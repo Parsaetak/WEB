@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Creative & Professional Portfolio</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind to use the 'Inter' font and a dark theme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        // Using darker tones for the black theme
+                        'primary-black': '#111827', // Dark Slate
+                        'secondary-black': '#1f2937', // Slightly lighter Dark Slate
+                        // Updated to Red Accent
+                        'accent-red': '#ef4444', // Tailwind red-500
+                        'accent-hover-red': '#dc2626', // Tailwind red-600
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base styles: Near-pure black background */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a; 
+        }
+        .section-content {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- RAINBOW BORDER EFFECT --- */
+        .rainbow-border {
+            position: relative;
+            padding: 2px; /* Space for the pseudo-element border */
+            overflow: hidden;
+            border-radius: 0.75rem; /* matches rounded-xl */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7); /* Deep shadow for shining effect */
+        }
+
+        /* The animated pseudo-element that creates the rainbow shine */
+        .rainbow-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            border-radius: 0.65rem; /* Slightly smaller than parent to show border */
+            
+            /* The Rainbow Gradient */
+            background: linear-gradient(45deg, #ff0000, #ff8c00, #ffff00, #00ff00, #00bfff, #0000ff, #9400d3, #ff0000);
+            background-size: 400% 400%; /* Increased size for smoother transition */
+            
+            /* Animation to shift the gradient smoothly */
+            animation: rainbowShift 12s linear infinite; /* Doubled duration for slower, smoother movement */
+        }
+
+        @keyframes rainbowShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        
+        /* Inner wrapper to contain content and provide a dark background */
+        .card-content-wrapper {
+            background-color: #111827; /* Dark Slate interior */
+            border-radius: 0.65rem;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen">
+
+    <!-- Global State Object and View Switching Logic -->
+    <script>
+        // Global App State
+        const app = {
+            activeView: 'home', // 'home', 'portfolio', 'cv'
+            content: {
+                name: "Parsa Tak", // Explicitly set name
+                tagline: "Writer, Technologist, and Storyteller",
+                // NOTE: Use a relative path like 'images/profile.jpg' when you add your real photo
+                profileImage: "https://placehold.co/150x150/0a0a0a/94a3b8?text=PT", 
+                
+                // --- MOCK DATA ---
+                cvData: [
+                    { year: "2018 - Present", title: "Senior Content Strategist", company: "Future Innovations Inc.", description: "Led cross-functional teams to define content strategy for flagship products, resulting in a 30% increase in user engagement." },
+                    { year: "2014 - 2018", title: "Technical Writer & Editor", company: "Global Systems", description: "Authored and managed technical documentation for enterprise software solutions. Mentored junior writers." },
+                ],
+                portfolioItems: [
+                    // --- STORIES & BOOKS ---
+                    { type: "Story", title: "The Last Lighthouse Keeper", description: "A science-fiction short story exploring solitude and memory in the deep space. You can read the full story on its own page.", tags: ["Sci-Fi", "Short Fiction"], link: "stories/lighthouse-keeper.html" },
+                    { type: "Book Listing", title: "Echoes of the Void (Novel)", description: "My debut novel. A hard-boiled mystery set in a cyberpunk city.", tags: ["Cyberpunk", "Mystery", "Novel"], link: "https://www.amazon.com/my-book" },
+                    // --- DOCUMENTS & FILES ---
+                    // REMINDER: These paths (assets/...) must point to files you upload to your own repository
+                    { type: "Document", title: "My Full Professional Résumé", description: "Downloadable PDF document detailing my complete professional experience and skills.", tags: ["CV", "PDF", "Download"], link: "assets/parsa_tak_cv.pdf", fileType: "pdf" },
+                    { type: "Document", title: "Web Dev Project Outline", description: "Detailed outline and wireframes for the Interactive Ebook Demo project.", tags: ["Doc", "Planning", "UX"], link: "assets/project_outline.docx", fileType: "doc" },
+                ]
+            }
+        };
+
+        // Function to render the active view based on app.activeView
+        function renderView() {
+            const views = {
+                'home': document.getElementById('home-view'),
+                'portfolio': document.getElementById('portfolio-view'),
+                'cv': document.getElementById('cv-view')
+            };
+
+            // Hide all views first
+            Object.values(views).forEach(v => v.classList.add('hidden'));
+
+            // Show the active view
+            const activeEl = views[app.activeView];
+            if (activeEl) {
+                activeEl.classList.remove('hidden');
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    // Update navigation styling based on active view
+                    link.classList.remove('bg-accent-red', 'text-white');
+                    link.classList.add('text-slate-300', 'hover:bg-primary-black');
+                    if (link.dataset.view === app.activeView) {
+                        link.classList.add('bg-accent-red', 'text-white');
+                        link.classList.remove('text-slate-300', 'hover:bg-primary-black');
+                    }
+                });
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Function to switch view
+        function setView(viewName) {
+            app.activeView = viewName;
+            renderView();
+        }
+
+        // Initial setup and rendering on load
+        window.onload = () => {
+            // Check for initial hash for deep linking (e.g., #cv)
+            const hash = window.location.hash.substring(1);
+            if (['home', 'portfolio', 'cv'].includes(hash)) {
+                app.activeView = hash;
+            }
+            
+            // Set the dynamic name for the image placeholder (will use PT)
+            document.getElementById('profile-img').src = `https://placehold.co/150x150/0a0a0a/94a3b8?text=${app.content.name.split(' ').map(n=>n[0]).join('')}`;
+
+
+            renderView(); // Initial render
+            
+            // Set up event listeners for navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const view = e.currentTarget.dataset.view;
+                    setView(view);
+                    window.location.hash = view; // Update URL hash
+                });
+            });
+        };
+    </script>
+
+
+    <!-- NAVIGATION (Fixed Header for Desktop, Flex for Mobile) -->
+    <header class="sticky top-0 z-50 bg-primary-black shadow-2xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row justify-between items-center">
+            <h1 class="text-2xl font-bold text-accent-red tracking-tight mb-2 md:mb-0">
+                Parsa Tak
+            </h1>
+            
+            <!-- Navigation Links -->
+            <nav class="flex space-x-2 sm:space-x-4">
+                <a href="#home" data-view="home" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out">
+                    Home / About
+                </a>
+                <a href="#portfolio" data-view="portfolio" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out">
+                    Stories & Projects
+                </a>
+                <a href="#cv" data-view="cv" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out">
+                    CV / Résumé
+                </a>
+            </nav>
+        </div>
+    </header>
+
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        <!-- 1. HOME/ABOUT VIEW -->
+        <section id="home-view" class="section-content hidden">
+            <!-- Main Profile Card with Rainbow Border -->
+            <div class="rainbow-border">
+                <div class="card-content-wrapper p-8">
+                    <div class="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-10">
+                        <!-- Profile Image (Placeholder) -->
+                        <img id="profile-img" src="https://placehold.co/150x150/0a0a0a/94a3b8?text=PT" alt="Profile Photo of Parsa Tak" class="w-36 h-36 rounded-full object-cover border-4 border-accent-red shadow-lg">
+                        <div class="text-center md:text-left">
+                            <h2 class="text-4xl font-extrabold text-white mb-2">Parsa Tak</h2>
+                            <!-- Replaced {{ app.content.tagline }} with static text -->
+                            <p class="text-xl text-slate-400 font-light mb-4">Writer, Technologist, and Storyteller</p>
+                            <p class="text-slate-300 max-w-2xl">
+                                Welcome! I blend creative narrative with technical strategy to build engaging experiences. Whether crafting a detailed sci-fi world, structuring complex technical documentation, or designing intuitive web interfaces, my work focuses on clarity, impact, and connecting deeply with the audience. Explore my stories, my projects, and my professional history below.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8 mt-10">
+                <!-- Short Bio Card -->
+                <div class="rainbow-border">
+                    <div class="card-content-wrapper p-6">
+                        <h3 class="text-2xl font-semibold text-accent-red mb-4">The Story Behind the Work</h3>
+                        <p class="text-slate-300">
+                            My passion lies at the intersection of imagination and execution. I've spent years developing my voice as a writer, tackling genres from fantasy and literary fiction to hard science fiction. Professionally, I translate this storytelling skill into effective content strategy, making complex ideas accessible and compelling for a corporate audience. This site serves as the bridge between those two worlds.
+                        </p>
+                    </div>
+                </div>
+                <!-- Quick Links/Contact Card -->
+                <div class="rainbow-border">
+                    <div class="card-content-wrapper p-6">
+                        <h3 class="text-2xl font-semibold text-accent-red mb-4">Get In Touch</h3>
+                        <ul class="space-y-3 text-slate-300">
+                            <li><span class="font-medium">Email:</span> <a href="mailto:parsaetak@gmail.com" class="text-accent-red hover:text-accent-hover-red transition">parsaetak@gmail.com</a></li>
+                            <li><span class="font-medium">GitHub:</span> <a href="https://github.com/Parsaetak" target="_blank" class="text-accent-red hover:text-accent-hover-red transition">github.com/Parsaetak</a></li>
+                            <li><span class="font-medium">LinkedIn:</span> <a href="https://www.linkedin.com/in/parsaetak" target="_blank" class="text-accent-red hover:text-accent-hover-red transition">linkedin.com/in/parsaetak</a></li>
+                            <li><span class="font-medium">Linktree:</span> <a href="https://linktr.ee/Parsaetak" target="_blank" class="text-accent-red hover:text-accent-hover-red transition">linktr.ee/Parsaetak</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- 2. PORTFOLIO & STORIES VIEW -->
+        <section id="portfolio-view" class="section-content hidden">
+            <h2 class="text-3xl font-bold border-b-2 border-accent-red pb-2 mb-8">Stories, Documents & Creative Projects</h2>
+            
+            <div id="portfolio-list" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Portfolio Items (Generated by JS) -->
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const listContainer = document.getElementById('portfolio-list');
+                    if (!listContainer) return;
+
+                    // Clear existing content just in case
+                    listContainer.innerHTML = '';
+
+                    app.content.portfolioItems.forEach(item => {
+                        const tagsHtml = item.tags.map(tag => `<span class="inline-block bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded-full mr-2">${tag}</span>`).join('');
+                        
+                        // Determine the button text and icon based on type
+                        let buttonText = 'View Details &rarr;';
+                        let buttonTarget = '_blank';
+                        
+                        if (item.fileType === 'pdf') {
+                            buttonText = 'Download PDF ↓';
+                            buttonTarget = '_blank'; // Opens PDF in a new tab for easy viewing/downloading
+                        } else if (item.fileType === 'doc') {
+                            buttonText = 'Download Document ↓';
+                            buttonTarget = '_self'; // Downloads in the current window
+                        }
+
+                        const itemHtml = `
+                            <div class="rainbow-border group"> 
+                                <div class="card-content-wrapper p-6 transition-all duration-300 group-hover:bg-slate-900">
+                                    <span class="text-xs font-bold uppercase tracking-widest text-accent-red mb-1 block">${item.type}</span>
+                                    <h3 class="text-2xl font-semibold text-white mb-2">${item.title}</h3>
+                                    <p class="text-slate-400 mb-4">${item.description}</p>
+                                    <div class="mb-4">${tagsHtml}</div>
+                                    <a href="${item.link}" target="${buttonTarget}" class="inline-block bg-accent-red text-white px-4 py-2 rounded-lg font-medium hover:bg-accent-hover-red transition">
+                                        ${buttonText}
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                        listContainer.innerHTML += itemHtml;
+                    });
+                });
+            </script>
+        </section>
+
+
+        <!-- 3. CV / RÉSUMÉ VIEW -->
+        <section id="cv-view" class="section-content hidden">
+            <!-- CV Content Card with Rainbow Border -->
+            <div class="rainbow-border">
+                <div class="card-content-wrapper p-8">
+                    <div class="flex justify-between items-start border-b border-slate-600 pb-4 mb-8">
+                        <div>
+                            <h2 class="text-3xl font-bold text-accent-red">Professional Résumé</h2>
+                            <p class="text-slate-400 mt-1">Focused on Content Strategy, Technical Writing, and Digital Storytelling.</p>
+                        </div>
+                        <button onclick="window.print()" class="bg-primary-black text-slate-300 px-4 py-2 rounded-lg hover:bg-slate-800 transition hidden md:block">
+                            Print PDF Version
+                        </button>
+                    </div>
+                    
+                    <!-- Experience Section -->
+                    <h3 class="text-2xl font-semibold text-white mb-4 border-b border-slate-700 pb-2">Experience</h3>
+                    <div id="experience-list" class="space-y-8">
+                        <!-- CV Items (Generated by JS) -->
+                    </div>
+
+                    <!-- Education Section (Static Mockup) -->
+                    <h3 class="text-2xl font-semibold text-white mt-10 mb-4 border-b border-slate-700 pb-2">Education</h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-primary-black rounded-lg">
+                            <p class="font-bold text-xl">M.A. Creative Writing & Digital Media</p>
+                            <p class="text-slate-300">State University, 2012 - 2014</p>
+                        </div>
+                        <div class="p-4 bg-primary-black rounded-lg">
+                            <p class="font-bold text-xl">B.S. Computer Science</p>
+                            <p class="text-slate-300">Tech Institute, 2008 - 2012</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const expList = document.getElementById('experience-list');
+                    if (!expList) return;
+
+                    app.content.cvData.forEach(job => {
+                        const jobHtml = `
+                            <div class="p-6 bg-primary-black rounded-lg shadow-md">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="text-xl font-bold text-accent-red">${job.title}</h4>
+                                    <span class="text-sm text-slate-400 font-medium">${job.year}</span>
+                                </div>
+                                <p class="text-md text-slate-300 italic mb-2">${job.company}</p>
+                                <p class="text-slate-400">${job.description}</p>
+                            </div>
+                        `;
+                        expList.innerHTML += jobHtml;
+                    });
+                });
+            </script>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-primary-black mt-10 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-400 text-sm">
+            <p>&copy; 2025 Parsa Tak. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
