@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Creative & Professional Portfolio</title>
+    <title>Parsa Tak</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Configure Tailwind to use the 'Inter' font and a dark theme -->
@@ -79,6 +79,24 @@
             border-radius: 0.65rem;
             height: 100%;
         }
+        /* Custom styles for document content readability */
+        #document-content p, #cv-summary p {
+            margin-bottom: 1.5rem;
+            line-height: 1.75; /* Increased line-height for readability */
+        }
+        #document-content h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: #ef4444; /* accent-red */
+        }
+        /* Style for the sidebar on small screens */
+        @media (max-width: 768px) {
+            #doc-sidebar {
+                margin-bottom: 2rem;
+            }
+        }
     </style>
 </head>
 <body class="text-white min-h-screen">
@@ -87,36 +105,196 @@
     <script>
         // Global App State
         const app = {
-            activeView: 'home', // 'home', 'portfolio', 'cv'
+            activeView: 'home', // 'home', 'portfolio', 'cv', 'docs'
             content: {
-                name: "Parsa Tak", // Explicitly set name
-                tagline: "Writer, Technologist, and Storyteller",
-                // NOTE: Use a relative path like 'images/profile.jpg' when you add your real photo
+                name: "Parsa Tak", 
+                tagline: "Architect of High-Assurance AI Systems | AI Governance & IP Strategist",
                 profileImage: "https://placehold.co/150x150/0a0a0a/94a3b8?text=PT", 
                 
-                // --- MOCK DATA ---
-                cvData: [
-                    { year: "2018 - Present", title: "Senior Content Strategist", company: "Future Innovations Inc.", description: "Led cross-functional teams to define content strategy for flagship products, resulting in a 30% increase in user engagement." },
-                    { year: "2014 - 2018", title: "Technical Writer & Editor", company: "Global Systems", description: "Authored and managed technical documentation for enterprise software solutions. Mentored junior writers." },
-                ],
+                // --- DOCUMENT MOCK DATA ---
+                documentData: {
+                    activeChapterId: 'chap1',
+                    documentTitle: "The Future of Content Strategy: A Thousand Page Summary",
+                    chapters: [
+                        { id: 'chap1', title: "Chapter 1: Foundations of Technical Narrative", content: 
+                            "The modern digital landscape demands more than just information; it requires narrative. Technical documentation must evolve from simple reference guides into compelling, structured stories that anticipate user needs. The foundation of this shift lies in recognizing the user's journey as a plot arc, where every feature and instruction is a necessary development. This ensures adoption and reduces friction. This initial framework is critical for any multi-page document that seeks to truly inform and engage, rather than just store data. A long document is useless if the reader cannot easily locate and digest key information. The sidebar structure ensures immediate access."
+                        },
+                        { id: 'chap2', title: "Chapter 2: Scaling Content for Enterprise Systems", content: 
+                            "Scaling content across large enterprise platforms introduces complexities far beyond those of a small website. Governance models, translation workflows, and version control become paramount. This section details a modular content architecture approach, where information blocks are reusable across platforms and geographies, drastically cutting redundancy and maintenance overhead. By treating content as a service (CaaS), we can decouple the text from the presentation layer, making future migrations and updates nearly instantaneous. This organizational principle is what allows a 1000-page document to remain manageable."
+                        },
+                        { id: 'chap3', title: "Chapter 3: AI in Content Creation and Curation", content: 
+                            "Artificial intelligence is rapidly moving from an augmentation tool to an active co-creator in the content space. This shift raises profound ethical and structural questions. While AI excels at drafting routine updates and managing taxonomy, the human role—defining voice, tone, and strategic intent—is more critical than ever. We explore three leading models for human-AI collaboration: the Oversight Model, the Co-Pilot Model, and the Autonomous Generation Model, assessing their impact on long-form documentation and compliance. The future of publishing relies on integrating these tools responsibly."
+                        },
+                    ],
+                },
+
+                // --- LIVE CV DATA FROM UPLOADED PDF ---
+                cvData: {
+                    summary: `My work is driven by a single, lifelong ambition: to architect perfect systems. For years, this was a theoretical pursuit, an exploration of why organizations, governments, and technologies so often fall short of their potential. With the advent of advanced AI and Large Language Models, this pursuit has transformed into a practical engineering discipline. I have found the tool that allows me to not just theorize about, but to build, blueprints for a more reliable, intelligent, and equitable world.
+
+This journey began not with a specific problem, but with a foundational question: Is there a universal science to making any system better? My answer is the **Unified System Enhancement Framework (USEF)** and its technical AI counterpart, the **Reasoning Enhancement Protocol (REP)**. These are my foundational works—a complete, open-standard methodology for iterative improvement, ethical integrity, and measurable performance.
+
+To prove the power of this universal theory, I applied it to two of the world's most complex challenges, demonstrating its scalability from the societal to the technical:
+1.  **Societal Architecture ("The Unity"):** A complete blueprint for a self-improving global governance system that leverages AI for data-driven policymaking, eradicates corruption via a transparent ledger, and ensures long-term sustainability.
+2.  **Commercial AI Architecture (The ZERO Ecosystem):** A proprietary cognitive operating system that transforms probabilistic LLMs into deterministic, auditable, and high-assurance enterprise assets, including the proprietary **NZAS Protocol** for IP protection.
+
+I design blueprints for more reliable, ethical, and intelligent worlds—whether those worlds are the cognitive architecture of an AI or the governance structure of a society. I am seeking senior executive roles in AI architecture, governance, or safety, or strategic partners who share my ambition to build the foundational systems for a more perfect future.`,
+
+                    contact: {
+                        location: "Mestre, Venezia",
+                        mobile: "+393515742989",
+                        email: "Parsaetak@gmail.com",
+                        linkedin: "www.linkedin.com/in/parsaetak",
+                        portfolio: "linktr.ee/Parsaetak"
+                    },
+
+                    experience: [
+                        { year: "Jan 2025 - Present", title: "Chief Executive Officer (Self-employed)", company: "Future Company", description: "Lead the business towards a seamless integration of AI and art, focusing on passive income through NFTs and digital art with plans to expand into broader financial sectors. Responsibilities include strategic direction, innovation, and growth while maintaining a balance between artistic vision and financial success." },
+                        { year: "Dec 2024 - Present", title: "Project Manager (Self-employed)", company: "Startup", description: "Overseeing successful execution of multiple projects in the digital art, AI, and NFT sectors. Key responsibilities: leading cross-functional teams, managing the entire lifecycle of NFT collections, developing project strategies, overseeing digital marketing, and analyzing project performance." },
+                        { year: "Jan 2023 - Present", title: "Artificial Intelligence Engineer (Self-employed)", company: "AI Development", description: "Designed and developed the **Reasoning Enhancement Protocol (REP)**, achieving +27% logical reasoning accuracy and 83% reduction in ethical bias. Tested REP across multiple models (Grok, ChatGPT, Gemini), improving performance in healthcare, finance, and customer service. Crafted optimized prompts, reducing response latency by 37.8%." },
+                        { year: "Dec 2024 - Present", title: "Artist and Digital Creator (Self-employed)", company: "Digital Art", description: "Specializing in unique NFT collections blending short stories and digital artwork, incorporating energy symbolism and AI technology. Managed the end-to-end process of designing, minting, and marketing NFTs." },
+                        { year: "Sep 2024 - Dec 2024", title: "Barista", company: "Starbucks, Venice", description: "Provided excellent customer service in a fast-paced environment, prepared various beverages, managed cash register, and worked collaboratively to meet daily sales targets. Developed strong communication, multitasking, and time-management skills." },
+                        { year: "Jul 2024 - Sep 2024", title: "Shop Assistant", company: "Primark, Venice", description: "Identified customer needs and recommended purchasing options, collaborating effectively with team members for efficient store operations." },
+                        { year: "Jun 2021 - Jan 2022", title: "Information Technology Intern", company: "Mehrsam Darou", description: "Responsible for troubleshooting and resolving hardware and software issues. Diagnosed, researched, and implemented fixes to ensure minimal disruption. Managed the sourcing and installation of new devices." },
+                    ],
+                    
+                    education: [
+                        { year: "Sep 2022 - Present", institution: "Università Ca' Foscari Venezia", degree: "Student, Economics" },
+                        { year: "Sep 2021 - Mar 2022", institution: "IELTS Official Test Center", degree: "IELTS Academic, English Language and Literature/Letters" },
+                        { year: "Sep 2016 - Jun 2019", institution: "Allameh Helli school", degree: "High School Diploma, Mathematics" },
+                    ]
+                },
+
+
+                // --- PORTFOLIO MOCK DATA ---
                 portfolioItems: [
-                    // --- STORIES & BOOKS ---
                     { type: "Story", title: "The Last Lighthouse Keeper", description: "A science-fiction short story exploring solitude and memory in the deep space. You can read the full story on its own page.", tags: ["Sci-Fi", "Short Fiction"], link: "stories/lighthouse-keeper.html" },
                     { type: "Book Listing", title: "Echoes of the Void (Novel)", description: "My debut novel. A hard-boiled mystery set in a cyberpunk city.", tags: ["Cyberpunk", "Mystery", "Novel"], link: "https://www.amazon.com/my-book" },
-                    // --- DOCUMENTS & FILES ---
-                    // REMINDER: These paths (assets/...) must point to files you upload to your own repository
                     { type: "Document", title: "My Full Professional Résumé", description: "Downloadable PDF document detailing my complete professional experience and skills.", tags: ["CV", "PDF", "Download"], link: "assets/parsa_tak_cv.pdf", fileType: "pdf" },
                     { type: "Document", title: "Web Dev Project Outline", description: "Detailed outline and wireframes for the Interactive Ebook Demo project.", tags: ["Doc", "Planning", "UX"], link: "assets/project_outline.docx", fileType: "doc" },
                 ]
             }
         };
 
-        // Function to render the active view based on app.activeView
+        // --- DOCUMENT RENDERING FUNCTIONS ---
+        // Function to switch the active chapter and update the content panel
+        function setActiveChapter(chapterId) {
+            const docData = app.content.documentData;
+            docData.activeChapterId = chapterId;
+            
+            const chapter = docData.chapters.find(c => c.id === chapterId);
+            if (!chapter) return;
+
+            // 1. Update main content area
+            document.getElementById('doc-title').textContent = chapter.title;
+            
+            // Render content, replacing double newlines with paragraph breaks
+            const formattedContent = chapter.content
+                .split('\n\n')
+                .map(p => `<p>${p.trim()}</p>`)
+                .join('');
+            document.getElementById('document-content').innerHTML = formattedContent;
+
+            // 2. Update sidebar active state
+            document.querySelectorAll('.chapter-link').forEach(link => {
+                link.classList.remove('bg-accent-red', 'text-white');
+                link.classList.add('hover:bg-slate-700');
+            });
+            const activeLink = document.getElementById(`link-${chapterId}`);
+            if (activeLink) {
+                activeLink.classList.add('bg-accent-red', 'text-white');
+                activeLink.classList.remove('hover:bg-slate-700');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Function to render the entire document view on entry
+        function renderDocumentView() {
+            const docData = app.content.documentData;
+            const sidebar = document.getElementById('doc-sidebar-list');
+            if (!sidebar) return;
+
+            // 1. Populate Sidebar Navigation
+            sidebar.innerHTML = ''; // Clear previous links
+            docData.chapters.forEach(chapter => {
+                const isActive = chapter.id === docData.activeChapterId;
+                const linkClass = `chapter-link w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 ${isActive ? 'bg-accent-red text-white' : 'text-slate-300 hover:bg-slate-700'}`;
+                
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `<button id="link-${chapter.id}" class="${linkClass}" onclick="setActiveChapter('${chapter.id}')">${chapter.title}</button>`;
+                sidebar.appendChild(listItem);
+            });
+
+            // 2. Set the document main title
+            document.getElementById('document-main-title').textContent = docData.documentTitle;
+
+            // 3. Load the currently active chapter content
+            setActiveChapter(docData.activeChapterId);
+        }
+
+        // --- CV RENDERING FUNCTIONS ---
+        function renderCVView() {
+            const cv = app.content.cvData;
+
+            // 1. Render Contact Info
+            const contactHtml = `
+                <p class="text-sm text-slate-400">
+                    ${cv.contact.location} • 
+                    ${cv.contact.mobile} • 
+                    <a href="mailto:${cv.contact.email}" class="text-accent-red hover:underline">${cv.contact.email}</a>
+                </p>
+                <p class="text-sm text-slate-400 mt-1">
+                    <a href="https://${cv.contact.linkedin}" target="_blank" class="text-accent-red hover:underline">LinkedIn</a> • 
+                    <a href="https://${cv.contact.portfolio}" target="_blank" class="text-accent-red hover:underline">Portfolio</a>
+                </p>
+            `;
+            document.getElementById('cv-contact-info').innerHTML = contactHtml;
+            
+            // 2. Render Summary
+            // Replace double newlines with paragraph tags for the summary
+            document.getElementById('cv-summary').innerHTML = cv.summary
+                .split('\n\n')
+                .map(p => `<p>${p.trim().replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`)
+                .join('');
+
+
+            // 3. Render Experience
+            const expList = document.getElementById('experience-list');
+            expList.innerHTML = ''; // Clear existing mock data
+            cv.experience.forEach(job => {
+                expList.innerHTML += `
+                    <div class="p-6 bg-secondary-black rounded-lg shadow-md">
+                        <div class="flex flex-col sm:flex-row justify-between items-start mb-1">
+                            <h4 class="text-xl font-bold text-accent-red">${job.title}</h4>
+                            <span class="text-sm text-slate-400 font-medium">${job.year}</span>
+                        </div>
+                        <p class="text-md text-slate-300 italic mb-2">${job.company}</p>
+                        <p class="text-slate-400">${job.description}</p>
+                    </div>
+                `;
+            });
+            
+            // 4. Render Education
+            const eduList = document.getElementById('education-list');
+            eduList.innerHTML = ''; // Clear existing mock data
+            cv.education.forEach(edu => {
+                eduList.innerHTML += `
+                    <div class="p-4 bg-secondary-black rounded-lg">
+                        <p class="font-bold text-xl">${edu.degree}</p>
+                        <p class="text-slate-300">${edu.institution}, ${edu.year}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // --- GLOBAL VIEW SWITCHING LOGIC ---
         function renderView() {
             const views = {
                 'home': document.getElementById('home-view'),
                 'portfolio': document.getElementById('portfolio-view'),
-                'cv': document.getElementById('cv-view')
+                'cv': document.getElementById('cv-view'),
+                'docs': document.getElementById('document-view') 
             };
 
             // Hide all views first
@@ -126,6 +304,14 @@
             const activeEl = views[app.activeView];
             if (activeEl) {
                 activeEl.classList.remove('hidden');
+                
+                // Special rendering for the document view
+                if (app.activeView === 'docs') {
+                    renderDocumentView();
+                } else if (app.activeView === 'cv') {
+                    renderCVView();
+                }
+
                 document.querySelectorAll('.nav-link').forEach(link => {
                     // Update navigation styling based on active view
                     link.classList.remove('bg-accent-red', 'text-white');
@@ -149,13 +335,12 @@
         window.onload = () => {
             // Check for initial hash for deep linking (e.g., #cv)
             const hash = window.location.hash.substring(1);
-            if (['home', 'portfolio', 'cv'].includes(hash)) {
+            if (['home', 'portfolio', 'cv', 'docs'].includes(hash)) {
                 app.activeView = hash;
             }
             
             // Set the dynamic name for the image placeholder (will use PT)
             document.getElementById('profile-img').src = `https://placehold.co/150x150/0a0a0a/94a3b8?text=${app.content.name.split(' ').map(n=>n[0]).join('')}`;
-
 
             renderView(); // Initial render
             
@@ -168,6 +353,42 @@
                     window.location.hash = view; // Update URL hash
                 });
             });
+
+            // Initial rendering of Portfolio (CV will be rendered on view switch)
+            document.addEventListener('DOMContentLoaded', () => {
+                // RENDER PORTFOLIO ITEMS
+                const listContainer = document.getElementById('portfolio-list');
+                if (listContainer) {
+                    app.content.portfolioItems.forEach(item => {
+                        const tagsHtml = item.tags.map(tag => `<span class="inline-block bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded-full mr-2">${tag}</span>`).join('');
+                        
+                        let buttonText = 'View Details &rarr;';
+                        let buttonTarget = '_blank';
+                        
+                        if (item.fileType === 'pdf') {
+                            buttonText = 'Download PDF ↓';
+                        } else if (item.fileType === 'doc') {
+                            buttonText = 'Download Document ↓';
+                            buttonTarget = '_self';
+                        }
+
+                        listContainer.innerHTML += `
+                            <div class="rainbow-border group"> 
+                                <div class="card-content-wrapper p-6 transition-all duration-300 group-hover:bg-slate-900">
+                                    <span class="text-xs font-bold uppercase tracking-widest text-accent-red mb-1 block">${item.type}</span>
+                                    <h3 class="text-2xl font-semibold text-white mb-2">${item.title}</h3>
+                                    <p class="text-slate-400 mb-4">${item.description}</p>
+                                    <div class="mb-4">${tagsHtml}</div>
+                                    <a href="${item.link}" target="${buttonTarget}" class="inline-block bg-accent-red text-white px-4 py-2 rounded-lg font-medium hover:bg-accent-hover-red transition">
+                                        ${buttonText}
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            });
+
         };
     </script>
 
@@ -186,6 +407,9 @@
                 </a>
                 <a href="#portfolio" data-view="portfolio" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out">
                     Stories & Projects
+                </a>
+                <a href="#docs" data-view="docs" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out">
+                    Long Documents
                 </a>
                 <a href="#cv" data-view="cv" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out">
                     CV / Résumé
@@ -208,10 +432,9 @@
                         <img id="profile-img" src="https://placehold.co/150x150/0a0a0a/94a3b8?text=PT" alt="Profile Photo of Parsa Tak" class="w-36 h-36 rounded-full object-cover border-4 border-accent-red shadow-lg">
                         <div class="text-center md:text-left">
                             <h2 class="text-4xl font-extrabold text-white mb-2">Parsa Tak</h2>
-                            <!-- Replaced {{ app.content.tagline }} with static text -->
-                            <p class="text-xl text-slate-400 font-light mb-4">Writer, Technologist, and Storyteller</p>
+                            <p class="text-xl text-slate-400 font-light mb-4" id="home-tagline">Architect of High-Assurance AI Systems | AI Governance & IP Strategist</p>
                             <p class="text-slate-300 max-w-2xl">
-                                Welcome! I blend creative narrative with technical strategy to build engaging experiences. Whether crafting a detailed sci-fi world, structuring complex technical documentation, or designing intuitive web interfaces, my work focuses on clarity, impact, and connecting deeply with the audience. Explore my stories, my projects, and my professional history below.
+                                Welcome! I blend high-assurance system architecture with strategic AI governance and digital content creation. My focus is on building reliable, intelligent, and ethical systems, demonstrated by my work on the **ZERO Ecosystem** and the **Unified System Enhancement Framework (USEF)**. Explore my professional blueprints, my long-form documentation, and my creative ventures here.
                             </p>
                         </div>
                     </div>
@@ -222,9 +445,9 @@
                 <!-- Short Bio Card -->
                 <div class="rainbow-border">
                     <div class="card-content-wrapper p-6">
-                        <h3 class="text-2xl font-semibold text-accent-red mb-4">The Story Behind the Work</h3>
+                        <h3 class="text-2xl font-semibold text-accent-red mb-4">The Architect's Focus</h3>
                         <p class="text-slate-300">
-                            My passion lies at the intersection of imagination and execution. I've spent years developing my voice as a writer, tackling genres from fantasy and literary fiction to hard science fiction. Professionally, I translate this storytelling skill into effective content strategy, making complex ideas accessible and compelling for a corporate audience. This site serves as the bridge between those two worlds.
+                            My passion lies in defining the universal science behind making any complex system perform optimally. This has led me to architect foundational works like the **Reasoning Enhancement Protocol (REP)**, drastically improving AI reliability, and applying these principles to governance (The Unity) and commercial AI (The ZERO Ecosystem). This site is dedicated to sharing these architectural blueprints.
                         </p>
                     </div>
                 </div>
@@ -233,10 +456,10 @@
                     <div class="card-content-wrapper p-6">
                         <h3 class="text-2xl font-semibold text-accent-red mb-4">Get In Touch</h3>
                         <ul class="space-y-3 text-slate-300">
-                            <li><span class="font-medium">Email:</span> <a href="mailto:parsaetak@gmail.com" class="text-accent-red hover:text-accent-hover-red transition">parsaetak@gmail.com</a></li>
-                            <li><span class="font-medium">GitHub:</span> <a href="https://github.com/Parsaetak" target="_blank" class="text-accent-red hover:text-accent-hover-red transition">github.com/Parsaetak</a></li>
+                            <li><span class="font-medium">Email:</span> <a href="mailto:Parsaetak@gmail.com" class="text-accent-red hover:text-accent-hover-red transition">Parsaetak@gmail.com</a></li>
                             <li><span class="font-medium">LinkedIn:</span> <a href="https://www.linkedin.com/in/parsaetak" target="_blank" class="text-accent-red hover:text-accent-hover-red transition">linkedin.com/in/parsaetak</a></li>
-                            <li><span class="font-medium">Linktree:</span> <a href="https://linktr.ee/Parsaetak" target="_blank" class="text-accent-red hover:text-accent-hover-red transition">linktr.ee/Parsaetak</a></li>
+                            <li><span class="font-medium">Portfolio:</span> <a href="https://linktr.ee/Parsaetak" target="_blank" class="text-accent-red hover:text-accent-hover-red transition">linktr.ee/Parsaetak</a></li>
+                            <li><span class="font-medium">Location:</span> Mestre, Venezia</li>
                         </ul>
                     </div>
                 </div>
@@ -252,105 +475,73 @@
                 <!-- Portfolio Items (Generated by JS) -->
             </div>
 
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const listContainer = document.getElementById('portfolio-list');
-                    if (!listContainer) return;
-
-                    // Clear existing content just in case
-                    listContainer.innerHTML = '';
-
-                    app.content.portfolioItems.forEach(item => {
-                        const tagsHtml = item.tags.map(tag => `<span class="inline-block bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded-full mr-2">${tag}</span>`).join('');
-                        
-                        // Determine the button text and icon based on type
-                        let buttonText = 'View Details &rarr;';
-                        let buttonTarget = '_blank';
-                        
-                        if (item.fileType === 'pdf') {
-                            buttonText = 'Download PDF ↓';
-                            buttonTarget = '_blank'; // Opens PDF in a new tab for easy viewing/downloading
-                        } else if (item.fileType === 'doc') {
-                            buttonText = 'Download Document ↓';
-                            buttonTarget = '_self'; // Downloads in the current window
-                        }
-
-                        const itemHtml = `
-                            <div class="rainbow-border group"> 
-                                <div class="card-content-wrapper p-6 transition-all duration-300 group-hover:bg-slate-900">
-                                    <span class="text-xs font-bold uppercase tracking-widest text-accent-red mb-1 block">${item.type}</span>
-                                    <h3 class="text-2xl font-semibold text-white mb-2">${item.title}</h3>
-                                    <p class="text-slate-400 mb-4">${item.description}</p>
-                                    <div class="mb-4">${tagsHtml}</div>
-                                    <a href="${item.link}" target="${buttonTarget}" class="inline-block bg-accent-red text-white px-4 py-2 rounded-lg font-medium hover:bg-accent-hover-red transition">
-                                        ${buttonText}
-                                    </a>
-                                </div>
+        </section>
+        
+        <!-- 3. LONG DOCUMENTS VIEW -->
+        <section id="document-view" class="section-content hidden">
+            <h2 id="document-main-title" class="text-3xl font-bold border-b-2 border-accent-red pb-2 mb-6">Long Document Title Here</h2>
+            
+            <div class="flex flex-col md:flex-row gap-8">
+                
+                <!-- Document Sidebar / Navigation (1/4 width on desktop) -->
+                <nav id="doc-sidebar" class="md:w-1/4 p-4 bg-secondary-black rounded-xl shadow-lg h-full md:sticky md:top-24">
+                    <h3 class="text-xl font-semibold text-white mb-4 border-b border-slate-600 pb-2">Table of Contents</h3>
+                    <ul id="doc-sidebar-list" class="space-y-2">
+                        <!-- Chapter links generated by renderDocumentView() -->
+                    </ul>
+                </nav>
+                
+                <!-- Document Content Panel (3/4 width on desktop) -->
+                <div class="md:w-3/4">
+                    <div class="rainbow-border">
+                        <div class="card-content-wrapper p-6 sm:p-8">
+                            <h3 id="doc-title" class="text-2xl font-bold text-accent-red mb-4">Chapter Title</h3>
+                            <div id="document-content" class="text-slate-300 text-lg">
+                                <!-- Chapter content populated by setActiveChapter() -->
+                                <p>Loading document content...</p>
                             </div>
-                        `;
-                        listContainer.innerHTML += itemHtml;
-                    });
-                });
-            </script>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </section>
 
 
-        <!-- 3. CV / RÉSUMÉ VIEW -->
+        <!-- 4. CV / RÉSUMÉ VIEW (Updated with real data) -->
         <section id="cv-view" class="section-content hidden">
             <!-- CV Content Card with Rainbow Border -->
             <div class="rainbow-border">
                 <div class="card-content-wrapper p-8">
-                    <div class="flex justify-between items-start border-b border-slate-600 pb-4 mb-8">
+                    <div class="flex flex-col md:flex-row justify-between items-start border-b border-slate-600 pb-4 mb-8">
                         <div>
                             <h2 class="text-3xl font-bold text-accent-red">Professional Résumé</h2>
-                            <p class="text-slate-400 mt-1">Focused on Content Strategy, Technical Writing, and Digital Storytelling.</p>
+                            <p class="text-slate-400 mt-1" id="cv-contact-info">Loading contact info...</p>
                         </div>
-                        <button onclick="window.print()" class="bg-primary-black text-slate-300 px-4 py-2 rounded-lg hover:bg-slate-800 transition hidden md:block">
-                            Print PDF Version
+                        <button onclick="window.print()" class="bg-primary-black text-slate-300 px-4 py-2 rounded-lg hover:bg-slate-800 transition mt-4 md:mt-0">
+                            Print / Save PDF
                         </button>
                     </div>
                     
+                    <!-- Summary Section -->
+                    <h3 class="text-2xl font-semibold text-white mb-4 border-b border-slate-700 pb-2">Summary</h3>
+                    <div id="cv-summary" class="text-slate-300 mb-10">
+                        <!-- Summary content populated by renderCVView() -->
+                    </div>
+
                     <!-- Experience Section -->
                     <h3 class="text-2xl font-semibold text-white mb-4 border-b border-slate-700 pb-2">Experience</h3>
                     <div id="experience-list" class="space-y-8">
-                        <!-- CV Items (Generated by JS) -->
+                        <!-- CV Items (Generated by renderCVView()) -->
                     </div>
 
-                    <!-- Education Section (Static Mockup) -->
+                    <!-- Education Section -->
                     <h3 class="text-2xl font-semibold text-white mt-10 mb-4 border-b border-slate-700 pb-2">Education</h3>
-                    <div class="space-y-4">
-                        <div class="p-4 bg-primary-black rounded-lg">
-                            <p class="font-bold text-xl">M.A. Creative Writing & Digital Media</p>
-                            <p class="text-slate-300">State University, 2012 - 2014</p>
-                        </div>
-                        <div class="p-4 bg-primary-black rounded-lg">
-                            <p class="font-bold text-xl">B.S. Computer Science</p>
-                            <p class="text-slate-300">Tech Institute, 2008 - 2012</p>
-                        </div>
+                    <div id="education-list" class="space-y-4">
+                        <!-- Education Items (Generated by renderCVView()) -->
                     </div>
                 </div>
             </div>
-
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const expList = document.getElementById('experience-list');
-                    if (!expList) return;
-
-                    app.content.cvData.forEach(job => {
-                        const jobHtml = `
-                            <div class="p-6 bg-primary-black rounded-lg shadow-md">
-                                <div class="flex justify-between items-start mb-1">
-                                    <h4 class="text-xl font-bold text-accent-red">${job.title}</h4>
-                                    <span class="text-sm text-slate-400 font-medium">${job.year}</span>
-                                </div>
-                                <p class="text-md text-slate-300 italic mb-2">${job.company}</p>
-                                <p class="text-slate-400">${job.description}</p>
-                            </div>
-                        `;
-                        expList.innerHTML += jobHtml;
-                    });
-                });
-            </script>
         </section>
 
     </main>
