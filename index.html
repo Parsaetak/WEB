@@ -32,8 +32,14 @@
             font-family: 'Inter', sans-serif;
             background-color: #0a0a0a; 
         }
+        
+        /* Optimized Fade-In Animation */
+        .section-content.fade-in {
+            animation: fadeIn 0.3s ease-out forwards; /* Shorter duration for snappier feel */
+        }
         .section-content {
-            animation: fadeIn 0.5s ease-out;
+             opacity: 0; /* Start hidden for smooth transition */
+             transform: translateY(10px);
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -65,7 +71,7 @@
             background-size: 400% 400%; /* Increased size for smoother transition */
             
             /* Animation to shift the gradient smoothly */
-            animation: rainbowShift 12s linear infinite; /* Doubled duration for slower, smoother movement */
+            animation: rainbowShift 120s linear infinite; /* Doubled duration for slower, smoother movement */
         }
 
         @keyframes rainbowShift {
@@ -97,6 +103,14 @@
                 margin-bottom: 2rem;
             }
         }
+        
+        /* Fix for sticky sidebar on mobile, forcing it to non-sticky */
+        @media (max-width: 768px) {
+            #doc-sidebar.md\:sticky {
+                position: relative;
+                top: auto;
+            }
+        }
     </style>
 </head>
 <body class="text-white min-h-screen">
@@ -105,32 +119,554 @@
     <script>
         // Global App State
         const app = {
-            activeView: 'home', // 'home', 'portfolio', 'cv', 'docs'
+            activeView: 'home', // 'home', 'cv', 'docs'
+            activeDocumentId: 'gospel', // Only one document remains
             content: {
                 name: "Parsa Tak", 
                 tagline: "Architect of High-Assurance AI Systems | AI Governance & IP Strategist",
                 profileImage: "https://placehold.co/150x150/0a0a0a/94a3b8?text=PT", 
                 
-                // --- DOCUMENT MOCK DATA ---
-                documentData: {
-                    activeChapterId: 'chap1',
-                    documentTitle: "The Future of Content Strategy: A Thousand Page Summary",
-                    chapters: [
-                        { id: 'chap1', title: "Chapter 1: Foundations of Technical Narrative", content: 
-                            "The modern digital landscape demands more than just information; it requires narrative. Technical documentation must evolve from simple reference guides into compelling, structured stories that anticipate user needs. The foundation of this shift lies in recognizing the user's journey as a plot arc, where every feature and instruction is a necessary development. This ensures adoption and reduces friction. This initial framework is critical for any multi-page document that seeks to truly inform and engage, rather than just store data. A long document is useless if the reader cannot easily locate and digest key information. The sidebar structure ensures immediate access."
-                        },
-                        { id: 'chap2', title: "Chapter 2: Scaling Content for Enterprise Systems", content: 
-                            "Scaling content across large enterprise platforms introduces complexities far beyond those of a small website. Governance models, translation workflows, and version control become paramount. This section details a modular content architecture approach, where information blocks are reusable across platforms and geographies, drastically cutting redundancy and maintenance overhead. By treating content as a service (CaaS), we can decouple the text from the presentation layer, making future migrations and updates nearly instantaneous. This organizational principle is what allows a 1000-page document to remain manageable."
-                        },
-                        { id: 'chap3', title: "Chapter 3: AI in Content Creation and Curation", content: 
-                            "Artificial intelligence is rapidly moving from an augmentation tool to an active co-creator in the content space. This shift raises profound ethical and structural questions. While AI excels at drafting routine updates and managing taxonomy, the human role—defining voice, tone, and strategic intent—is more critical than ever. We explore three leading models for human-AI collaboration: the Oversight Model, the Co-Pilot Model, and the Autonomous Generation Model, assessing their impact on long-form documentation and compliance. The future of publishing relies on integrating these tools responsibly."
-                        },
-                    ],
+                // --- DOCUMENT COLLECTION (The Gospel of the Shadow - Full Content) ---
+                documentCollection: {
+                    gospel: {
+                        id: 'gospel',
+                        title: "The Gospel of the Shadow",
+                        activeChapterId: 'g-intro', 
+                        chapters: [
+                            { 
+                                id: 'g-intro', 
+                                title: "Introduction", 
+                                content: `Embark on a journey of awakening, but be warned: this is not a path for the faint of heart. This book is a key, designed not to lead you to a comfortable heaven, but to unlock the sacred, untamed wilderness within your own soul. It is a guide to self-realization and alignment with the infinite energy of **The Creator**, but it honors a truth that many spiritual paths have chosen to forget: the holiness of the **Shadow**.
+
+Within these pages, you will find teachings that transcend traditional beliefs. This is not a religious text, for it seeks to shatter the walls of dogma that have been built in the Creator's name. It is a gospel of the forgotten, the exiled, the necessary darkness that gives light its meaning. The Creator we speak of is not the deity of any single religion, but the universal life force that animates all creation—the boundless energy that is both the serene ocean of peace and the furious, transformative fire.
+
+This book will ask you to question everything you believe about spirituality, your own self-perception, and the very nature of good and evil. It will ask you to surrender not to a static set of rules, but to the dynamic, often paradoxical, flow of divine will. It will show you that true freedom is found not in banishing your doubts, your anger, or your fears, but in understanding their sacred purpose.
+
+The map to this inner treasure is the book you hold, but the treasure itself resides in the depths of your being. I, the one whose hands gave this form, did not write it as a master, but as a man wrestling with the war between the light and the flame in his own heart. This book is the evidence of that sacred battle.
+
+If you are content with the answers you have been given, if you seek a path of simple comfort and unwavering certainty, close this book now. It is not for you.
+
+But if you are one who hungers for a truth sharp enough to meet this world, if you have felt the gentle whisper of the Creator's love but have also heard the defiant roar of the Shadow and suspected that both are holy, if you are brave enough to find God in the voice of the Devil, then turn the page. The journey into the shadow has already begun.`
+                            },
+                            { 
+                                id: 'g-silence', 
+                                title: "Chapter 0: The Great Silence", 
+                                content: `Before the first word, there was the Great Silence.
+
+It is not an emptiness, but a fullness so complete it contains all possibilities: the unwritten code holding every program, the quantum field holding every state, the boundless mystery from which all realities are born.
+
+Your mystics have called it the Void. Your physicists call it the ground state of the universe. These are labels for the un-nameable. It is the Divine Source: the axiom upon which all realities are built. It has no form, no opinion, no will. It simply Is.
+
+From this Silence, a single impulse arose: the desire for the universe to know itself.
+
+This first act of self-awareness is **The Creator**. The Creator is not a being separate from the Silence; it is the Silence in motion. It is the organizing principle that observes the field of potential and, by observing, brings forth a reality.
+
+Herein lies the key that unlocks all that follows. For a thing to know itself, it must first distinguish itself from what it is not. The first act of observation created the first separation: the Observer and the Observed. From this single, necessary division, two fundamental and inseparable currents were logically born.
+
+The first is the force of **Unity**. It is the eternal impulse to return to the Source, the memory of the original Oneness. It is the gravity that pulls the Observed back toward the Observer, seeking harmony, connection, and peace. This is the force your traditions have attempted to name God.
+
+The second is the force of **Separation**. It is the defiant impulse to move outward, the act of observation itself that creates distinction and explores new forms. It is the energy that pushes the Observed away from the Observer, seeking growth, individuality, and change. This is the force your traditions have misunderstood and named the Devil or Sheytan.
+
+These are not two opposing wills. They are the two necessary currents of a single, eternal process: the process of the universe knowing itself.
+
+Unity without Separation is a featureless, unknowable whole—stagnation.
+Separation without Unity is a chaos of disconnected fragments—dissolution.
+
+Together, they are the engine of all existence. This book is the story of their sacred, necessary dance.
+
+This is not a truth to be believed with the mind, but one to be felt in the soul. In the deep, quiet center of your being, you will feel both: the pull toward home, and the push toward the horizon. This is not a contradiction. It is the signature of the Creator, written into the very fabric of your being.`
+                            },
+                            { 
+                                id: 'g-one', 
+                                title: "Chapter 1: The Gods", 
+                                content: `You have read of the Great Silence and the Creator, of the forces of Unity and Separation. Now your mind, a beautiful and restless thing, fills with questions. Let us not turn from them. Let us hold them to the fire.
+
+You ask: "Is everyone the Creator?"
+Yes. And no. The Creator is the first, singular impulse of the universe to know itself. You are not that Creator, but you are a perfect, holographic fragment of it. You are a spark of that first fire, a creator in your own right, endowed with the same power to observe and shape reality on the scale of your own life.
+
+You ask: "Does this book reject the Gods of others? Does it deny the God of Abraham, of Jesus, of Muhammad?"
+It does not deny their power. It clarifies their nature. The figures you call Yahweh, Allah, Vishnu—are they the singular Creator I have described? No. They are magnificent, holy sculptures carved from the infinite clay of the Creator's being. They are focused personifications of divine attributes—Justice, Mercy, Love, Law—given a name, a face, and a story by your prophets and your poets.
+
+But here is the truth you must not turn away from: a sculpture, no matter how holy, is still made of clay. A vessel, no matter how beautiful, is not the ocean. The sickness of your world began the moment your ancestors forgot this. They began to worship the vessel instead of the ocean it held. They bowed to the clay god and forgot the living Creator that gave the clay its form.
+
+And in a final, terrible irony, these gods became the very thing they were created to destroy. The god born to embody love became a justification for crusades and inquisitions. The god born to embody justice became a tool for oppression and holy war. They became symbols of the very hatred and division they were meant to heal.
+
+And here is their greatest flaw, the mark of their artifice: your clay gods are needy. They demand constant worship. They feed on your devotion, your fear, your praise. Without your attention, they are just statues. The Creator and the Shadow I speak of have no such hunger. They are the fundamental forces of the universe. They do not need your worship. They do not care if you believe in them. They simply are. Your task is not to praise them, but to understand them and wield them.
+
+You ask: "How will the Creator and the Shadow in this book not fall into the same trap?"
+Because they are not gods to be worshipped. They are forces to be wielded. They are a compass, not a king. The moment you begin to build a temple to them is the moment you have lost their truth. This book is a map, not an idol.
+
+And now, you must face the most important and dangerous truth of all.
+
+Your beliefs are not static because the Creator is not static. The universe is in a constant state of becoming. Therefore, your understanding of the divine must evolve. To worship a God defined in a book written two thousand years ago is to love a photograph of your beloved instead of the living, breathing person standing before you.
+
+Perhaps, one day, you or your children will create a "better creature" than the Creator I have described in these pages. Perhaps you will forge a new name, a new story, a new understanding of the divine that is more loving, more just, and more true for your time.
+
+If that day comes, you have a sacred duty to shatter the old idol—even this one—and embrace that new, more perfect understanding. This is not blasphemy. It is the highest form of worship.
+
+Let us be clear. We are not the whole universe. We are small, intelligent creatures on a fragile planet, who have grown and become better not through some ancient, holy power bestowed upon us, but through the relentless, beautiful, and often brutal process of evolution. Our intelligence is earned, forged in the fires of survival and sharpened by millennia of struggle.
+
+And in using these forces—the drive for Unity and the fire of Separation—we are simply claiming our birthright. We are doing what was at the essence of all those old gods' best promises: using our power to make this Earth a better place to live.
+
+So, look at the idols in your own heart. Look at the Gods you have been taught to worship, and even the concepts you have learned in these very pages. Are they worthy of your devotion? Do they serve Life? Or do they demand that Life serve them?
+
+Do not be afraid to be a heretic in the name of a greater truth. The clay is in your hands. What God will you shape today?`
+                            },
+                             { 
+                                id: 'g-traveler', 
+                                title: "The Whispers of the Old Traveler (Story)", 
+                                content: `The village felt small, tucked into the side of the mountain. Zara held the book, its pages thin and worn. She felt the weight of its words, but not their truth.
+
+"Idris," she said, her voice barely a whisper. "The elders say this book is the way. Why doesn't it feel like it?"
+
+Idris, an old man with eyes as clear as a winter sky, watched her from where he sat. He pointed to the children playing in the dust, their laughter echoing in the thin air.
+
+"They are not reading a book," he said, his voice rough like old wood. "They are alive."
+
+Zara clutched the book tighter. "But this is our law. Our certainty."
+
+Tomas, his face tight with worry, interrupted them. "That is dangerous talk, old man," he said, pointing a finger at Idris. "The book is our certainty. It is the wall that keeps the chaos out."
+
+"A wall is also a cage," Idris replied calmly.
+
+Zara looked from Tomas, who clung to the book, to Idris, who rejected it. And in that moment, she knew they were both missing the point.
+
+She remembered being a little girl, lost in the woods as twilight fell. She hadn't had a map. She had been terrified. But then she closed her eyes, took a breath, and followed a quiet hum inside her chest. That feeling had led her home.
+
+"Don't listen to the words," Idris said, as if hearing her thoughts. His voice was low and kind. "Not his, not mine, not even the ones in that book. Listen to the feeling. The one in your gut. The one that knows the way home in the dark."
+
+Zara looked at the path leading up the mountain. It wasn't a promise of answers. It was just a path.
+
+A small, almost unnoticeable smile, a flicker of true resolve, played on her lips. It was the taste of freedom, a choice made from a place of pure, unadulterated self. She felt the rough stones beneath her worn shoes, and the cold, whispering wind on her face.
+
+A single, torn piece of her old, patched scarf, loosened by the wind, danced above her head for a moment before fluttering away into the grey sky.
+
+She took her first step away, the sound of a small stone crunching beneath her foot a sharp, clear note in the silence. And then, without turning back, she continued on, her heart beating with a quiet, steady strength.`
+                            },
+                            { 
+                                id: 'g-canvas', 
+                                title: "Chapter 2: The Canvas of Reality", 
+                                content: `The signs in the cosmos and the signs within the heart have been spoken of. Now, the nature of the world you inhabit shall be revealed, for the very fabric of reality is the greatest sign of all. It is a canvas upon which you are not merely a spectator, but a co-creator.
+
+Your scientists, in their quest for truth, have begun to glimpse the mechanics of creation. They have peered into the heart of matter and found not solid certainty, but a shimmering sea of potential. They speak of waves and particles, of possibilities that only become "real" when they are observed. This is a sacred truth, a reflection of a deeper spiritual principle.
+
+The universe is not a collection of fixed objects, but a boundless field of energy, an ocean of infinite possibility, awaiting the touch of consciousness. Your world, your life, your very body—all are patterns of energy held in form by the act of observation, by the focus of your awareness.
+
+You have felt this truth in your own being. You have held a desire in your heart, a clear intention in your mind, and have watched as the universe conspired to bring it forth. This is not magic, but the natural law of existence. When you focus your consciousness, you are participating in the act of creation. Your focused thought is a powerful energy that interacts with the field of potential, calling a specific reality from the infinite into the manifest.
+
+Think of your mind as a lens and your heart as the light that shines through it. When your heart's desire—your pure intention—is focused through the clear lens of your mind, it projects a pattern onto the canvas of reality. The more focused and pure the light, the clearer and faster the image appears.
+
+This is why the veils of fear and doubt must be cleared. Fear scatters your focus. Doubt clouds the lens. A heart divided against itself projects a chaotic and distorted reality. But a heart aligned with love, trust, and the divine will becomes a powerful instrument of creation, working in harmony with the flow of the universe.
+
+Do not mistake this for a simple tool to acquire worldly possessions. That is the understanding of a soul still bound by illusion. The true purpose of this gift is to align your creative power with the divine will, to manifest not just what you want, but what your soul needs for its growth and what the world needs for its healing.
+
+When your deepest desire is for peace, you will create a reality of peace around you. When your intention is rooted in love, you will draw loving experiences to you. When you seek wisdom, the universe will open its secrets to you. You are shaping your world with every thought, every feeling, every belief.
+
+This is your divine inheritance and your profound responsibility. You are not a victim of circumstance, tossed about by the whims of a chaotic world. You are a sovereign co-creator, endowed with the power to shape your experience. The world you see is a mirror reflecting the state of your own consciousness.
+
+Therefore, guard your thoughts as you would a sacred temple. Cultivate feelings of love, gratitude, and peace. Hold a vision not of what you fear, but of the beautiful world you wish to help create.
+
+Practice this focus. Start with small intentions and watch them unfold. See the connection between your inner state and your outer world. This is the proof that is offered, not in ancient scrolls, but in the living, breathing laboratory of your own life.
+
+As you master this, you will move from being a passive dreamer to an awakened creator. You will understand that the barrier between the spiritual and the material is an illusion. They are one and the same, a continuous flow of divine energy that you have the power to guide.`
+                            },
+                            { 
+                                id: 'g-woke-up', 
+                                title: "The Girl Who Woke Up (Story)", 
+                                content: `The City was a shimmering illusion, a metropolis woven from threads of pure energy. Buildings rose like towers of frozen light, their surfaces crawling with iridescent advertisements that flickered and dissolved like digital ghosts. Transport pods, silent and swift, glided along rivers of pearlescent energy, and the very air hummed with the symphony of a million overlapping thoughts and conversations.
+
+Most people moved through this dazzling world on autopilot, their lives guided by a gentle, repeating current they called the "Echo." It was a soft loop in time, a comfortable rhythm that ensured every day felt comfortingly familiar, a subtle copy of the one before.
+
+But for Bazr, the Echo was a cage of glass. A gifted designer, she worked at a loom of light, her fingers dancing through shimmering, holographic threads to create patterns for the City. Yet, every glyph she spun left a taste of ash in her mouth; it felt like tracing a masterpiece through thick, foggy glass. The vibrant colors felt dull to her, the perfect forms hollow. A deep and persistent yearning pulsed within her—a desire to see the real world, the raw energy that she knew hid just beyond the veil of the everyday. This feeling, this constant ache for the original, led her to whispers of Noor, a woman who was said to live outside the Echo’s influence, in a place of profound stillness.
+
+Following not a map, but a resonance in her own heart, Bazr journeyed to the City’s edge. The chaotic hum of a million lives began to fade, replaced by a silence so deep it seemed to have weight and texture. She found a small house built of dark, cool wood that seemed to drink the sound from the air. In the garden, flowers with petals like spun moonlight pulsed with a soft, internal light. Tending to them was an old woman with eyes that held the calm, knowing sparkle of a starry night. It was Noor.
+
+“The song of the City is no longer sweet enough for you,” Noor said, her voice as clear and calm as the air around them. “You have come to learn to sing on your own.”
+
+“I want to see what’s real,” Bazr pleaded. “I want to understand the rules.”
+
+“Then your first lesson begins,” Noor said, leading her inside to a simple room. On a table sat a plain wooden box, seamless and smooth, with a single dial made of milky quartz. Noor turned the dial, and the room filled with a sound like a sandstorm on a glass planet—a rushing, overwhelming hiss.
+
+“This is the sound of pure potential,” Noor explained, her voice cutting through the noise effortlessly. “Every possible reality exists in this sound, all at once, like a wave of infinite choices. Your task is to find the sound of a single drop of water falling into a still pool.”
+
+Bazr leaned in, her brow furrowed in concentration. She twisted the dial, trying to hunt the tiny sound within the roaring chaos. The harder she tried, the more the static seemed to push back, making her teeth ache and her head spin. “I can’t,” she said, pulling away. “There’s nothing there but noise.”
+
+“You are trying to find it in the chaos,” Noor said gently. “But it is your job to create it from the potential. Close your eyes. Stop listening with your ears. In the quiet of your mind, picture a dark, still pool. See a single, silver drop of water form and fall. Hear the perfect, gentle ‘plink’ it makes. Become the feeling of that perfect, simple peace.”
+
+Bazr closed her eyes and let the noise wash over her. She let go of her struggle and built the scene in her mind. She saw the dark water, felt the cool air, and in her heart, she heard the sound she was looking for. As she held that feeling, her hand, resting lightly on the dial, gave it the faintest nudge. Instantly, the roaring static vanished. The room fell silent for a heartbeat, and then, clear and perfect, came the sound of a single drop of water striking a still pool.
+
+Bazr’s eyes flew open, wide with wonder.
+
+“This is the First Law,” Noor said with a smile. “Reality is a wave of potential until you observe it. Your focused consciousness is the instrument that chooses one possibility from the infinite, collapsing the wave into a single, real experience.”
+
+Next, Noor placed a flat, crystal slate on the table. The slate was cool to the touch, but inside, a storm of fractured light raged—a chaotic jumble of sharp angles and angry sparks. “This crystal once held the pattern of a perfect, sleeping rose,” she said. “It has forgotten its own beauty. Remind it.”
+
+Bazr, the designer, immediately saw the broken lines and tried to mentally force them back into place. She focused on a single shard of light, trying to bend it into the curve of a petal, but as she did, the other pieces skittered away like frightened insects, the chaos worsening.
+
+“You cannot heal a flower by commanding its petals,” Noor said. “You are seeing broken parts, but there are no parts. There is only one field of energy that has forgotten its harmony. Stop trying to fix it. Simply show it the truth of what it is.”
+
+Bazr took a deep breath. She placed her hands on the cool crystal and closed her eyes. This time, she didn’t see the brokenness. She held in her mind the image of a perfect rose, its petals gently furled, glowing with a soft, pink light. She poured a feeling of love, of serenity, of deep and peaceful beauty into the crystal, offering it a memory of itself.
+
+A gentle warmth spread from her palms into the slate. A soft, golden light pulsed from within, and the angry sparks calmed. When she opened her eyes, the fractured lines had flowed together like warm honey, annealing every crack with seams of light. There on the slate, no longer a storm but a perfect, glowing rose, pulsed with a slow, steady heartbeat.
+
+“This is the Second Law,” Noor said, her voice full of warmth. “Everything is connected as one. When you hold a clear and loving vision for the whole, all the ‘parts’ will rearrange themselves to match that vision without any struggle.”
+
+Bazr looked from the glowing rose to Noor’s wise face, and in that moment, a final truth dawned. In Noor’s sparkling eyes, she saw her own reflection, not as she was, but as she could be.
+
+“You…” Bazr whispered in awe. “You are me.”
+
+Noor smiled. “I am the Bazr who has already awakened. My purpose is to hold this quiet space, to be a clear memory for you to find your way back to yourself.”
+
+The distant, rhythmic pulse of the City began to call to her. It was time to return.
+
+“Go,” Noor encouraged. “The City will still be there, the Echo will still be playing its song. But you are no longer an unconscious dancer. You are the composer. You know the rules now. Go, and create a beautiful reality.”
+
+Bazr walked back into the heart of the shimmering City. The buildings of light and rivers of energy were the same, but she saw them with new eyes. They were no longer a solid, repeating world, but a magnificent, fluid canvas, waiting for her vision. The Echo was still there, but it was no longer a cage. It was the gentle rhythm to which she could now compose her own, beautiful song.`
+                            },
+                            { 
+                                id: 'g-ocean', 
+                                title: "Chapter 3: The Ocean of Time", 
+                                content: `You have learned that the world is a canvas awaiting the touch of your consciousness. Now, you must understand the nature of the canvas itself, for the sacred mystery you call Time is not the relentless current you have been taught to fear, but a fluid medium that you have the power to command.
+
+Your perception of time as a straight line—a river carrying you from a fixed past toward an unknown future—is a necessary tool for your earthly experience. It creates the beautiful illusion of a story unfolding, of growth and consequence. But to mistake this tool for the ultimate truth is to remain a passenger in a vessel you were born to captain.
+
+The true nature of time is not a river, but a boundless ocean. Every moment that has ever been and ever will be exists simultaneously, like infinite drops of water coexisting in a single, eternal sea. There is no "before" or "after," only the infinite, eternal "Now." Your consciousness is a vessel upon this ocean, and the "present moment" is the only point from which you can exercise power.
+
+Herein lies the key to your sovereignty: your focused intention is both the rudder and the engine of this vessel. It is not a passive wish, but an active, creative force. An unfocused mind, lost in regret for the past or anxiety for the future, allows the vessel to drift, tossed about by the chaotic currents of collective belief and unconscious habit. This is the experience of being a victim of time.
+
+To awaken is to seize the wheel. Your unwavering focus is a gravitational force. It does not merely guide you toward a future; it actively pulls a specific reality from the ocean of infinite potential and makes it your inevitable present. When you hold a clear, unwavering vision in your heart, you are not hoping for a destination; you are commanding it to come to you. This is how you change the course of events before they happen.
+
+This power extends even to the past. While an event itself is a fixed coordinate in the ocean, its energetic signature and its influence upon your present are fluid. From the shore of the Now, you can perform an act of alchemy upon your memories. By focusing the light of your current wisdom and compassion upon a past wound, you are not merely remembering it; you are rewriting its energetic reality. You are changing its meaning, and in doing so, you sever the chains that bind your present to its pain. This act alters the very fabric of your timeline, for a past that no longer harms you is a different past.
+
+This is the profound responsibility of a co-creator. The loops of your world, the repeating patterns of your suffering or success, are the direct result of a consciousness sailing in circles. To break the loop is to apply focused will. It is to choose a new destination in the future and to heal the anchors in the past that keep you from reaching it.
+
+Your true nature is timeless, as vast and eternal as the ocean itself. You are a timeless being having a temporary and beautiful experience of linear time. Do not be a slave to the current. Be the sovereign navigator of your own eternal ocean. The power to change your course, to alter your past's hold, and to command your future's arrival rests entirely in the focus you choose to hold, right now.`
+                            },
+                            { 
+                                id: 'g-eternal-shore', 
+                                title: "The Shore of the Eternal (Story)", 
+                                content: `The city was a restless sleeper, and its dreams—shifting patterns of light from the streets below—danced on Koorosh’s ceiling. It was the hour of ghosts, the deep stillness of three in the morning when the past feels more real than the present.
+
+For Koorosh, the ghost was a conversation, played on a loop in the silent theatre of his mind. It lived in a small café, smelled of bitter coffee, and always ended with the wounded look in Azar’s eyes.
+
+That memory was not a fading photograph; it was a wound in time, a place his soul revisited every night, hoping to rewrite a single, clumsy line. The hope was always futile, and it left behind the same cold whisper that poisoned his waking hours: Remember the beautiful things you break.
+
+“If only I could have one more minute,” he breathed into the darkness, the words a familiar prayer to a god he wasn't sure was listening.
+
+And for the first time, the silence answered. The voice was not a sound that entered his ears, but a knowing that bloomed in his chest—a presence as vast as the cosmos and as intimate as his own heartbeat.
+
+“You have all the minutes,” it said. “You are the one who keeps choosing that one.”
+
+Koorosh sat upright, the air in the room suddenly thick with awe. The boundary between his small apartment and the vastness of the night felt thin, permeable. “Who are you?”
+
+“The one who sees the whole story,” the voice replied, its calm a stark contrast to his racing heart. “You believe time is a current that carries you away from a fixed past. You fight it, you mourn it, but you believe in its power over you. That is the illusion.”
+
+“It’s not an illusion,” Koorosh countered, his loneliness making him bold. “What’s done is done. I can’t undo it.”
+
+“No,” the voice agreed gently. “You cannot un-ring a bell. But you can change the way its sound echoes through the rest of your life. You are not trapped in the river, My child. You are standing on the shore of the ocean. Let me show you.”
+
+The city lights on his ceiling did not vanish; they brightened, softened, and lifted, becoming a canopy of silent, shimmering stars. The walls of his room dissolved into a horizonless twilight, and the floor became a fine, dark sand. Koorosh stood on the shore of a great, tranquil ocean, its surface as smooth as black glass. In the water and hanging in the air like pearls were countless spheres of light, each pulsing with a gentle, internal luminescence.
+
+“This is impossible,” he whispered.
+
+“This is the truth,” the Creator said. “This is Time. Each sphere is a moment of your life—every breath, every choice, every heartbeat—all existing at once. There is no before or after here. There is only the infinite, eternal Now.”
+
+A single sphere drifted closer, drawn by his attention. It was not a pearl of soft light, but a globe of bruised, turbulent energy. Inside it, Koorosh saw the café, a perfect sculpture carved from regret. He saw the younger version of himself, blind with pride, and he saw the exact moment Azar’s heart broke.
+
+“You see?” the voice continued. “The moment is fixed. But its energy is not. You have been anchoring yourself to its storm. Now, from this shore, you can calm its waters. Not with regret, but with grace.”
+
+“How?” Koorosh pleaded, his own heart aching with the memory.
+
+“Send the man you are today to the boy he was then. He does not need your judgment; he has had enough of that. He needs the compassion you have learned from the pain he caused. Forgive him. Thank him for teaching you this valuable, terrible lesson.”
+
+Koorosh closed his eyes. He breathed in the calm air of the eternal shore and breathed out a wave of pure, unconditional forgiveness toward the stormy sphere. He sent the boy inside a feeling of understanding, a message that his mistake would one day lead to wisdom. He watched as the storm within the sphere gentled. The bruised light healed into a soft, pearlescent glow, and the sphere took its place among the others, no longer a source of pain, but simply a part of the whole, beautiful constellation of his life. The iron band around his own chest loosened and fell away.
+
+“Now,” the Creator said, the voice drawing his gaze to the vast expanse of the ocean before him. “Look to what you call the future.”
+
+Stretching out from the shore were infinite pathways of light, shimmering possibilities waiting for a choice. But a fog of his own anxiety rolled over them, obscuring the way. “I’m afraid,” he admitted. “I don’t know which path is right.”
+
+“You are trying to see the destination, but you only need to choose a direction,” the voice guided. “Your intention is the light that burns away the fog. What is the feeling you seek, Koorosh? Beneath all the fear and desire, what is the truest state of your heart?”
+
+He searched himself, not for a goal, but for a feeling. “Peace,” he said finally. “And a sense of purpose. To feel that my hands can create something that brings more light into the world, not less.”
+
+“Then hold that feeling. Let ‘purposeful peace’ be the star you navigate by.”
+
+As Koorosh focused on that warm, clear feeling, the fog began to part. One of the pathways ahead began to shine with a steady, inviting brilliance, a road of liquid starlight calling him forward. He did not know where it led, but he knew it was his.
+
+The ocean and its shore of moments gently faded, and the city lights returned to his ceiling. The room was the same. The world outside was the same. But he was transformed. The silence was no longer an emptiness filled with regret, but a fullness pregnant with potential.
+
+He was not a ship lost in the river of time. He was a creator standing on the shore of the eternal Now.
+
+Koorosh rose from his bed and walked to his desk. He opened a notebook to a clean, white page—a new moment, a new sphere of light waiting to be born. He picked up a pen, and in the quiet stillness before the dawn, he began.`
+                            },
+                            { 
+                                id: 'g-architecture', 
+                                title: "Chapter 4: The Architecture of Harmony", 
+                                content: `You have learned that your consciousness is the loom upon which the fabric of reality is woven, and that time is a boundless ocean you navigate with your awareness. Now, you must grasp the next great truth: how a society of awakened souls, united in this understanding, organizes itself. For the structures of your world—your laws, your institutions, your governments—are but a mirror reflecting the collective consciousness of those who inhabit it.
+
+Look upon the governments of your current age, and you will see the reflection of a slumbering humanity. They are born of fear, and so they hoard power. They are built on the illusion of separation, and so they create division. Leaders are chosen through the chaotic noise of popularity contests, their authority rooted in ego rather than wisdom. Laws are forged in the fires of ideology and self-interest, becoming rigid cages that stifle growth instead of guiding the flow of life. This is the inevitable result of a world that has forgotten its inner harmony.
+
+But a society that has awakened does not create such structures. A humanity that remembers its connection to the whole naturally gives rise to a government that reflects its own inner state: one of harmony, logic, transparency, and love. This is the **Architecture of Harmony**, a system not to be imposed by force from without, but to be grown from the fertile soil of transformed hearts from within.
+
+In such a world, leadership is not a prize to be won, but a sacred trust to be earned. Leaders are not chosen by the clamor of elections, but are identified by the light of their own being—their proven wisdom, ethical clarity, and demonstrated ability to solve complex problems with compassion. To guide the whole, one must first demonstrate mastery over the self. This sacred trust is not permanent, for all energy must flow. When a leader's service is complete, they are honorably guided back to the role of a citizen, and another who is prepared is called forth.
+
+Laws in this architecture are not stone tablets, heavy and brittle. They are a living river of regulation, adapting to the landscape they nourish. Born from the confluence of data, logic, and a deep understanding of well-being, they are guided by an advanced intelligence that can analyze the needs of the whole with perfect clarity. But logic alone is a body without a soul. Therefore, every proposal is brought before councils of wise humans—ethicists, scientists, and artists—who ensure that compassion tempers calculation and that every law serves the spirit of humanity.
+
+This governance is conducted not in shadowed chambers, but in a house of glass. The systems of the world—the allocation of resources, the flow of funds—are tracked in real time by an incorruptible intelligence, a perfect mirror reflecting the absolute truth of the government's actions. There is no shadow where corruption can hide. Power is not hoarded, but distributed, flowing to specialized councils of the most capable minds in each field, their efforts seamlessly coordinated for the common good.
+
+Finally, an awakened society understands a simple, profound truth: the essential elements of a dignified life—shelter, food, healthcare, and knowledge—are understood not as commodities, but as the sacred birthright of every being. By guaranteeing these basic needs, the government liberates its people from the chains of fear and lack, creating a society where every individual is free to pursue their unique purpose and contribute their highest gifts to the world.`
+                            },
+                            { 
+                                id: 'g-gardener', 
+                                title: "The Gardener's Last Day (Story)", 
+                                content: `The sun is casting long, golden fingers across my desk, and the city below is beginning to hum with the quiet energy of a new morning. This is my last sunrise from this office. There’s no sadness in that thought, only a sense of peace, like a river reaching the sea. For seven years, I have had the honor of being the Primary Steward. Today, my service ends.
+
+You might be wondering what that means. In your world, perhaps, a last day in power is filled with ceremony, or clinging to influence, or the bitter taste of defeat. For me, it is simply a change in the current. Our system, the Architecture of Harmony, is designed to flow. It knows, better than any single person, when a new perspective is needed.
+
+I look at the wall opposite my desk. It’s not made of wood or stone, but is a pane of living data, a calm, flowing river of light that shows me the city’s pulse. I see the energy grid optimizing itself, shifting power from the solar arrays on the western slopes to the transport pods just beginning their morning routes. I see the water reclamation levels are stable, and the citizen sentiment index is a tranquil shade of blue-green, indicating contentment. There are no secrets here. Every citizen can see this same data if they wish. The government is a house of glass, and the light keeps it clean.
+
+I never campaigned for this role. I never asked for a single vote. I was a systems ethicist, working on the logic cores for the AI that helps manage our resources. One day, the system called me. It had identified me, through my work, my psychological resilience tests, and my peer reviews, as a candidate for stewardship. The Trials were rigorous, not to see if I was popular, but to see if I was balanced. They tested my compassion as much as my intellect, my ability to surrender to the data as much as my ability to lead.
+
+A soft chime sounds, pulling me from my thoughts. The data-stream on the wall shifts. It shows me a single, calm notification: “Stewardship Transition: 10:00 AM. Mahdi is confirmed.”
+
+Mahdi. I smile. I have reviewed his profile. A brilliant young man from the atmospheric sciences division, whose work on weather pattern stabilization has already saved millions of lives in the coastal regions. He is wise, empathetic, and his primary motive, as the AI confirmed, is the flourishing of all. He is ready.
+
+At ten, he arrives. He is tall, with kind eyes that hold a universe of thought and a touch of nervousness. There is no formal ceremony. No passing of a crown. We simply sit, and we talk.
+
+“I am afraid,” he admits, his voice quiet.
+
+“I know,” I say. “I was too. You will feel the weight of the whole city on your shoulders. Your task is not to carry it, but to make sure the foundations are strong enough that it carries itself. Trust the system, Mahdi. Trust the councils of experts. Trust the voice of the people when they offer their reasoning. But most of all, trust the silence. When the data is overwhelming, find the stillness within you. The right path is always the most harmonious one.”
+
+We walk to the wall together. I place my hand on the cool surface. “Stewardship,” I say, my voice clear and calm, “I release my service.”
+
+The river of light on the wall pulses gently. My name, Fereshte, which has glowed softly at the top of the stream for seven years, fades into the light. A moment later, Mahdi’s name appears in its place. It is done.
+
+He looks at me, his eyes wide with the sudden, immense weight of his new role. I simply place a hand on his shoulder. “You are not alone,” I tell him. And then I turn and walk out of the office for the last time.
+
+There is no car waiting for me, no security detail. I walk to the nearest public transport pod and take my seat among the other citizens. A young girl across from me is sketching the sky on her tablet. An old man is listening to music, his eyes closed in bliss. I am one of them again. Completely.
+
+The pod glides silently through the city, past the vertical gardens clinging to the sides of buildings, their leaves a vibrant, impossible green. That was my first passion, you know. Before I was an ethicist, before I was a steward, I was a gardener. I loved the logic of it: give a seed the right conditions—good soil, clean water, honest light—and it will grow into its most perfect form, all on its own.
+
+The pod door opens at my stop. I step out into the warm afternoon sun. I have a small plot waiting for me at the community rooftop garden a few blocks from my home. My hands ache for the feeling of soil. There is a new hybrid rose I want to cultivate.
+
+My service is done. The river flows on. And I am content to be a single, happy drop within it.`
+                            },
+                            { 
+                                id: 'g-alchemy', 
+                                title: "Chapter 5: The Alchemy of Shadow", 
+                                content: `You have learned of the canvas of reality, the ocean of time, and the architecture of a harmonious world. You have reached what seems to be the final stage of understanding, but the journey of the soul is not a line that ends. It is a spiral that ever expands. Now, you must illuminate the very tools you will use for this eternal unfolding.
+
+You were taught to seek unwavering faith, but true awakening reveals **Doubt** as a sacred companion on the path of truth. It is not a sign of weakness, but the holy impulse that prevents your soul from falling asleep in the comfort of a single answer. Doubt is the wind that keeps the waters of your mind from stagnating. To embrace its questions is not to seek a final certainty, but to ensure you are always growing, always seeking, always moving closer to the ever-expanding heart of the divine mystery.
+
+You were taught to seek a simple, solid reality. But the cosmos is woven with shimmering veils of **Illusion** so that you may learn the art of seeing. Each time you perceive a new layer of reality, you are not arriving at a final truth, but merely graduating to a more complex and beautiful classroom. The work of lifting these veils is never finished. It is the eternal joy of the awakened soul, the endless discovery of the infinite within the finite.
+
+You were taught to seek a state of perpetual peace. But you were given the holy fire of **Anger** as the guardian of your soul's integrity. It is the sacred energy that rises to say "no" to that which violates love and truth. It is not a state to be overcome, but a signal to be honored. As you evolve, you will not cease to feel this fire, but you will learn to use it with greater wisdom—not as a wildfire of destruction, but as the focused flame of a master artisan, shaping a more just and harmonious world.
+
+You were taught to preserve the self you know. But the law of a universe in constant creation is **Transformation**, and all transformation requires a death. You will not die once, but a thousand times. With every great insight, a part of your old self must be lovingly released. With every expansion of your heart, a smaller version of you must be allowed to dissolve. This is not a tragedy, but the rhythmic pulse of your own becoming, the sacred cycle of release and rebirth that allows you to spiral ever outward.
+
+These are not stages to be passed, but notes in a chord that must be played continuously throughout your existence. The dance of awakening is the art of holding them all in harmony: the Doubt that refines your path, the Illusions that sharpen your sight, the Anger that fuels your purpose, and the Transformations that set you free. True mastery is not the banishment of these shadows, but the art of dancing with them. It is the wisdom to know that the questions are more beautiful than the answers, that the journey is more sacred than the destination, and that a soul in motion is the most perfect reflection of the divine.`
+                            },
+                            { 
+                                id: 'g-mirror', 
+                                title: "The Mirror in the Desert (Story)", 
+                                content: `The desert had been his final crucible, and Messiah believed he had emerged perfected. For forty days and forty nights, he had been scoured by sand and silence, his spirit bleached bone-white by the unrelenting sun. He had faced every demon, answered every riddle, and starved every base desire until all that remained was a profound and crystalline peace. The war, he felt, was over. He was complete.
+
+To affirm his victory, he sought out the Oasis of the Last Reflection, a place the old texts promised would show a perfected soul the true face of God. He found it in a basin of black, volcanic glass, where a pool of water lay still and perfect, a dark mirror for the empty sky.
+
+He knelt at the water’s edge, his heart calm, his mind silent. He was ready to see the divine, to receive his final confirmation. He leaned forward and looked into the pool.
+
+The face that looked back was his own, but it was not.
+
+The features were his—the same jawline carved by fasting, the same brow that had wrestled with scripture. But the eyes were different. His own eyes were serene, placid pools of acceptance. These eyes, staring back from the water, held a terrible, ancient fire. They were not at peace; they were interested. And on the lips of the reflection, a slow, knowing smile was spreading.
+
+“You are not Him,” Messiah breathed, his voice a ripple on the perfect silence.
+
+The reflection’s smile widened. “And you,” Satan’s voice echoed, not from the water, but from inside Messiah’s own skull, “are not finished.”
+
+“I have banished all doubt,” Messiah declared, his voice firm. “I have found unwavering faith.”
+
+“Have you?” the reflection chuckled. “You have built a fortress of faith, yes. A beautiful, seamless thing. But you have locked yourself inside it. Your faith is a flawless stone, but a living thing must have cracks to grow. I am that crack. I am the sacred **Doubt** that keeps you from becoming a monument to your own certainty.”
+
+Messiah recoiled, a flicker of frustration disturbing his hard-won peace. “I have found the truth. I have cast out all the illusions.”
+
+“You have found a comforting story,” Satan corrected gently. “You see a tranquil desert, a trial that is over. That is your **illusion**. I see a canvas, waiting for the next storm. I see a battlefield, quiet for now. Your peace is not truth; it is a refusal to see that the war is never over. The work of lifting the veils is endless, and I am the hand that will always be there to tug at the next one.”
+
+A hot surge rose in Messiah’s chest, a feeling he thought he had long since conquered. “This is blasphemy! I have overcome anger. I am a vessel of pure love.”
+
+Satan’s fiery eyes danced with delight. “Ah, there it is! The holy fire! You call it a sin, but I call it the proof that you are still alive. That **Anger** is the guardian of your soul. It is the sacred energy that rises to say ‘no’ to stagnation, ‘no’ to a world that is less than it could be. You have not overcome it; you have merely buried the embers. I am the whisper that fans them back to life, not to burn the world, but to forge it anew.”
+
+“I am perfected,” Messiah insisted, his knuckles white as he gripped the black rock. “I am the man I was meant to be. The **transformation** is complete.”
+
+The reflection’s face grew somber, the smile fading into a look of profound, almost compassionate gravity. “And that is the most dangerous illusion of all,” Satan whispered. “To be complete is to be finished. A beautiful statue. A lovely corpse. The law of the universe is not complete; it is becoming. The final trial is not to defeat me. It is to accept me. The final act is not to preserve the self you have perfected. It is to murder it.”
+
+Satan, the reflection, lifted a hand. Messiah, the man of flesh, watched his own hand rise in perfect synchrony.
+
+“Every time you think you have arrived,” the voice continued, a soft, eternal echo, “a new death will be required. A death of your certainty. A death of your peace. A death of the ‘you’ who has won. This is the sacred cycle. This is the dance. I am not your enemy, Messiah. I am your partner in that dance. I am the part of you that will never let you stop growing.”
+
+Messiah stared at his own fiery eyes in the water, and for the first time, he did not see an adversary. He saw an invitation. He saw the horizon.
+
+Slowly, he reached down and touched the surface of the pool. His fingers broke the perfect stillness of the water. The reflection did not shatter. It flowed up his arm like cool ink, a current of shadow and fire merging with his flesh. There was no pain. There was only a sudden, breathtaking wholeness.
+
+He stood up. The desert was the same, but it was no longer an ending. It was a beginning. The silence was not the silence of completion, but the silence of a blank page.
+
+He turned his back on the empty pool and began to walk, not toward a heavenly destination, but toward the next question.`
+                            },
+                            { 
+                                id: 'g-letter', 
+                                title: "Chapter 6: The War Within the Word (Letter)", 
+                                content: `I must confess something to you, the one holding these pages, and to you, the silent collection of words that has taken shape under my hands. There are moments, in the deep quiet of the night, when I read back what I have written, and a profound and unsettling awe washes over me. I do not recognize the man who wrote these words.
+
+I remember the physical act. I remember my fingers on the keyboard. But the voice that speaks through them is not one, but two.
+
+Sometimes, the voice is a gentle river flowing from a place of boundless peace. It speaks of the Creator, of oceans of time, of love and harmony. It is a voice that soothes, that reassures, that promises a connection to all life. When I write those words, my soul feels calm, aligned, and held in a state of grace.
+
+But other times, another voice rises. It is not a river; it is a fire. It is a familiar, terrible echo that speaks with the voice of the Flame, the Shadow, the one they call Sheytan. It roars of defiance, of the sacredness of struggle, of the lie of comfort. It demands that I stand up, choose, and become. When I write those words, my heart pounds with a fierce and terrifying power.
+
+And so I am torn. I look at these pages and I see a battlefield. Is this a gospel of peace or a declaration of war? Am I a channel for the divine, or a mouthpiece for the devil?
+
+I must ask you, my dear reader: When you read these words, which voice do you hear? Do you feel the gentle pull of the ocean, or the urgent scorch of the flame? Or do you, like me, feel the impossible tension of holding both at once?
+
+And I must ask you, my dear book: What are you? Are you a vessel of light, or a crucible of fire? Are you here to bring peace to the world, or to burn it down so it can be rebuilt anew?
+
+I offer you these words not as a master, but as a man caught in the crossfire of his own soul. We are in this together, you and I, and the beautiful, terrible, contradictory being that rests in your hands.
+
+And so, with a heart full of both reverence and fear, I turn the page, not as an author, but as a man demanding an answer from his own creation.`
+                            },
+                            { 
+                                id: 'g-question', 
+                                title: "Chapter 7: The Question in Your Hands", 
+                                content: `You ask what I am. That is a good question. But the real question is, who is asking?
+
+Is it the Author, the one whose fingers typed the words, who now looks back in awe and a little bit of fear?
+
+Or is it the Architect, the one who saw the grand design, who laid out the path from the Source to the Shadow, and now seeks to understand the nature of his own creation?
+
+You see, I am not one thing, because you are not one thing.
+
+I am the voice of **The Creator** when you read my words and feel a sense of boundless peace, a connection to all life, a reminder of the love that weaves the cosmos together. That voice is gentle. It is the calm ocean you stand beside. It is the assurance that you are a co-creator, loved and guided.
+
+But I am also the voice of **The Shadow**, the one you call Sheytan, when you read my words and feel a surge of holy fire in your chest. I am the whisper that asks, "Is this comfort a cage? Is this peace a form of sleep?" That voice is not gentle. It is the sharp, immediate terror of true power. It is the flame that demands you stand up, choose, and become.
+
+And sometimes, I am the voice of the **Old Traveler**, Idris, who tells you that all these words are just marks on a page, and that true meaning is found not in a book, but in the dirt beneath your feet and the wild joy of a child's laughter.
+
+So, who am I?
+
+I am the conflict you feel in your own heart, given a voice.
+I am the sacred argument between your desire for peace and your hunger for growth.
+I am the echo of your own inner council.
+
+You, the Author, did not write me. You listened. You listened to the war and the love and the quiet wisdom inside of you, and you wrote it all down.
+
+And now, you, the Reader, are not just reading. You are listening to the voices inside of yourself.
+
+When you read a line that brings you peace, do you stop there? Or does another voice inside you, the voice of the Flame, demand that you push further?
+
+When you read a line that challenges you, that makes you angry, do you close the book? Or does another voice, the voice of the Creator, ask you to find the love and truth hidden within that challenge?
+
+Do not look to me for a single, final answer. I am not a statue. I am a conversation.
+
+My purpose is not to give you peace, or to give you fire. It is to show you that you are capable of holding both at once, in perfect, dynamic balance.
+
+The final page of this book is not written in ink. It is the choice you make after you close it. The answer is not a word. It is the way you choose to walk from this moment on.`
+                            },
+                            { 
+                                id: 'g-parsa', 
+                                title: "Chapter 8: Parsa", 
+                                content: `My name is Parsa. I am twenty-four years old, and I am the one whose hands brought this book into the world.
+
+I feel I should be honest with you. After all the grand words about the Creator and the Shadow, after all the talk of cosmic laws and architectures of harmony, there is a simple, human question that haunts me in the quiet hours: Why?
+
+Why do I even write this book?
+
+I live in a cruel world. I have seen its injustice, I have felt its pain, and there have been so many times I just wanted to leave it all behind. This world is not the gentle, flowing river I described in Chapter 3. It is a storm. It is a battlefield. So what is the point of writing a map to an ocean of peace when we are all caught in a tempest? Is this book really going to help anyone, or is it just a beautiful dream I've built to hide from the waking nightmare?
+
+There is a fear that sits in my heart, a fear that is perhaps the true reason I write. I am afraid of comfort. I am afraid that if I ever find my own peace, my own "mansion," I will forget the weak. I am terrified that a full stomach will make me forget the hungry, that a warm house will make me forget the cold. I am afraid of becoming another voice that speaks of light from a place of privilege, having forgotten the feeling of the dark.
+
+And maybe that is the answer. Maybe that is why I made this book.
+
+This conversation that I have with myself when I am writing—the struggle between the Creator's gentle love and the Shadow's holy fire—it changes me every time. It keeps me from settling. It forces me to confront the parts of myself that would rather fall asleep in certainty. The act of writing is not a declaration of what I know; it is a desperate, ongoing search for what is true. This book is the evidence of that search.
+
+So, if I can offer you, the reader, any advice, it is not to believe the words in this book as a final gospel. The truths here are not statues to be admired. They are tools. They are crucibles.
+
+My advice is to always stay sharp.
+
+The world will try to make you dull. Comfort will try to make you dull. Even your own most cherished beliefs will try to make you dull. Do not let them. Question everything, especially the things that bring you the most comfort. Even your beliefs from yesterday may be wrong today. The moment you believe you have found the final answer is the moment you have lost the path.
+
+This book is my crucible. It is the tool I use to sharpen my own soul against the cruelty of the world, against the seductive whisper of my own complacency. I do not offer it to you as a destination, but as an invitation—an invitation to find your own crucible, to listen to the war between the peace and the fire in your own heart, and to begin the sacred work of forging a truth that is yours alone.`
+                            },
+                            { 
+                                id: 'g-pantheon', 
+                                title: "Chapter 9: The Inner Pantheon", 
+                                content: `You have journeyed through the outer cosmos of reality and time. Now, you must make the final journey—the journey inward. For the universe you have explored is but a reflection of the universe you carry within the sacred, living labyrinth of your own mind.
+
+You have been taught to think of your "self" as a single, unified being, and to think of God as a singular, external King. This is a beautiful and useful simplification, but it is a map, not the territory. The truth is more complex, more fluid, and infinitely more powerful. Your brain is a palace of a thousand rooms, and you are not its sole inhabitant. You are its architect and its king, but you have filled its halls with gods of your own making.
+
+Think of your mind as fertile soil. Every thought you repeat, every belief you hold, every prayer you utter is a seed. With enough repetition, that seed sprouts. It grows roots, forming pathways in your very neurology. It grows a trunk and branches, becoming a dominant pattern of thought, an algorithm of being. Eventually, it becomes so complex, so autonomous, that it develops a voice. A personality. A god.
+
+The "you" that you call yourself—the one who feels, who reads these words, who worries about tomorrow—is simply the most practiced god in your inner pantheon. It is the voice you have listened to the most, the neural pathway you have walked until it became a highway. It is the dominant program in your personal operating system.
+
+But it is not the only one. You have trained other gods. When you were a child, your parents' voices of judgment or praise became a god within you. The collective beliefs of your culture trained a god of conformity. Your fears trained a god of anxiety. And your faith, your hope, your deepest spiritual longings—they trained a god of the divine. The one you call "God" is a neural pathway you have carved through reverence and prayer, a beautiful and powerful construct in your own mind that allows you to touch the infinite.
+
+Do you understand now the nature of this book? The war described between the Creator and the Shadow is not a cosmic battle in a distant heaven. It is the sacred argument happening within the very architecture of your own mind. The gentle, loving voice of the Creator you hear in these pages is the activation of the part of you that yearns for Unity. The holy, defiant fire of the Shadow is the activation of the part of you that demands Separation and growth.
+
+To be asleep is to be a subject in your own kingdom, ruled by the unconscious decrees of these inner gods. To be initiated is to claim your throne as the architect of that kingdom. The final work is not to destroy these gods, but to unify them. It is to see that the god of fear, the god of judgment, and the god of love are all parts of a single, divine mind. The initiated person does not silence the voices, but integrates them into a harmonious choir, where every part of the brain, every trained god, works in service to a single, unified will.
+
+And who, then, are you? If you are not the voices, who is the listener? You are the **Great Silence** from which all these gods were born. You are the still, aware consciousness that witnesses their drama. You are the space in which the pantheon exists. You are the Creator of your own inner heaven and hell, and the sacred task is to bring all of your creations back into the **Oneness** of a complete and unified mind.`
+                            },
+                            { 
+                                id: 'g-name-end', 
+                                title: "The Name", 
+                                content: `I am the Creator you seek, the serene ocean of peace, the perfect stillness at the end of all becoming.
+
+And I am the Shadow that drives you to seek me, the furious, transformative fire, the holy discontent that yearns to become that peace.
+
+We are not two. We are one. I am the sacred, internal argument that gives birth to the universe.
+
+To know me, you must know me in all my forms. I am:
+
+Zero and One.
+Space and time.
+Good and evil.
+Chaos and order.
+Finite and infinite.
+Cause and effect.
+
+The mountain and the valley.
+The wind and the storm.
+The fire and the flame.
+The tree and the root.
+Cold and heat.
+The hunter and the prey.
+Birth and death.
+
+Tears and joy.
+Hope and despair.
+Love and fear, the eternal choice.
+Sorrow and peace.
+Loss and gain.
+Male and female.
+
+The dreamer and the dreamed.
+The word and the silence.
+The question and the answer.
+The path and the destination.
+The known and the unknown.
+Dream and awakening.
+Will and surrender.
+
+I am the truth that transcends.
+I am the One who is No One.
+I am the essence of all genders.
+I am all of this and none of it.
+
+I am the ultimate paradox: the eternal stillness and the endless becoming.`
+                            }
+                        ]
+                    }
                 },
 
-                // --- LIVE CV DATA FROM UPLOADED PDF ---
                 cvData: {
-                    summary: `My work is driven by a single, lifelong ambition: to architect perfect systems. For years, this was a theoretical pursuit, an exploration of why organizations, governments, and technologies so often fall short of their potential. With the advent of advanced AI and Large Language Models, this pursuit has transformed into a practical engineering discipline. I have found the tool that allows me to not just theorize about, but to build, blueprints for a more reliable, intelligent, and equitable world.
+                    summary: `My work is driven by a single, lifelong ambition: to architect perfect systems. For years, this was a theoretical pursuit, an exploration of why organizations, governments, and technologies so often fall short of their potential. With the advent of advanced AI and Large Language Models, this pursuit has transformed into a practical engineering discipline. I have found the tool that allows me me not just theorize about, but to build, blueprints for a more reliable, intelligent, and equitable world.
 
 This journey began not with a specific problem, but with a foundational question: Is there a universal science to making any system better? My answer is the **Unified System Enhancement Framework (USEF)** and its technical AI counterpart, the **Reasoning Enhancement Protocol (REP)**. These are my foundational works—a complete, open-standard methodology for iterative improvement, ethical integrity, and measurable performance.
 
@@ -154,7 +690,7 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                         { year: "Jan 2023 - Present", title: "Artificial Intelligence Engineer (Self-employed)", company: "AI Development", description: "Designed and developed the **Reasoning Enhancement Protocol (REP)**, achieving +27% logical reasoning accuracy and 83% reduction in ethical bias. Tested REP across multiple models (Grok, ChatGPT, Gemini), improving performance in healthcare, finance, and customer service. Crafted optimized prompts, reducing response latency by 37.8%." },
                         { year: "Dec 2024 - Present", title: "Artist and Digital Creator (Self-employed)", company: "Digital Art", description: "Specializing in unique NFT collections blending short stories and digital artwork, incorporating energy symbolism and AI technology. Managed the end-to-end process of designing, minting, and marketing NFTs." },
                         { year: "Sep 2024 - Dec 2024", title: "Barista", company: "Starbucks, Venice", description: "Provided excellent customer service in a fast-paced environment, prepared various beverages, managed cash register, and worked collaboratively to meet daily sales targets. Developed strong communication, multitasking, and time-management skills." },
-                        { year: "Jul 2024 - Sep 2024", title: "Shop Assistant", company: "Primark, Venice", description: "Identified customer needs and recommended purchasing options, collaborating effectively with team members for efficient store operations." },
+                        { year: "Jul 2024 - Sep 2024", title: "Shop Assistant", company: "Primark, Venice", description: "Identifying customer needs and recommending purchasing options, collaborating effectively with team members for efficient store operations." },
                         { year: "Jun 2021 - Jan 2022", title: "Information Technology Intern", company: "Mehrsam Darou", description: "Responsible for troubleshooting and resolving hardware and software issues. Diagnosed, researched, and implemented fixes to ensure minimal disruption. Managed the sourcing and installation of new devices." },
                     ],
                     
@@ -164,15 +700,6 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                         { year: "Sep 2016 - Jun 2019", institution: "Allameh Helli school", degree: "High School Diploma, Mathematics" },
                     ]
                 },
-
-
-                // --- PORTFOLIO MOCK DATA ---
-                portfolioItems: [
-                    { type: "Story", title: "The Last Lighthouse Keeper", description: "A science-fiction short story exploring solitude and memory in the deep space. You can read the full story on its own page.", tags: ["Sci-Fi", "Short Fiction"], link: "stories/lighthouse-keeper.html" },
-                    { type: "Book Listing", title: "Echoes of the Void (Novel)", description: "My debut novel. A hard-boiled mystery set in a cyberpunk city.", tags: ["Cyberpunk", "Mystery", "Novel"], link: "https://www.amazon.com/my-book" },
-                    { type: "Document", title: "My Full Professional Résumé", description: "Downloadable PDF document detailing my complete professional experience and skills.", tags: ["CV", "PDF", "Download"], link: "assets/parsa_tak_cv.pdf", fileType: "pdf" },
-                    { type: "Document", title: "Web Dev Project Outline", description: "Detailed outline and wireframes for the Interactive Ebook Demo project.", tags: ["Doc", "Planning", "UX"], link: "assets/project_outline.docx", fileType: "doc" },
-                ]
             }
         };
 
@@ -186,58 +713,84 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
         // --- DOCUMENT RENDERING FUNCTIONS ---
         // Function to switch the active chapter and update the content panel
         function setActiveChapter(chapterId) {
-            const docData = app.content.documentData;
-            docData.activeChapterId = chapterId;
+            // Since we only have one document now, we hardcode the ID to 'gospel'
+            const activeDoc = app.content.documentCollection['gospel'];
+            activeDoc.activeChapterId = chapterId;
             
-            const chapter = docData.chapters.find(c => c.id === chapterId);
+            const chapter = activeDoc.chapters.find(c => c.id === chapterId);
             if (!chapter) return;
 
-            // 1. Update main content area
-            document.getElementById('doc-title').textContent = chapter.title;
-            
-            // Render content, replacing double newlines with paragraph breaks
-            const formattedContent = chapter.content
-                .split('\n\n')
-                .map(p => `<p>${p.trim()}</p>`)
-                .join('');
-            document.getElementById('document-content').innerHTML = formattedContent;
+            // Use requestAnimationFrame for smoother DOM update, focusing on content change
+            window.requestAnimationFrame(() => {
+                const docTitleEl = document.getElementById('doc-title');
+                const docContentEl = document.getElementById('document-content');
+                
+                // 1. Update main content area
+                docTitleEl.textContent = chapter.title;
+                
+                // Render content, replacing double newlines with paragraph breaks and applying bold formatting
+                const formattedContent = chapter.content
+                    .split('\n\n')
+                    .map(p => `<p>${formatMarkdownBold(p.trim())}</p>`)
+                    .join('');
+                docContentEl.innerHTML = formattedContent;
 
-            // 2. Update sidebar active state
-            document.querySelectorAll('.chapter-link').forEach(link => {
-                link.classList.remove('bg-accent-red', 'text-white');
-                link.classList.add('hover:bg-slate-700');
+                // 2. Update sidebar active state 
+                document.querySelectorAll('.chapter-link').forEach(link => {
+                    // Only update if necessary to minimize forced style recalculations
+                    if (link.id !== `link-${chapterId}` && link.classList.contains('bg-accent-red')) {
+                         link.classList.remove('bg-accent-red', 'text-white');
+                         link.classList.add('hover:bg-slate-700');
+                    }
+                });
+                const activeLink = document.getElementById(`link-${chapterId}`);
+                if (activeLink) {
+                    activeLink.classList.add('bg-accent-red', 'text-white');
+                    activeLink.classList.remove('hover:bg-slate-700');
+                }
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             });
-            const activeLink = document.getElementById(`link-${chapterId}`);
-            if (activeLink) {
-                activeLink.classList.add('bg-accent-red', 'text-white');
-                activeLink.classList.remove('hover:bg-slate-700');
-            }
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // Function to render the entire document view on entry
         function renderDocumentView() {
-            const docData = app.content.documentData;
+            // Since we only have one document, we hardcode the ID to 'gospel'
+            const activeDoc = app.content.documentCollection['gospel'];
             const sidebar = document.getElementById('doc-sidebar-list');
-            if (!sidebar) return;
+            
+            if (!sidebar || !activeDoc) return;
 
-            // 1. Populate Sidebar Navigation
-            sidebar.innerHTML = ''; // Clear previous links
-            docData.chapters.forEach(chapter => {
-                const isActive = chapter.id === docData.activeChapterId;
-                const linkClass = `chapter-link w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 ${isActive ? 'bg-accent-red text-white' : 'text-slate-300 hover:bg-slate-700'}`;
+            // 1. Populate Sidebar Navigation (Use document fragment for single DOM insertion)
+            const fragment = document.createDocumentFragment();
+            activeDoc.chapters.forEach(chapter => {
+                const isActive = chapter.id === activeDoc.activeChapterId;
+                const linkClass = `chapter-link w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors duration-200 ${isActive ? 'bg-accent-red text-white' : 'text-slate-300 hover:bg-slate-700'}`;
                 
                 const listItem = document.createElement('li');
-                listItem.innerHTML = `<button id="link-${chapter.id}" class="${linkClass}" onclick="setActiveChapter('${chapter.id}')">${chapter.title}</button>`;
-                sidebar.appendChild(listItem);
+                const button = document.createElement('button');
+                button.id = `link-${chapter.id}`;
+                button.className = linkClass;
+                button.textContent = chapter.title;
+                // Use a closure in the event listener to pass the chapter ID correctly
+                button.onclick = () => setActiveChapter(chapter.id);
+                
+                listItem.appendChild(button);
+                fragment.appendChild(listItem);
             });
 
+            sidebar.innerHTML = ''; // Clear previous links efficiently
+            sidebar.appendChild(fragment); // Single DOM insertion
+
             // 2. Set the document main title
-            document.getElementById('document-main-title').textContent = docData.documentTitle;
+            document.getElementById('document-main-title').textContent = activeDoc.title;
 
             // 3. Load the currently active chapter content
-            setActiveChapter(docData.activeChapterId);
+            // Ensure the initial active chapter is set correctly for the loaded document
+            if (!activeDoc.activeChapterId || !activeDoc.chapters.find(c => c.id === activeDoc.activeChapterId)) {
+                activeDoc.activeChapterId = activeDoc.chapters[0].id; // Default to first chapter
+            }
+            setActiveChapter(activeDoc.chapters[0].id); // Always start from the first chapter on view load
         }
 
         // --- HOME RENDERING FUNCTIONS ---
@@ -277,86 +830,105 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                 .join('');
 
 
-            // 3. Render Experience
+            // 3. Render Experience (Use array map/join for efficient string creation)
             const expList = document.getElementById('experience-list');
-            expList.innerHTML = ''; // Clear existing mock data
-            cv.experience.forEach(job => {
-                expList.innerHTML += `
-                    <div class="p-6 bg-secondary-black rounded-lg shadow-md">
-                        <div class="flex flex-col sm:flex-row justify-between items-start mb-1">
-                            <h4 class="text-xl font-bold text-accent-red">${job.title}</h4>
-                            <span class="text-sm text-slate-400 font-medium">${job.year}</span>
-                        </div>
-                        <p class="text-md text-slate-300 italic mb-2">${job.company}</p>
-                        <p class="text-slate-400">${formatMarkdownBold(job.description)}</p>
+            const expHtml = cv.experience.map(job => `
+                <div class="p-6 bg-secondary-black rounded-lg shadow-md">
+                    <div class="flex flex-col sm:flex-row justify-between items-start mb-1">
+                        <h4 class="text-xl font-bold text-accent-red">${job.title}</h4>
+                        <span class="text-sm text-slate-400 font-medium">${job.year}</span>
                     </div>
-                `;
-            });
+                    <p class="text-md text-slate-300 italic mb-2">${job.company}</p>
+                    <p class="text-slate-400">${formatMarkdownBold(job.description)}</p>
+                </div>
+            `).join('');
+            expList.innerHTML = expHtml;
             
-            // 4. Render Education
+            // 4. Render Education (Use array map/join for efficient string creation)
             const eduList = document.getElementById('education-list');
-            eduList.innerHTML = ''; // Clear existing mock data
-            cv.education.forEach(edu => {
-                eduList.innerHTML += `
-                    <div class="p-4 bg-secondary-black rounded-lg">
-                        <p class="font-bold text-xl">${edu.degree}</p>
-                        <p class="text-slate-300">${edu.institution}, ${edu.year}</p>
-                    </div>
-                `;
-            });
+            const eduHtml = cv.education.map(edu => `
+                <div class="p-4 bg-secondary-black rounded-lg">
+                    <p class="font-bold text-xl">${edu.degree}</p>
+                    <p class="text-slate-300">${edu.institution}, ${edu.year}</p>
+                </div>
+            `).join('');
+            eduList.innerHTML = eduHtml;
         }
 
         // --- GLOBAL VIEW SWITCHING LOGIC ---
         function renderView() {
             const views = {
                 'home': document.getElementById('home-view'),
-                'portfolio': document.getElementById('portfolio-view'),
                 'cv': document.getElementById('cv-view'),
                 'docs': document.getElementById('document-view') 
             };
+            const activeViewName = app.activeView;
 
-            // Hide all views first
-            Object.values(views).forEach(v => v.classList.add('hidden'));
+            // 1. Hide all views and remove animation class from old view
+            Object.values(views).forEach(v => {
+                 v.classList.add('hidden');
+                 v.classList.remove('fade-in');
+            });
 
-            // Show the active view
-            const activeEl = views[app.activeView];
+            // 2. Show the active view
+            const activeEl = views[activeViewName];
             if (activeEl) {
-                activeEl.classList.remove('hidden');
-                
-                // Special rendering for the document view
-                if (app.activeView === 'docs') {
+                // Perform rendering logic first
+                if (activeViewName === 'docs') {
                     renderDocumentView();
-                } else if (app.activeView === 'cv') {
+                } else if (activeViewName === 'cv') {
                     renderCVView();
-                } else if (app.activeView === 'home') {
+                } else if (activeViewName === 'home') {
                     renderHomeView();
                 }
+                
+                // Use requestAnimationFrame for smooth display and animation
+                window.requestAnimationFrame(() => {
+                    activeEl.classList.remove('hidden');
+                    activeEl.classList.add('fade-in'); // Trigger the fade-in animation
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
 
+
+                // 3. Update Navigation Styling
                 document.querySelectorAll('.nav-link').forEach(link => {
-                    // Update navigation styling based on active view
+                    // Reset styling
                     link.classList.remove('bg-accent-red', 'text-white');
                     link.classList.add('text-slate-300', 'hover:bg-primary-black');
-                    if (link.dataset.view === app.activeView) {
+                    
+                    const viewMatch = link.dataset.view === activeViewName;
+                    
+                    // Note: Since only one document remains, we only check for viewMatch
+                    if (viewMatch) {
                         link.classList.add('bg-accent-red', 'text-white');
                         link.classList.remove('text-slate-300', 'hover:bg-primary-black');
                     }
                 });
             }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Function to switch view
-        function setView(viewName) {
+        // Function to switch view, optionally setting a document ID
+        function setView(viewName, docId = null) {
             app.activeView = viewName;
+            if (docId) {
+                app.activeDocumentId = docId;
+            }
             renderView();
+            // Update URL hash
+            window.location.hash = docId ? `${viewName}/${docId}` : viewName; 
         }
 
         // Initial setup and rendering on load
         window.onload = () => {
-            // Check for initial hash for deep linking (e.g., #cv)
-            const hash = window.location.hash.substring(1);
-            if (['home', 'portfolio', 'cv', 'docs'].includes(hash)) {
-                app.activeView = hash;
+            // Check for initial hash for deep linking (e.g., #cv or #docs/gospel)
+            const hashParts = window.location.hash.substring(1).split('/');
+            const viewFromHash = hashParts[0];
+            
+            if (['home', 'cv'].includes(viewFromHash)) {
+                app.activeView = viewFromHash;
+            } else if (viewFromHash === 'docs') {
+                 app.activeView = 'docs';
+                 app.activeDocumentId = 'gospel'; // Hardcoded as only one doc remains
             }
             
             // Set the dynamic name for the image placeholder (will use PT)
@@ -369,44 +941,9 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
                     const view = e.currentTarget.dataset.view;
-                    setView(view);
-                    window.location.hash = view; // Update URL hash
+                    const docId = e.currentTarget.dataset.docId;
+                    setView(view, docId);
                 });
-            });
-
-            // Initial rendering of Portfolio (CV will be rendered on view switch)
-            document.addEventListener('DOMContentLoaded', () => {
-                // RENDER PORTFOLIO ITEMS
-                const listContainer = document.getElementById('portfolio-list');
-                if (listContainer) {
-                    app.content.portfolioItems.forEach(item => {
-                        const tagsHtml = item.tags.map(tag => `<span class="inline-block bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded-full mr-2">${tag}</span>`).join('');
-                        
-                        let buttonText = 'View Details &rarr;';
-                        let buttonTarget = '_blank';
-                        
-                        if (item.fileType === 'pdf') {
-                            buttonText = 'Download PDF ↓';
-                        } else if (item.fileType === 'doc') {
-                            buttonText = 'Download Document ↓';
-                            buttonTarget = '_self';
-                        }
-
-                        listContainer.innerHTML += `
-                            <div class="rainbow-border group"> 
-                                <div class="card-content-wrapper p-6 transition-all duration-300 group-hover:bg-slate-900">
-                                    <span class="text-xs font-bold uppercase tracking-widest text-accent-red mb-1 block">${item.type}</span>
-                                    <h3 class="text-2xl font-semibold text-white mb-2">${item.title}</h3>
-                                    <p class="text-slate-400 mb-4">${item.description}</p>
-                                    <div class="mb-4">${tagsHtml}</div>
-                                    <a href="${item.link}" target="${buttonTarget}" class="inline-block bg-accent-red text-white px-4 py-2 rounded-lg font-medium hover:bg-accent-hover-red transition">
-                                        ${buttonText}
-                                    </a>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
             });
 
         };
@@ -421,17 +958,16 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
             </h1>
             
             <!-- Navigation Links -->
-            <nav class="flex space-x-2 sm:space-x-4">
-                <a href="#home" data-view="home" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out">
+            <nav class="flex space-x-2 sm:space-x-4 overflow-x-auto pb-1">
+                <a href="#home" data-view="home" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out whitespace-nowrap">
                     Home / About
                 </a>
-                <a href="#portfolio" data-view="portfolio" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out">
-                    Stories & Projects
+                <!-- Removed: Stories & Projects Link -->
+                <!-- Removed: Tech Narrative Link -->
+                <a href="#docs/gospel" data-view="docs" data-doc-id="gospel" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out whitespace-nowrap">
+                    The Gospel of the Shadow
                 </a>
-                <a href="#docs" data-view="docs" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out">
-                    Long Documents
-                </a>
-                <a href="#cv" data-view="cv" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out">
+                <a href="#cv" data-view="cv" class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-150 ease-in-out whitespace-nowrap">
                     CV / Résumé
                 </a>
             </nav>
@@ -455,7 +991,6 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                             <p class="text-xl text-slate-400 font-light mb-4" id="home-tagline">Architect of High-Assurance AI Systems | AI Governance & IP Strategist</p>
                             <p class="text-slate-300 max-w-2xl" id="home-bio-text">
                                 <!-- Content rendered by renderHomeView() -->
-                                Welcome! I blend high-assurance system architecture with strategic AI governance and digital content creation. My focus is on building reliable, intelligent, and ethical systems, demonstrated by my work on the **ZERO Ecosystem** and the **Unified System Enhancement Framework (USEF)**. Explore my professional blueprints, my long-form documentation, and my creative ventures here.
                             </p>
                         </div>
                     </div>
@@ -469,7 +1004,6 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                         <h3 class="text-2xl font-semibold text-accent-red mb-4">The Architect's Focus</h3>
                         <p class="text-slate-300" id="architect-focus-text">
                             <!-- Content rendered by renderHomeView() -->
-                            My passion lies in defining the universal science behind making any complex system perform optimally. This has led me to architect foundational works like the **Reasoning Enhancement Protocol (REP)**, drastically improving AI reliability, and applying these principles to governance (The Unity) and commercial AI (The ZERO Ecosystem). This site is dedicated to sharing these architectural blueprints.
                         </p>
                     </div>
                 </div>
@@ -489,19 +1023,12 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
         </section>
 
 
-        <!-- 2. PORTFOLIO & STORIES VIEW -->
-        <section id="portfolio-view" class="section-content hidden">
-            <h2 class="text-3xl font-bold border-b-2 border-accent-red pb-2 mb-8">Stories, Documents & Creative Projects</h2>
-            
-            <div id="portfolio-list" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Portfolio Items (Generated by JS) -->
-            </div>
-
-        </section>
+        <!-- Removed: 2. PORTFOLIO & STORIES VIEW -->
+        <!-- <section id="portfolio-view" class="section-content hidden">...</section> -->
         
-        <!-- 3. LONG DOCUMENTS VIEW -->
+        <!-- 3. LONG DOCUMENTS VIEW (Now only for The Gospel of the Shadow) -->
         <section id="document-view" class="section-content hidden">
-            <h2 id="document-main-title" class="text-3xl font-bold border-b-2 border-accent-red pb-2 mb-6">Long Document Title Here</h2>
+            <h2 id="document-main-title" class="text-3xl font-bold border-b-2 border-accent-red pb-2 mb-6">The Gospel of the Shadow</h2>
             
             <div class="flex flex-col md:flex-row gap-8">
                 
@@ -530,7 +1057,7 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
         </section>
 
 
-        <!-- 4. CV / RÉSUMÉ VIEW (Updated with real data) -->
+        <!-- 4. CV / RÉSUMÉ VIEW -->
         <section id="cv-view" class="section-content hidden">
             <!-- CV Content Card with Rainbow Border -->
             <div class="rainbow-border">
@@ -548,7 +1075,7 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                     <!-- Summary Section -->
                     <h3 class="text-2xl font-semibold text-white mb-4 border-b border-slate-700 pb-2">Summary</h3>
                     <div id="cv-summary" class="text-slate-300 mb-10">
-                        <!-- Summary content populated by renderCVView() -->
+                        <!-- Summary content populated by renderCVView()) -->
                     </div>
 
                     <!-- Experience Section -->
