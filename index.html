@@ -176,6 +176,13 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
             }
         };
 
+        // --- UTILITY FUNCTION FOR MARKDOWN BOLD (used in Home and CV views) ---
+        function formatMarkdownBold(text) {
+            if (!text) return '';
+            // Replaces **text** with <strong>text</strong>
+            return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        }
+
         // --- DOCUMENT RENDERING FUNCTIONS ---
         // Function to switch the active chapter and update the content panel
         function setActiveChapter(chapterId) {
@@ -233,6 +240,17 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
             setActiveChapter(docData.activeChapterId);
         }
 
+        // --- HOME RENDERING FUNCTIONS ---
+        function renderHomeView() {
+            // Update the main introductory text with markdown formatting
+            const homeBioText = `Welcome! I blend high-assurance system architecture with strategic AI governance and digital content creation. My focus is on building reliable, intelligent, and ethical systems, demonstrated by my work on the **ZERO Ecosystem** and the **Unified System Enhancement Framework (USEF)**. Explore my professional blueprints, my long-form documentation, and my creative ventures here.`;
+            document.getElementById('home-bio-text').innerHTML = formatMarkdownBold(homeBioText);
+
+            // Update the architect focus text with markdown formatting
+            const architectFocusText = `My passion lies in defining the universal science behind making any complex system perform optimally. This has led me to architect foundational works like the **Reasoning Enhancement Protocol (REP)**, drastically improving AI reliability, and applying these principles to governance (The Unity) and commercial AI (The ZERO Ecosystem). This site is dedicated to sharing these architectural blueprints.`;
+            document.getElementById('architect-focus-text').innerHTML = formatMarkdownBold(architectFocusText);
+        }
+
         // --- CV RENDERING FUNCTIONS ---
         function renderCVView() {
             const cv = app.content.cvData;
@@ -252,10 +270,10 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
             document.getElementById('cv-contact-info').innerHTML = contactHtml;
             
             // 2. Render Summary
-            // Replace double newlines with paragraph tags for the summary
+            // Replace double newlines with paragraph tags AND apply markdown bold formatting
             document.getElementById('cv-summary').innerHTML = cv.summary
                 .split('\n\n')
-                .map(p => `<p>${p.trim().replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`)
+                .map(p => `<p>${formatMarkdownBold(p.trim())}</p>`)
                 .join('');
 
 
@@ -270,7 +288,7 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                             <span class="text-sm text-slate-400 font-medium">${job.year}</span>
                         </div>
                         <p class="text-md text-slate-300 italic mb-2">${job.company}</p>
-                        <p class="text-slate-400">${job.description}</p>
+                        <p class="text-slate-400">${formatMarkdownBold(job.description)}</p>
                     </div>
                 `;
             });
@@ -310,6 +328,8 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                     renderDocumentView();
                 } else if (app.activeView === 'cv') {
                     renderCVView();
+                } else if (app.activeView === 'home') {
+                    renderHomeView();
                 }
 
                 document.querySelectorAll('.nav-link').forEach(link => {
@@ -433,7 +453,8 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                         <div class="text-center md:text-left">
                             <h2 class="text-4xl font-extrabold text-white mb-2">Parsa Tak</h2>
                             <p class="text-xl text-slate-400 font-light mb-4" id="home-tagline">Architect of High-Assurance AI Systems | AI Governance & IP Strategist</p>
-                            <p class="text-slate-300 max-w-2xl">
+                            <p class="text-slate-300 max-w-2xl" id="home-bio-text">
+                                <!-- Content rendered by renderHomeView() -->
                                 Welcome! I blend high-assurance system architecture with strategic AI governance and digital content creation. My focus is on building reliable, intelligent, and ethical systems, demonstrated by my work on the **ZERO Ecosystem** and the **Unified System Enhancement Framework (USEF)**. Explore my professional blueprints, my long-form documentation, and my creative ventures here.
                             </p>
                         </div>
@@ -446,7 +467,8 @@ I design blueprints for more reliable, ethical, and intelligent worlds—whether
                 <div class="rainbow-border">
                     <div class="card-content-wrapper p-6">
                         <h3 class="text-2xl font-semibold text-accent-red mb-4">The Architect's Focus</h3>
-                        <p class="text-slate-300">
+                        <p class="text-slate-300" id="architect-focus-text">
+                            <!-- Content rendered by renderHomeView() -->
                             My passion lies in defining the universal science behind making any complex system perform optimally. This has led me to architect foundational works like the **Reasoning Enhancement Protocol (REP)**, drastically improving AI reliability, and applying these principles to governance (The Unity) and commercial AI (The ZERO Ecosystem). This site is dedicated to sharing these architectural blueprints.
                         </p>
                     </div>
