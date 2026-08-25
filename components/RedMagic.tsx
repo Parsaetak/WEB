@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import {
+  useEffect,
+  useRef
+} from "react";
 
 type Particle = {
   angle: number;
@@ -31,7 +34,10 @@ type Point = {
   y: number;
 };
 
-type QualityName = "high" | "medium" | "low";
+type QualityName =
+  | "high"
+  | "medium"
+  | "low";
 
 type Quality = {
   particles: number;
@@ -41,10 +47,15 @@ type Quality = {
   flowSegments: number;
 };
 
-const TAU = Math.PI * 2;
+const TAU =
+  Math.PI * 2;
+
 const MAX_DPR = 2;
 
-const QUALITY: Record<QualityName, Quality> = {
+const QUALITY: Record<
+  QualityName,
+  Quality
+> = {
   high: {
     particles: 112,
     nodes: 12,
@@ -70,6 +81,9 @@ const QUALITY: Record<QualityName, Quality> = {
   }
 };
 
+const HIGH_FPS_TARGET = 88;
+const HIGH_FPS_FLOOR = 76;
+
 function clamp(
   value: number,
   min: number,
@@ -81,48 +95,69 @@ function clamp(
   );
 }
 
-function smoothstep(value: number) {
-  const x = clamp(value, 0, 1);
+function smoothstep(
+  value: number
+) {
+  const x =
+    clamp(
+      value,
+      0,
+      1
+    );
 
-  return x * x * (3 - 2 * x);
+  return (
+    x *
+    x *
+    (3 - 2 * x)
+  );
 }
 
 function createParticles(
   count: number
 ): Particle[] {
   return Array.from(
-    { length: count },
+    {
+      length: count
+    },
     (_, index) => ({
       angle:
         (index / count) *
           TAU +
-        Math.random() * 0.35,
+        Math.random() *
+          0.35,
 
       radius:
         0.18 +
-        Math.random() * 0.7,
+        Math.random() *
+          0.7,
 
       speed:
         (0.08 +
-          Math.random() * 0.22) *
-        (Math.random() > 0.5
+          Math.random() *
+            0.22) *
+        (Math.random() >
+        0.5
           ? 1
           : -1),
 
       size:
         0.7 +
-        Math.random() * 1.8,
+        Math.random() *
+          1.8,
 
       phase:
-        Math.random() * TAU,
+        Math.random() *
+        TAU,
 
       orbit:
         0.75 +
-        Math.random() * 0.45,
+        Math.random() *
+          0.45,
 
       drift:
         0.15 +
-        Math.random() * 0.45
+        Math.random() *
+          0.45
     })
   );
 }
@@ -131,30 +166,38 @@ function createNodes(
   count: number
 ): Node[] {
   return Array.from(
-    { length: count },
+    {
+      length: count
+    },
     (_, index) => ({
       angle:
         (index / count) *
           TAU +
-        Math.random() * 0.25,
+        Math.random() *
+          0.25,
 
       radius:
         0.32 +
-        Math.random() * 0.52,
+        Math.random() *
+          0.52,
 
       speed:
         (0.03 +
-          Math.random() * 0.08) *
-        (Math.random() > 0.5
+          Math.random() *
+            0.08) *
+        (Math.random() >
+        0.5
           ? 1
           : -1),
 
       size:
         1.7 +
-        Math.random() * 2.6,
+        Math.random() *
+          2.6,
 
       phase:
-        Math.random() * TAU
+        Math.random() *
+        TAU
     })
   );
 }
@@ -163,14 +206,26 @@ function createBoundary(
   count: number
 ): BoundaryPoint[] {
   return Array.from(
-    { length: count + 1 },
+    {
+      length:
+        count + 1
+    },
     (_, index) => {
       const angle =
-        (index / count) * TAU;
+        (index / count) *
+        TAU;
 
       return {
-        sin: Math.sin(angle),
-        cos: Math.cos(angle),
+        sin:
+          Math.sin(
+            angle
+          ),
+
+        cos:
+          Math.cos(
+            angle
+          ),
+
         angle
       };
     }
@@ -206,10 +261,13 @@ export default function RedMagic() {
     }
 
     const context =
-      canvas.getContext("2d", {
-        alpha: true,
-        desynchronized: true
-      });
+      canvas.getContext(
+        "2d",
+        {
+          alpha: true,
+          desynchronized: true
+        }
+      );
 
     if (!context) {
       return;
@@ -224,6 +282,7 @@ export default function RedMagic() {
       reduceMotionQuery.matches;
 
     let animationFrame = 0;
+
     let resizeObserver:
       | ResizeObserver
       | null = null;
@@ -233,6 +292,9 @@ export default function RedMagic() {
       | null = null;
 
     let visible = true;
+    let documentVisible =
+      document.visibilityState ===
+      "visible";
 
     let width = 1;
     let height = 1;
@@ -256,7 +318,9 @@ export default function RedMagic() {
       y: 0
     };
 
-    let pointerActive = false;
+    let pointerActive =
+      false;
+
     let pointerEnergy = 0;
 
     let qualityName:
@@ -265,10 +329,13 @@ export default function RedMagic() {
     let quality =
       QUALITY[qualityName];
 
-    let particles: Particle[] = [];
-    let nodes: Node[] = [];
-    let boundary: BoundaryPoint[] =
+    let particles: Particle[] =
       [];
+
+    let nodes: Node[] = [];
+
+    let boundary:
+      BoundaryPoint[] = [];
 
     let pointerAngle = 0;
     let pointerDistance = 0;
@@ -278,11 +345,16 @@ export default function RedMagic() {
 
     let lastQualityChange = 0;
 
+    let membraneGradient:
+      CanvasGradient | null =
+      null;
+
     const buildWorld = (
       name: QualityName
     ) => {
       qualityName = name;
-      quality = QUALITY[name];
+      quality =
+        QUALITY[name];
 
       particles =
         createParticles(
@@ -302,6 +374,39 @@ export default function RedMagic() {
       lastQualityChange =
         performance.now();
     };
+
+    const rebuildMembraneGradient =
+      () => {
+        membraneGradient =
+          context.createRadialGradient(
+            centerX,
+            centerY,
+            radius * 0.35,
+            centerX,
+            centerY,
+            radius * 1.2
+          );
+
+        membraneGradient.addColorStop(
+          0,
+          "rgba(255, 34, 24, 0)"
+        );
+
+        membraneGradient.addColorStop(
+          0.64,
+          "rgba(190, 0, 0, 0.06)"
+        );
+
+        membraneGradient.addColorStop(
+          0.9,
+          "rgba(255, 38, 25, 0.11)"
+        );
+
+        membraneGradient.addColorStop(
+          1,
+          "rgba(255, 25, 20, 0.01)"
+        );
+      };
 
     const chooseInitialQuality =
       () => {
@@ -368,33 +473,34 @@ export default function RedMagic() {
           height
         ) * 0.39;
 
+      rebuildMembraneGradient();
+
       chooseInitialQuality();
     };
 
-    const updatePointer =
-      (
-        clientX: number,
-        clientY: number
-      ) => {
-        const rect =
-          canvas.getBoundingClientRect();
+    const updatePointer = (
+      clientX: number,
+      clientY: number
+    ) => {
+      const rect =
+        canvas.getBoundingClientRect();
 
-        pointerTarget.x =
-          clamp(
-            clientX -
-              rect.left,
-            0,
-            width
-          );
+      pointerTarget.x =
+        clamp(
+          clientX -
+            rect.left,
+          0,
+          width
+        );
 
-        pointerTarget.y =
-          clamp(
-            clientY -
-              rect.top,
-            0,
-            height
-          );
-      };
+      pointerTarget.y =
+        clamp(
+          clientY -
+            rect.top,
+          0,
+          height
+        );
+    };
 
     const updatePointerGeometry =
       () => {
@@ -475,7 +581,8 @@ export default function RedMagic() {
             clamp(
               1 -
                 pointerDistance /
-                  (radius * 2.2),
+                  (radius *
+                    2.2),
               0,
               1
             );
@@ -553,10 +660,12 @@ export default function RedMagic() {
         1 +
         Math.sin(
           time * 0.0022
-        ) * 0.035 +
+        ) *
+          0.035 +
         Math.sin(
           time * 0.0049
-        ) * 0.012;
+        ) *
+          0.012;
 
       const activePulse =
         pointerEnergy *
@@ -583,13 +692,10 @@ export default function RedMagic() {
           centerX -
             coreRadius *
               0.18,
-
           centerY -
             coreRadius *
               0.2,
-
           coreRadius * 0.08,
-
           centerX,
           centerY,
           coreRadius
@@ -663,11 +769,9 @@ export default function RedMagic() {
         centerX -
           nucleusRadius *
             0.15,
-
         centerY -
           nucleusRadius *
             0.17,
-
         nucleusRadius,
         0,
         TAU
@@ -705,7 +809,9 @@ export default function RedMagic() {
             point.sin *
               normalizedRadius;
 
-          if (index === 0) {
+          if (
+            index === 0
+          ) {
             context.moveTo(
               x,
               y
@@ -720,47 +826,21 @@ export default function RedMagic() {
 
         context.closePath();
 
-        const gradient =
-          context.createRadialGradient(
-            centerX,
-            centerY,
-            radius * 0.35,
-            centerX,
-            centerY,
-            radius * 1.2
-          );
+        if (
+          membraneGradient
+        ) {
+          context.fillStyle =
+            membraneGradient;
 
-        gradient.addColorStop(
-          0,
-          "rgba(255, 34, 24, 0)"
-        );
+          context.fill();
+        }
 
-        gradient.addColorStop(
-          0.64,
-          "rgba(190, 0, 0, 0.06)"
-        );
-
-        gradient.addColorStop(
-          0.9,
-          "rgba(255, 38, 25, 0.11)"
-        );
-
-        gradient.addColorStop(
-          1,
-          "rgba(255, 25, 20, 0.01)"
-        );
-
-        context.fillStyle =
-          gradient;
-
-        context.fill();
-
-        context.shadowColor =
-          "rgba(255, 32, 24, 0.35)";
-
-        context.shadowBlur =
-          18;
-
+        /*
+         * Avoid shadowBlur here.
+         * The membrane already has a bright stroke and layered
+         * fill, so the blur adds significant paint cost for little
+         * perceptual gain.
+         */
         context.lineWidth =
           reducedMotion
             ? 1.2
@@ -770,8 +850,6 @@ export default function RedMagic() {
           "rgba(255, 55, 40, 0.68)";
 
         context.stroke();
-
-        context.shadowBlur = 0;
 
         context.lineWidth = 4;
 
@@ -843,13 +921,17 @@ export default function RedMagic() {
 
             const x =
               centerX +
-              Math.cos(angle) *
+              Math.cos(
+                angle
+              ) *
                 (distance +
                   wave);
 
             const y =
               centerY +
-              Math.sin(angle) *
+              Math.sin(
+                angle
+              ) *
                 (distance +
                   wave);
 
@@ -892,6 +974,14 @@ export default function RedMagic() {
         delta *
         0.0009 *
         16;
+
+      /*
+       * One fill style for the whole particle pass.
+       * Per-particle visual variation is handled with alpha instead
+       * of allocating a new rgba string for every particle.
+       */
+      context.fillStyle =
+        "rgb(255, 72, 55)";
 
       for (
         let index = 0;
@@ -948,8 +1038,7 @@ export default function RedMagic() {
             particle.angle
           ) *
             orbitalRadius +
-          swirl *
-            0.55;
+          swirl * 0.55;
 
         const pointerInfluence =
           pointerActive
@@ -958,7 +1047,6 @@ export default function RedMagic() {
                   Math.hypot(
                     pointer.x -
                       x,
-
                     pointer.y -
                       y
                   ) /
@@ -973,24 +1061,10 @@ export default function RedMagic() {
             pointerInfluence *
               0.75);
 
-        context.fillStyle =
-          `rgba(255, ${
-            60 +
-            Math.floor(
-              pointerInfluence *
-                80
-            )
-          }, ${
-            48 +
-            Math.floor(
-              pointerInfluence *
-                35
-            )
-          }, ${
-            0.28 +
-            pointerInfluence *
-              0.42
-          })`;
+        context.globalAlpha =
+          0.28 +
+          pointerInfluence *
+            0.42;
 
         context.beginPath();
 
@@ -1004,6 +1078,8 @@ export default function RedMagic() {
 
         context.fill();
       }
+
+      context.globalAlpha = 1;
     };
 
     const drawNodes = (
@@ -1015,6 +1091,9 @@ export default function RedMagic() {
         0.0009 *
         16;
 
+      context.fillStyle =
+        "rgb(255, 96, 72)";
+
       for (
         let index = 0;
         index < nodes.length;
@@ -1024,7 +1103,8 @@ export default function RedMagic() {
           nodes[index];
 
         node.angle +=
-          node.speed * step;
+          node.speed *
+          step;
 
         const breathing =
           1 +
@@ -1070,18 +1150,32 @@ export default function RedMagic() {
             pointerEnergy *
               0.4);
 
-        drawGlow(
+        /*
+         * Replacing 12 radial gradients per frame with two tiny
+         * layered circles dramatically reduces allocations and
+         * keeps the luminous node appearance.
+         */
+        context.globalAlpha =
+          0.08 +
+          pointerEnergy *
+            0.04;
+
+        context.beginPath();
+
+        context.arc(
           x,
           y,
-          nodeSize * 0.15,
-          nodeSize * 5,
-          0.035 +
-            pointerEnergy *
-              0.025
+          nodeSize * 3.2,
+          0,
+          TAU
         );
 
-        context.fillStyle =
-          "rgba(255, 96, 72, 0.78)";
+        context.fill();
+
+        context.globalAlpha =
+          0.78 +
+          pointerEnergy *
+            0.08;
 
         context.beginPath();
 
@@ -1095,6 +1189,8 @@ export default function RedMagic() {
 
         context.fill();
       }
+
+      context.globalAlpha = 1;
     };
 
     const drawInteraction =
@@ -1160,7 +1256,9 @@ export default function RedMagic() {
       };
 
     const maybeAdaptQuality =
-      (timestamp: number) => {
+      (
+        timestamp: number
+      ) => {
         if (
           reducedMotion
         ) {
@@ -1191,8 +1289,8 @@ export default function RedMagic() {
         }
 
         const fps =
-          performanceFrames *
-          1000 /
+          (performanceFrames *
+            1000) /
           sampleElapsed;
 
         performanceSampleTime =
@@ -1209,12 +1307,24 @@ export default function RedMagic() {
         }
 
         /*
-         * Hysteresis:
-         * degrade quickly when performance is poor,
-         * recover only after a comfortable margin.
+         * Target high-refresh smoothness without aggressively
+         * degrading on normal 60Hz displays.
          */
         if (
-          fps < 45 &&
+          fps <
+            HIGH_FPS_FLOOR &&
+          qualityName ===
+            "high"
+        ) {
+          buildWorld(
+            "medium"
+          );
+
+          return;
+        }
+
+        if (
+          fps < 50 &&
           qualityName !==
             "low"
         ) {
@@ -1226,36 +1336,25 @@ export default function RedMagic() {
         }
 
         if (
-          fps < 68 &&
+          fps >=
+            HIGH_FPS_TARGET &&
           qualityName ===
-            "high"
+            "medium"
         ) {
           buildWorld(
-            "medium"
+            "high"
           );
 
           return;
         }
 
         if (
-          fps >= 86 &&
+          fps >= 58 &&
           qualityName ===
             "low"
         ) {
           buildWorld(
             "medium"
-          );
-
-          return;
-        }
-
-        if (
-          fps >= 92 &&
-          qualityName ===
-            "medium"
-        ) {
-          buildWorld(
-            "high"
           );
         }
       };
@@ -1263,9 +1362,11 @@ export default function RedMagic() {
     const render = (
       timestamp: number
     ) => {
-      if (!visible) {
+      if (
+        !visible ||
+        !documentVisible
+      ) {
         animationFrame = 0;
-
         return;
       }
 
@@ -1306,7 +1407,8 @@ export default function RedMagic() {
           pointer.x) *
         Math.min(
           1,
-          delta * 0.018
+          delta *
+            0.018
         );
 
       pointer.y +=
@@ -1314,21 +1416,27 @@ export default function RedMagic() {
           pointer.y) *
         Math.min(
           1,
-          delta * 0.018
+          delta *
+            0.018
         );
 
       const targetEnergy =
-        pointerActive ? 1 : 0;
+        pointerActive
+          ? 1
+          : 0;
 
       pointerEnergy +=
         (targetEnergy -
           pointerEnergy) *
         Math.min(
           1,
-          delta * 0.008
+          delta *
+            0.008
         );
 
       updatePointerGeometry();
+
+      context.globalAlpha = 1;
 
       context.clearRect(
         0,
@@ -1338,9 +1446,15 @@ export default function RedMagic() {
       );
 
       drawInteraction();
-      drawMembrane(time);
-      drawEnergyFlows(time);
-      drawCore(time);
+      drawMembrane(
+        time
+      );
+      drawEnergyFlows(
+        time
+      );
+      drawCore(
+        time
+      );
       drawParticles(
         time,
         delta
@@ -1363,7 +1477,8 @@ export default function RedMagic() {
     const start = () => {
       if (
         animationFrame !== 0 ||
-        !visible
+        !visible ||
+        !documentVisible
       ) {
         return;
       }
@@ -1390,46 +1505,68 @@ export default function RedMagic() {
       lastTimestamp = 0;
     };
 
-    const handlePointerMove = (
-      event: PointerEvent
-    ) => {
-      updatePointer(
-        event.clientX,
-        event.clientY
-      );
+    const handlePointerMove =
+      (
+        event: PointerEvent
+      ) => {
+        updatePointer(
+          event.clientX,
+          event.clientY
+        );
 
-      pointerActive = true;
-    };
+        pointerActive =
+          true;
+      };
 
     const handlePointerLeave =
       () => {
-        pointerActive = false;
+        pointerActive =
+          false;
       };
 
-    const handleMotionChange = (
-      event: MediaQueryListEvent
-    ) => {
-      reducedMotion =
-        event.matches;
+    const handleMotionChange =
+      (
+        event: MediaQueryListEvent
+      ) => {
+        reducedMotion =
+          event.matches;
 
-      if (
-        reducedMotion
-      ) {
-        buildWorld("low");
-      } else {
-        chooseInitialQuality();
-      }
-    };
+        if (
+          reducedMotion
+        ) {
+          buildWorld(
+            "low"
+          );
+        } else {
+          chooseInitialQuality();
+        }
+      };
 
     const handleIntersection =
       (
         entries: IntersectionObserverEntry[]
       ) => {
         visible =
-          entries[0]?.isIntersecting ??
+          entries[0]
+            ?.isIntersecting ??
           true;
 
         if (visible) {
+          start();
+        } else {
+          stop();
+        }
+      };
+
+    const handleVisibility =
+      () => {
+        documentVisible =
+          document.visibilityState ===
+          "visible";
+
+        if (
+          documentVisible
+        ) {
           start();
         } else {
           stop();
@@ -1457,6 +1594,11 @@ export default function RedMagic() {
       handleMotionChange
     );
 
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility
+    );
+
     resizeObserver =
       new ResizeObserver(
         resize
@@ -1480,8 +1622,12 @@ export default function RedMagic() {
 
     resize();
 
-    if (reducedMotion) {
-      buildWorld("low");
+    if (
+      reducedMotion
+    ) {
+      buildWorld(
+        "low"
+      );
     }
 
     start();
@@ -1504,7 +1650,13 @@ export default function RedMagic() {
         handleMotionChange
       );
 
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility
+      );
+
       resizeObserver?.disconnect();
+
       intersectionObserver?.disconnect();
     };
   }, []);
