@@ -6,10 +6,10 @@ import {
   useState
 } from "react";
 
+import RedEye from "@/components/RedEye";
 import SceneNavigator, {
   type SceneNavigationItem
 } from "@/components/SceneNavigator";
-
 import WorldBackground from "@/components/WorldBackground";
 
 export type SceneId =
@@ -87,6 +87,20 @@ export default function LivingShell({
 
       <header className="living-shell-hud">
         <div className="living-shell-hud-inner">
+          <a
+            className="living-shell-brand"
+            href="#top"
+            aria-label="Parsa Tak home"
+          >
+            <span className="living-shell-brand-eye">
+              <RedEye size={36} />
+            </span>
+
+            <span className="living-shell-brand-name">
+              Parsa Tak
+            </span>
+          </a>
+
           <div
             className="living-shell-status"
             aria-live="polite"
@@ -109,10 +123,20 @@ export default function LivingShell({
               changeScene
             }
           />
+
+          <a
+            className="living-shell-github"
+            href="https://github.com/Parsaetak"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub ↗
+          </a>
         </div>
       </header>
 
       <main
+        id="top"
         className="living-shell-viewport"
         data-active-scene={
           activeScene
