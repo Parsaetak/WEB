@@ -71,18 +71,18 @@ export default function ScenePreloader({
     };
 
     if (
-      "requestIdleCallback" in window
+      typeof window !==
+        "undefined" &&
+      "requestIdleCallback" in
+        window
     ) {
       const idleWindow =
         window as typeof window & {
           requestIdleCallback: (
             callback: () => void
           ) => number;
-        };
 
-      const cancelWindow =
-        window as typeof window & {
-          cancelIdleCallback?: (
+          cancelIdleCallback: (
             id: number
           ) => void;
         };
@@ -93,20 +93,22 @@ export default function ScenePreloader({
         );
 
       return () => {
-        cancelWindow.cancelIdleCallback?.(
+        idleWindow.cancelIdleCallback(
           id
         );
       };
     }
 
     const id =
-      window.setTimeout(
+      globalThis.setTimeout(
         run,
         300
       );
 
     return () => {
-      window.clearTimeout(id);
+      globalThis.clearTimeout(
+        id
+      );
     };
   }, [scene]);
 
