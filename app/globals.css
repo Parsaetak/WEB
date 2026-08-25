@@ -3838,25 +3838,14 @@ html.red-cursor-enabled body {
 
 .scene-transition-layer {
   opacity: 1;
-  transform:
-    translate3d(0, 0, 0)
-    scale(1);
-
+  transform: translate3d(0, 0, 0) scale(1);
   transform-origin: center top;
 
   transition:
     opacity 160ms ease,
-    transform 220ms
-    cubic-bezier(
-      0.22,
-      1,
-      0.36,
-      1
-    );
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 
-  will-change:
-    opacity,
-    transform;
+  will-change: opacity, transform;
 }
 
 .scene-transition-layer[data-transitioning="true"] {
