@@ -1,0 +1,65 @@
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Parsa Tak — AI Systems, Creative Architecture & RED MAGIC",
+  description:
+    "Parsa Tak — an evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.",
+  applicationName: "Parsa Tak / WEB",
+  authors: [{ name: "Parsa Tak", url: "https://github.com/Parsaetak" }],
+  creator: "Parsa Tak",
+  publisher: "Parsa Tak",
+  keywords: [
+    "Parsa Tak",
+    "AI",
+    "artificial intelligence",
+    "AI systems",
+    "reasoning",
+    "creative technology",
+    "system architecture",
+    "RED MAGIC",
+    "RED THEORY"
+  ],
+  metadataBase: new URL("https://parsaetak.github.io/WEB/"),
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    type: "website",
+    url: "https://parsaetak.github.io/WEB/",
+    title: "Parsa Tak — AI Systems, Creative Architecture & RED MAGIC",
+    description:
+      "An evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.",
+    siteName: "Parsa Tak / WEB"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Parsa Tak — AI Systems, Creative Architecture & RED MAGIC",
+    description:
+      "An evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC."
+  },
+  robots: {
+    index: true,
+    follow: true
+  }
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  colorScheme: "dark",
+  themeColor: "#070707"
+};
+
+export default function RootLayout({
+  children
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
