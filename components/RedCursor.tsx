@@ -3,10 +3,11 @@
 import {
   createPortal
 } from "react-dom";
+
 import {
   useEffect,
-  useState,
-  useRef
+  useRef,
+  useState
 } from "react";
 
 export default function RedCursor() {
@@ -58,11 +59,11 @@ export default function RedCursor() {
     let targetX = -100;
     let targetY = -100;
 
-    let currentX = targetX;
-    let currentY = targetY;
+    let currentX = -100;
+    let currentY = -100;
 
-    let trailX = targetX;
-    let trailY = targetY;
+    let trailX = -100;
+    let trailY = -100;
 
     let frame = 0;
     let visible = false;
@@ -136,16 +137,17 @@ export default function RedCursor() {
 
     const animate = () => {
       if (!running) {
+        frame = 0;
         return;
       }
 
       currentX +=
         (targetX - currentX) *
-        0.32;
+        0.34;
 
       currentY +=
         (targetY - currentY) *
-        0.32;
+        0.34;
 
       trailX +=
         (targetX - trailX) *
@@ -201,25 +203,30 @@ export default function RedCursor() {
     window.addEventListener(
       "pointermove",
       updatePointer,
-      { passive: true }
+      {
+        passive: true
+      }
     );
 
     window.addEventListener(
       "pointerover",
       updateHoverState,
-      { passive: true }
+      {
+        passive: true
+      }
     );
 
     window.addEventListener(
       "pointerout",
       updateHoverState,
-      { passive: true }
+      {
+        passive: true
+      }
     );
 
-    window.addEventListener(
-      "mouseout",
-      hidePointer,
-      { passive: true }
+    document.addEventListener(
+      "mouseleave",
+      hidePointer
     );
 
     document.addEventListener(
@@ -265,8 +272,8 @@ export default function RedCursor() {
         updateHoverState
       );
 
-      window.removeEventListener(
-        "mouseout",
+      document.removeEventListener(
+        "mouseleave",
         hidePointer
       );
 
