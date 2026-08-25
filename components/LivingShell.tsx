@@ -6,6 +6,10 @@ import {
   useState
 } from "react";
 
+import SceneNavigator, {
+  type SceneNavigationItem
+} from "@/components/SceneNavigator";
+
 import WorldBackground from "@/components/WorldBackground";
 
 export type SceneId =
@@ -15,39 +19,35 @@ export type SceneId =
   | "magic"
   | "work";
 
-type SceneDefinition = {
-  id: SceneId;
-  label: string;
-  shortLabel: string;
-};
-
-const SCENES: SceneDefinition[] = [
-  {
-    id: "home",
-    label: "Home",
-    shortLabel: "HOME"
-  },
-  {
-    id: "about",
-    label: "About",
-    shortLabel: "ABOUT"
-  },
-  {
-    id: "systems",
-    label: "Systems",
-    shortLabel: "SYSTEMS"
-  },
-  {
-    id: "magic",
-    label: "RED Magic",
-    shortLabel: "MAGIC"
-  },
-  {
-    id: "work",
-    label: "Work",
-    shortLabel: "WORK"
-  }
-];
+export const SCENES:
+  readonly SceneNavigationItem[] =
+  [
+    {
+      id: "home",
+      label: "Home",
+      shortLabel: "HOME"
+    },
+    {
+      id: "about",
+      label: "About",
+      shortLabel: "ABOUT"
+    },
+    {
+      id: "systems",
+      label: "Systems",
+      shortLabel: "SYSTEMS"
+    },
+    {
+      id: "magic",
+      label: "RED Magic",
+      shortLabel: "MAGIC"
+    },
+    {
+      id: "work",
+      label: "Work",
+      shortLabel: "WORK"
+    }
+  ];
 
 type LivingShellProps = {
   children?: ReactNode;
@@ -70,95 +70,56 @@ export default function LivingShell({
     []
   );
 
+  const activeSceneDefinition =
+    SCENES.find(
+      (scene) =>
+        scene.id === activeScene
+    );
+
   return (
     <div
       className="living-shell"
-      data-active-scene={activeScene}
+      data-active-scene={
+        activeScene
+      }
     >
       <WorldBackground />
 
-      <div
-        className="living-shell-hud"
-        aria-label="Site navigation"
-      >
+      <header className="living-shell-hud">
         <div className="living-shell-hud-inner">
           <div
             className="living-shell-status"
             aria-live="polite"
           >
-            <span className="living-shell-status-dot" />
+            <span
+              className="living-shell-status-dot"
+              aria-hidden="true"
+            />
 
             <span>
-              {SCENES.find(
-                (scene) =>
-                  scene.id ===
-                  activeScene
-              )?.label ?? "Home"}
+              {activeSceneDefinition?.label ??
+                "Home"}
             </span>
           </div>
 
-          <nav
-            className="living-shell-nav"
-            aria-label="Scenes"
-          >
-            {SCENES.map(
-              (scene) => {
-                const active =
-                  scene.id ===
-                  activeScene;
-
-                return (
-                  <button
-                    key={scene.id}
-                    type="button"
-                    className="living-shell-nav-item"
-                    data-active={
-                      active
-                        ? "true"
-                        : "false"
-                    }
-                    aria-current={
-                      active
-                        ? "page"
-                        : undefined
-                    }
-                    aria-label={`Open ${scene.label} scene`}
-                    onClick={() =>
-                      changeScene(
-                        scene.id
-                      )
-                    }
-                  >
-                    <span className="living-shell-nav-index">
-                      {String(
-                        SCENES.indexOf(
-                          scene
-                        ) + 1
-                      ).padStart(
-                        2,
-                        "0"
-                      )}
-                    </span>
-
-                    <span className="living-shell-nav-label">
-                      {scene.shortLabel}
-                    </span>
-                  </button>
-                );
-              }
-            )}
-          </nav>
+          <SceneNavigator
+            scenes={SCENES}
+            activeScene={activeScene}
+            onSceneChange={
+              changeScene
+            }
+          />
         </div>
-      </div>
+      </header>
 
-      <div
+      <main
         className="living-shell-viewport"
         data-active-scene={
           activeScene
         }
       >
         {children}
-      </div>
+      </main>
     </div>
   );
 }
