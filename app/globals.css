@@ -3168,3 +3168,667 @@ html.red-cursor-enabled body {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* LIVING SHELL — persistent identity HUD                                     */
+/* -------------------------------------------------------------------------- */
+
+.living-shell {
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+.living-shell-hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  z-index: 1000;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(4, 4, 5, 0.92) 0%,
+      rgba(4, 4, 5, 0.72) 68%,
+      rgba(4, 4, 5, 0) 100%
+    );
+
+  backdrop-filter:
+    blur(12px);
+
+  -webkit-backdrop-filter:
+    blur(12px);
+}
+
+.living-shell-hud-inner {
+  width: min(
+    calc(100% - 32px),
+    1440px
+  );
+
+  min-height: 74px;
+
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns:
+    auto
+    auto
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+
+  gap: 22px;
+
+  pointer-events: auto;
+
+  border-bottom:
+    1px solid
+    rgba(255, 32, 32, 0.07);
+}
+
+.living-shell-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+
+  min-width: max-content;
+
+  color: inherit;
+  text-decoration: none;
+}
+
+.living-shell-brand-eye {
+  width: 39px;
+  height: 30px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: visible;
+}
+
+.living-shell-brand-name {
+  position: relative;
+
+  color: #f4f5f8;
+
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+
+  transition:
+    color 180ms ease,
+    text-shadow 180ms ease;
+}
+
+.living-shell-brand-name::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: -5px;
+
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 32, 32, 0.78),
+      transparent
+    );
+
+  opacity: 0.28;
+
+  transform:
+    scaleX(0.45);
+
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.living-shell-brand:hover
+  .living-shell-brand-name {
+  color: #ffffff;
+
+  text-shadow:
+    0 0 16px
+    rgba(255, 32, 32, 0.18);
+}
+
+.living-shell-brand:hover
+  .living-shell-brand-name::after {
+  opacity: 0.9;
+
+  transform:
+    scaleX(1);
+}
+
+.living-shell-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  min-width: max-content;
+
+  color: #8a919d;
+
+  font-family:
+    var(--font-mono);
+
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.living-shell-status-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background:
+    #ff2020;
+
+  box-shadow:
+    0 0 8px
+      rgba(255, 32, 32, 0.72);
+
+  animation:
+    living-shell-status-pulse
+    2.4s
+    ease-in-out
+    infinite;
+}
+
+@keyframes living-shell-status-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scene navigator                                                             */
+/* -------------------------------------------------------------------------- */
+
+.scene-navigator {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scene-navigator-track {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.scene-navigator-track::-webkit-scrollbar {
+  display: none;
+}
+
+.scene-navigator-item {
+  position: relative;
+
+  appearance: none;
+  border: 0;
+  background: transparent;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  min-height: 38px;
+  padding:
+    0 10px;
+
+  color: #737b88;
+
+  font:
+    inherit;
+
+  cursor: pointer;
+
+  transition:
+    color 160ms ease,
+    background 160ms ease;
+}
+
+.scene-navigator-item::before {
+  content: "";
+
+  position: absolute;
+
+  left: 8px;
+  right: 8px;
+  bottom: 3px;
+
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 32, 32, 0.84),
+      transparent
+    );
+
+  opacity: 0;
+
+  transform:
+    scaleX(0.35);
+
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.scene-navigator-item:hover {
+  color: #d2d6dd;
+}
+
+.scene-navigator-item[data-active="true"] {
+  color: #f4f5f8;
+}
+
+.scene-navigator-item[data-active="true"]::before {
+  opacity: 0.9;
+
+  transform:
+    scaleX(1);
+}
+
+.scene-navigator-index {
+  color: rgba(255, 54, 42, 0.62);
+
+  font-family:
+    var(--font-mono);
+
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.scene-navigator-label {
+  font-family:
+    var(--font-mono);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.12em;
+}
+
+.scene-navigator-indicator {
+  width: 4px;
+  height: 4px;
+
+  margin-left: 1px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 32, 32, 0);
+
+  box-shadow:
+    0 0 0
+    rgba(255, 32, 32, 0);
+
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.scene-navigator-item[data-active="true"]
+  .scene-navigator-indicator {
+  background:
+    #ff2020;
+
+  box-shadow:
+    0 0 8px
+    rgba(255, 32, 32, 0.68);
+}
+
+.living-shell-github {
+  min-width: max-content;
+
+  color: #7e8692;
+
+  font-family:
+    var(--font-mono);
+
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+
+  text-decoration: none;
+
+  transition:
+    color 160ms ease,
+    text-shadow 160ms ease;
+}
+
+.living-shell-github:hover {
+  color: #f2f3f6;
+
+  text-shadow:
+    0 0 12px
+    rgba(255, 32, 32, 0.2);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scene viewport                                                              */
+/* -------------------------------------------------------------------------- */
+
+.living-shell-viewport {
+  position: relative;
+
+  min-height: 100vh;
+
+  padding-top: 74px;
+}
+
+.scene-viewport {
+  position: relative;
+
+  min-height:
+    calc(100vh - 74px);
+
+  isolation: isolate;
+}
+
+.scene-viewport-content {
+  position: relative;
+  z-index: 2;
+}
+
+.scene-viewport-frame {
+  position: absolute;
+
+  inset:
+    14px;
+
+  border:
+    1px solid
+    rgba(255, 32, 32, 0.025);
+
+  border-radius: 20px;
+
+  pointer-events: none;
+
+  opacity: 0.75;
+}
+
+.scene-viewport-corner {
+  position: absolute;
+
+  width: 20px;
+  height: 20px;
+
+  z-index: 3;
+
+  pointer-events: none;
+
+  border-color:
+    rgba(255, 32, 32, 0.28);
+
+  border-style: solid;
+}
+
+.scene-viewport-corner-tl {
+  top: 14px;
+  left: 14px;
+
+  border-width:
+    1px 0 0 1px;
+}
+
+.scene-viewport-corner-tr {
+  top: 14px;
+  right: 14px;
+
+  border-width:
+    1px 1px 0 0;
+}
+
+.scene-viewport-corner-bl {
+  bottom: 14px;
+  left: 14px;
+
+  border-width:
+    0 0 1px 1px;
+}
+
+.scene-viewport-corner-br {
+  bottom: 14px;
+  right: 14px;
+
+  border-width:
+    0 1px 1px 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scene loading                                                               */
+/* -------------------------------------------------------------------------- */
+
+.scene-loading {
+  min-height:
+    calc(100vh - 110px);
+
+  display: grid;
+  place-items: center;
+
+  align-content: center;
+
+  position: relative;
+
+  color: #7c838e;
+
+  font-family:
+    var(--font-mono);
+
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.scene-loading-orbit {
+  position: absolute;
+
+  width: 110px;
+  height: 110px;
+
+  border:
+    1px solid
+    rgba(255, 32, 32, 0.22);
+
+  border-radius: 50%;
+
+  animation:
+    scene-loading-spin
+    7s
+    linear
+    infinite;
+}
+
+.scene-loading-core {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background:
+    #ff2020;
+
+  box-shadow:
+    0 0 10px
+      rgba(255, 32, 32, 0.72),
+    0 0 25px
+      rgba(255, 32, 32, 0.28);
+
+  animation:
+    scene-loading-pulse
+    1.8s
+    ease-in-out
+    infinite;
+}
+
+.scene-loading-text {
+  position: absolute;
+
+  margin-top: 86px;
+
+  opacity: 0.72;
+}
+
+@keyframes scene-loading-spin {
+  from {
+    transform:
+      rotate(0deg);
+  }
+
+  to {
+    transform:
+      rotate(360deg);
+  }
+}
+
+@keyframes scene-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(0.82);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile                                                                     */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 980px) {
+  .living-shell-hud-inner {
+    grid-template-columns:
+      auto
+      minmax(0, 1fr)
+      auto;
+
+    gap: 14px;
+  }
+
+  .living-shell-status {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .living-shell-hud-inner {
+    width:
+      calc(100% - 20px);
+
+    min-height: 68px;
+
+    grid-template-columns:
+      auto
+      minmax(0, 1fr)
+      auto;
+  }
+
+  .living-shell-brand-name {
+    font-size: 14px;
+  }
+
+  .living-shell-brand-eye {
+    width: 34px;
+  }
+
+  .living-shell-github {
+    display: none;
+  }
+
+  .scene-navigator {
+    justify-content: flex-end;
+  }
+
+  .scene-navigator-item {
+    padding:
+      0 8px;
+  }
+
+  .scene-navigator-index {
+    display: none;
+  }
+
+  .scene-navigator-label {
+    font-size: 8px;
+  }
+
+  .living-shell-viewport {
+    padding-top: 68px;
+  }
+
+  .scene-viewport {
+    min-height:
+      calc(100vh - 68px);
+  }
+
+  .scene-viewport-frame,
+  .scene-viewport-corner {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .living-shell-brand-name {
+    display: none;
+  }
+
+  .scene-navigator-track {
+    gap: 0;
+  }
+
+  .scene-navigator-item {
+    min-height: 34px;
+    padding:
+      0 6px;
+  }
+
+  .scene-navigator-label {
+    font-size: 7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .living-shell-status-dot,
+  .scene-loading-orbit,
+  .scene-loading-core {
+    animation: none !important;
+  }
+}
+
