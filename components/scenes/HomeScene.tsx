@@ -1,5 +1,32 @@
 import RedMagic from "@/components/RedMagic";
 
+const capabilities = [
+  {
+    number: "01",
+    title: "RESEARCH",
+    copy:
+      "Exploring intelligence, reasoning, adaptive systems, human cognition, and experimental architectures through independent research and prototypes."
+  },
+  {
+    number: "02",
+    title: "PROGRAMMING",
+    copy:
+      "Designing and building software systems, AI tooling, interactive experiences, computational experiments, and living digital environments."
+  },
+  {
+    number: "03",
+    title: "WRITING",
+    copy:
+      "Developing frameworks, books, theories, and long-form ideas that turn abstract questions into structured systems and testable concepts."
+  },
+  {
+    number: "04",
+    title: "ART",
+    copy:
+      "Working across visual art, digital creation, AI-assisted creativity, identity, interaction, and experimental visual worlds."
+  }
+];
+
 const systems = [
   {
     number: "01",
@@ -61,11 +88,14 @@ export default function HomeScene() {
           <div className="hero-copy">
             <div className="hero-status">
               <span className="status-dot" />
-              <span>Actively building</span>
+
+              <span>
+                Independent research / active build
+              </span>
             </div>
 
             <p className="kicker">
-              PARSA TAK / INDEPENDENT BUILDER
+              PARSA TAK / RESEARCHER / WRITER / ARTIST / PROGRAMMER
             </p>
 
             <h1
@@ -87,24 +117,51 @@ export default function HomeScene() {
             </h1>
 
             <p className="body-large hero-description">
-              Turning intelligence into
-              architecture.
+              Researching intelligence.
+              Building systems.
+              Writing ideas.
+              Creating art.
             </p>
 
             <p
               className="body"
               style={{
-                maxWidth: "720px",
+                maxWidth: "760px",
                 marginTop: "20px"
               }}
             >
-              This is the public laboratory of
-              an independent builder working
-              across AI systems, reasoning
-              architecture, creative technology,
-              system design, and experimental
-              worlds.
+              Parsa Tak is an independent
+              researcher, writer, artist, and
+              programmer working across artificial
+              intelligence, reasoning architecture,
+              software systems, creative technology,
+              simulation, and experimental worlds.
             </p>
+
+            <div
+              className="hero-actions"
+              style={{
+                marginTop: "28px"
+              }}
+            >
+              <a
+                className="button button-primary"
+                href="https://github.com/Parsaetak"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Explore GitHub ↗
+              </a>
+
+              <a
+                className="button button-secondary"
+                href="https://linktr.ee/Parsaetak"
+                target="_blank"
+                rel="noreferrer"
+              >
+                All links ↗
+              </a>
+            </div>
           </div>
 
           <div
@@ -122,49 +179,104 @@ export default function HomeScene() {
         <div className="page-container">
           <SectionHeading
             number="01"
+            title="CAPABILITIES"
+            description="Four connected practices define the work: investigate deeply, build precisely, express ideas clearly, and turn imagination into visual systems."
+          />
+
+          <div className="four-column">
+            {capabilities.map(
+              (capability) => (
+                <article
+                  className="glow-border"
+                  key={capability.number}
+                >
+                  <div className="panel magic-panel">
+                    <div className="panel-content">
+                      <div className="panel-topline">
+                        <span className="system-number">
+                          {capability.number}
+                        </span>
+
+                        <span className="system-type">
+                          CAPABILITY
+                        </span>
+                      </div>
+
+                      <h2 className="system-title">
+                        {capability.title}
+                      </h2>
+
+                      <p className="system-copy">
+                        {capability.copy}
+                      </p>
+
+                      <div
+                        className="system-pulse"
+                        aria-hidden="true"
+                      >
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              )
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="page-container">
+          <SectionHeading
+            number="02"
             title="SYSTEMS"
             description="The architecture is designed around complementary layers: governance, reasoning, and continuous improvement."
           />
 
           <div className="three-column">
-            {systems.map((system) => (
-              <article
-                className="glow-border"
-                key={system.number}
-              >
-                <div className="panel system-card magic-panel">
-                  <div className="panel-content">
-                    <div className="panel-topline">
-                      <span className="system-number">
-                        {system.number}
-                      </span>
+            {systems.map(
+              (system) => (
+                <article
+                  className="glow-border"
+                  key={system.number}
+                >
+                  <div className="panel system-card magic-panel">
+                    <div className="panel-content">
+                      <div className="panel-topline">
+                        <span className="system-number">
+                          {system.number}
+                        </span>
 
-                      <span className="system-type">
-                        {system.type}
-                      </span>
-                    </div>
+                        <span className="system-type">
+                          {system.type}
+                        </span>
+                      </div>
 
-                    <h2 className="system-title">
-                      {system.title}
-                    </h2>
+                      <h2 className="system-title">
+                        {system.title}
+                      </h2>
 
-                    <p className="system-copy">
-                      {system.copy}
-                    </p>
+                      <p className="system-copy">
+                        {system.copy}
+                      </p>
 
-                    <div
-                      className="system-pulse"
-                      aria-hidden="true"
-                    >
-                      <span />
-                      <span />
-                      <span />
-                      <span />
+                      <div
+                        className="system-pulse"
+                        aria-hidden="true"
+                      >
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              )
+            )}
           </div>
         </div>
       </section>
@@ -172,7 +284,7 @@ export default function HomeScene() {
       <section className="section magic-section">
         <div className="page-container">
           <SectionHeading
-            number="02"
+            number="03"
             title="RED MAGIC"
             description="The living layer of the website: movement, observation, interaction, adaptation, and controlled energy."
           />
@@ -208,10 +320,10 @@ export default function HomeScene() {
                   marginTop: "22px"
                 }}
               >
-                RED MAGIC is not intended to be
-                background decoration. It is the
-                first active visual organism inside
-                the site.
+                RED MAGIC is not intended to
+                be background decoration. It
+                is the first active visual
+                organism inside the site.
               </p>
 
               <p
@@ -220,11 +332,12 @@ export default function HomeScene() {
                   marginTop: "18px"
                 }}
               >
-                The renderer changes its activity,
-                responds to presence, and adapts
-                computational complexity so the
-                visual system can remain alive
-                without dominating the page.
+                The renderer responds to
+                presence and adapts its
+                computational complexity
+                so the visual system can
+                remain alive without
+                dominating the page.
               </p>
 
               <div className="magic-metrics">
