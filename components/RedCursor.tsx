@@ -12,10 +12,29 @@ import {
 
 export default function RedCursor() {
   const cursorRef =
-    useRef<HTMLDivElement | null>(null);
+    useRef<HTMLDivElement | null>(
+      null
+    );
 
   const trailRef =
-    useRef<HTMLDivElement | null>(null);
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
+  const pointerRef =
+    useRef({
+      x: -100,
+      y: -100
+    });
+
+  const trailPositionRef =
+    useRef({
+      x: -100,
+      y: -100
+    });
+
+  const frameRef =
+    useRef(0);
 
   const [mounted, setMounted] =
     useState(false);
@@ -56,50 +75,16 @@ export default function RedCursor() {
       return;
     }
 
-    let targetX = -100;
-    let targetY = -100;
-
-    let currentX = -100;
-    let currentY = -100;
-
-    let trailX = -100;
-    let trailY = -100;
-
-    let frame = 0;
-    let visible = false;
     let running = true;
 
     const setVisible = (
-      nextVisible: boolean
+      visible: boolean
     ) => {
-      visible = nextVisible;
-
       cursor.dataset.visible =
-        String(nextVisible);
+        String(visible);
 
       trail.dataset.visible =
-        String(nextVisible);
-    };
-
-    const updatePointer = (
-      event: PointerEvent
-    ) => {
-      if (!running) {
-        return;
-      }
-
-      targetX = event.clientX;
-      targetY = event.clientY;
-
-      if (!visible) {
-        currentX = targetX;
-        currentY = targetY;
-
-        trailX = targetX;
-        trailY = targetY;
-
-        setVisible(true);
-      }
+        String(visible);
     };
 
     const updateHoverState = (
@@ -108,7 +93,9 @@ export default function RedCursor() {
       const target =
         event.target;
 
-      if (!(target instanceof Element)) {
+      if (
+        !(target instanceof Element)
+      ) {
         return;
       }
 
@@ -131,42 +118,71 @@ export default function RedCursor() {
           : "false";
     };
 
-    const hidePointer = () => {
-      setVisible(false);
+    const updatePointer = (
+      event: PointerEvent
+    ) => {
+      pointerRef.current.x =
+        event.clientX;
+
+      pointerRef.current.y =
+        event.clientY;
+
+      cursor.style.transform =
+        `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
+
+      if (
+        trail.dataset.visible !==
+        "true"
+      ) {
+        trailPositionRef.current.x =
+          event.clientX;
+
+        trailPositionRef.current.y =
+          event.clientY;
+
+        trail.style.transform =
+          `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
+
+        setVisible(true);
+      }
     };
 
-    const animate = () => {
+    const animateTrail = () => {
       if (!running) {
-        frame = 0;
+        frameRef.current = 0;
         return;
       }
 
-      currentX +=
-        (targetX - currentX) *
-        0.34;
+      const target =
+        pointerRef.current;
 
-      currentY +=
-        (targetY - currentY) *
-        0.34;
+      const trailPosition =
+        trailPositionRef.current;
 
-      trailX +=
-        (targetX - trailX) *
-        0.14;
+      const smoothing =
+        0.2;
 
-      trailY +=
-        (targetY - trailY) *
-        0.14;
+      trailPosition.x +=
+        (target.x -
+          trailPosition.x) *
+        smoothing;
 
-      cursor.style.transform =
-        `translate3d(${currentX}px, ${currentY}px, 0)`;
+      trailPosition.y +=
+        (target.y -
+          trailPosition.y) *
+        smoothing;
 
       trail.style.transform =
-        `translate3d(${trailX}px, ${trailY}px, 0)`;
+        `translate3d(${trailPosition.x}px, ${trailPosition.y}px, 0)`;
 
-      frame =
+      frameRef.current =
         window.requestAnimationFrame(
-          animate
+          animateTrail
         );
+    };
+
+    const hidePointer = () => {
+      setVisible(false);
     };
 
     const handleVisibility =
@@ -177,10 +193,12 @@ export default function RedCursor() {
         ) {
           running = true;
 
-          if (!frame) {
-            frame =
+          if (
+            !frameRef.current
+          ) {
+            frameRef.current =
               window.requestAnimationFrame(
-                animate
+                animateTrail
               );
           }
 
@@ -189,12 +207,14 @@ export default function RedCursor() {
 
         running = false;
 
-        if (frame) {
+        if (
+          frameRef.current
+        ) {
           window.cancelAnimationFrame(
-            frame
+            frameRef.current
           );
 
-          frame = 0;
+          frameRef.current = 0;
         }
 
         setVisible(false);
@@ -234,26 +254,25 @@ export default function RedCursor() {
       handleVisibility
     );
 
-    document.documentElement.dataset.redCursor =
-      "ready";
-
     document.documentElement.classList.add(
       "red-cursor-enabled"
     );
 
     setVisible(false);
 
-    frame =
+    frameRef.current =
       window.requestAnimationFrame(
-        animate
+        animateTrail
       );
 
     return () => {
       running = false;
 
-      if (frame) {
+      if (
+        frameRef.current
+      ) {
         window.cancelAnimationFrame(
-          frame
+          frameRef.current
         );
       }
 
@@ -281,8 +300,6 @@ export default function RedCursor() {
         "visibilitychange",
         handleVisibility
       );
-
-      delete document.documentElement.dataset.redCursor;
 
       document.documentElement.classList.remove(
         "red-cursor-enabled"
@@ -314,12 +331,151 @@ export default function RedCursor() {
         data-visible="false"
         data-hover="false"
       >
-        <span className="red-cursor-pyramid">
-          <span className="red-cursor-pyramid-top" />
-          <span className="red-cursor-pyramid-left" />
-          <span className="red-cursor-pyramid-right" />
-          <span className="red-cursor-pyramid-core" />
-        </span>
+        <svg
+          className="red-cursor-svg"
+          viewBox="0 0 48 58"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient
+              id="redCursorFace"
+              x1="0"
+              y1="0"
+              x2="1"
+              y2="1"
+            >
+              <stop
+                offset="0%"
+                stopColor="#ff5848"
+              />
+              <stop
+                offset="42%"
+                stopColor="#d20f0f"
+              />
+              <stop
+                offset="100%"
+                stopColor="#460000"
+              />
+            </linearGradient>
+
+            <linearGradient
+              id="redCursorSide"
+              x1="0"
+              y1="0"
+              x2="1"
+              y2="1"
+            >
+              <stop
+                offset="0%"
+                stopColor="#ff3028"
+              />
+              <stop
+                offset="100%"
+                stopColor="#680000"
+              />
+            </linearGradient>
+
+            <filter
+              id="redCursorGlow"
+              x="-100%"
+              y="-100%"
+              width="300%"
+              height="300%"
+            >
+              <feGaussianBlur
+                stdDeviation="1.8"
+                result="blur"
+              />
+
+              <feMerge>
+                <feMergeNode
+                  in="blur"
+                />
+                <feMergeNode
+                  in="SourceGraphic"
+                />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/*
+            True pointer silhouette:
+            the sharp upper-left point is the click tip,
+            while the rest forms a pyramid.
+          */}
+          <path
+            className="red-cursor-pointer-shadow"
+            d="
+              M 2 2
+              L 2 52
+              L 15 39
+              L 27 56
+              L 36 51
+              L 24 34
+              L 43 34
+              Z
+            "
+          />
+
+          <path
+            className="red-cursor-pointer"
+            fill="url(#redCursorFace)"
+            d="
+              M 1.5 1.5
+              L 1.5 49
+              L 14.5 36.5
+              L 26.5 53.5
+              L 34 48.5
+              L 22.5 32.5
+              L 41.5 32.5
+              Z
+            "
+          />
+
+          <path
+            className="red-cursor-pointer-edge"
+            fill="url(#redCursorSide)"
+            d="
+              M 1.5 1.5
+              L 22.5 32.5
+              L 41.5 32.5
+              L 1.5 1.5
+              Z
+            "
+          />
+
+          <path
+            className="red-cursor-pointer-highlight"
+            d="
+              M 3.5 5
+              L 3.5 43
+              L 13.5 33.5
+            "
+            fill="none"
+          />
+
+          <circle
+            className="red-cursor-eye-glow"
+            cx="14.5"
+            cy="23"
+            r="8.5"
+            filter="url(#redCursorGlow)"
+          />
+
+          <circle
+            className="red-cursor-eye"
+            cx="14.5"
+            cy="23"
+            r="4"
+          />
+
+          <circle
+            className="red-cursor-eye-core"
+            cx="14.5"
+            cy="23"
+            r="1.5"
+          />
+        </svg>
 
         <span className="red-cursor-ring" />
       </div>
