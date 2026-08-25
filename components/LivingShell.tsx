@@ -65,11 +65,28 @@ export default function LivingShell({
     );
 
   const changeScene = useCallback(
-    (scene: SceneId) => {
-      setActiveScene(scene);
-    },
-    []
-  );
+  (scene: SceneId) => {
+    if (
+      scene === activeScene
+    ) {
+      return;
+    }
+
+    const hash =
+      scene === "home"
+        ? ""
+        : `#${scene}`;
+
+    window.history.pushState(
+      null,
+      "",
+      `${window.location.pathname}${window.location.search}${hash}`
+    );
+
+    setActiveScene(scene);
+  },
+  [activeScene]
+);
 
   const activeSceneDefinition =
     SCENES.find(
