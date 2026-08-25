@@ -5,6 +5,10 @@ import {
   useRef
 } from "react";
 
+import {
+  publishRedMagicPerformance
+} from "@/components/RedMagicTelemetry";
+
 type Particle = {
   angle: number;
   radius: number;
@@ -1288,15 +1292,34 @@ export default function RedMagic() {
           return;
         }
 
-        const fps =
-          (performanceFrames *
-            1000) /
-          sampleElapsed;
+        const sampledFrames =
+  performanceFrames;
 
-        performanceSampleTime =
-          timestamp;
+const fps =
+  (sampledFrames *
+    1000) /
+  sampleElapsed;
 
-        performanceFrames = 0;
+const frameTime =
+  sampledFrames > 0
+    ? sampleElapsed /
+      sampledFrames
+    : 0;
+
+performanceSampleTime =
+  timestamp;
+
+performanceFrames = 0;
+
+publishRedMagicPerformance({
+  fps,
+  frameTime,
+  quality:
+    qualityName,
+  dpr,
+  width,
+  height
+});
 
         if (
           timestamp -
