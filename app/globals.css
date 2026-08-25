@@ -4230,3 +4230,63 @@ html.red-cursor-enabled * {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* RED PYRAMID CURSOR — LARGE MODE                                           */
+/* -------------------------------------------------------------------------- */
+
+.red-cursor {
+  width: 52px !important;
+  height: 62px !important;
+
+  z-index: 2147483647 !important;
+}
+
+.red-cursor-pyramid {
+  width: 38px !important;
+  height: 46px !important;
+
+  transform:
+    translate(-50%, -50%)
+    !important;
+}
+
+.red-cursor-pyramid-top {
+  border-left-width: 19px !important;
+  border-right-width: 19px !important;
+  border-bottom-width: 28px !important;
+}
+
+.red-cursor-pyramid-left {
+  border-top-width: 18px !important;
+  border-right-width: 19px !important;
+}
+
+.red-cursor-pyramid-right {
+  border-top-width: 18px !important;
+  border-left-width: 19px !important;
+}
+
+.red-cursor-pyramid-core {
+  top: 12px !important;
+
+  width: 7px !important;
+  height: 7px !important;
+
+  box-shadow:
+    0 0 7px
+      rgba(255, 255, 255, 0.95),
+    0 0 16px
+      rgba(255, 24, 24, 0.95) !important;
+}
+
+.red-cursor-ring {
+  width: 52px !important;
+  height: 52px !important;
+}
+
+.red-cursor[data-hover="true"]
+  .red-cursor-ring {
+  width: 66px !important;
+  height: 66px !important;
+}
+
