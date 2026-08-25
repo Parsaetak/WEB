@@ -52,7 +52,10 @@ export const SCENES:
   ];
 
 type LivingShellProps = {
-  children?: ReactNode;
+  children?:
+    | ReactNode
+    | ((scene: SceneId) => ReactNode);
+
   initialScene?: SceneId;
 };
 
@@ -100,6 +103,14 @@ export default function LivingShell({
       );
     }, [activeScene]);
 
+  const sceneContent =
+    typeof children ===
+    "function"
+      ? children(
+          activeScene
+        )
+      : children;
+
   return (
     <div
       className="living-shell"
@@ -119,6 +130,9 @@ export default function LivingShell({
             className="living-shell-brand"
             href="#top"
             aria-label="Parsa Tak home"
+            onClick={() =>
+              changeScene("home")
+            }
           >
             <span className="living-shell-brand-eye">
               <RedEye size={36} />
@@ -170,7 +184,7 @@ export default function LivingShell({
           activeScene
         }
       >
-        {children}
+        {sceneContent}
       </main>
     </div>
   );
