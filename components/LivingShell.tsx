@@ -12,6 +12,7 @@ import SceneNavigator, {
   type SceneNavigationItem
 } from "@/components/SceneNavigator";
 import ScenePreloader from "@/components/ScenePreloader";
+import SceneUrlSync from "@/components/SceneUrlSync";
 import WorldBackground from "@/components/WorldBackground";
 
 export type SceneId =
@@ -119,6 +120,13 @@ export default function LivingShell({
       }
     >
       <WorldBackground />
+
+      <SceneUrlSync
+        scene={activeScene}
+        onSceneChange={
+          changeScene
+        }
+      />
 
       <ScenePreloader
         scene={nextScene}
