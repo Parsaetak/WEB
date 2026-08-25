@@ -38,6 +38,19 @@ const preloaders: Record<
     )
 };
 
+export function preloadScene(
+  scene: SceneId
+) {
+  const preload =
+    preloaders[scene];
+
+  if (!preload) {
+    return;
+  }
+
+  void preload();
+}
+
 type ScenePreloaderProps = {
   scene: SceneId;
 };
@@ -53,10 +66,9 @@ export default function ScenePreloader({
       return;
     }
 
-    const run =
-      () => {
-        void preload();
-      };
+    const run = () => {
+      void preload();
+    };
 
     if (
       "requestIdleCallback" in window
@@ -68,34 +80,29 @@ export default function ScenePreloader({
           ) => number;
         };
 
+      const cancelWindow =
+        window as typeof window & {
+          cancelIdleCallback?: (
+            id: number
+          ) => void;
+        };
+
       const id =
         idleWindow.requestIdleCallback(
           run
         );
 
       return () => {
-        if (
-          "cancelIdleCallback" in
-          window
-        ) {
-          const cancelWindow =
-            window as typeof window & {
-              cancelIdleCallback: (
-                id: number
-              ) => void;
-            };
-
-          cancelWindow.cancelIdleCallback(
-            id
-          );
-        }
+        cancelWindow.cancelIdleCallback?.(
+          id
+        );
       };
     }
 
     const id =
       window.setTimeout(
         run,
-        250
+        300
       );
 
     return () => {
