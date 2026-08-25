@@ -2008,3 +2008,26 @@ html.red-cursor-enabled body {
   }
 }
 
+/* RED PYRAMID — topmost visual layer */
+
+.red-cursor,
+.red-cursor-trail {
+  z-index: 2147483647 !important;
+}
+
+.red-cursor {
+  position: fixed !important;
+  isolation: isolate;
+}
+
+.red-cursor-trail {
+  position: fixed !important;
+  isolation: isolate;
+}
+
+.red-cursor-pyramid,
+.red-cursor-ring,
+.red-cursor-trail span {
+  pointer-events: none !important;
+}
+
