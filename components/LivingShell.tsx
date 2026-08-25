@@ -3,6 +3,7 @@
 import {
   type ReactNode,
   useCallback,
+  useMemo,
   useState
 } from "react";
 
@@ -10,6 +11,7 @@ import RedEye from "@/components/RedEye";
 import SceneNavigator, {
   type SceneNavigationItem
 } from "@/components/SceneNavigator";
+import ScenePreloader from "@/components/ScenePreloader";
 import WorldBackground from "@/components/WorldBackground";
 
 export type SceneId =
@@ -76,6 +78,28 @@ export default function LivingShell({
         scene.id === activeScene
     );
 
+  const nextScene =
+    useMemo(() => {
+      const index =
+        SCENES.findIndex(
+          (scene) =>
+            scene.id ===
+            activeScene
+        );
+
+      if (index < 0) {
+        return "about" as SceneId;
+      }
+
+      return (
+        SCENES[
+          (index + 1) %
+            SCENES.length
+        ]?.id ??
+        "home"
+      );
+    }, [activeScene]);
+
   return (
     <div
       className="living-shell"
@@ -84,6 +108,10 @@ export default function LivingShell({
       }
     >
       <WorldBackground />
+
+      <ScenePreloader
+        scene={nextScene}
+      />
 
       <header className="living-shell-hud">
         <div className="living-shell-hud-inner">
