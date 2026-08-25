@@ -39,6 +39,21 @@ function readSceneFromHash():
     : null;
 }
 
+function writeSceneToHistory(
+  scene: SceneId
+) {
+  const hash =
+    scene === "home"
+      ? ""
+      : `#${scene}`;
+
+  window.history.pushState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}${hash}`
+  );
+}
+
 export default function SceneUrlSync({
   scene,
   onSceneChange
@@ -56,54 +71,53 @@ export default function SceneUrlSync({
       );
     }
 
-    const handleHashChange =
+    const handleNavigation =
       () => {
         const nextScene =
           readSceneFromHash();
 
-        if (
-          nextScene &&
-          nextScene !== scene
-        ) {
-          onSceneChange(
-            nextScene
-          );
-        }
+        onSceneChange(
+          nextScene ?? "home"
+        );
       };
 
     window.addEventListener(
       "hashchange",
-      handleHashChange
+      handleNavigation
+    );
+
+    window.addEventListener(
+      "popstate",
+      handleNavigation
     );
 
     return () => {
       window.removeEventListener(
         "hashchange",
-        handleHashChange
+        handleNavigation
+      );
+
+      window.removeEventListener(
+        "popstate",
+        handleNavigation
       );
     };
   }, [
-    onSceneChange,
-    scene
+    onSceneChange
   ]);
 
   useEffect(() => {
     const current =
       readSceneFromHash();
 
-    if (current === scene) {
+    if (
+      current === scene
+    ) {
       return;
     }
 
-    const hash =
-      scene === "home"
-        ? ""
-        : `#${scene}`;
-
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}${window.location.search}${hash}`
+    writeSceneToHistory(
+      scene
     );
   }, [scene]);
 
