@@ -2357,3 +2357,445 @@ html.red-cursor-enabled body {
     display: none !important;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* LIVING WORLD — persistent background layer                                */
+/* -------------------------------------------------------------------------- */
+
+.world-background {
+  position: fixed;
+  inset: 0;
+  z-index: -4;
+
+  overflow: hidden;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle at 50% 18%,
+      rgba(255, 18, 18, 0.035),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      #050505 0%,
+      #060608 48%,
+      #040405 100%
+    );
+
+  contain: strict;
+  isolation: isolate;
+}
+
+/* Fine structural grid */
+
+.world-background-grid {
+  position: absolute;
+  inset: 0;
+
+  opacity: 0.2;
+
+  background-image:
+    linear-gradient(
+      rgba(255, 255, 255, 0.022) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.022) 1px,
+      transparent 1px
+    );
+
+  background-size:
+    36px 36px;
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      black 0%,
+      rgba(0, 0, 0, 0.65) 48%,
+      transparent 100%
+    );
+}
+
+/* Persistent vignette */
+
+.world-background-vignette {
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at center,
+      transparent 30%,
+      rgba(0, 0, 0, 0.22) 72%,
+      rgba(0, 0, 0, 0.5) 100%
+    );
+}
+
+/* Ambient red energy */
+
+.world-ambient {
+  position: absolute;
+
+  width: 540px;
+  aspect-ratio: 1;
+
+  border-radius: 50%;
+
+  opacity: 0.08;
+
+  transform:
+    translate3d(0, 0, 0);
+
+  will-change:
+    transform;
+
+  contain: paint;
+}
+
+.world-ambient-red {
+  top: -240px;
+  right: -160px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 35, 25, 0.95) 0%,
+      rgba(255, 35, 25, 0.3) 30%,
+      transparent 72%
+    );
+
+  animation:
+    world-ambient-red
+    20s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.world-ambient-deep {
+  bottom: -260px;
+  left: -190px;
+
+  width: 620px;
+
+  opacity: 0.055;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(130, 0, 0, 0.95) 0%,
+      rgba(100, 0, 0, 0.28) 34%,
+      transparent 74%
+    );
+
+  animation:
+    world-ambient-deep
+    26s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+/* Large-scale orbital geometry */
+
+.world-orbit {
+  position: absolute;
+
+  border: 1px solid
+    rgba(255, 32, 32, 0.035);
+
+  border-radius: 50%;
+
+  transform:
+    translate3d(0, 0, 0);
+
+  will-change:
+    transform;
+}
+
+.world-orbit-one {
+  width: 780px;
+  height: 780px;
+
+  right: -570px;
+  top: 10%;
+
+  animation:
+    world-orbit-one
+    42s
+    linear
+    infinite;
+}
+
+.world-orbit-two {
+  width: 560px;
+  height: 560px;
+
+  left: -420px;
+  bottom: 8%;
+
+  border-color:
+    rgba(255, 32, 32, 0.025);
+
+  animation:
+    world-orbit-two
+    50s
+    linear
+    infinite reverse;
+}
+
+/* Living system signals */
+
+.world-signal {
+  position: absolute;
+
+  display: grid;
+  place-items: center;
+
+  width: 18px;
+  height: 18px;
+
+  border:
+    1px solid
+    rgba(255, 32, 32, 0.16);
+
+  border-radius: 50%;
+
+  opacity: 0.36;
+
+  transform:
+    translate3d(0, 0, 0);
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.world-signal span {
+  width: 5px;
+  height: 5px;
+
+  border-radius: 50%;
+
+  background:
+    #ff2020;
+
+  box-shadow:
+    0 0 8px
+      rgba(255, 32, 32, 0.68);
+
+  animation:
+    world-signal-pulse
+    3.4s
+    ease-in-out
+    infinite;
+}
+
+.world-signal-one {
+  top: 22%;
+  left: 8%;
+
+  animation:
+    world-signal-drift-one
+    18s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.world-signal-two {
+  top: 58%;
+  right: 7%;
+
+  animation:
+    world-signal-drift-two
+    21s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.world-signal-three {
+  bottom: 16%;
+  left: 18%;
+
+  animation:
+    world-signal-drift-three
+    24s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+/* -------------------------------------------------------------------------- */
+/* World animations                                                            */
+/* -------------------------------------------------------------------------- */
+
+@keyframes world-ambient-red {
+  0% {
+    transform:
+      translate3d(0, 0, 0)
+      scale(0.94);
+  }
+
+  100% {
+    transform:
+      translate3d(-34px, 26px, 0)
+      scale(1.08);
+  }
+}
+
+@keyframes world-ambient-deep {
+  0% {
+    transform:
+      translate3d(0, 0, 0)
+      scale(0.96);
+  }
+
+  100% {
+    transform:
+      translate3d(38px, -30px, 0)
+      scale(1.08);
+  }
+}
+
+@keyframes world-orbit-one {
+  from {
+    transform:
+      translate3d(0, 0, 0)
+      rotate(0deg);
+  }
+
+  to {
+    transform:
+      translate3d(-28px, 20px, 0)
+      rotate(360deg);
+  }
+}
+
+@keyframes world-orbit-two {
+  from {
+    transform:
+      translate3d(0, 0, 0)
+      rotate(360deg);
+  }
+
+  to {
+    transform:
+      translate3d(32px, -24px, 0)
+      rotate(0deg);
+  }
+}
+
+@keyframes world-signal-pulse {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: scale(0.72);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes world-signal-drift-one {
+  0% {
+    transform:
+      translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform:
+      translate3d(
+        18px,
+        22px,
+        0
+      );
+  }
+}
+
+@keyframes world-signal-drift-two {
+  0% {
+    transform:
+      translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -18px,
+        16px,
+        0
+      );
+  }
+}
+
+@keyframes world-signal-drift-three {
+  0% {
+    transform:
+      translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform:
+      translate3d(
+        22px,
+        -14px,
+        0
+      );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* World accessibility / small screens                                        */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .world-ambient-red {
+    width: 400px;
+    right: -220px;
+  }
+
+  .world-ambient-deep {
+    width: 460px;
+    left: -250px;
+  }
+
+  .world-orbit-one {
+    width: 560px;
+    height: 560px;
+    right: -450px;
+  }
+
+  .world-orbit-two {
+    width: 420px;
+    height: 420px;
+    left: -340px;
+  }
+
+  .world-signal-two {
+    right: 4%;
+  }
+
+  .world-signal-three {
+    left: 10%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .world-ambient-red,
+  .world-ambient-deep,
+  .world-orbit-one,
+  .world-orbit-two,
+  .world-signal-one,
+  .world-signal-two,
+  .world-signal-three,
+  .world-signal span {
+    animation: none !important;
+  }
+}
+
