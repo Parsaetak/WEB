@@ -1,7 +1,8 @@
 "use client";
 
 import {
-  useEffect
+  useEffect,
+  useRef
 } from "react";
 
 import type {
@@ -39,25 +40,13 @@ function readSceneFromHash():
     : null;
 }
 
-function writeSceneToHistory(
-  scene: SceneId
-) {
-  const hash =
-    scene === "home"
-      ? ""
-      : `#${scene}`;
-
-  window.history.pushState(
-    null,
-    "",
-    `${window.location.pathname}${window.location.search}${hash}`
-  );
-}
-
 export default function SceneUrlSync({
   scene,
   onSceneChange
 }: SceneUrlSyncProps) {
+  const initialized =
+    useRef(false);
+
   useEffect(() => {
     const initialScene =
       readSceneFromHash();
@@ -70,6 +59,9 @@ export default function SceneUrlSync({
         initialScene
       );
     }
+
+    initialized.current =
+      true;
 
     const handleNavigation =
       () => {
@@ -102,11 +94,15 @@ export default function SceneUrlSync({
         handleNavigation
       );
     };
-  }, [
-    onSceneChange
-  ]);
+  }, [onSceneChange, scene]);
 
   useEffect(() => {
+    if (
+      !initialized.current
+    ) {
+      return;
+    }
+
     const current =
       readSceneFromHash();
 
@@ -116,8 +112,15 @@ export default function SceneUrlSync({
       return;
     }
 
-    writeSceneToHistory(
-      scene
+    const hash =
+      scene === "home"
+        ? ""
+        : `#${scene}`;
+
+    window.history.pushState(
+      null,
+      "",
+      `${window.location.pathname}${window.location.search}${hash}`
     );
   }, [scene]);
 
