@@ -25,7 +25,15 @@ export default function RedCursor() {
         "(hover: hover) and (pointer: fine)"
       );
 
-    if (!finePointer.matches) {
+    const reduceMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      );
+
+    if (
+      !finePointer.matches ||
+      reduceMotion.matches
+    ) {
       return;
     }
 
@@ -40,31 +48,39 @@ export default function RedCursor() {
 
     let frame = 0;
     let visible = false;
+    let running = true;
+
+    const setVisible = (
+      nextVisible: boolean
+    ) => {
+      visible = nextVisible;
+
+      cursor.dataset.visible =
+        String(nextVisible);
+
+      trail.dataset.visible =
+        String(nextVisible);
+    };
 
     const updatePointer = (
       event: PointerEvent
     ) => {
+      if (!running) {
+        return;
+      }
+
       targetX = event.clientX;
       targetY = event.clientY;
 
       if (!visible) {
         currentX = targetX;
         currentY = targetY;
+
         trailX = targetX;
         trailY = targetY;
 
-        visible = true;
-
-        cursor.dataset.visible = "true";
-        trail.dataset.visible = "true";
+        setVisible(true);
       }
-    };
-
-    const hidePointer = () => {
-      visible = false;
-
-      cursor.dataset.visible = "false";
-      trail.dataset.visible = "false";
     };
 
     const updateHoverState = (
@@ -79,7 +95,15 @@ export default function RedCursor() {
 
       const interactive =
         target.closest(
-          "a, button, [role='button'], input, textarea, select, summary"
+          [
+            "a",
+            "button",
+            "[role='button']",
+            "input",
+            "textarea",
+            "select",
+            "summary"
+          ].join(", ")
         );
 
       cursor.dataset.hover =
@@ -88,7 +112,15 @@ export default function RedCursor() {
           : "false";
     };
 
+    const hidePointer = () => {
+      setVisible(false);
+    };
+
     const animate = () => {
+      if (!running) {
+        return;
+      }
+
       currentX +=
         (targetX - currentX) *
         0.32;
@@ -117,6 +149,37 @@ export default function RedCursor() {
         );
     };
 
+    const handleVisibility =
+      () => {
+        if (
+          document.visibilityState ===
+          "visible"
+        ) {
+          running = true;
+
+          if (!frame) {
+            frame =
+              window.requestAnimationFrame(
+                animate
+              );
+          }
+
+          return;
+        }
+
+        running = false;
+
+        if (frame) {
+          window.cancelAnimationFrame(
+            frame
+          );
+
+          frame = 0;
+        }
+
+        setVisible(false);
+      };
+
     window.addEventListener(
       "pointermove",
       updatePointer,
@@ -136,12 +199,22 @@ export default function RedCursor() {
     );
 
     window.addEventListener(
-      "blur",
-      hidePointer
+      "mouseout",
+      hidePointer,
+      { passive: true }
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility
     );
 
     document.documentElement.dataset.redCursor =
       "ready";
+
+    document.documentElement.classList.add(
+      "red-cursor-enabled"
+    );
 
     frame =
       window.requestAnimationFrame(
@@ -149,9 +222,13 @@ export default function RedCursor() {
       );
 
     return () => {
-      window.cancelAnimationFrame(
-        frame
-      );
+      running = false;
+
+      if (frame) {
+        window.cancelAnimationFrame(
+          frame
+        );
+      }
 
       window.removeEventListener(
         "pointermove",
@@ -169,11 +246,20 @@ export default function RedCursor() {
       );
 
       window.removeEventListener(
-        "blur",
+        "mouseout",
         hidePointer
       );
 
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility
+      );
+
       delete document.documentElement.dataset.redCursor;
+
+      document.documentElement.classList.remove(
+        "red-cursor-enabled"
+      );
     };
   }, []);
 
