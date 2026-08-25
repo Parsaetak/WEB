@@ -385,6 +385,125 @@ button {
 }
 
 /* -------------------------------------------------------------------------- */
+/* RED MAGIC all-seeing eye                                                   */
+/* -------------------------------------------------------------------------- */
+
+.red-eye {
+  display: block;
+  overflow: visible;
+  flex: 0 0 auto;
+  color: var(--red);
+  filter:
+    drop-shadow(0 0 6px rgba(255, 32, 32, 0.3))
+    drop-shadow(0 0 15px rgba(255, 32, 32, 0.12));
+  transform: translateZ(0);
+  contain: paint;
+}
+
+.red-eye-glow {
+  transform-origin: 50% 50%;
+  transform-box: fill-box;
+  animation: red-eye-breathe 2.8s ease-in-out infinite;
+}
+
+.red-eye-iris-wrap {
+  transform-origin: 50% 50%;
+  transform-box: fill-box;
+  animation: red-eye-pulse 2.8s ease-in-out infinite;
+}
+
+.red-eye-crown {
+  animation: red-eye-scan 7s linear infinite;
+}
+
+@keyframes red-eye-breathe {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(0.94);
+  }
+
+  50% {
+    opacity: 0.92;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes red-eye-pulse {
+  0%,
+  100% {
+    transform: scale(0.97);
+  }
+
+  48% {
+    transform: scale(1.035);
+  }
+
+  56% {
+    transform: scale(1);
+  }
+}
+
+@keyframes red-eye-scan {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+
+  50% {
+    opacity: 0.82;
+  }
+}
+
+.brand-eye-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 28px;
+  overflow: visible;
+}
+
+.brand-name {
+  position: relative;
+  color: #f5f7fb;
+}
+
+.brand-name::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 1px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 32, 32, 0),
+      rgba(255, 32, 32, 0.65),
+      rgba(255, 32, 32, 0)
+    );
+  opacity: 0.42;
+  transform: scaleX(0.55);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.brand:hover .brand-name::after {
+  opacity: 0.9;
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .red-eye-glow,
+  .red-eye-iris-wrap,
+  .red-eye-crown {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* RED MAGIC canvas host                                                       */
 /* -------------------------------------------------------------------------- */
 
