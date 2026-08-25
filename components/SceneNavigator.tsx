@@ -4,6 +4,10 @@ import type {
   SceneId
 } from "@/components/LivingShell";
 
+import {
+  preloadScene
+} from "@/components/ScenePreloader";
+
 export type SceneNavigationItem = {
   id: SceneId;
   label: string;
@@ -35,6 +39,12 @@ export default function SceneNavigator({
               scene.id ===
               activeScene;
 
+            const warmScene = () => {
+              if (!active) {
+                preloadScene(scene.id);
+              }
+            };
+
             return (
               <button
                 key={scene.id}
@@ -51,6 +61,12 @@ export default function SceneNavigator({
                     : undefined
                 }
                 aria-label={`Open ${scene.label} scene`}
+                onPointerEnter={
+                  warmScene
+                }
+                onFocus={
+                  warmScene
+                }
                 onClick={() =>
                   onSceneChange(
                     scene.id
