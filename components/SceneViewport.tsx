@@ -9,32 +9,16 @@ import type {
   SceneId
 } from "@/components/LivingShell";
 
+import SceneLoadingScreen from "@/components/SceneLoadingScreen";
+
 type SceneLoaderProps = {
   scene: SceneId;
   children: ReactNode;
 };
 
-function SceneFallback({
-  scene
-}: {
-  scene: SceneId;
-}) {
+function SceneFallback() {
   return (
-    <div
-      className="scene-loading"
-      role="status"
-      aria-live="polite"
-      aria-label={`Loading ${scene} scene`}
-    >
-      <span className="scene-loading-orbit" />
-
-      <span className="scene-loading-core" />
-
-      <span className="scene-loading-text">
-        LOADING /{" "}
-        {scene.toUpperCase()}
-      </span>
-    </div>
+    <SceneLoadingScreen />
   );
 }
 
@@ -67,13 +51,7 @@ export default function SceneViewport({
       data-scene={scene}
       aria-label={`${scene} scene`}
     >
-      <Suspense
-        fallback={
-          <SceneFallback
-            scene={scene}
-          />
-        }
-      >
+      <Suspense fallback={<SceneFallback />}>
         <div className="scene-viewport-content">
           {children}
         </div>
