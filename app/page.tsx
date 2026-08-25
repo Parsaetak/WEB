@@ -8,7 +8,11 @@ export default function Home() {
       <RedCursor />
 
       <LivingShell>
-        <SceneRegistry scene="home" />
+        {(scene) => (
+          <SceneRegistry
+            scene={scene}
+          />
+        )}
       </LivingShell>
     </>
   );
