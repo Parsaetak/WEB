@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import {
+  createPortal
+} from "react-dom";
+import {
+  useEffect,
+  useState,
+  useRef
+} from "react";
 
 export default function RedCursor() {
   const cursorRef =
@@ -9,7 +16,18 @@ export default function RedCursor() {
   const trailRef =
     useRef<HTMLDivElement | null>(null);
 
+  const [mounted, setMounted] =
+    useState(false);
+
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) {
+      return;
+    }
+
     const cursor =
       cursorRef.current;
 
@@ -216,6 +234,8 @@ export default function RedCursor() {
       "red-cursor-enabled"
     );
 
+    setVisible(false);
+
     frame =
       window.requestAnimationFrame(
         animate
@@ -261,14 +281,19 @@ export default function RedCursor() {
         "red-cursor-enabled"
       );
     };
-  }, []);
+  }, [mounted]);
 
-  return (
+  if (!mounted) {
+    return null;
+  }
+
+  return createPortal(
     <>
       <div
         ref={trailRef}
         className="red-cursor-trail"
         aria-hidden="true"
+        data-visible="false"
       >
         <span />
         <span />
@@ -279,6 +304,8 @@ export default function RedCursor() {
         ref={cursorRef}
         className="red-cursor"
         aria-hidden="true"
+        data-visible="false"
+        data-hover="false"
       >
         <span className="red-cursor-pyramid">
           <span className="red-cursor-pyramid-top" />
@@ -289,6 +316,7 @@ export default function RedCursor() {
 
         <span className="red-cursor-ring" />
       </div>
-    </>
+    </>,
+    document.body
   );
 }
