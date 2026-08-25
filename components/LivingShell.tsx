@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  type ReactNode,
   useCallback,
   useMemo,
   useState
@@ -12,6 +11,7 @@ import SceneNavigator, {
   type SceneNavigationItem
 } from "@/components/SceneNavigator";
 import ScenePreloader from "@/components/ScenePreloader";
+import SceneRegistry from "@/components/SceneRegistry";
 import SceneUrlSync from "@/components/SceneUrlSync";
 import WorldBackground from "@/components/WorldBackground";
 
@@ -53,15 +53,10 @@ export const SCENES:
   ];
 
 type LivingShellProps = {
-  children?:
-    | ReactNode
-    | ((scene: SceneId) => ReactNode);
-
   initialScene?: SceneId;
 };
 
 export default function LivingShell({
-  children,
   initialScene = "home"
 }: LivingShellProps) {
   const [activeScene, setActiveScene] =
@@ -87,8 +82,7 @@ export default function LivingShell({
       const index =
         SCENES.findIndex(
           (scene) =>
-            scene.id ===
-            activeScene
+            scene.id === activeScene
         );
 
       if (index < 0) {
@@ -103,14 +97,6 @@ export default function LivingShell({
         "home"
       );
     }, [activeScene]);
-
-  const sceneContent =
-    typeof children ===
-    "function"
-      ? children(
-          activeScene
-        )
-      : children;
 
   return (
     <div
@@ -192,7 +178,9 @@ export default function LivingShell({
           activeScene
         }
       >
-        {sceneContent}
+        <SceneRegistry
+          scene={activeScene}
+        />
       </main>
     </div>
   );
