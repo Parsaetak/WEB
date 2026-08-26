@@ -60,17 +60,13 @@ const preloadCache =
     Promise<unknown>
   >();
 
-type ConnectionInformation =
-  NetworkInformation & {
-    saveData?: boolean;
-    effectiveType?:
-      | "slow-2g"
-      | "2g"
-      | "3g"
-      | "4g";
-  };
+type ConnectionState = {
+  saveData?: boolean;
+  effectiveType?: string;
+};
 
-function getConnectionInformation() {
+function getConnectionState():
+  ConnectionState | null {
   if (
     typeof navigator ===
     "undefined"
@@ -78,21 +74,20 @@ function getConnectionInformation() {
     return null;
   }
 
-  const connection =
-    (
-      navigator as Navigator & {
-        connection?: ConnectionInformation;
-      }
-    ).connection;
+  const navigatorWithConnection =
+    navigator as Navigator & {
+      connection?: ConnectionState;
+    };
 
   return (
-    connection ?? null
+    navigatorWithConnection.connection ??
+    null
   );
 }
 
 function shouldPreloadInBackground() {
   const connection =
-    getConnectionInformation();
+    getConnectionState();
 
   if (!connection) {
     return true;
@@ -146,8 +141,7 @@ function getAdjacentScenes(
   const next =
     SCENE_ORDER[
       (
-        index +
-        1
+        index + 1
       ) %
         SCENE_ORDER.length
     ];
@@ -225,7 +219,8 @@ function scheduleIdle(
       idleWindow.requestIdleCallback(
         callback,
         {
-          timeout: 1800
+          timeout:
+            1800
         }
       );
 
@@ -237,23 +232,27 @@ function scheduleIdle(
   }
 
   const id =
-    window.setTimeout(
+    globalThis.setTimeout(
       callback,
       350
     );
 
   return () => {
-    window.clearTimeout(
+    globalThis.clearTimeout(
       id
     );
   };
 }
 
-function scheduleNextIdle(
-  callback: () => void
-) {
-  return scheduleIdle(
-    callback
+function waitForIdle(): Promise<void> {
+  return new Promise(
+    (
+      resolve
+    ) => {
+      scheduleIdle(
+        resolve
+      );
+    }
   );
 }
 
@@ -278,23 +277,24 @@ export async function preloadAdjacentScenes(
     nextScene
   );
 
-  await new Promise<void>(
-    (resolve) => {
-      scheduleNextIdle(
-        resolve
-      );
-    }
-  );
+  await waitForIdle();
 
   if (
-    nextScene !==
-    previousScene &&
-    shouldPreloadInBackground()
+    nextScene ===
+    previousScene
   ) {
-    await preloadScene(
-      previousScene
-    );
+    return;
   }
+
+  if (
+    !shouldPreloadInBackground()
+  ) {
+    return;
+  }
+
+  await preloadScene(
+    previousScene
+  );
 }
 
 type ScenePreloaderProps = {
@@ -325,7 +325,9 @@ export default function ScenePreloader({
       );
 
     return () => {
-      cancelled = true;
+      cancelled =
+        true;
+
       cancelIdle();
     };
   }, [
