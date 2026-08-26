@@ -12935,3 +12935,317 @@ html.red-cursor-enabled * {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Typography / 4K readability                                                */
+/* -------------------------------------------------------------------------- */
+
+.kicker {
+  font-size:
+    10px;
+
+  letter-spacing:
+    0.17em;
+}
+
+.body {
+  font-size:
+    0.95rem;
+
+  line-height:
+    1.72;
+}
+
+.body-large {
+  font-size:
+    clamp(
+      1.05rem,
+      1.35vw,
+      1.28rem
+    );
+
+  line-height:
+    1.62;
+}
+
+.system-number,
+.system-type,
+.system-signal,
+.section-signal {
+  font-size:
+    9px;
+}
+
+.panel-topline,
+.systems-module-top,
+.work-project-meta,
+.work-project-state,
+.work-project-code,
+.work-project-type,
+.work-project-tags,
+.work-state span,
+.work-state strong,
+.work-archive-link span,
+.work-archive-link strong,
+.about-signal,
+.about-fields-header > span,
+.about-field small,
+.magic-organism-status,
+.magic-organism-metric span,
+.magic-organism-metric strong,
+.magic-organism-label span,
+.magic-organism-label strong,
+.magic-organism-signal,
+.magic-organism-statement,
+.systems-status,
+.systems-module-layer,
+.systems-module-code,
+.systems-architecture-node strong,
+.systems-architecture-node span,
+.systems-architecture-node small,
+.systems-equation {
+  font-size:
+    9px;
+}
+
+.system-copy {
+  font-size:
+    0.92rem;
+
+  line-height:
+    1.65;
+}
+
+.system-title {
+  line-height:
+    0.98;
+}
+
+.home-role-strip span,
+.home-field-strip span {
+  font-size:
+    10px;
+}
+
+.home-role-strip small,
+.home-field-strip small {
+  font-size:
+    8px;
+}
+
+.home-intro-copy,
+.home-systems-copy,
+.home-magic-copy,
+.home-direction-copy,
+.home-direction-goals small {
+  font-size:
+    1rem;
+
+  line-height:
+    1.7;
+}
+
+.home-direction-goals span,
+.home-direction-goals strong {
+  font-size:
+    10px;
+}
+
+.about-lead,
+.about-identity-statement,
+.about-method-copy,
+.about-observer-copy,
+.about-principle .system-copy {
+  font-size:
+    1rem;
+
+  line-height:
+    1.7;
+}
+
+.about-identity-side span,
+.about-identity-side strong {
+  font-size:
+    10px;
+}
+
+.systems-lead,
+.systems-principle-copy,
+.systems-module-copy {
+  font-size:
+    1rem;
+
+  line-height:
+    1.68;
+}
+
+.systems-module h2 {
+  font-size:
+    clamp(
+      2rem,
+      3.6vw,
+      3.45rem
+    );
+}
+
+.systems-architecture-map-header h2 {
+  font-size:
+    clamp(
+      2rem,
+      3vw,
+      3rem
+    );
+}
+
+.systems-architecture-node strong,
+.systems-architecture-node span {
+  font-size:
+    10px;
+}
+
+.systems-architecture-node small {
+  font-size:
+    0.86rem;
+
+  line-height:
+    1.5;
+}
+
+.magic-organism-lead,
+.magic-organism-purpose-copy,
+.magic-organism-future-copy {
+  font-size:
+    1.05rem;
+
+  line-height:
+    1.68;
+}
+
+.magic-organism-principle h3 {
+  font-size:
+    1.25rem;
+}
+
+.magic-organism-principle p {
+  font-size:
+    0.95rem;
+
+  line-height:
+    1.6;
+}
+
+.magic-organism-future-copy {
+  max-width:
+    620px;
+}
+
+.work-lead,
+.work-intro-statement,
+.work-project-copy {
+  font-size:
+    1rem;
+
+  line-height:
+    1.68;
+}
+
+.work-project-copy {
+  max-width:
+    700px;
+}
+
+.work-project-tags span {
+  font-size:
+    8px;
+}
+
+.work-project-main h2 {
+  font-size:
+    clamp(
+      1.55rem,
+      2.8vw,
+      2.4rem
+    );
+}
+
+.work-state strong {
+  font-size:
+    11px;
+}
+
+.work-archive-link strong {
+  font-size:
+    11px;
+}
+
+@media (min-width: 1800px) {
+  .kicker {
+    font-size:
+      11px;
+  }
+
+  .body,
+  .system-copy,
+  .about-identity-statement,
+  .about-method-copy,
+  .systems-lead,
+  .systems-principle-copy,
+  .systems-module-copy,
+  .magic-organism-purpose-copy,
+  .magic-organism-future-copy,
+  .work-lead,
+  .work-intro-statement,
+  .work-project-copy,
+  .home-intro-copy,
+  .home-systems-copy,
+  .home-magic-copy,
+  .home-direction-copy {
+    font-size:
+      1.06rem;
+  }
+
+  .home-role-strip span,
+  .home-field-strip span,
+  .home-direction-goals span,
+  .home-direction-goals strong,
+  .about-identity-side span,
+  .about-identity-side strong,
+  .systems-architecture-node strong,
+  .systems-architecture-node span {
+    font-size:
+      11px;
+  }
+
+  .about-identity-side strong,
+  .home-direction-goals strong {
+    letter-spacing:
+      0.09em;
+  }
+}
+
+@media (max-width: 720px) {
+  .body,
+  .system-copy,
+  .about-identity-statement,
+  .about-method-copy,
+  .systems-lead,
+  .systems-principle-copy,
+  .systems-module-copy,
+  .magic-organism-purpose-copy,
+  .magic-organism-future-copy,
+  .work-lead,
+  .work-intro-statement,
+  .work-project-copy,
+  .home-intro-copy,
+  .home-systems-copy,
+  .home-magic-copy,
+  .home-direction-copy {
+    font-size:
+      0.94rem;
+  }
+
+  .kicker {
+    font-size:
+      9px;
+  }
+}
+
