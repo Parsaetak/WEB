@@ -2,61 +2,47 @@ import PublicLinks from "@/components/PublicLinks";
 import RedMagic from "@/components/RedMagic";
 import { PUBLIC_LINKS } from "@/lib/links";
 
-const capabilities = [
+const practices = [
   {
     number: "01",
     title: "RESEARCH",
-    copy:
-      "Exploring intelligence, reasoning, adaptive systems, human cognition, and experimental architectures through independent research and prototypes.",
-    code: "ORIGIN / INQUIRY"
+    copy: "Intelligence, reasoning, cognition, systems."
   },
   {
     number: "02",
-    title: "PROGRAMMING",
-    copy:
-      "Designing and building software systems, AI tooling, interactive experiences, computational experiments, and living digital environments.",
-    code: "ORIGIN / BUILD"
+    title: "CODE",
+    copy: "Software, AI tools, simulations, experiments."
   },
   {
     number: "03",
     title: "WRITING",
-    copy:
-      "Developing frameworks, books, theories, and long-form ideas that turn abstract questions into structured systems and testable concepts.",
-    code: "ORIGIN / IDEAS"
+    copy: "Ideas, frameworks, theories, questions."
   },
   {
     number: "04",
     title: "ART",
-    copy:
-      "Working across visual art, digital creation, AI-assisted creativity, identity, interaction, and experimental visual worlds.",
-    code: "ORIGIN / FORM"
+    copy: "Images, identities, worlds, interactions."
   }
 ];
 
 const systems = [
   {
     number: "01",
-    type: "MASTER LAYER",
-    title: "AI Instructions",
-    copy:
-      "The operating constitution: instruction hierarchy, evidence handling, tool philosophy, context engineering, verification, security, memory behaviour, and self-governance.",
-    signal: "GOVERN"
+    title: "AI INSTRUCTIONS",
+    signal: "GOVERN",
+    copy: "Defines how the system operates."
   },
   {
     number: "02",
-    type: "REASONING LAYER",
     title: "REP",
-    copy:
-      "The reasoning architecture: decomposition, verification, adversarial checking, uncertainty handling, critique, and iterative refinement.",
-    signal: "REASON"
+    signal: "REASON",
+    copy: "Strengthens reasoning and verification."
   },
   {
     number: "03",
-    type: "SYSTEM LAYER",
     title: "USEF",
-    copy:
-      "A general system-improvement discipline: identify weaknesses, redesign components, test consequences, measure results, and iterate.",
-    signal: "IMPROVE"
+    signal: "IMPROVE",
+    copy: "Drives continuous system improvement."
   }
 ];
 
@@ -67,7 +53,7 @@ function SectionHeading({
 }: {
   number: string;
   title: string;
-  description: string;
+  description?: string;
 }) {
   return (
     <div className="section-heading home-section-heading">
@@ -82,45 +68,47 @@ function SectionHeading({
         </p>
       </div>
 
-      <p className="body-large section-heading-description">
-        {description}
-      </p>
+      {description && (
+        <p className="body-large section-heading-description">
+          {description}
+        </p>
+      )}
     </div>
   );
 }
 
-function CapabilityCard({
-  capability
+function PracticeCard({
+  practice
 }: {
-  capability: (typeof capabilities)[number];
+  practice: (typeof practices)[number];
 }) {
   return (
     <article
       className="glow-border home-capability-card"
-      data-capability={capability.title.toLowerCase()}
+      data-capability={practice.title.toLowerCase()}
     >
       <div className="panel magic-panel">
         <div className="panel-content">
           <div className="panel-topline">
             <span className="system-number">
-              {capability.number}
+              {practice.number}
             </span>
 
             <span className="system-type">
-              CAPABILITY
+              PRACTICE
             </span>
           </div>
 
           <div className="home-capability-code">
-            {capability.code}
+            {practice.title}
           </div>
 
           <h2 className="system-title">
-            {capability.title}
+            {practice.title}
           </h2>
 
           <p className="system-copy">
-            {capability.copy}
+            {practice.copy}
           </p>
 
           <div
@@ -156,7 +144,7 @@ function SystemCard({
             </span>
 
             <span className="system-type">
-              {system.type}
+              SYSTEM
             </span>
           </div>
 
@@ -195,16 +183,17 @@ function SystemCard({
 }
 
 export default function HomeScene() {
-  const github =
-    PUBLIC_LINKS.social.find(
-      (link) =>
-        link.id === "github"
-    );
+  const github = PUBLIC_LINKS.social.find(
+    (link) => link.id === "github"
+  );
 
   return (
     <div className="home-scene">
       <section className="hero home-origin">
-        <div className="home-origin-grid" aria-hidden="true">
+        <div
+          className="home-origin-grid"
+          aria-hidden="true"
+        >
           <span className="home-origin-ring home-origin-ring-one" />
           <span className="home-origin-ring home-origin-ring-two" />
           <span className="home-origin-ring home-origin-ring-three" />
@@ -218,51 +207,33 @@ export default function HomeScene() {
               <span className="status-dot" />
 
               <span>
-                Independent research / active build
+                ACTIVE
               </span>
             </div>
 
             <p className="kicker">
-              PARSA TAK / RESEARCHER / WRITER / ARTIST / PROGRAMMER
+              PARSA TAK
             </p>
 
-            <div className="home-origin-label">
-              <span>
-                ORIGIN
-              </span>
-
-              <span>
-                SYSTEM / 000
-              </span>
-            </div>
-
             <h1 className="hero-title">
-              Building AI systems,
+              Researching
               <br />
-
               <span className="hero-title-accent">
-                living worlds
+                intelligence.
               </span>
 
               <br />
 
-              & ideas.
+              Building systems.
             </h1>
 
             <p className="body-large hero-description">
-              Researching intelligence.
-              Building systems.
               Writing ideas.
               Creating art.
             </p>
 
             <p className="body home-origin-description">
-              Parsa Tak is an independent researcher,
-              writer, artist, and programmer working
-              across artificial intelligence, reasoning
-              architecture, software systems, creative
-              technology, simulation, and experimental
-              worlds.
+              AI · REASONING · SYSTEMS · SIMULATION · CREATIVE TECHNOLOGY
             </p>
 
             <div className="hero-actions home-origin-actions">
@@ -273,7 +244,7 @@ export default function HomeScene() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Explore GitHub ↗
+                  GitHub ↗
                 </a>
               )}
 
@@ -281,7 +252,7 @@ export default function HomeScene() {
                 className="button button-secondary"
                 href="#about"
               >
-                Explore the network ↓
+                Explore ↓
               </a>
             </div>
           </div>
@@ -296,7 +267,7 @@ export default function HomeScene() {
 
             <div className="home-origin-core-label">
               <span>
-                CORE
+                LIVE
               </span>
 
               <strong>
@@ -311,23 +282,16 @@ export default function HomeScene() {
         <div className="page-container">
           <SectionHeading
             number="01"
-            title="CAPABILITIES"
-            description="Four connected practices define the work: investigate deeply, build precisely, express ideas clearly, and turn imagination into visual systems."
+            title="PRACTICE"
           />
 
           <div className="four-column home-capability-grid">
-            {capabilities.map(
-              (capability) => (
-                <CapabilityCard
-                  key={
-                    capability.number
-                  }
-                  capability={
-                    capability
-                  }
-                />
-              )
-            )}
+            {practices.map((practice) => (
+              <PracticeCard
+                key={practice.number}
+                practice={practice}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -337,22 +301,15 @@ export default function HomeScene() {
           <SectionHeading
             number="02"
             title="SYSTEMS"
-            description="The current architecture is built as a progression: govern the environment, strengthen reasoning, then improve the system itself."
           />
 
           <div className="three-column home-system-grid">
-            {systems.map(
-              (system) => (
-                <SystemCard
-                  key={
-                    system.number
-                  }
-                  system={
-                    system
-                  }
-                />
-              )
-            )}
+            {systems.map((system) => (
+              <SystemCard
+                key={system.number}
+                system={system}
+              />
+            ))}
           </div>
 
           <div className="glow-border home-relationship">
@@ -360,7 +317,7 @@ export default function HomeScene() {
               <div className="panel-content">
                 <div className="home-relationship-header">
                   <p className="kicker">
-                    ARCHITECTURAL RELATIONSHIP
+                    FLOW
                   </p>
 
                   <span className="home-relationship-state">
@@ -370,7 +327,7 @@ export default function HomeScene() {
 
                 <p className="home-relationship-sequence">
                   <span>
-                    Govern
+                    GOVERN
                   </span>
 
                   <span aria-hidden="true">
@@ -378,7 +335,7 @@ export default function HomeScene() {
                   </span>
 
                   <span>
-                    Reason
+                    REASON
                   </span>
 
                   <span aria-hidden="true">
@@ -386,16 +343,8 @@ export default function HomeScene() {
                   </span>
 
                   <span>
-                    Improve
+                    IMPROVE
                   </span>
-                </p>
-
-                <p className="quote home-relationship-copy">
-                  AI Instructions establishes
-                  the environment. REP strengthens
-                  reasoning behaviour inside it.
-                  USEF supplies the discipline for
-                  evolving the system itself.
                 </p>
               </div>
             </div>
@@ -407,8 +356,8 @@ export default function HomeScene() {
         <div className="page-container">
           <SectionHeading
             number="03"
-            title="RED MAGIC"
-            description="The living layer of the website: movement, observation, interaction, adaptation, and controlled energy."
+            title="MAGIC"
+            description="A living computational organism."
           />
 
           <div className="magic-system home-magic-system">
@@ -421,12 +370,12 @@ export default function HomeScene() {
                 <span className="status-dot" />
 
                 <span>
-                  Organism online
+                  ALIVE
                 </span>
               </div>
 
               <p className="kicker">
-                LIVING SYSTEM / 001
+                RED MAGIC
               </p>
 
               <h2 className="section-title">
@@ -437,16 +386,9 @@ export default function HomeScene() {
               </h2>
 
               <p className="body-large home-magic-lead">
-                RED MAGIC is not background decoration.
-                It is the first active visual organism
-                inside the site.
-              </p>
-
-              <p className="body home-magic-copy">
-                The renderer responds to presence
-                and adapts its computational complexity
-                so the visual system can remain alive
-                without dominating the page.
+                Responsive.
+                Adaptive.
+                Computational.
               </p>
 
               <div className="magic-metrics">
