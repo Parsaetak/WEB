@@ -1,12 +1,21 @@
-import type { Metadata, Viewport } from "next";
+import type {
+  Metadata,
+  Viewport
+} from "next";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Parsa Tak — AI Systems, Creative Architecture & RED MAGIC",
+  title: "Parsa Tak",
   description:
     "Parsa Tak — an evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.",
-  applicationName: "Parsa Tak / WEB",
-  authors: [{ name: "Parsa Tak", url: "https://github.com/Parsaetak" }],
+  applicationName: "Parsa Tak",
+  authors: [
+    {
+      name: "Parsa Tak",
+      url: "https://github.com/Parsaetak"
+    }
+  ],
   creator: "Parsa Tak",
   publisher: "Parsa Tak",
   keywords: [
@@ -20,21 +29,25 @@ export const metadata: Metadata = {
     "RED MAGIC",
     "RED THEORY"
   ],
-  metadataBase: new URL("https://parsaetak.github.io/WEB/"),
+  metadataBase:
+    new URL(
+      "https://parsaetak.github.io/WEB/"
+    ),
   alternates: {
     canonical: "/"
   },
   openGraph: {
     type: "website",
-    url: "https://parsaetak.github.io/WEB/",
-    title: "Parsa Tak — AI Systems, Creative Architecture & RED MAGIC",
+    url:
+      "https://parsaetak.github.io/WEB/",
+    title: "Parsa Tak",
     description:
       "An evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.",
-    siteName: "Parsa Tak / WEB"
+    siteName: "Parsa Tak"
   },
   twitter: {
     card: "summary_large_image",
-    title: "Parsa Tak — AI Systems, Creative Architecture & RED MAGIC",
+    title: "Parsa Tak",
     description:
       "An evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC."
   },
@@ -59,7 +72,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+      </body>
     </html>
   );
 }
