@@ -10641,3 +10641,1132 @@ html.red-cursor-enabled * {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Magic / Organism                                                            */
+/* -------------------------------------------------------------------------- */
+
+.magic-organism {
+  position:
+    relative;
+
+  min-height:
+    calc(100vh - var(--shell-header));
+
+  overflow:
+    hidden;
+
+  isolation:
+    isolate;
+
+  border-bottom:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.08
+    );
+
+  background:
+    radial-gradient(
+      circle at 50% 48%,
+      rgba(
+        255,
+        25,
+        20,
+        0.08
+      ),
+      transparent 27%
+    ),
+    radial-gradient(
+      circle at 82% 14%,
+      rgba(
+        255,
+        32,
+        32,
+        0.045
+      ),
+      transparent 25%
+    );
+}
+
+.magic-organism-field {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  z-index:
+    0;
+
+  pointer-events:
+    none;
+
+  overflow:
+    hidden;
+}
+
+.magic-organism-ring {
+  position:
+    absolute;
+
+  left:
+    50%;
+
+  top:
+    49%;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.07
+    );
+
+  border-radius:
+    50%;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+}
+
+.magic-organism-ring-one {
+  width:
+    320px;
+
+  height:
+    320px;
+
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.13
+    );
+}
+
+.magic-organism-ring-two {
+  width:
+    500px;
+
+  height:
+    500px;
+
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.07
+    );
+}
+
+.magic-organism-ring-three {
+  width:
+    720px;
+
+  height:
+    720px;
+
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.035
+    );
+}
+
+.magic-organism-axis {
+  position:
+    absolute;
+
+  pointer-events:
+    none;
+
+  opacity:
+    0.46;
+}
+
+.magic-organism-axis-x {
+  left:
+    0;
+
+  right:
+    0;
+
+  top:
+    49%;
+
+  height:
+    1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(
+        255,
+        32,
+        32,
+        0.09
+      ),
+      transparent
+    );
+}
+
+.magic-organism-axis-y {
+  top:
+    0;
+
+  bottom:
+    0;
+
+  left:
+    50%;
+
+  width:
+    1px;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(
+        255,
+        32,
+        32,
+        0.09
+      ),
+      transparent
+    );
+}
+
+.magic-organism-node {
+  position:
+    absolute;
+
+  width:
+    7px;
+
+  height:
+    7px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      72,
+      58,
+      0.62
+    );
+
+  border-radius:
+    50%;
+
+  background:
+    #090505;
+
+  box-shadow:
+    0 0 12px
+      rgba(
+        255,
+        32,
+        32,
+        0.25
+      );
+}
+
+.magic-organism-node-one {
+  left:
+    calc(
+      50% - 175px
+    );
+
+  top:
+    calc(
+      49% - 95px
+    );
+}
+
+.magic-organism-node-two {
+  left:
+    calc(
+      50% + 190px
+    );
+
+  top:
+    calc(
+      49% - 35px
+    );
+}
+
+.magic-organism-node-three {
+  left:
+    calc(
+      50% - 230px
+    );
+
+  top:
+    calc(
+      49% + 120px
+    );
+}
+
+.magic-organism-node-four {
+  left:
+    calc(
+      50% + 150px
+    );
+
+  top:
+    calc(
+      49% + 145px
+    );
+}
+
+.magic-organism-header {
+  position:
+    relative;
+
+  z-index:
+    3;
+
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  justify-content:
+    space-between;
+
+  gap:
+    30px;
+
+  margin-bottom:
+    34px;
+}
+
+.magic-organism-title {
+  margin-top:
+    10px;
+
+  color:
+    #f5f5f5;
+
+  font-size:
+    clamp(
+      3rem,
+      7vw,
+      7rem
+    );
+
+  letter-spacing:
+    -0.07em;
+}
+
+.magic-organism-lead {
+  margin-top:
+    14px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.56
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.16em;
+
+  text-transform:
+    uppercase;
+}
+
+.magic-organism-status {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    8px;
+
+  padding:
+    8px 11px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.16
+    );
+
+  background:
+    rgba(
+      14,
+      6,
+      6,
+      0.68
+    );
+
+  color:
+    rgba(
+      255,
+      90,
+      72,
+      0.88
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.16em;
+
+  text-transform:
+    uppercase;
+}
+
+.magic-organism-core {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  min-height:
+    600px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+}
+
+.magic-organism-canvas {
+  position:
+    relative;
+
+  width:
+    min(
+      78vw,
+      760px
+    );
+
+  aspect-ratio:
+    1;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  isolation:
+    isolate;
+}
+
+.magic-organism-canvas::before {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  inset:
+    4%;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.08
+    );
+
+  border-radius:
+    50%;
+
+  box-shadow:
+    0 0 70px
+      rgba(
+        255,
+        32,
+        32,
+        0.03
+      ),
+    inset 0 0 70px
+      rgba(
+        255,
+        32,
+        32,
+        0.025
+      );
+
+  pointer-events:
+    none;
+}
+
+.magic-organism-canvas::after {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  left:
+    50%;
+
+  top:
+    50%;
+
+  width:
+    18px;
+
+  height:
+    18px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      48,
+      40,
+      0.5
+    );
+
+  border-radius:
+    50%;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+
+  box-shadow:
+    0 0 18px
+      rgba(
+        255,
+        32,
+        32,
+        0.24
+      );
+
+  pointer-events:
+    none;
+}
+
+.magic-organism-canvas > * {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  width:
+    100%;
+
+  height:
+    100%;
+}
+
+.magic-organism-label {
+  position:
+    absolute;
+
+  right:
+    7%;
+
+  bottom:
+    8%;
+
+  z-index:
+    4;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    4px;
+
+  min-width:
+    68px;
+
+  padding:
+    9px 11px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.13
+    );
+
+  background:
+    rgba(
+      7,
+      5,
+      5,
+      0.76
+    );
+
+  backdrop-filter:
+    blur(8px);
+
+  -webkit-backdrop-filter:
+    blur(8px);
+}
+
+.magic-organism-label span {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.34
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    7px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.16em;
+
+  text-transform:
+    uppercase;
+}
+
+.magic-organism-label strong {
+  color:
+    rgba(
+      255,
+      70,
+      58,
+      0.92
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+
+  text-transform:
+    uppercase;
+}
+
+.magic-organism-metrics {
+  position:
+    relative;
+
+  z-index:
+    3;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap:
+    10px;
+
+  margin-top:
+    -26px;
+}
+
+.magic-organism-metric {
+  min-height:
+    72px;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  justify-content:
+    center;
+
+  padding:
+    12px 16px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.08
+    );
+
+  background:
+    rgba(
+      10,
+      6,
+      6,
+      0.68
+    );
+}
+
+.magic-organism-metric span {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.34
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    7px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.16em;
+
+  text-transform:
+    uppercase;
+}
+
+.magic-organism-metric strong {
+  margin-top:
+    5px;
+
+  color:
+    rgba(
+      255,
+      82,
+      68,
+      0.9
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    12px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.12em;
+}
+
+.magic-organism-signals {
+  position:
+    relative;
+
+  z-index:
+    3;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap:
+    10px;
+
+  margin-top:
+    10px;
+}
+
+.magic-organism-signal {
+  position:
+    relative;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    auto
+    1fr
+    auto;
+
+  align-items:
+    center;
+
+  gap:
+    10px;
+
+  min-height:
+    46px;
+
+  padding:
+    10px 12px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.06
+    );
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.44
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    7px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.1em;
+
+  text-transform:
+    uppercase;
+}
+
+.magic-organism-signal > span {
+  color:
+    rgba(
+      255,
+      60,
+      48,
+      0.48
+    );
+}
+
+.magic-organism-signal strong {
+  color:
+    rgba(
+      238,
+      229,
+      229,
+      0.74
+    );
+
+  font-weight:
+    800;
+}
+
+.magic-organism-signal i {
+  display:
+    block;
+
+  width:
+    5px;
+
+  height:
+    5px;
+
+  border-radius:
+    50%;
+
+  background:
+    rgba(
+      255,
+      44,
+      34,
+      0.72
+    );
+
+  box-shadow:
+    0 0 8px
+      rgba(
+        255,
+        32,
+        32,
+        0.35
+      );
+}
+
+.magic-organism-statement {
+  position:
+    relative;
+
+  z-index:
+    3;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    12px;
+
+  margin-top:
+    24px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.42
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    clamp(
+      7px,
+      1.1vw,
+      10px
+    );
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+
+  text-align:
+    center;
+
+  text-transform:
+    uppercase;
+}
+
+.magic-organism-statement strong {
+  color:
+    rgba(
+      255,
+      64,
+      52,
+      0.78
+    );
+}
+
+.magic-organism-statement > span:last-child {
+  color:
+    rgba(
+      255,
+      32,
+      32,
+      0.48
+    );
+}
+
+@media (max-width: 980px) {
+  .magic-organism-core {
+    min-height:
+      500px;
+  }
+
+  .magic-organism-canvas {
+    width:
+      min(
+        78vw,
+        600px
+      );
+  }
+}
+
+@media (max-width: 720px) {
+  .magic-organism {
+    min-height:
+      auto;
+  }
+
+  .magic-organism-header {
+    flex-direction:
+      column;
+
+    align-items:
+      flex-start;
+
+    margin-bottom:
+      24px;
+  }
+
+  .magic-organism-status {
+    align-self:
+      flex-start;
+  }
+
+  .magic-organism-axis-y {
+    left:
+      50%;
+  }
+
+  .magic-organism-ring-one {
+    width:
+      230px;
+
+    height:
+      230px;
+  }
+
+  .magic-organism-ring-two {
+    width:
+      360px;
+
+    height:
+      360px;
+  }
+
+  .magic-organism-ring-three {
+    width:
+      510px;
+
+    height:
+      510px;
+  }
+
+  .magic-organism-core {
+    min-height:
+      390px;
+  }
+
+  .magic-organism-canvas {
+    width:
+      min(
+        92vw,
+        500px
+      );
+  }
+
+  .magic-organism-label {
+    right:
+      2%;
+
+    bottom:
+      4%;
+  }
+
+  .magic-organism-metrics,
+  .magic-organism-signals {
+    grid-template-columns:
+      1fr;
+  }
+
+  .magic-organism-metrics {
+    margin-top:
+      -4px;
+  }
+
+  .magic-organism-statement {
+    flex-wrap:
+      wrap;
+
+    line-height:
+      1.7;
+  }
+
+  .magic-organism-node-one {
+    left:
+      16%;
+
+    top:
+      25%;
+  }
+
+  .magic-organism-node-two {
+    left:
+      82%;
+
+    top:
+      34%;
+  }
+
+  .magic-organism-node-three {
+    left:
+      13%;
+
+    top:
+      73%;
+  }
+
+  .magic-organism-node-four {
+    left:
+      79%;
+
+    top:
+      76%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magic-organism-metric,
+  .magic-organism-signal {
+    transition:
+      none;
+  }
+}
+
