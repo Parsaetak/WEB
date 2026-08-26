@@ -1,4 +1,4 @@
-import rawLibraryManifest from "@/data/library.json";
+import libraryManifest from "@/data/library.json";
 
 export type ContentKind =
   | "pdf"
@@ -71,14 +71,8 @@ const MIME_EXTENSIONS: Record<
   gif: true
 };
 
-/*
- * JSON imports are intentionally widened by TypeScript.
- * The deployment workflow validates the external manifest,
- * and this explicit boundary gives the application its
- * stable domain type.
- */
 const LIBRARY_MANIFEST =
-  rawLibraryManifest as unknown as LibraryManifest;
+  libraryManifest as unknown as LibraryManifest;
 
 function getContentKind(
   path: string
@@ -110,17 +104,17 @@ function encodePath(
     .join("/");
 }
 
-function createRawUrl(
+function createMediaUrl(
   branch: string,
   path: string
 ) {
   return [
-    "https://raw.githubusercontent.com",
+    "https://cdn.jsdelivr.net/gh",
     OWNER,
     REPOSITORY,
-    encodeURIComponent(
+    `@${encodeURIComponent(
       branch
-    ),
+    )}`,
     encodePath(path)
   ].join("/");
 }
@@ -177,7 +171,7 @@ function createContentItem(
       `${metadata.branch}:${metadata.source}`,
 
     rawUrl:
-      createRawUrl(
+      createMediaUrl(
         metadata.branch,
         metadata.source
       ),
@@ -190,7 +184,7 @@ function createContentItem(
 
     coverUrl:
       metadata.cover
-        ? createRawUrl(
+        ? createMediaUrl(
             metadata.branch,
             metadata.cover
           )
@@ -222,5 +216,26 @@ export async function listContent(): Promise<
 export function getContentKindLabel(
   kind: ContentKind
 ) {
-  return kind.toUpperCase();
+  if (
+    kind ===
+    "pdf"
+  ) {
+    return "BOOK";
+  }
+
+  if (
+    kind ===
+    "mp3"
+  ) {
+    return "AUDIO";
+  }
+
+  if (
+    kind ===
+    "mp4"
+  ) {
+    return "VIDEO";
+  }
+
+  return "ART";
 }
