@@ -1086,7 +1086,7 @@ export default function LibraryScene() {
                       }
                     </span>
 
-                    <span>
+                    <span aria-hidden="true">
                       ↓
                     </span>
                   </a>
