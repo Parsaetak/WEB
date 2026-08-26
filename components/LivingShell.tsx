@@ -301,7 +301,8 @@ export default function LivingShell({
   className="living-shell-viewport"
   data-active-scene={
     activeScene
-  >
+  }
+>
   {urlReady && (
     <SceneRegistry
       scene={activeScene}
