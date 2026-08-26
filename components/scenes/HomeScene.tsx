@@ -1,4 +1,6 @@
+import PublicLinks from "@/components/PublicLinks";
 import RedMagic from "@/components/RedMagic";
+import { PUBLIC_LINKS } from "@/lib/links";
 
 const capabilities = [
   {
@@ -81,6 +83,14 @@ function SectionHeading({
 }
 
 export default function HomeScene() {
+  const github = PUBLIC_LINKS.social.find(
+    (link) => link.id === "github"
+  );
+
+  const linktree = PUBLIC_LINKS.meta.find(
+    (link) => link.id === "linktree"
+  );
+
   return (
     <div className="home-scene">
       <section className="hero">
@@ -144,23 +154,27 @@ export default function HomeScene() {
                 marginTop: "28px"
               }}
             >
-              <a
-                className="button button-primary"
-                href="https://github.com/Parsaetak"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Explore GitHub ↗
-              </a>
+              {github && (
+                <a
+                  className="button button-primary"
+                  href={github.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Explore GitHub ↗
+                </a>
+              )}
 
-              <a
-                className="button button-secondary"
-                href="https://linktr.ee/Parsaetak"
-                target="_blank"
-                rel="noreferrer"
-              >
-                All links ↗
-              </a>
+              {linktree && (
+                <a
+                  className="button button-secondary"
+                  href={linktree.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  All links ↗
+                </a>
+              )}
             </div>
           </div>
 
@@ -360,6 +374,11 @@ export default function HomeScene() {
           </div>
         </div>
       </section>
+
+      <PublicLinks
+        compact
+        title="CONNECT"
+      />
     </div>
   );
 }
