@@ -6,41 +6,61 @@ const projects = [
   {
     number: "01",
     code: "UHIT",
-    title: "INTELLIGENCE",
+    title: "Universal Human Intelligence Test",
+    type: "RESEARCH",
     status: "EVOLVING",
-    signal: "01"
+    copy: "An adaptive framework for measuring intelligence, reasoning, transfer, and human-AI performance.",
+    tags: [
+      "INTELLIGENCE",
+      "ASSESSMENT"
+    ]
   },
   {
     number: "02",
     code: "RED THEORY",
-    title: "SIMULATION",
+    title: "Living-System Experiment",
+    type: "SIMULATION",
     status: "ACTIVE",
-    signal: "02"
+    copy: "An experimental model for emergence, adaptation, competition, dissolution, and replacement.",
+    tags: [
+      "SIMULATION",
+      "EVOLUTION"
+    ]
   },
   {
     number: "03",
     code: "RED MAGIC",
-    title: "ORGANISM",
+    title: "Computational Organism",
+    type: "EXPERIMENT",
     status: "ACTIVE",
-    signal: "03"
+    copy: "A responsive visual organism that turns the website itself into a computational experiment.",
+    tags: [
+      "CANVAS",
+      "ADAPTATION"
+    ]
   },
   {
     number: "04",
     code: "AI SYSTEMS",
-    title: "ARCHITECTURE",
+    title: "Reasoning Architecture",
+    type: "SYSTEMS",
     status: "RESEARCH",
-    signal: "04"
+    copy: "Local AI tools, reasoning frameworks, context engineering, and autonomous system experiments.",
+    tags: [
+      "AI",
+      "SYSTEMS"
+    ]
   }
 ];
 
 const states = [
   {
-    label: "BUILD",
-    value: "ACTIVE"
+    label: "FOCUS",
+    value: "INTELLIGENCE"
   },
   {
-    label: "ARCHIVE",
-    value: "PUBLIC"
+    label: "OUTPUT",
+    value: "SYSTEMS"
   },
   {
     label: "MODE",
@@ -49,9 +69,12 @@ const states = [
 ];
 
 export default function WorkScene() {
-  const github = PUBLIC_LINKS.social.find(
-    (link) => link.id === "github"
-  );
+  const github =
+    PUBLIC_LINKS.social.find(
+      (link) =>
+        link.id ===
+        "github"
+    );
 
   return (
     <div className="work-scene">
@@ -78,11 +101,11 @@ export default function WorkScene() {
               </p>
 
               <h1 className="section-title work-title">
-                The laboratory.
+                What I am building.
               </h1>
 
               <p className="body-large work-lead">
-                Systems in progress.
+                Research becomes projects.
               </p>
             </div>
 
@@ -95,20 +118,33 @@ export default function WorkScene() {
             </div>
           </div>
 
+          <div className="work-intro">
+            <p className="work-intro-statement">
+              I build experiments around intelligence:
+              systems that can be measured, challenged,
+              visualised, and improved.
+            </p>
+          </div>
+
           <div className="work-instrument">
             <div className="work-instrument-header">
               <div>
                 <p className="kicker">
-                  INDEX
+                  PROJECTS
                 </p>
 
                 <strong>
-                  CURRENT PROJECTS
+                  CURRENT RESEARCH
                 </strong>
               </div>
 
               <span>
-                04
+                {String(
+                  projects.length
+                ).padStart(
+                  2,
+                  "0"
+                )}
               </span>
             </div>
 
@@ -127,13 +163,35 @@ export default function WorkScene() {
                     </div>
 
                     <div className="work-project-main">
-                      <span className="work-project-code">
-                        {project.code}
-                      </span>
+                      <div className="work-project-meta">
+                        <span className="work-project-code">
+                          {project.code}
+                        </span>
+
+                        <span className="work-project-type">
+                          {project.type}
+                        </span>
+                      </div>
 
                       <h2>
                         {project.title}
                       </h2>
+
+                      <p className="work-project-copy">
+                        {project.copy}
+                      </p>
+
+                      <div className="work-project-tags">
+                        {project.tags.map(
+                          (tag) => (
+                            <span
+                              key={tag}
+                            >
+                              {tag}
+                            </span>
+                          )
+                        )}
+                      </div>
                     </div>
 
                     <div className="work-project-state">
@@ -144,18 +202,6 @@ export default function WorkScene() {
                       <i
                         aria-hidden="true"
                       />
-                    </div>
-
-                    <div className="work-project-signal">
-                      <span>
-                        {project.signal}
-                      </span>
-
-                      <span
-                        aria-hidden="true"
-                      >
-                        →
-                      </span>
                     </div>
                   </article>
                 )
@@ -191,7 +237,7 @@ export default function WorkScene() {
                 rel="noreferrer"
               >
                 <span>
-                  ARCHIVE
+                  FULL ARCHIVE
                 </span>
 
                 <strong>
