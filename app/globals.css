@@ -20130,3 +20130,130 @@ html.red-cursor-enabled * {
   }
 }
 
+.library-download-button {
+  width:
+    100%;
+
+  min-height:
+    52px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    16px;
+
+  margin-top:
+    14px;
+
+  padding:
+    0 18px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.08
+    );
+
+  border-radius:
+    9px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.65
+    );
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.025
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.1em;
+
+  text-decoration:
+    none;
+
+  transition:
+    border-color
+    140ms
+    ease,
+    background-color
+    140ms
+    ease,
+    color
+    140ms
+    ease,
+    transform
+    140ms
+    ease;
+}
+
+.library-download-button:hover {
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.28
+    );
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.94
+    );
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.045
+    );
+
+  transform:
+    translateY(
+      -1px
+    );
+}
+
+.library-download-button span:last-child {
+  color:
+    rgba(
+      255,
+      55,
+      55,
+      0.9
+    );
+
+  font-size:
+    13px;
+}
+
