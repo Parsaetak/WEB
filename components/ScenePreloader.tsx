@@ -44,14 +44,14 @@ const preloaders: Record<
     ),
 
   work: () =>
-  import(
-    "@/components/scenes/WorkScene"
-  ),
+    import(
+      "@/components/scenes/WorkScene"
+    ),
 
-library: () =>
-  import(
-    "@/components/scenes/LibraryScene"
-  )
+  library: () =>
+    import(
+      "@/components/scenes/LibraryScene"
+    )
 };
 
 const preloadCache =
@@ -59,6 +59,62 @@ const preloadCache =
     SceneId,
     Promise<unknown>
   >();
+
+type ConnectionInformation =
+  NetworkInformation & {
+    saveData?: boolean;
+    effectiveType?:
+      | "slow-2g"
+      | "2g"
+      | "3g"
+      | "4g";
+  };
+
+function getConnectionInformation() {
+  if (
+    typeof navigator ===
+    "undefined"
+  ) {
+    return null;
+  }
+
+  const connection =
+    (
+      navigator as Navigator & {
+        connection?: ConnectionInformation;
+      }
+    ).connection;
+
+  return (
+    connection ?? null
+  );
+}
+
+function shouldPreloadInBackground() {
+  const connection =
+    getConnectionInformation();
+
+  if (!connection) {
+    return true;
+  }
+
+  if (
+    connection.saveData
+  ) {
+    return false;
+  }
+
+  if (
+    connection.effectiveType ===
+      "slow-2g" ||
+    connection.effectiveType ===
+      "2g"
+  ) {
+    return false;
+  }
+
+  return true;
+}
 
 function getAdjacentScenes(
   scene: SceneId
@@ -79,21 +135,26 @@ function getAdjacentScenes(
 
   const previous =
     SCENE_ORDER[
-      (index -
+      (
+        index -
         1 +
-        SCENE_ORDER.length) %
+        SCENE_ORDER.length
+      ) %
         SCENE_ORDER.length
     ];
 
   const next =
     SCENE_ORDER[
-      (index + 1) %
+      (
+        index +
+        1
+      ) %
         SCENE_ORDER.length
     ];
 
   return [
-    previous,
-    next
+    next,
+    previous
   ];
 }
 
@@ -105,18 +166,14 @@ export function preloadScene(
       scene
     );
 
-  if (
-    cached
-  ) {
+  if (cached) {
     return cached;
   }
 
   const preload =
     preloaders[scene];
 
-  if (
-    !preload
-  ) {
+  if (!preload) {
     return Promise.resolve();
   }
 
@@ -128,38 +185,15 @@ export function preloadScene(
     promise
   );
 
-  promise.catch(() => {
-    preloadCache.delete(
-      scene
-    );
-  });
+  promise.catch(
+    () => {
+      preloadCache.delete(
+        scene
+      );
+    }
+  );
 
   return promise;
-}
-
-export async function preloadAdjacentScenes(
-  scene: SceneId
-): Promise<void> {
-  const adjacent =
-    getAdjacentScenes(
-      scene
-    );
-
-  const unique =
-    Array.from(
-      new Set(adjacent)
-    );
-
-  await Promise.allSettled(
-    unique.map(
-      (
-        adjacentScene
-      ) =>
-        preloadScene(
-          adjacentScene
-        )
-    )
-  );
 }
 
 function scheduleIdle(
@@ -174,7 +208,9 @@ function scheduleIdle(
     const idleWindow =
       window as typeof window & {
         requestIdleCallback: (
-          callback: () => void,
+          callback: (
+            deadline: IdleDeadline
+          ) => void,
           options?: {
             timeout?: number;
           }
@@ -189,7 +225,7 @@ function scheduleIdle(
       idleWindow.requestIdleCallback(
         callback,
         {
-          timeout: 1500
+          timeout: 1800
         }
       );
 
@@ -201,16 +237,64 @@ function scheduleIdle(
   }
 
   const id =
-    globalThis.setTimeout(
+    window.setTimeout(
       callback,
-      250
+      350
     );
 
   return () => {
-    globalThis.clearTimeout(
+    window.clearTimeout(
       id
     );
   };
+}
+
+function scheduleNextIdle(
+  callback: () => void
+) {
+  return scheduleIdle(
+    callback
+  );
+}
+
+export async function preloadAdjacentScenes(
+  scene: SceneId
+): Promise<void> {
+  if (
+    !shouldPreloadInBackground()
+  ) {
+    return;
+  }
+
+  const [
+    nextScene,
+    previousScene
+  ] =
+    getAdjacentScenes(
+      scene
+    );
+
+  await preloadScene(
+    nextScene
+  );
+
+  await new Promise<void>(
+    (resolve) => {
+      scheduleNextIdle(
+        resolve
+      );
+    }
+  );
+
+  if (
+    nextScene !==
+    previousScene &&
+    shouldPreloadInBackground()
+  ) {
+    await preloadScene(
+      previousScene
+    );
+  }
 }
 
 type ScenePreloaderProps = {
@@ -221,13 +305,29 @@ export default function ScenePreloader({
   scene
 }: ScenePreloaderProps) {
   useEffect(() => {
-    return scheduleIdle(
-      () => {
-        void preloadAdjacentScenes(
-          scene
-        );
-      }
-    );
+    let cancelled =
+      false;
+
+    const cancelIdle =
+      scheduleIdle(
+        () => {
+          if (
+            cancelled ||
+            !shouldPreloadInBackground()
+          ) {
+            return;
+          }
+
+          void preloadAdjacentScenes(
+            scene
+          );
+        }
+      );
+
+    return () => {
+      cancelled = true;
+      cancelIdle();
+    };
   }, [
     scene
   ]);
