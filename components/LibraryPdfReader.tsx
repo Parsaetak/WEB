@@ -50,7 +50,6 @@ type PdfProgressData = {
 
 type PdfLoadingTask = {
   promise: Promise<PdfDocument>;
-
   destroy?: () => Promise<void>;
 
   onProgress?: (
@@ -143,9 +142,7 @@ function scheduleIdle(
   ) {
     const id =
       window.requestIdleCallback(
-        () => {
-          callback();
-        },
+        callback,
         {
           timeout:
             1200
@@ -187,7 +184,8 @@ function formatBytes(
     1024 * 1024
   ) {
     return `${Math.round(
-      bytes / 1024
+      bytes /
+        1024
     )} KB`;
   }
 
@@ -217,12 +215,12 @@ export default function LibraryPdfReader({
     );
 
   const thumbnailRefs =
-  useRef(
-    new Map<
-      number,
-      HTMLSpanElement
-    >()
-  );
+    useRef(
+      new Map<
+        number,
+        HTMLSpanElement
+      >()
+    );
 
   const documentRef =
     useRef<PdfDocument | null>(
@@ -326,6 +324,12 @@ export default function LibraryPdfReader({
     pdf?.numPages ??
     0;
 
+  const navigationCount =
+    Math.min(
+      NAVIGATION_PAGE_COUNT,
+      pageCount
+    );
+
   const readingProgress =
     pageCount > 0
       ? Math.round(
@@ -337,16 +341,10 @@ export default function LibraryPdfReader({
         )
       : 0;
 
-  const navigationCount =
-    Math.min(
-      NAVIGATION_PAGE_COUNT,
-      pageCount
-    );
-
   const renderThumbnail =
     useCallback(
       async (
-        document: PdfDocument,
+        pdfDocument: PdfDocument,
         number: number
       ) => {
         if (
@@ -368,7 +366,7 @@ export default function LibraryPdfReader({
 
         try {
           const page =
-            await document.getPage(
+            await pdfDocument.getPage(
               number
             );
 
@@ -398,9 +396,9 @@ export default function LibraryPdfReader({
             );
 
           const canvas =
-  globalThis.document.createElement(
-    "canvas"
-  );
+            globalThis.document.createElement(
+              "canvas"
+            );
 
           const context =
             canvas.getContext(
@@ -411,9 +409,7 @@ export default function LibraryPdfReader({
               }
             );
 
-          if (
-            !context
-          ) {
+          if (!context) {
             return;
           }
 
@@ -451,14 +447,15 @@ export default function LibraryPdfReader({
             canvas
           );
 
-          await page
-            .render({
+          const thumbnailTask =
+            page.render({
               canvas,
               canvasContext:
                 context,
               viewport
-            })
-            .promise;
+            });
+
+          await thumbnailTask.promise;
 
           thumbnailPagesRef.current.add(
             number
@@ -466,6 +463,7 @@ export default function LibraryPdfReader({
         } catch {
           /*
            * Thumbnail rendering is supplementary.
+           * Failure must not interrupt reading.
            */
         }
       },
@@ -514,6 +512,10 @@ export default function LibraryPdfReader({
 
     setPageInput(
       "1"
+    );
+
+    setScale(
+      1
     );
 
     prefetchedPagesRef.current.clear();
@@ -603,21 +605,21 @@ export default function LibraryPdfReader({
               }
             };
 
-          const document =
+          const pdfDocument =
             await loadingTask.promise;
 
           if (
             cancelled
           ) {
-            await document.destroy?.();
+            await pdfDocument.destroy?.();
             return;
           }
 
           documentRef.current =
-            document;
+            pdfDocument;
 
           setPdf(
-            document
+            pdfDocument
           );
         }
       )
@@ -660,7 +662,7 @@ export default function LibraryPdfReader({
       prefetchCancelRef.current =
         null;
 
-      const document =
+      const pdfDocument =
         documentRef.current;
 
       const loadingTask =
@@ -674,7 +676,7 @@ export default function LibraryPdfReader({
 
       void loadingTask?.destroy?.();
 
-      void document?.destroy?.();
+      void pdfDocument?.destroy?.();
     };
   }, [
     src
@@ -690,7 +692,7 @@ export default function LibraryPdfReader({
     let cancelled =
       false;
 
-    const calculateFit =
+    const updateFit =
       async () => {
         try {
           const page =
@@ -698,9 +700,12 @@ export default function LibraryPdfReader({
               pageNumber
             );
 
+          const stage =
+            stageRef.current;
+
           if (
             cancelled ||
-            !stageRef.current
+            !stage
           ) {
             return;
           }
@@ -713,29 +718,18 @@ export default function LibraryPdfReader({
           const availableWidth =
             Math.max(
               280,
-              stageRef.current.clientWidth -
+              stage.clientWidth -
                 54
             );
 
-          const nextFit =
+          setFitScale(
             clamp(
               availableWidth /
                 viewport.width,
               0.45,
               2.2
-            );
-
-          setFitScale(
-            nextFit
+            )
           );
-
-          if (
-            scale === 1
-          ) {
-            setScale(
-              nextFit
-            );
-          }
         } catch {
           if (
             !cancelled
@@ -747,7 +741,7 @@ export default function LibraryPdfReader({
         }
       };
 
-    void calculateFit();
+    void updateFit();
 
     return () => {
       cancelled =
@@ -755,8 +749,7 @@ export default function LibraryPdfReader({
     };
   }, [
     pdf,
-    pageNumber,
-    scale
+    pageNumber
   ]);
 
   useEffect(() => {
@@ -766,14 +759,17 @@ export default function LibraryPdfReader({
       return;
     }
 
+    const stage =
+      stageRef.current;
+
+    if (
+      !stage
+    ) {
+      return;
+    }
+
     const updateFit =
       async () => {
-        if (
-          !stageRef.current
-        ) {
-          return;
-        }
-
         try {
           const page =
             await pdf.getPage(
@@ -788,7 +784,7 @@ export default function LibraryPdfReader({
           const availableWidth =
             Math.max(
               280,
-              stageRef.current.clientWidth -
+              stage.clientWidth -
                 54
             );
 
@@ -814,25 +810,11 @@ export default function LibraryPdfReader({
         }
       );
 
-    const stage =
-  stageRef.current;
+    observer.observe(
+      stage
+    );
 
-if (
-  !stage
-) {
-  return;
-}
-
-const observer =
-  new ResizeObserver(
-    () => {
-      void updateFit();
-    }
-  );
-
-observer.observe(
-  stage
-);
+    void updateFit();
 
     return () => {
       observer.disconnect();
@@ -853,7 +835,7 @@ observer.observe(
     let cancelled =
       false;
 
-    const renderCurrentPage =
+    const renderPage =
       async () => {
         setRendering(
           true
@@ -891,7 +873,7 @@ observer.observe(
             );
 
           const canvas =
-            document.createElement(
+            globalThis.document.createElement(
               "canvas"
             );
 
@@ -904,9 +886,7 @@ observer.observe(
               }
             );
 
-          if (
-            !context
-          ) {
+          if (!context) {
             throw new Error(
               "Canvas rendering is unavailable."
             );
@@ -994,7 +974,7 @@ observer.observe(
         }
       };
 
-    void renderCurrentPage();
+    void renderPage();
 
     return () => {
       cancelled =
@@ -1025,9 +1005,10 @@ observer.observe(
 
     let cancelIdle:
       | (() => void)
-      | null = null;
+      | null =
+      null;
 
-    const renderNextThumbnail =
+    const renderNext =
       (
         number: number
       ) => {
@@ -1040,29 +1021,27 @@ observer.observe(
         void renderThumbnail(
           pdf,
           number
-        ).then(
-          () => {
-            if (
-              cancelled ||
-              number >=
-                navigationCount
-            ) {
-              return;
-            }
-
-            cancelIdle =
-              scheduleIdle(
-                () => {
-                  renderNextThumbnail(
-                    number + 1
-                  );
-                }
-              );
+        ).then(() => {
+          if (
+            cancelled ||
+            number >=
+              navigationCount
+          ) {
+            return;
           }
-        );
+
+          cancelIdle =
+            scheduleIdle(
+              () => {
+                renderNext(
+                  number + 1
+                );
+              }
+            );
+        });
       };
 
-    renderNextThumbnail(
+    renderNext(
       1
     );
 
@@ -1139,7 +1118,7 @@ observer.observe(
     let cancelled =
       false;
 
-    const warm =
+    const warmNext =
       async (
         index: number
       ) => {
@@ -1164,7 +1143,9 @@ observer.observe(
         );
 
         const candidate =
-          pagesToWarm[index];
+          pagesToWarm[
+            index
+          ];
 
         try {
           await pdf.getPage(
@@ -1182,7 +1163,7 @@ observer.observe(
           );
         } catch {
           /*
-           * Background loading is optional.
+           * Background warming is optional.
            */
         }
 
@@ -1195,7 +1176,7 @@ observer.observe(
         prefetchCancelRef.current =
           scheduleIdle(
             () => {
-              void warm(
+              void warmNext(
                 index + 1
               );
             }
@@ -1205,7 +1186,7 @@ observer.observe(
     prefetchCancelRef.current =
       scheduleIdle(
         () => {
-          void warm(
+          void warmNext(
             0
           );
         }
@@ -1233,6 +1214,13 @@ observer.observe(
     (
       number: number
     ) => {
+      if (
+        pageCount ===
+        0
+      ) {
+        return;
+      }
+
       const target =
         clamp(
           Math.round(
@@ -1252,35 +1240,21 @@ observer.observe(
         )
       );
 
-      thumbnailRefs.current
-        .get(
-          Math.min(
-            target,
-            navigationCount
+      if (
+        target <=
+        navigationCount
+      ) {
+        thumbnailRefs.current
+          .get(
+            target
           )
-        )
-        ?.scrollIntoView({
-          behavior:
-            "smooth",
-          block:
-            "nearest"
-        });
-    };
-
-  const previousPage =
-    () => {
-      goToPage(
-        pageNumber -
-          1
-      );
-    };
-
-  const nextPage =
-    () => {
-      goToPage(
-        pageNumber +
-          1
-      );
+          ?.scrollIntoView({
+            behavior:
+              "smooth",
+            block:
+              "nearest"
+          });
+      }
     };
 
   const submitPage =
@@ -1289,10 +1263,27 @@ observer.observe(
     ) => {
       event.preventDefault();
 
-      goToPage(
+      const requested =
         Number(
           pageInput
+        );
+
+      if (
+        !Number.isFinite(
+          requested
         )
+      ) {
+        setPageInput(
+          String(
+            pageNumber
+          )
+        );
+
+        return;
+      }
+
+      goToPage(
+        requested
       );
     };
 
@@ -1342,6 +1333,22 @@ observer.observe(
     () => {
       setScale(
         fitScale
+      );
+    };
+
+  const previousPage =
+    () => {
+      goToPage(
+        pageNumber -
+          1
+      );
+    };
+
+  const nextPage =
+    () => {
+      goToPage(
+        pageNumber +
+          1
       );
     };
 
@@ -1522,6 +1529,7 @@ observer.observe(
               pageNumber <=
               1
             }
+            aria-label="Previous page"
           >
             ←
           </button>
@@ -1540,7 +1548,8 @@ observer.observe(
                 event
               ) =>
                 setPageInput(
-                  event.target.value
+                  event.target
+                    .value
                 )
               }
               inputMode="numeric"
@@ -1548,8 +1557,7 @@ observer.observe(
             />
 
             <span>
-              /
-              {" "}
+              /{" "}
               {pageCount}
             </span>
           </form>
@@ -1563,6 +1571,7 @@ observer.observe(
               pageNumber >=
               pageCount
             }
+            aria-label="Next page"
           >
             →
           </button>
@@ -1596,6 +1605,7 @@ observer.observe(
             onClick={
               zoomOut
             }
+            aria-label="Zoom out"
           >
             −
           </button>
@@ -1613,6 +1623,7 @@ observer.observe(
             onClick={
               zoomIn
             }
+            aria-label="Zoom in"
           >
             +
           </button>
@@ -1750,7 +1761,10 @@ observer.observe(
         </aside>
 
         <main className="library-pdf-main">
-          <div className="library-pdf-stage">
+          <div
+            ref={stageRef}
+            className="library-pdf-stage"
+          >
             <div className="library-pdf-reading-indicator">
               <span>
                 PAGE{" "}
@@ -1772,6 +1786,12 @@ observer.observe(
               ref={pageRef}
               className="library-pdf-page-host"
             />
+
+            {rendering && (
+              <div className="library-pdf-rendering">
+                RENDERING
+              </div>
+            )}
           </div>
         </main>
       </div>
