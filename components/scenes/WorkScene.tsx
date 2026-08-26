@@ -5,232 +5,199 @@ import {
 const projects = [
   {
     number: "01",
-    type: "INTELLIGENCE",
-    title: "UHIT",
-    description:
-      "A universal human intelligence testing and research architecture designed to measure reasoning across adaptive cognitive levels.",
-    status: "EVOLVING"
+    code: "UHIT",
+    title: "INTELLIGENCE",
+    status: "EVOLVING",
+    signal: "01"
   },
   {
     number: "02",
-    type: "SIMULATION",
-    title: "RED THEORY",
-    description:
-      "A living-system experiment exploring finite environments, entities, interaction, adaptation, replacement, and emergent behaviour.",
-    status: "ACTIVE"
+    code: "RED THEORY",
+    title: "SIMULATION",
+    status: "ACTIVE",
+    signal: "02"
   },
   {
     number: "03",
-    type: "WEB SYSTEM",
-    title: "RED MAGIC",
-    description:
-      "A lightweight living visual organism used as the visual and computational identity of this website.",
-    status: "ACTIVE"
+    code: "RED MAGIC",
+    title: "ORGANISM",
+    status: "ACTIVE",
+    signal: "03"
   },
   {
     number: "04",
-    type: "AI ARCHITECTURE",
-    title: "AI SYSTEMS",
-    description:
-      "Experiments in local intelligence, reasoning architectures, tools, context engineering, and autonomous system design.",
-    status: "RESEARCH"
+    code: "AI SYSTEMS",
+    title: "ARCHITECTURE",
+    status: "RESEARCH",
+    signal: "04"
   }
 ];
 
-function SectionHeading() {
-  return (
-    <div className="section-heading">
-      <div className="section-heading-line">
-        <span
-          className="section-signal"
-          aria-hidden="true"
-        />
-
-        <p className="kicker">
-          04 / WORK
-        </p>
-      </div>
-
-      <p className="body-large section-heading-description">
-        An evolving collection of systems, experiments,
-        research directions, and prototypes.
-      </p>
-    </div>
-  );
-}
+const states = [
+  {
+    label: "BUILD",
+    value: "ACTIVE"
+  },
+  {
+    label: "ARCHIVE",
+    value: "PUBLIC"
+  },
+  {
+    label: "MODE",
+    value: "RESEARCH"
+  }
+];
 
 export default function WorkScene() {
   const github = PUBLIC_LINKS.social.find(
     (link) => link.id === "github"
   );
 
-  const websiteRepository = {
-    href: "https://github.com/Parsaetak/WEB"
-  };
-
   return (
     <div className="work-scene">
-      <section className="section">
-        <div className="page-container">
-          <SectionHeading />
+      <section className="section work-laboratory">
+        <div
+          className="work-laboratory-field"
+          aria-hidden="true"
+        >
+          <span className="work-grid-plane" />
+          <span className="work-grid-axis work-grid-axis-x" />
+          <span className="work-grid-axis work-grid-axis-y" />
 
-          <div className="two-column">
+          <span className="work-marker work-marker-one" />
+          <span className="work-marker work-marker-two" />
+          <span className="work-marker work-marker-three" />
+          <span className="work-marker work-marker-four" />
+        </div>
+
+        <div className="page-container">
+          <div className="work-header">
             <div>
               <p className="kicker">
-                PUBLIC LABORATORY
+                04 / WORK
               </p>
 
-              <h1 className="section-title">
-                Building systems that{" "}
-                <span className="hero-title-accent">
-                  evolve.
-                </span>
+              <h1 className="section-title work-title">
+                The laboratory.
               </h1>
 
-              <p
-                className="body-large"
-                style={{
-                  marginTop: "22px"
-                }}
-              >
-                The projects are treated as connected
-                experiments rather than isolated products.
-                Each one explores a different part of the
-                larger question: how can intelligence,
-                creativity, simulation, and systems design
-                reinforce one another?
+              <p className="body-large work-lead">
+                Systems in progress.
               </p>
-
-              <p
-                className="body"
-                style={{
-                  marginTop: "18px"
-                }}
-              >
-                GitHub is the public archive. The work can
-                change, split, disappear, or evolve into
-                something stronger as evidence accumulates.
-              </p>
-
-              <div
-                className="hero-actions"
-                style={{
-                  marginTop: "28px"
-                }}
-              >
-                {github && (
-                  <a
-                    className="button button-primary"
-                    href={github.href}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open GitHub ↗
-                  </a>
-                )}
-
-                <a
-                  className="button button-secondary"
-                  href={websiteRepository.href}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  WEB repository ↗
-                </a>
-              </div>
             </div>
 
-            <div className="work-index">
-              <div className="panel panel-red magic-panel">
-                <div className="panel-content">
-                  <p className="kicker">
-                    CURRENT DIRECTION
-                  </p>
+            <div className="work-status">
+              <span className="work-status-dot" />
 
-                  <p
-                    className="body-large"
-                    style={{
-                      marginTop: "14px"
-                    }}
-                  >
-                    Build small systems that can survive
-                    scrutiny and become larger only when
-                    the underlying architecture deserves it.
-                  </p>
-
-                  <div
-                    className="magic-divider"
-                    aria-hidden="true"
-                  >
-                    <span />
-                  </div>
-
-                  <div className="work-status-grid">
-                    <div>
-                      <span>MODE</span>
-                      <strong>BUILD</strong>
-                    </div>
-
-                    <div>
-                      <span>ARCHIVE</span>
-                      <strong>PUBLIC</strong>
-                    </div>
-
-                    <div>
-                      <span>WORLD</span>
-                      <strong>ALIVE</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <span>
+                OPEN
+              </span>
             </div>
           </div>
 
-          <div className="work-grid">
-            {projects.map(
-              (project) => (
-                <article
-                  className="glow-border"
-                  key={project.number}
-                >
-                  <div className="panel magic-panel work-card">
-                    <div className="panel-content">
-                      <div className="panel-topline">
-                        <span className="system-number">
-                          {project.number}
-                        </span>
+          <div className="work-instrument">
+            <div className="work-instrument-header">
+              <div>
+                <p className="kicker">
+                  INDEX
+                </p>
 
-                        <span className="system-type">
-                          {project.type}
-                        </span>
-                      </div>
+                <strong>
+                  CURRENT PROJECTS
+                </strong>
+              </div>
 
-                      <h2 className="system-title">
+              <span>
+                04
+              </span>
+            </div>
+
+            <div className="work-project-list">
+              {projects.map(
+                (project) => (
+                  <article
+                    className="work-project"
+                    key={project.number}
+                    data-status={
+                      project.status.toLowerCase()
+                    }
+                  >
+                    <div className="work-project-number">
+                      {project.number}
+                    </div>
+
+                    <div className="work-project-main">
+                      <span className="work-project-code">
+                        {project.code}
+                      </span>
+
+                      <h2>
                         {project.title}
                       </h2>
-
-                      <p className="system-copy">
-                        {project.description}
-                      </p>
-
-                      <div className="work-card-footer">
-                        <span>
-                          {project.status}
-                        </span>
-
-                        <span
-                          className="work-card-pulse"
-                          aria-hidden="true"
-                        >
-                          <i />
-                          <i />
-                          <i />
-                        </span>
-                      </div>
                     </div>
+
+                    <div className="work-project-state">
+                      <span>
+                        {project.status}
+                      </span>
+
+                      <i
+                        aria-hidden="true"
+                      />
+                    </div>
+
+                    <div className="work-project-signal">
+                      <span>
+                        {project.signal}
+                      </span>
+
+                      <span
+                        aria-hidden="true"
+                      >
+                        →
+                      </span>
+                    </div>
+                  </article>
+                )
+              )}
+            </div>
+          </div>
+
+          <div className="work-laboratory-footer">
+            <div className="work-state-grid">
+              {states.map(
+                (state) => (
+                  <div
+                    className="work-state"
+                    key={state.label}
+                  >
+                    <span>
+                      {state.label}
+                    </span>
+
+                    <strong>
+                      {state.value}
+                    </strong>
                   </div>
-                </article>
-              )
+                )
+              )}
+            </div>
+
+            {github && (
+              <a
+                className="work-archive-link"
+                href={github.href}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>
+                  ARCHIVE
+                </span>
+
+                <strong>
+                  GitHub ↗
+                </strong>
+              </a>
             )}
           </div>
         </div>
