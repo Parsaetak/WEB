@@ -25,15 +25,6 @@ const principles = [
   }
 ];
 
-const fields = [
-  "ARTIFICIAL INTELLIGENCE",
-  "REASONING",
-  "SYSTEMS",
-  "EXPERIMENTAL TECHNOLOGY",
-  "PHILOSOPHY",
-  "CREATIVE TECHNOLOGY"
-];
-
 export default function AboutScene() {
   return (
     <div className="about-scene">
@@ -170,43 +161,6 @@ export default function AboutScene() {
                       </p>
                     </div>
                   </article>
-                )
-              )}
-            </div>
-          </div>
-
-          <div className="about-fields">
-            <div className="about-fields-header">
-              <p className="kicker">
-                FIELD
-              </p>
-
-              <span>
-                06
-              </span>
-            </div>
-
-            <div className="about-fields-list">
-              {fields.map(
-                (
-                  field,
-                  index
-                ) => (
-                  <span
-                    key={field}
-                    className="about-field"
-                  >
-                    <small>
-                      {String(
-                        index + 1
-                      ).padStart(
-                        2,
-                        "0"
-                      )}
-                    </small>
-
-                    {field}
-                  </span>
                 )
               )}
             </div>
