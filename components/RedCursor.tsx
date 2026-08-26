@@ -21,17 +21,6 @@ export default function RedCursor() {
       null
     );
 
-  const pointerRef =
-    useRef({
-      x: -100,
-      y: -100
-    });
-
-  const trailPositionRef =
-    useRef({
-      x: -100,
-      y: -100
-    });
 
   const frameRef =
     useRef(0);
@@ -120,9 +109,7 @@ useEffect(() => {
     frameRef.current = 0;
   };
 
-  const animate = (
-    timestamp: number
-  ) => {
+  const animate = () => {
     frameRequested = false;
 
     if (!running) {
@@ -131,10 +118,10 @@ useEffect(() => {
     }
 
     const cursorSmoothing =
-      0.42;
+  0.82;
 
-    const trailSmoothing =
-      0.18;
+const trailSmoothing =
+  0.18;
 
     cursorPosition.x +=
       (pointer.x -
