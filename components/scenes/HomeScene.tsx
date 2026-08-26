@@ -87,10 +87,6 @@ export default function HomeScene() {
     (link) => link.id === "github"
   );
 
-  const linktree = PUBLIC_LINKS.meta.find(
-    (link) => link.id === "linktree"
-  );
-
   return (
     <div className="home-scene">
       <section className="hero">
@@ -165,16 +161,12 @@ export default function HomeScene() {
                 </a>
               )}
 
-              {linktree && (
-                <a
-                  className="button button-secondary"
-                  href={linktree.href}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  All links ↗
-                </a>
-              )}
+              <a
+                className="button button-secondary"
+                href="#about"
+              >
+                Explore the network ↓
+              </a>
             </div>
           </div>
 
