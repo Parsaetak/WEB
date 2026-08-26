@@ -79,6 +79,9 @@ const PDF_WORKER_URL =
 const RANGE_CHUNK_SIZE =
   256 * 1024;
 
+const PREFETCH_AHEAD =
+  3;
+
 let pdfJsPromise:
   | Promise<PdfJs>
   | null = null;
@@ -177,10 +180,15 @@ export default function LibraryPdfReader({
       null
     );
 
-  const lookAheadCancelRef =
+  const prefetchCancelRef =
     useRef<
       (() => void) | null
     >(null);
+
+  const prefetchedPagesRef =
+    useRef(
+      new Set<number>()
+    );
 
   const [
     pdf,
@@ -241,6 +249,8 @@ export default function LibraryPdfReader({
       1
     );
 
+    prefetchedPagesRef.current.clear();
+
     documentRef.current =
       null;
 
@@ -268,15 +278,32 @@ export default function LibraryPdfReader({
               withCredentials:
                 false,
 
+              /*
+               * Keep HTTP range requests enabled.
+               * The document can therefore be loaded in
+               * partial byte ranges when the host supports it.
+               */
               disableRange:
                 false,
 
+              /*
+               * Disable streaming so that our explicit
+               * look-ahead policy controls what gets fetched.
+               */
               disableStream:
-                false,
+                true,
 
+              /*
+               * Prevent PDF.js from automatically walking
+               * through the rest of the document.
+               */
               disableAutoFetch:
-                false,
+                true,
 
+              /*
+               * Use moderate chunks so the first useful
+               * document data does not require a huge transfer.
+               */
               rangeChunkSize:
                 RANGE_CHUNK_SIZE
             });
@@ -334,9 +361,9 @@ export default function LibraryPdfReader({
       cancelled =
         true;
 
-      lookAheadCancelRef.current?.();
+      prefetchCancelRef.current?.();
 
-      lookAheadCancelRef.current =
+      prefetchCancelRef.current =
         null;
 
       const document =
@@ -666,47 +693,141 @@ export default function LibraryPdfReader({
   ]);
 
   /*
-   * Warm only the next page during browser idle time.
+   * Controlled progressive loading:
    *
-   * PDF.js resolves the required PDF byte ranges internally.
-   * We intentionally do not render the speculative page.
+   * current page:
+   *      render now
+   *
+   * next 1..3 pages:
+   *      resolve during idle time
+   *
+   * no full-document automatic prefetch:
+   *      PDF.js is configured with disableAutoFetch=true
    */
   useEffect(() => {
     if (
-      !pdf ||
-      pageNumber >=
-        pdf.numPages
+      !pdf
     ) {
       return;
     }
 
-    lookAheadCancelRef.current?.();
+    prefetchCancelRef.current?.();
 
-    const nextPageNumber =
-      pageNumber + 1;
+    prefetchCancelRef.current =
+      null;
 
-    lookAheadCancelRef.current =
+    const pagesToWarm: number[] =
+      [];
+
+    for (
+      let offset = 1;
+      offset <=
+        PREFETCH_AHEAD;
+      offset += 1
+    ) {
+      const candidate =
+        pageNumber +
+        offset;
+
+      if (
+        candidate >
+        pdf.numPages
+      ) {
+        break;
+      }
+
+      if (
+        prefetchedPagesRef.current.has(
+          candidate
+        )
+      ) {
+        continue;
+      }
+
+      pagesToWarm.push(
+        candidate
+      );
+    }
+
+    if (
+      pagesToWarm.length ===
+      0
+    ) {
+      return;
+    }
+
+    let cancelled =
+      false;
+
+    const loadNextPage =
+      async (
+        index: number
+      ) => {
+        if (
+          cancelled ||
+          index >=
+            pagesToWarm.length
+        ) {
+          return;
+        }
+
+        const nextPage =
+          pagesToWarm[index];
+
+        try {
+          await pdf.getPage(
+            nextPage
+          );
+
+          if (
+            cancelled
+          ) {
+            return;
+          }
+
+          prefetchedPagesRef.current.add(
+            nextPage
+          );
+        } catch {
+          /*
+           * Speculative loading is optional.
+           * Never interrupt the reader because
+           * a background warm-up failed.
+           */
+        }
+
+        if (
+          cancelled
+        ) {
+          return;
+        }
+
+        prefetchCancelRef.current =
+          scheduleIdle(
+            () => {
+              void loadNextPage(
+                index + 1
+              );
+            }
+          );
+      };
+
+    prefetchCancelRef.current =
       scheduleIdle(
         () => {
-          void pdf
-            .getPage(
-              nextPageNumber
-            )
-            .catch(
-              () => {
-                /*
-                 * Speculative loading must never
-                 * interrupt the active reader.
-                 */
-              }
-            );
+          void loadNextPage(
+            0
+          );
         }
       );
 
     return () => {
-      lookAheadCancelRef.current?.();
+      cancelled =
+        true;
 
-      lookAheadCancelRef.current =
+      prefetchCancelRef.current?.();
+
+      prefetchCancelRef.current =
         null;
     };
   }, [
