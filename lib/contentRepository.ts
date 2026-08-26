@@ -104,15 +104,21 @@ function encodePath(
     .join("/");
 }
 
+function encodeBranch(
+  branch: string
+) {
+  return encodeURIComponent(
+    branch
+  );
+}
+
 function createMediaUrl(
   branch: string,
   path: string
 ) {
   return [
     "https://cdn.jsdelivr.net/gh",
-    OWNER,
-    REPOSITORY,
-    `@${encodeURIComponent(
+    `${OWNER}/${REPOSITORY}@${encodeBranch(
       branch
     )}`,
     encodePath(path)
@@ -128,7 +134,7 @@ function createGitHubUrl(
     OWNER,
     REPOSITORY,
     "blob",
-    encodeURIComponent(
+    encodeBranch(
       branch
     ),
     encodePath(path)
