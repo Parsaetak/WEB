@@ -238,23 +238,24 @@ function LinkCard({
 
   return (
     <a
-      className="public-link-card"
-      href={link.href}
-      target={
-        isMail
-          ? undefined
-          : "_blank"
-      }
-      rel={
-        isMail
-          ? undefined
-          : "noreferrer"
-      }
-      style={{
-        "--public-link-accent":
-          link.accent
-      } as CSSProperties}
-    >
+  className="public-link-card"
+  href={link.href}
+  target={
+    isMail
+      ? undefined
+      : "_blank"
+  }
+  rel={
+    isMail
+      ? undefined
+      : "noreferrer"
+  }
+  data-theme={link.theme}
+  style={{
+    "--public-link-accent":
+      link.accent
+  } as CSSProperties}
+>
       <div className="public-link-card-glow" />
 
       <div className="public-link-card-top">
