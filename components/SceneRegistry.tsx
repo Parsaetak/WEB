@@ -11,7 +11,7 @@ import type {
   SceneId
 } from "@/components/LivingShell";
 
-import ScenePreloader, {
+import {
   preloadScene
 } from "@/components/ScenePreloader";
 
