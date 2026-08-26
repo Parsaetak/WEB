@@ -40,6 +40,7 @@ export type ContentItem =
     sha: string;
     rawUrl: string;
     githubUrl: string;
+    coverUrl?: string;
   };
 
 const OWNER =
@@ -140,14 +141,17 @@ function createContentItem(
     return null;
   }
 
+  const sourceName =
+    metadata.source
+      .split("/")
+      .pop() ??
+    metadata.source;
+
   return {
     ...metadata,
     name:
       metadata.title ||
-      metadata.source
-        .split("/")
-        .pop() ||
-      metadata.source,
+      sourceName,
     path:
       metadata.source,
     kind,
@@ -163,7 +167,14 @@ function createContentItem(
       createGitHubUrl(
         metadata.branch,
         metadata.source
-      )
+      ),
+    coverUrl:
+      metadata.cover
+        ? createRawUrl(
+            metadata.branch,
+            metadata.cover
+          )
+        : undefined
   };
 }
 
