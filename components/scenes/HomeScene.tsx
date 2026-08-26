@@ -201,22 +201,16 @@ export default function HomeScene() {
     </div>
 
     <div className="home-systems-overview">
-      <a
-        className="home-systems-overview-link"
-        href="#systems"
-      >
-        <span>
-          EXPLORE THE SYSTEMS
-        </span>
+  <div className="home-systems-overview-link">
+    <span>
+      SYSTEMS
+    </span>
 
-        <strong>
-          AI · REASONING · SYSTEMS
-          <span aria-hidden="true">
-            →
-          </span>
-        </strong>
-      </a>
-    </div>
+    <strong>
+      AI · REASONING · SYSTEMS
+    </strong>
+  </div>
+</div>
   </div>
 </section>
 
