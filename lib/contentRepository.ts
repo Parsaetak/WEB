@@ -52,8 +52,11 @@ const REPOSITORY =
 const MANIFEST_BRANCH =
   "Projects";
 
+const CDN_BASE =
+  `https://cdn.jsdelivr.net/gh/${OWNER}/${REPOSITORY}@${MANIFEST_BRANCH}`;
+
 const MANIFEST_URL =
-  `https://raw.githubusercontent.com/${OWNER}/${REPOSITORY}/${MANIFEST_BRANCH}/library.json`;
+  `${CDN_BASE}/library.json`;
 
 const MIME_EXTENSIONS: Record<
   ContentKind,
@@ -88,6 +91,17 @@ function getContentKind(
   return extension as ContentKind;
 }
 
+function encodePath(
+  path: string
+) {
+  return path
+    .split("/")
+    .map(
+      encodeURIComponent
+    )
+    .join("/");
+}
+
 function createRawUrl(
   branch: string,
   path: string
@@ -99,12 +113,22 @@ function createRawUrl(
     encodeURIComponent(
       branch
     ),
-    path
-      .split("/")
-      .map(
-        encodeURIComponent
-      )
-      .join("/")
+    encodePath(path)
+  ].join("/");
+}
+
+function createCdnUrl(
+  branch: string,
+  path: string
+) {
+  return [
+    "https://cdn.jsdelivr.net/gh",
+    OWNER,
+    REPOSITORY,
+    `@${encodeURIComponent(
+      branch
+    )}`,
+    encodePath(path)
   ].join("/");
 }
 
@@ -120,12 +144,7 @@ function createGitHubUrl(
     encodeURIComponent(
       branch
     ),
-    path
-      .split("/")
-      .map(
-        encodeURIComponent
-      )
-      .join("/")
+    encodePath(path)
   ].join("/");
 }
 
@@ -149,28 +168,36 @@ function createContentItem(
 
   return {
     ...metadata,
+
     name:
       metadata.title ||
       sourceName,
+
     path:
       metadata.source,
+
     kind,
+
     size: 0,
+
     sha:
       `${metadata.branch}:${metadata.source}`,
+
     rawUrl:
       createRawUrl(
         metadata.branch,
         metadata.source
       ),
+
     githubUrl:
       createGitHubUrl(
         metadata.branch,
         metadata.source
       ),
+
     coverUrl:
       metadata.cover
-        ? createRawUrl(
+        ? createCdnUrl(
             metadata.branch,
             metadata.cover
           )
@@ -178,15 +205,19 @@ function createContentItem(
   };
 }
 
-export async function loadLibraryManifest(): Promise<
-  LibraryManifest
-> {
+async function fetchManifest(
+  url: string
+): Promise<LibraryManifest> {
   const response =
     await fetch(
-      MANIFEST_URL,
+      url,
       {
         cache:
-          "no-store"
+          "no-store",
+        headers: {
+          Accept:
+            "application/json"
+        }
       }
     );
 
@@ -216,6 +247,28 @@ export async function loadLibraryManifest(): Promise<
   }
 
   return data;
+}
+
+export async function loadLibraryManifest(): Promise<
+  LibraryManifest
+> {
+  try {
+    return await fetchManifest(
+      MANIFEST_URL
+    );
+  } catch {
+    /*
+     * Keep GitHub Raw as a fallback.
+     * This protects the Library if the CDN is temporarily
+     * unavailable or has not refreshed its branch cache yet.
+     */
+    const fallbackUrl =
+      `https://raw.githubusercontent.com/${OWNER}/${REPOSITORY}/${MANIFEST_BRANCH}/library.json`;
+
+    return fetchManifest(
+      fallbackUrl
+    );
+  }
 }
 
 export async function listContent(): Promise<
