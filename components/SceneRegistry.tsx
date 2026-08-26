@@ -11,6 +11,10 @@ import type {
   SceneId
 } from "@/components/LivingShell";
 
+import ScenePreloader, {
+  preloadScene
+} from "@/components/ScenePreloader";
+
 import SceneViewport from "@/components/SceneViewport";
 
 type SceneComponent =
@@ -61,6 +65,22 @@ const SCENE_COMPONENTS:
     work: WorkScene
   };
 
+const MIN_TRANSITION_MS =
+  160;
+
+function wait(
+  milliseconds: number
+): Promise<void> {
+  return new Promise(
+    (resolve) => {
+      window.setTimeout(
+        resolve,
+        milliseconds
+      );
+    }
+  );
+}
+
 type SceneRegistryProps = {
   scene: SceneId;
 };
@@ -87,16 +107,44 @@ export default function SceneRegistry({
       return;
     }
 
-    setTransitioning(true);
+    let cancelled =
+      false;
 
-    const timer =
-      window.setTimeout(() => {
-        setRenderedScene(scene);
-        setTransitioning(false);
-      }, 160);
+    setTransitioning(
+      true
+    );
+
+    const loadScene =
+      preloadScene(
+        scene
+      );
+
+    const minimumTransition =
+      wait(
+        MIN_TRANSITION_MS
+      );
+
+    void Promise.allSettled([
+      loadScene,
+      minimumTransition
+    ]).then(() => {
+      if (
+        cancelled
+      ) {
+        return;
+      }
+
+      setRenderedScene(
+        scene
+      );
+
+      setTransitioning(
+        false
+      );
+    });
 
     return () => {
-      window.clearTimeout(timer);
+      cancelled = true;
     };
   }, [
     scene,
