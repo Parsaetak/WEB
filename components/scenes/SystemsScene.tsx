@@ -4,7 +4,7 @@ const systems = [
     code: "AI INSTRUCTIONS",
     layer: "OPERATING CONSTITUTION",
     role: "GOVERN",
-    title: "Defines the environment.",
+    title: "Defines the environment",
     copy: "Sets the rules for how an intelligent system operates: instruction hierarchy, evidence handling, tools, context, security, memory, and self-governance."
   },
   {
@@ -12,7 +12,7 @@ const systems = [
     code: "REP",
     layer: "REASONING PROTOCOL",
     role: "REASON",
-    title: "Strengthens the thinking.",
+    title: "Strengthens the thinking",
     copy: "Structures reasoning through decomposition, verification, critique, adversarial checking, uncertainty handling, and iterative refinement."
   },
   {
@@ -20,7 +20,7 @@ const systems = [
     code: "USEF",
     layer: "SYSTEM IMPROVEMENT",
     role: "IMPROVE",
-    title: "Changes the system.",
+    title: "Changes the system",
     copy: "Provides a discipline for finding weaknesses, redesigning components, testing consequences, measuring results, and iterating."
   }
 ];
@@ -73,7 +73,7 @@ export default function SystemsScene() {
                 <br />
                 thinking becomes
                 <br />
-                a system.
+                a system
               </h1>
 
               <p className="body-large systems-lead">
@@ -154,9 +154,9 @@ export default function SystemsScene() {
                 </p>
 
                 <h2>
-                  One architecture.
+                  One architecture
                   <br />
-                  Three responsibilities.
+                  Three responsibilities
                 </h2>
               </div>
 
@@ -220,7 +220,7 @@ export default function SystemsScene() {
               <h2 className="section-title">
                 Intelligence is
                 <br />
-                not just a model.
+                not just a model
               </h2>
             </div>
 
