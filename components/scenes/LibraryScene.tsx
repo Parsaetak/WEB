@@ -283,7 +283,7 @@ export default function LibraryScene() {
           <header className="library-header">
             <div>
               <p className="kicker">
-                05 / LIBRARY
+                06 / LIBRARY
               </p>
 
               <h1 className="section-title library-title">
