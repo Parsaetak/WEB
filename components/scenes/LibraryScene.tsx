@@ -7,7 +7,6 @@ import {
 } from "react";
 
 import {
-  CONTENT_BRANCHES,
   getContentKindLabel,
   listContent,
   type ContentItem,
@@ -290,9 +289,7 @@ export default function LibraryScene() {
     setLoading(true);
     setError(null);
 
-    void listContent(
-      CONTENT_BRANCHES
-    )
+    void listContent()
       .then(
         (
           content
@@ -631,9 +628,7 @@ export default function LibraryScene() {
                                   item.branch
                                 )}
                                 {" · "}
-                                {formatSize(
-                                  item.size
-                                )}
+                                MEDIA
                               </small>
                             </span>
 
@@ -729,9 +724,7 @@ export default function LibraryScene() {
 
                         <div className="library-preview-meta">
                           <span>
-                            {formatSize(
-                              selected.size
-                            )}
+                            PUBLISHED
                           </span>
 
                           <span>
