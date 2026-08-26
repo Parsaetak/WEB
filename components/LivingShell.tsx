@@ -23,6 +23,10 @@ export type SceneId =
   | "magic"
   | "work";
 
+export type SceneChangeSource =
+  | "navigation"
+  | "history";
+
 export const SCENES:
   readonly SceneNavigationItem[] =
   [
@@ -66,25 +70,34 @@ export default function LivingShell({
     );
 
   const changeScene = useCallback(
-    (scene: SceneId) => {
+    (
+      scene: SceneId,
+      source: SceneChangeSource = "navigation"
+    ) => {
       if (
         scene === activeScene
       ) {
         return;
       }
 
-      const hash =
-        scene === "home"
-          ? ""
-          : `#${scene}`;
+      if (
+        source === "navigation"
+      ) {
+        const hash =
+          scene === "home"
+            ? ""
+            : `#${scene}`;
 
-      window.history.pushState(
-        null,
-        "",
-        `${window.location.pathname}${window.location.search}${hash}`
+        window.history.pushState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}${hash}`
+        );
+      }
+
+      setActiveScene(
+        scene
       );
-
-      setActiveScene(scene);
     },
     [activeScene]
   );
@@ -134,7 +147,11 @@ export default function LivingShell({
       <SceneUrlSync
         scene={activeScene}
         onSceneChange={
-          changeScene
+          (scene) =>
+            changeScene(
+              scene,
+              "history"
+            )
         }
       />
 
@@ -148,9 +165,12 @@ export default function LivingShell({
             className="living-shell-brand"
             href="#top"
             aria-label="Parsa Tak home"
-            onClick={() =>
-              changeScene("home")
-            }
+            onClick={(event) => {
+              event.preventDefault();
+              changeScene(
+                "home"
+              );
+            }}
           >
             <span className="living-shell-brand-eye">
               <RedEye size={36} />
@@ -180,7 +200,11 @@ export default function LivingShell({
             scenes={SCENES}
             activeScene={activeScene}
             onSceneChange={
-              changeScene
+              (scene) =>
+                changeScene(
+                  scene,
+                  "navigation"
+                )
             }
           />
 
