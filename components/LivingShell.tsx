@@ -139,16 +139,13 @@ export default function LivingShell({
       initialUrlScene
     );
 
-    if (
-      initialUrlScene !==
-      activeScene
-    ) {
-      setActiveScene(
-        initialUrlScene
-      );
-    }
+    setActiveScene(
+      initialUrlScene
+    );
 
-    setUrlReady(true);
+    setUrlReady(
+      true
+    );
   }, []);
 
   const changeScene = useCallback(
@@ -247,9 +244,11 @@ export default function LivingShell({
         }
       />
 
-      <ScenePreloader
-        scene={nextScene}
-      />
+      {urlReady && (
+        <ScenePreloader
+          scene={nextScene}
+        />
+      )}
 
       <header className="living-shell-hud">
         <div className="living-shell-hud-inner">
@@ -331,9 +330,11 @@ export default function LivingShell({
           activeScene
         }
       >
-        <SceneRegistry
-          scene={activeScene}
-        />
+        {urlReady && (
+          <SceneRegistry
+            scene={activeScene}
+          />
+        )}
       </main>
 
       <SceneLoadingScreen
