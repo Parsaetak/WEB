@@ -246,8 +246,8 @@ export default function LivingShell({
 
       {urlReady && (
         <ScenePreloader
-          scene={nextScene}
-        />
+  scene={activeScene}
+/>
       )}
 
       <header className="living-shell-hud">
