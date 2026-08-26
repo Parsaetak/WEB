@@ -2,190 +2,74 @@ import PublicLinks from "@/components/PublicLinks";
 import RedMagic from "@/components/RedMagic";
 import { PUBLIC_LINKS } from "@/lib/links";
 
-const practices = [
-  {
-    number: "01",
-    title: "RESEARCH",
-    copy: "Intelligence, reasoning, cognition, systems."
-  },
-  {
-    number: "02",
-    title: "CODE",
-    copy: "Software, AI tools, simulations, experiments."
-  },
-  {
-    number: "03",
-    title: "WRITING",
-    copy: "Ideas, frameworks, theories, questions."
-  },
-  {
-    number: "04",
-    title: "ART",
-    copy: "Images, identities, worlds, interactions."
-  }
+const roles = [
+  "RESEARCHER",
+  "WRITER",
+  "ARTIST",
+  "PROGRAMMER"
+];
+
+const fields = [
+  "AI",
+  "REASONING",
+  "SYSTEMS",
+  "SIMULATION",
+  "CREATIVE TECHNOLOGY"
 ];
 
 const systems = [
   {
     number: "01",
     title: "AI INSTRUCTIONS",
-    signal: "GOVERN",
-    copy: "Defines how the system operates."
+    copy: "A framework for governing intelligent systems."
   },
   {
     number: "02",
     title: "REP",
-    signal: "REASON",
-    copy: "Strengthens reasoning and verification."
+    copy: "A framework for stronger reasoning and verification."
   },
   {
     number: "03",
     title: "USEF",
-    signal: "IMPROVE",
-    copy: "Drives continuous system improvement."
+    copy: "A framework for improving systems over time."
   }
 ];
 
-function SectionHeading({
-  number,
-  title,
-  description
-}: {
-  number: string;
-  title: string;
-  description?: string;
-}) {
+function RoleStrip() {
   return (
-    <div className="section-heading home-section-heading">
-      <div className="section-heading-line">
-        <span
-          className="section-signal"
-          aria-hidden="true"
-        />
+    <div className="home-role-strip">
+      {roles.map(
+        (
+          role,
+          index
+        ) => (
+          <span
+            key={role}
+          >
+            <small>
+              {String(
+                index + 1
+              ).padStart(
+                2,
+                "0"
+              )}
+            </small>
 
-        <p className="kicker">
-          {number} / {title}
-        </p>
-      </div>
-
-      {description && (
-        <p className="body-large section-heading-description">
-          {description}
-        </p>
+            {role}
+          </span>
+        )
       )}
     </div>
   );
 }
 
-function PracticeCard({
-  practice
-}: {
-  practice: (typeof practices)[number];
-}) {
-  return (
-    <article
-      className="glow-border home-capability-card"
-      data-capability={practice.title.toLowerCase()}
-    >
-      <div className="panel magic-panel">
-        <div className="panel-content">
-          <div className="panel-topline">
-            <span className="system-number">
-              {practice.number}
-            </span>
-
-            <span className="system-type">
-              PRACTICE
-            </span>
-          </div>
-
-          <div className="home-capability-code">
-            {practice.title}
-          </div>
-
-          <h2 className="system-title">
-            {practice.title}
-          </h2>
-
-          <p className="system-copy">
-            {practice.copy}
-          </p>
-
-          <div
-            className="system-pulse"
-            aria-hidden="true"
-          >
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function SystemCard({
-  system
-}: {
-  system: (typeof systems)[number];
-}) {
-  return (
-    <article
-      className="glow-border home-system-card"
-      data-system={system.signal.toLowerCase()}
-    >
-      <div className="panel system-card magic-panel">
-        <div className="panel-content">
-          <div className="panel-topline">
-            <span className="system-number">
-              {system.number}
-            </span>
-
-            <span className="system-type">
-              SYSTEM
-            </span>
-          </div>
-
-          <h2 className="system-title">
-            {system.title}
-          </h2>
-
-          <p className="system-copy">
-            {system.copy}
-          </p>
-
-          <div className="home-system-signal">
-            <span>
-              {system.signal}
-            </span>
-
-            <span
-              className="home-system-signal-line"
-              aria-hidden="true"
-            />
-          </div>
-
-          <div
-            className="system-pulse"
-            aria-hidden="true"
-          >
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
 export default function HomeScene() {
-  const github = PUBLIC_LINKS.social.find(
-    (link) => link.id === "github"
-  );
+  const github =
+    PUBLIC_LINKS.social.find(
+      (link) =>
+        link.id ===
+        "github"
+    );
 
   return (
     <div className="home-scene">
@@ -215,31 +99,37 @@ export default function HomeScene() {
               PARSA TAK
             </p>
 
-            <h1 className="hero-title">
-              Researching
+            <h1 className="hero-title home-identity-title">
+              Researcher.
               <br />
-              <span className="hero-title-accent">
-                intelligence.
-              </span>
-
+              Writer.
               <br />
-
-              Building systems.
+              Artist.
+              <br />
+              Programmer.
             </h1>
 
-            <p className="body-large hero-description">
-              Writing ideas.
-              Creating art.
+            <p className="body-large hero-description home-identity-lead">
+              Exploring intelligence through
+              <br />
+              AI, reasoning, systems,
+              <br />
+              simulation, and creative technology.
             </p>
 
-            <p className="body home-origin-description">
-              AI · REASONING · SYSTEMS · SIMULATION · CREATIVE TECHNOLOGY
-            </p>
+            <RoleStrip />
 
             <div className="hero-actions home-origin-actions">
+              <a
+                className="button button-primary"
+                href="#work"
+              >
+                Explore the work ↓
+              </a>
+
               {github && (
                 <a
-                  className="button button-primary"
+                  className="button button-secondary"
                   href={github.href}
                   target="_blank"
                   rel="noreferrer"
@@ -247,19 +137,12 @@ export default function HomeScene() {
                   GitHub ↗
                 </a>
               )}
-
-              <a
-                className="button button-secondary"
-                href="#about"
-              >
-                Explore ↓
-              </a>
             </div>
           </div>
 
           <div
             className="hero-magic home-origin-core"
-            aria-label="RED MAGIC living organism"
+            aria-label="RED MAGIC"
           >
             <div className="hero-magic-frame">
               <RedMagic />
@@ -267,7 +150,7 @@ export default function HomeScene() {
 
             <div className="home-origin-core-label">
               <span>
-                LIVE
+                LIVING SYSTEM
               </span>
 
               <strong>
@@ -280,85 +163,139 @@ export default function HomeScene() {
 
       <section className="section home-capabilities">
         <div className="page-container">
-          <SectionHeading
-            number="01"
-            title="PRACTICE"
-          />
+          <div className="home-intro-block">
+            <div>
+              <p className="kicker">
+                WHAT I EXPLORE
+              </p>
 
-          <div className="four-column home-capability-grid">
-            {practices.map((practice) => (
-              <PracticeCard
-                key={practice.number}
-                practice={practice}
-              />
-            ))}
+              <h2 className="section-title">
+                Questions first.
+                <br />
+                Systems second.
+              </h2>
+            </div>
+
+            <p className="body-large home-intro-copy">
+              I study ideas about intelligence,
+              build systems around them,
+              and turn the results into
+              software, writing, experiments,
+              and art.
+            </p>
+          </div>
+
+          <div className="home-field-strip">
+            {fields.map(
+              (
+                field,
+                index
+              ) => (
+                <span
+                  key={field}
+                >
+                  <small>
+                    {String(
+                      index + 1
+                    ).padStart(
+                      2,
+                      "0"
+                    )}
+                  </small>
+
+                  {field}
+                </span>
+              )
+            )}
           </div>
         </div>
       </section>
 
       <section className="section home-systems">
         <div className="page-container">
-          <SectionHeading
-            number="02"
-            title="SYSTEMS"
-          />
+          <div className="home-systems-intro">
+            <div>
+              <p className="kicker">
+                WHAT I BUILD
+              </p>
 
-          <div className="three-column home-system-grid">
-            {systems.map((system) => (
-              <SystemCard
-                key={system.number}
-                system={system}
-              />
-            ))}
+              <h2 className="section-title">
+                Thinking
+                <br />
+                made concrete.
+              </h2>
+            </div>
+
+            <p className="body home-systems-copy">
+              AI Instructions, REP, and USEF form
+              the foundation of my current systems
+              work.
+            </p>
           </div>
 
-          <div className="glow-border home-relationship">
-            <div className="panel panel-red magic-panel">
-              <div className="panel-content">
-                <div className="home-relationship-header">
-                  <p className="kicker">
-                    FLOW
-                  </p>
+          <div className="three-column home-system-grid">
+            {systems.map(
+              (system) => (
+                <article
+                  className="glow-border home-system-card"
+                  key={system.number}
+                >
+                  <div className="panel system-card magic-panel">
+                    <div className="panel-content">
+                      <div className="panel-topline">
+                        <span className="system-number">
+                          {system.number}
+                        </span>
 
-                  <span className="home-relationship-state">
-                    ACTIVE
-                  </span>
-                </div>
+                        <span className="system-type">
+                          SYSTEM
+                        </span>
+                      </div>
 
-                <p className="home-relationship-sequence">
-                  <span>
-                    GOVERN
-                  </span>
+                      <h3 className="system-title">
+                        {system.title}
+                      </h3>
 
-                  <span aria-hidden="true">
-                    →
-                  </span>
+                      <p className="system-copy">
+                        {system.copy}
+                      </p>
 
-                  <span>
-                    REASON
-                  </span>
-
-                  <span aria-hidden="true">
-                    →
-                  </span>
-
-                  <span>
-                    IMPROVE
-                  </span>
-                </p>
-              </div>
-            </div>
+                      <div
+                        className="system-pulse"
+                        aria-hidden="true"
+                      >
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              )
+            )}
           </div>
         </div>
       </section>
 
       <section className="section-tight magic-section home-magic-section">
         <div className="page-container">
-          <SectionHeading
-            number="03"
-            title="MAGIC"
-            description="A living computational organism."
-          />
+          <div className="home-magic-intro">
+            <div>
+              <p className="kicker">
+                EXPERIMENT
+              </p>
+
+              <h2 className="section-title">
+                RED MAGIC
+              </h2>
+            </div>
+
+            <p className="body-large home-magic-copy">
+              A living computational organism
+              built into the site itself.
+            </p>
+          </div>
 
           <div className="magic-system home-magic-system">
             <div className="magic-system-organism">
@@ -375,21 +312,14 @@ export default function HomeScene() {
               </div>
 
               <p className="kicker">
-                RED MAGIC
+                RESPONSIVE · ADAPTIVE · COMPUTATIONAL
               </p>
 
-              <h2 className="section-title">
-                Intelligence should{" "}
-                <span className="hero-title-accent">
-                  move.
-                </span>
-              </h2>
-
-              <p className="body-large home-magic-lead">
-                Responsive.
-                Adaptive.
-                Computational.
-              </p>
+              <h3 className="section-title">
+                The website
+                <br />
+                is part of the experiment.
+              </h3>
 
               <div className="magic-metrics">
                 <div>
