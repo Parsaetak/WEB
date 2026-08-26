@@ -49,15 +49,6 @@ const OWNER =
 const REPOSITORY =
   "Contents";
 
-const MANIFEST_BRANCH =
-  "Projects";
-
-const CDN_BASE =
-  `https://cdn.jsdelivr.net/gh/${OWNER}/${REPOSITORY}@${MANIFEST_BRANCH}`;
-
-const MANIFEST_URL =
-  `${CDN_BASE}/library.json`;
-
 const MIME_EXTENSIONS: Record<
   ContentKind,
   true
@@ -70,6 +61,73 @@ const MIME_EXTENSIONS: Record<
   jpeg: true,
   webp: true,
   gif: true
+};
+
+const LIBRARY_MANIFEST: LibraryManifest = {
+  version: 1,
+  updated: "2026-08-26",
+  items: [
+    {
+      branch: "Books",
+      source: "RED MAGIC.pdf",
+      title: "RED MAGIC",
+      type: "book",
+      description:
+        "A living work exploring intelligence, systems, consciousness, adaptation, and the possibility of computational life.",
+      year: "2026",
+      author: "Parsa Tak",
+      featured: true,
+      tags: [
+        "RED MAGIC",
+        "AI",
+        "intelligence",
+        "systems",
+        "consciousness",
+        "simulation",
+        "adaptation"
+      ]
+    },
+    {
+      branch: "Books",
+      source:
+        "RED MAGIC 0_ MAGIC FOR KIDS.pdf",
+      title:
+        "RED MAGIC 0: MAGIC FOR KIDS",
+      type: "book",
+      description:
+        "An accessible entry point into the ideas behind RED MAGIC, introducing its concepts in a more approachable form.",
+      year: "2026",
+      author: "Parsa Tak",
+      featured: false,
+      tags: [
+        "RED MAGIC",
+        "intelligence",
+        "systems",
+        "introduction"
+      ]
+    },
+    {
+      branch: "Books",
+      source:
+        "RED MAGIC II_ THE BOOK OF THE DEMIURGE.pdf",
+      title:
+        "RED MAGIC II: THE BOOK OF THE DEMIURGE",
+      type: "book",
+      description:
+        "A deeper exploration of creation, intelligence, systems, and the forces that shape synthetic life.",
+      year: "2026",
+      author: "Parsa Tak",
+      featured: false,
+      tags: [
+        "RED MAGIC",
+        "systems",
+        "creation",
+        "intelligence",
+        "synthetic life",
+        "demiurge"
+      ]
+    }
+  ]
 };
 
 function getContentKind(
@@ -113,21 +171,6 @@ function createRawUrl(
     encodeURIComponent(
       branch
     ),
-    encodePath(path)
-  ].join("/");
-}
-
-function createCdnUrl(
-  branch: string,
-  path: string
-) {
-  return [
-    "https://cdn.jsdelivr.net/gh",
-    OWNER,
-    REPOSITORY,
-    `@${encodeURIComponent(
-      branch
-    )}`,
     encodePath(path)
   ].join("/");
 }
@@ -197,7 +240,7 @@ function createContentItem(
 
     coverUrl:
       metadata.cover
-        ? createCdnUrl(
+        ? createRawUrl(
             metadata.branch,
             metadata.cover
           )
@@ -205,79 +248,16 @@ function createContentItem(
   };
 }
 
-async function fetchManifest(
-  url: string
-): Promise<LibraryManifest> {
-  const response =
-    await fetch(
-      url,
-      {
-        cache:
-          "no-store",
-        headers: {
-          Accept:
-            "application/json"
-        }
-      }
-    );
-
-  if (
-    !response.ok
-  ) {
-    throw new Error(
-      `Library metadata failed: ${response.status}`
-    );
-  }
-
-  const data =
-    (await response.json()) as LibraryManifest;
-
-  if (
-    typeof data.version !==
-      "number" ||
-    typeof data.updated !==
-      "string" ||
-    !Array.isArray(
-      data.items
-    )
-  ) {
-    throw new Error(
-      "Library metadata is invalid."
-    );
-  }
-
-  return data;
-}
-
 export async function loadLibraryManifest(): Promise<
   LibraryManifest
 > {
-  try {
-    return await fetchManifest(
-      MANIFEST_URL
-    );
-  } catch {
-    /*
-     * Keep GitHub Raw as a fallback.
-     * This protects the Library if the CDN is temporarily
-     * unavailable or has not refreshed its branch cache yet.
-     */
-    const fallbackUrl =
-      `https://raw.githubusercontent.com/${OWNER}/${REPOSITORY}/${MANIFEST_BRANCH}/library.json`;
-
-    return fetchManifest(
-      fallbackUrl
-    );
-  }
+  return LIBRARY_MANIFEST;
 }
 
 export async function listContent(): Promise<
   ContentItem[]
 > {
-  const manifest =
-    await loadLibraryManifest();
-
-  return manifest.items
+  return LIBRARY_MANIFEST.items
     .map(
       createContentItem
     )
