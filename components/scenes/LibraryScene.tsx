@@ -7,13 +7,47 @@ import {
 } from "react";
 
 import {
+  CONTENT_BRANCHES,
   getContentKindLabel,
-  listBranchContent,
-  type ContentItem
+  listContent,
+  type ContentItem,
+  type ContentKind
 } from "@/lib/contentRepository";
 
-const LIBRARY_BRANCH =
-  "Books";
+type MediaFilter =
+  | "all"
+  | "book"
+  | "audio"
+  | "video"
+  | "art";
+
+const MEDIA_FILTERS:
+  readonly {
+    id: MediaFilter;
+    label: string;
+  }[] =
+  [
+    {
+      id: "all",
+      label: "ALL"
+    },
+    {
+      id: "book",
+      label: "BOOKS"
+    },
+    {
+      id: "audio",
+      label: "AUDIO"
+    },
+    {
+      id: "video",
+      label: "VIDEO"
+    },
+    {
+      id: "art",
+      label: "ART"
+    }
+  ];
 
 function formatSize(
   bytes: number
@@ -56,6 +90,54 @@ function titleFromFileName(
     .trim();
 }
 
+function getMediaFilter(
+  kind: ContentKind
+): MediaFilter {
+  if (kind === "pdf") {
+    return "book";
+  }
+
+  if (kind === "mp3") {
+    return "audio";
+  }
+
+  if (kind === "mp4") {
+    return "video";
+  }
+
+  return "art";
+}
+
+function getBranchLabel(
+  branch: string
+) {
+  return branch
+    .replace(
+      /[_-]+/g,
+      " "
+    )
+    .replace(
+      /\s+/g,
+      " "
+    )
+    .trim();
+}
+
+function getCatalogLabel(
+  item: ContentItem
+) {
+  if (
+    item.kind ===
+    "pdf"
+  ) {
+    return "BOOK";
+  }
+
+  return getContentKindLabel(
+    item.kind
+  );
+}
+
 export default function LibraryScene() {
   const [
     items,
@@ -70,6 +152,13 @@ export default function LibraryScene() {
   ] = useState<
     ContentItem | null
   >(null);
+
+  const [
+    filter,
+    setFilter
+  ] = useState<MediaFilter>(
+    "all"
+  );
 
   const [
     loading,
@@ -90,8 +179,8 @@ export default function LibraryScene() {
     setLoading(true);
     setError(null);
 
-    void listBranchContent(
-      LIBRARY_BRANCH
+    void listContent(
+      CONTENT_BRANCHES
     )
       .then(
         (content) => {
@@ -143,34 +232,51 @@ export default function LibraryScene() {
     };
   }, []);
 
-  const groupedItems =
+  const filteredItems =
     useMemo(() => {
-      return items.reduce(
+      if (
+        filter ===
+        "all"
+      ) {
+        return items;
+      }
+
+      return items.filter(
         (
-          groups,
           item
-        ) => {
-          const group =
-            groups[
-              item.kind
-            ] ?? [];
-
-          group.push(
-            item
-          );
-
-          groups[
+        ) =>
+          getMediaFilter(
             item.kind
-          ] = group;
-
-          return groups;
-        },
-        {} as Record<
-          string,
-          ContentItem[]
-        >
+          ) === filter
       );
-    }, [items]);
+    }, [
+      items,
+      filter
+    ]);
+
+  useEffect(() => {
+    if (
+      selected &&
+      filteredItems.some(
+        (
+          item
+        ) =>
+          item.sha ===
+          selected.sha
+      )
+    ) {
+      return;
+    }
+
+    setSelected(
+      filteredItems[0] ??
+        null
+    );
+  }, [
+    filter,
+    filteredItems,
+    selected
+  ]);
 
   const renderViewer =
     () => {
@@ -179,7 +285,13 @@ export default function LibraryScene() {
       ) {
         return (
           <div className="library-viewer-empty">
-            Select a work to open it.
+            <strong>
+              No work selected
+            </strong>
+
+            <span>
+              Choose an item from the collection.
+            </span>
           </div>
         );
       }
@@ -218,6 +330,12 @@ export default function LibraryScene() {
                 selected.name
               )}
             </h2>
+
+            <p className="library-media-meta">
+              {getBranchLabel(
+                selected.branch
+              )}
+            </p>
 
             <audio
               className="library-audio-player"
@@ -305,17 +423,75 @@ export default function LibraryScene() {
               <span className="status-dot" />
 
               <span>
-                CONTENTS / BOOKS
+                {items.length} PUBLISHED
               </span>
             </div>
           </header>
+
+          <div className="library-filters">
+            {MEDIA_FILTERS.map(
+              (
+                mediaFilter
+              ) => {
+                const count =
+                  mediaFilter.id ===
+                  "all"
+                    ? items.length
+                    : items.filter(
+                        (
+                          item
+                        ) =>
+                          getMediaFilter(
+                            item.kind
+                          ) ===
+                          mediaFilter.id
+                      ).length;
+
+                return (
+                  <button
+                    type="button"
+                    className="library-filter"
+                    data-active={
+                      filter ===
+                      mediaFilter.id
+                        ? "true"
+                        : "false"
+                    }
+                    key={
+                      mediaFilter.id
+                    }
+                    onClick={() =>
+                      setFilter(
+                        mediaFilter.id
+                      )
+                    }
+                  >
+                    <span>
+                      {
+                        mediaFilter.label
+                      }
+                    </span>
+
+                    <strong>
+                      {String(
+                        count
+                      ).padStart(
+                        2,
+                        "0"
+                      )}
+                    </strong>
+                  </button>
+                );
+              }
+            )}
+          </div>
 
           {loading && (
             <div className="library-loading">
               <span className="status-dot" />
 
               <span>
-                LOADING LIBRARY
+                LOADING CONTENT
               </span>
             </div>
           )}
@@ -346,13 +522,22 @@ export default function LibraryScene() {
                       </p>
 
                       <h2>
-                        Books
+                        {filter ===
+                        "all"
+                          ? "All works"
+                          : MEDIA_FILTERS.find(
+                              (
+                                item
+                              ) =>
+                                item.id ===
+                                filter
+                            )?.label}
                       </h2>
                     </div>
 
                     <span>
                       {String(
-                        items.length
+                        filteredItems.length
                       ).padStart(
                         2,
                         "0"
@@ -361,99 +546,85 @@ export default function LibraryScene() {
                   </div>
 
                   <div className="library-list">
-                    {Object.entries(
-                      groupedItems
-                    ).map(
-                      ([
-                        kind,
-                        content
-                      ]) => (
-                        <div
-                          className="library-group"
-                          key={kind}
-                        >
-                          <div className="library-group-label">
-                            {getContentKindLabel(
-                              kind as ContentItem["kind"]
-                            )}
-                          </div>
+                    {filteredItems.map(
+                      (
+                        item
+                      ) => {
+                        const active =
+                          selected?.sha ===
+                          item.sha;
 
-                          {content.map(
-                            (
-                              item
-                            ) => {
-                              const active =
-                                selected?.sha ===
-                                item.sha;
-
-                              return (
-                                <button
-                                  type="button"
-                                  className="library-item"
-                                  data-active={
-                                    active
-                                      ? "true"
-                                      : "false"
-                                  }
-                                  key={
-                                    `${item.branch}:${item.path}`
-                                  }
-                                  onClick={() =>
-                                    setSelected(
-                                      item
-                                    )
-                                  }
-                                >
-                                  <span className="library-item-type">
-                                    {getContentKindLabel(
-                                      item.kind
-                                    )}
-                                  </span>
-
-                                  <span className="library-item-main">
-                                    <strong>
-                                      {titleFromFileName(
-                                        item.name
-                                      )}
-                                    </strong>
-
-                                    <small>
-                                      {formatSize(
-                                        item.size
-                                      )}
-                                    </small>
-                                  </span>
-
-                                  <span
-                                    className="library-item-arrow"
-                                    aria-hidden="true"
-                                  >
-                                    →
-                                  </span>
-                                </button>
-                              );
+                        return (
+                          <button
+                            type="button"
+                            className="library-item"
+                            data-active={
+                              active
+                                ? "true"
+                                : "false"
                             }
-                          )}
-                        </div>
-                      )
+                            key={
+                              `${item.branch}:${item.path}`
+                            }
+                            onClick={() =>
+                              setSelected(
+                                item
+                              )
+                            }
+                          >
+                            <span className="library-item-type">
+                              {
+                                getCatalogLabel(
+                                  item
+                                )
+                              }
+                            </span>
+
+                            <span className="library-item-main">
+                              <strong>
+                                {titleFromFileName(
+                                  item.name
+                                )}
+                              </strong>
+
+                              <small>
+                                {getBranchLabel(
+                                  item.branch
+                                )}
+                                {" · "}
+                                {formatSize(
+                                  item.size
+                                )}
+                              </small>
+                            </span>
+
+                            <span
+                              className="library-item-arrow"
+                              aria-hidden="true"
+                            >
+                              →
+                            </span>
+                          </button>
+                        );
+                      }
                     )}
 
-                    {items.length ===
+                    {filteredItems.length ===
                       0 && (
                       <div className="library-empty">
-                        No supported media
-                        found in this
-                        collection.
+                        No published media
+                        exists in this
+                        category yet.
                       </div>
                     )}
                   </div>
 
                   <p className="library-source">
-                    Stored in the public
+                    Source:
+                    {" "}
                     <strong>
-                      Contents
-                    </strong>{" "}
-                    repository.
+                      Parsaetak / Contents
+                    </strong>
                   </p>
                 </aside>
 
@@ -462,8 +633,8 @@ export default function LibraryScene() {
                     <div>
                       <span>
                         {selected
-                          ? getContentKindLabel(
-                              selected.kind
+                          ? getCatalogLabel(
+                              selected
                             )
                           : "SELECT"}
                       </span>
