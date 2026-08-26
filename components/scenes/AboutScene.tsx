@@ -126,13 +126,13 @@ export default function AboutScene() {
                 </p>
 
                 <h2 className="section-title">
-                  Question.
+                  Question
                   <br />
-                  Build.
+                  Build
                   <br />
-                  Stress-test.
+                  Stress-test
                   <br />
-                  Refine.
+                  Refine
                 </h2>
               </div>
 
