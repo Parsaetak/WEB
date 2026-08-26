@@ -83,24 +83,21 @@ export default function SceneUrlSync({
     const initialScene =
       readSceneFromHash();
 
-    if (
-      initialScene
-    ) {
-      if (
-        initialScene !==
-        scene
-      ) {
-        onSceneChange(
-          initialScene
-        );
-      }
+    const nextScene =
+  initialScene ?? "home";
 
-      return;
-    }
+if (
+  nextScene !==
+  scene
+) {
+  onSceneChange(
+    nextScene
+  );
+}
 
-    normalizeHash(
-      scene
-    );
+normalizeHash(
+  nextScene
+);
   }, [
     onSceneChange,
     scene
