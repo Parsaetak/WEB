@@ -48,50 +48,6 @@ const MEDIA_FILTERS:
     }
   ];
 
-function formatSize(
-  bytes: number
-) {
-  if (
-    bytes <
-    1024
-  ) {
-    return `${bytes} B`;
-  }
-
-  if (
-    bytes <
-    1024 * 1024
-  ) {
-    return `${(
-      bytes / 1024
-    ).toFixed(1)} KB`;
-  }
-
-  return `${(
-    bytes /
-    (1024 * 1024)
-  ).toFixed(1)} MB`;
-}
-
-function titleFromFileName(
-  fileName: string
-) {
-  return fileName
-    .replace(
-      /\.[^/.]+$/,
-      ""
-    )
-    .replace(
-      /[_-]+/g,
-      " "
-    )
-    .replace(
-      /\s+/g,
-      " "
-    )
-    .trim();
-}
-
 function getMediaFilter(
   kind: ContentKind
 ): MediaFilter {
@@ -159,15 +115,6 @@ function getActionLabel(
   }
 
   return "VIEW";
-}
-
-function getDescription(
-  item: ContentItem
-) {
-  return (
-    item.description ??
-    "An original work from the Parsa Tak archive."
-  );
 }
 
 function getPreviewGlyph(
@@ -258,8 +205,18 @@ export default function LibraryScene() {
             content
           );
 
+          const firstFeatured =
+            content.find(
+              (
+                item
+              ) =>
+                item.featured
+            );
+
           setSelected(
-            null
+            firstFeatured ??
+              content[0] ??
+              null
           );
         }
       )
@@ -366,6 +323,34 @@ export default function LibraryScene() {
       [
         items,
         filter
+      ]
+    );
+
+  const featuredItems =
+    useMemo(
+      () =>
+        filteredItems.filter(
+          (
+            item
+          ) =>
+            item.featured
+        ),
+      [
+        filteredItems
+      ]
+    );
+
+  const regularItems =
+    useMemo(
+      () =>
+        filteredItems.filter(
+          (
+            item
+          ) =>
+            !item.featured
+        ),
+      [
+        filteredItems
       ]
     );
 
@@ -530,7 +515,7 @@ export default function LibraryScene() {
                   <div className="library-catalog-header">
                     <div>
                       <p className="kicker">
-                        SELECT A WORK
+                        COLLECTION
                       </p>
 
                       <h2>
@@ -557,8 +542,84 @@ export default function LibraryScene() {
                     </span>
                   </div>
 
+                  {featuredItems.length >
+                    0 && (
+                    <div className="library-featured-strip">
+                      {featuredItems.map(
+                        (
+                          item
+                        ) => {
+                          const active =
+                            selected?.sha ===
+                            item.sha;
+
+                          return (
+                            <button
+                              type="button"
+                              className="library-featured-card"
+                              data-active={
+                                active
+                                  ? "true"
+                                  : "false"
+                              }
+                              key={
+                                `${item.branch}:${item.path}`
+                              }
+                              onClick={() =>
+                                selectItem(
+                                  item
+                                )
+                              }
+                            >
+                              <div className="library-featured-card-visual">
+                                {item.coverUrl ? (
+                                  <img
+                                    src={
+                                      item.coverUrl
+                                    }
+                                    alt=""
+                                    loading="lazy"
+                                    decoding="async"
+                                  />
+                                ) : (
+                                  <span>
+                                    {
+                                      getPreviewGlyph(
+                                        item.kind
+                                      )
+                                    }
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="library-featured-card-content">
+                                <span>
+                                  FEATURED
+                                </span>
+
+                                <strong>
+                                  {
+                                    item.title
+                                  }
+                                </strong>
+
+                                {item.year && (
+                                  <small>
+                                    {
+                                      item.year
+                                    }
+                                  </small>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
+
                   <div className="library-list">
-                    {filteredItems.map(
+                    {regularItems.map(
                       (
                         item
                       ) => {
@@ -631,17 +692,18 @@ export default function LibraryScene() {
                   {!selected && (
                     <div className="library-preview-empty">
                       <span className="library-preview-empty-glyph">
-                        SELECT
+                        EXPLORE
                       </span>
 
                       <strong>
-                        Choose a work
+                        Discover the
+                        collection
                       </strong>
 
                       <p>
-                        Select a work to
-                        discover what it
-                        is about before
+                        Choose a work to
+                        see what it is
+                        about before
                         opening the full
                         media.
                       </p>
@@ -665,27 +727,50 @@ export default function LibraryScene() {
 
                         <div className="library-preview-art-orbit" />
 
-                        <span className="library-preview-art-type">
-                          {
-                            getPreviewGlyph(
-                              selected.kind
-                            )
-                          }
-                        </span>
-
-                        <strong>
-                          {
-                            selected.title
-                          }
-                        </strong>
-
-                        {selected.author && (
-                          <small>
-                            {
-                              selected.author
+                        {selected.coverUrl ? (
+                          <img
+                            src={
+                              selected.coverUrl
                             }
-                          </small>
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            className="library-preview-cover"
+                          />
+                        ) : (
+                          <>
+                            <span className="library-preview-art-type">
+                              {
+                                getPreviewGlyph(
+                                  selected.kind
+                                )
+                              }
+                            </span>
+
+                            <strong>
+                              {
+                                selected.title
+                              }
+                            </strong>
+
+                            {selected.author && (
+                              <small>
+                                {
+                                  selected.author
+                                }
+                              </small>
+                            )}
+                          </>
                         )}
+
+                        {selected.coverUrl &&
+                          selected.author && (
+                            <small className="library-preview-cover-author">
+                              {
+                                selected.author
+                              }
+                            </small>
+                          )}
 
                         {selected.featured && (
                           <span className="library-featured-mark">
@@ -711,9 +796,8 @@ export default function LibraryScene() {
 
                         <p>
                           {
-                            getDescription(
-                              selected
-                            )
+                            selected.description ??
+                            "An original work from the Parsa Tak archive."
                           }
                         </p>
 
