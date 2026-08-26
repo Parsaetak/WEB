@@ -1,0 +1,96 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+>
+  <defs>
+    <radialGradient
+      id="core"
+      cx="50%"
+      cy="45%"
+      r="55%"
+    >
+      <stop
+        offset="0%"
+        stop-color="#ff5252"
+      />
+      <stop
+        offset="55%"
+        stop-color="#ff1717"
+      />
+      <stop
+        offset="100%"
+        stop-color="#a60000"
+      />
+    </radialGradient>
+
+    <filter
+      id="glow"
+      x="-100%"
+      y="-100%"
+      width="300%"
+      height="300%"
+    >
+      <feGaussianBlur
+        stdDeviation="2.4"
+        result="blur"
+      />
+
+      <feMerge>
+        <feMergeNode
+          in="blur"
+        />
+        <feMergeNode
+          in="SourceGraphic"
+        />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect
+    width="64"
+    height="64"
+    rx="14"
+    fill="#070707"
+  />
+
+  <path
+    d="M32 7 56 53 32 45 8 53 32 7Z"
+    fill="#0b0b0b"
+    stroke="#ff1717"
+    stroke-width="2"
+    stroke-linejoin="round"
+  />
+
+  <path
+    d="M32 16 47 47 32 42 17 47 32 16Z"
+    fill="#110000"
+    stroke="#ff2424"
+    stroke-width="1.5"
+    stroke-linejoin="round"
+    filter="url(#glow)"
+  />
+
+  <circle
+    cx="32"
+    cy="31"
+    r="8"
+    fill="#160000"
+    stroke="#ff2929"
+    stroke-width="1.5"
+  />
+
+  <circle
+    cx="32"
+    cy="31"
+    r="4.5"
+    fill="url(#core)"
+    filter="url(#glow)"
+  />
+
+  <circle
+    cx="32"
+    cy="31"
+    r="1.6"
+    fill="#ffffff"
+  />
+</svg>
