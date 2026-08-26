@@ -42,6 +42,11 @@ type PdfDocument = {
   destroy?: () => Promise<void>;
 };
 
+type PdfProgressData = {
+  loaded: number;
+  total?: number;
+};
+
 type PdfLoadingTask = {
   promise: Promise<PdfDocument>;
 
@@ -156,6 +161,61 @@ function scheduleIdle(
   };
 }
 
+function formatProgress(
+  loaded: number,
+  total?: number
+) {
+  if (
+    !total ||
+    total <= 0
+  ) {
+    return null;
+  }
+
+  return clamp(
+    Math.round(
+      (
+        loaded /
+        total
+      ) *
+        100
+    ),
+    0,
+    100
+  );
+}
+
+function formatBytes(
+  bytes: number
+) {
+  if (
+    bytes <
+    1024
+  ) {
+    return `${bytes} B`;
+  }
+
+  if (
+    bytes <
+    1024 * 1024
+  ) {
+    return `${Math.round(
+      bytes /
+        1024
+    )} KB`;
+  }
+
+  return `${(
+    bytes /
+    (
+      1024 *
+      1024
+    )
+  ).toFixed(
+    1
+  )} MB`;
+}
+
 export default function LibraryPdfReader({
   src,
   title
@@ -203,8 +263,18 @@ export default function LibraryPdfReader({
   ] = useState(1);
 
   const [
+    pageInput,
+    setPageInput
+  ] = useState("1");
+
+  const [
     scale,
     setScale
+  ] = useState(1);
+
+  const [
+    fitScale,
+    setFitScale
   ] = useState(1);
 
   const [
@@ -218,16 +288,35 @@ export default function LibraryPdfReader({
   ] = useState(false);
 
   const [
+    backgroundLoading,
+    setBackgroundLoading
+  ] = useState(false);
+
+  const [
+    loadProgress,
+    setLoadProgress
+  ] = useState<
+    number | null
+  >(null);
+
+  const [
+    bytesLoaded,
+    setBytesLoaded
+  ] = useState(0);
+
+  const [
+    bytesTotal,
+    setBytesTotal
+  ] = useState<
+    number | null
+  >(null);
+
+  const [
     error,
     setError
   ] = useState<
     string | null
   >(null);
-
-  const [
-    fitScale,
-    setFitScale
-  ] = useState(1);
 
   useEffect(() => {
     let cancelled =
@@ -235,6 +324,26 @@ export default function LibraryPdfReader({
 
     setLoading(
       true
+    );
+
+    setRendering(
+      false
+    );
+
+    setBackgroundLoading(
+      false
+    );
+
+    setLoadProgress(
+      null
+    );
+
+    setBytesLoaded(
+      0
+    );
+
+    setBytesTotal(
+      null
     );
 
     setError(
@@ -247,6 +356,10 @@ export default function LibraryPdfReader({
 
     setPageNumber(
       1
+    );
+
+    setPageInput(
+      "1"
     );
 
     prefetchedPagesRef.current.clear();
@@ -273,43 +386,72 @@ export default function LibraryPdfReader({
 
           const loadingTask =
             pdfjs.getDocument({
-              url: src,
+              url:
+                src,
 
               withCredentials:
                 false,
 
-              /*
-               * Keep HTTP range requests enabled.
-               * The document can therefore be loaded in
-               * partial byte ranges when the host supports it.
-               */
               disableRange:
                 false,
 
-              /*
-               * Disable streaming so that our explicit
-               * look-ahead policy controls what gets fetched.
-               */
               disableStream:
                 true,
 
-              /*
-               * Prevent PDF.js from automatically walking
-               * through the rest of the document.
-               */
               disableAutoFetch:
                 true,
 
-              /*
-               * Use moderate chunks so the first useful
-               * document data does not require a huge transfer.
-               */
               rangeChunkSize:
                 RANGE_CHUNK_SIZE
             });
 
           loadingTaskRef.current =
             loadingTask;
+
+          const progressTask =
+            loadingTask as PdfLoadingTask & {
+              onProgress?: (
+                data: PdfProgressData
+              ) => void;
+            };
+
+          progressTask.onProgress =
+            (
+              data
+            ) => {
+              if (
+                cancelled
+              ) {
+                return;
+              }
+
+              setBytesLoaded(
+                data.loaded
+              );
+
+              if (
+                typeof data.total ===
+                  "number" &&
+                data.total > 0
+              ) {
+                setBytesTotal(
+                  data.total
+                );
+
+                setLoadProgress(
+                  formatProgress(
+                    data.loaded,
+                    data.total
+                  )
+                );
+
+                return;
+              }
+
+              setLoadProgress(
+                null
+              );
+            };
 
           const document =
             await loadingTask.promise;
@@ -382,7 +524,9 @@ export default function LibraryPdfReader({
 
       void document?.destroy?.();
     };
-  }, [src]);
+  }, [
+    src
+  ]);
 
   useEffect(() => {
     if (
@@ -395,7 +539,7 @@ export default function LibraryPdfReader({
     let cancelled =
       false;
 
-    const calculateFitScale =
+    const updateFit =
       async () => {
         try {
           const page =
@@ -430,13 +574,9 @@ export default function LibraryPdfReader({
               2.2
             );
 
-          if (
-            !cancelled
-          ) {
-            setFitScale(
-              nextFit
-            );
-          }
+          setFitScale(
+            nextFit
+          );
         } catch {
           if (
             !cancelled
@@ -448,7 +588,7 @@ export default function LibraryPdfReader({
         }
       };
 
-    void calculateFitScale();
+    void updateFit();
 
     return () => {
       cancelled =
@@ -692,18 +832,6 @@ export default function LibraryPdfReader({
     scale
   ]);
 
-  /*
-   * Controlled progressive loading:
-   *
-   * current page:
-   *      render now
-   *
-   * next 1..3 pages:
-   *      resolve during idle time
-   *
-   * no full-document automatic prefetch:
-   *      PDF.js is configured with disableAutoFetch=true
-   */
   useEffect(() => {
     if (
       !pdf
@@ -716,7 +844,8 @@ export default function LibraryPdfReader({
     prefetchCancelRef.current =
       null;
 
-    const pagesToWarm: number[] =
+    const pagesToWarm:
+      number[] =
       [];
 
     for (
@@ -753,6 +882,10 @@ export default function LibraryPdfReader({
       pagesToWarm.length ===
       0
     ) {
+      setBackgroundLoading(
+        false
+      );
+
       return;
     }
 
@@ -768,11 +901,23 @@ export default function LibraryPdfReader({
           index >=
             pagesToWarm.length
         ) {
+          if (
+            !cancelled
+          ) {
+            setBackgroundLoading(
+              false
+            );
+          }
+
           return;
         }
 
         const nextPage =
           pagesToWarm[index];
+
+        setBackgroundLoading(
+          true
+        );
 
         try {
           await pdf.getPage(
@@ -790,9 +935,8 @@ export default function LibraryPdfReader({
           );
         } catch {
           /*
-           * Speculative loading is optional.
-           * Never interrupt the reader because
-           * a background warm-up failed.
+           * Background warming is optional.
+           * Never interrupt active reading.
            */
         }
 
@@ -829,6 +973,10 @@ export default function LibraryPdfReader({
 
       prefetchCancelRef.current =
         null;
+
+      setBackgroundLoading(
+        false
+      );
     };
   }, [
     pdf,
@@ -839,16 +987,37 @@ export default function LibraryPdfReader({
     pdf?.numPages ??
     0;
 
+  const readingProgress =
+    pageCount > 0
+      ? Math.round(
+          (
+            pageNumber /
+            pageCount
+          ) *
+            100
+        )
+      : 0;
+
   const previousPage =
     () => {
       setPageNumber(
         (
           current
-        ) =>
-          Math.max(
-            1,
-            current - 1
-          )
+        ) => {
+          const next =
+            Math.max(
+              1,
+              current - 1
+            );
+
+          setPageInput(
+            String(
+              next
+            )
+          );
+
+          return next;
+        }
       );
     };
 
@@ -857,11 +1026,68 @@ export default function LibraryPdfReader({
       setPageNumber(
         (
           current
-        ) =>
-          Math.min(
-            pageCount,
-            current + 1
+        ) => {
+          const next =
+            Math.min(
+              pageCount,
+              current + 1
+            );
+
+          setPageInput(
+            String(
+              next
+            )
+          );
+
+          return next;
+        }
+      );
+    };
+
+  const goToPage =
+    (
+      event: React.FormEvent
+    ) => {
+      event.preventDefault();
+
+      const requested =
+        Number(
+          pageInput
+        );
+
+      if (
+        !Number.isFinite(
+          requested
+        )
+      ) {
+        setPageInput(
+          String(
+            pageNumber
           )
+        );
+
+        return;
+      }
+
+      const target =
+        Math.min(
+          pageCount,
+          Math.max(
+            1,
+            Math.round(
+              requested
+            )
+          )
+        );
+
+      setPageNumber(
+        target
+      );
+
+      setPageInput(
+        String(
+          target
+        )
       );
     };
 
@@ -922,6 +1148,7 @@ export default function LibraryPdfReader({
         event.key ===
         "ArrowLeft"
       ) {
+        event.preventDefault();
         previousPage();
       }
 
@@ -929,7 +1156,40 @@ export default function LibraryPdfReader({
         event.key ===
         "ArrowRight"
       ) {
+        event.preventDefault();
         nextPage();
+      }
+
+      if (
+        event.key ===
+        "Home"
+      ) {
+        event.preventDefault();
+
+        setPageNumber(
+          1
+        );
+
+        setPageInput(
+          "1"
+        );
+      }
+
+      if (
+        event.key ===
+        "End"
+      ) {
+        event.preventDefault();
+
+        setPageNumber(
+          pageCount
+        );
+
+        setPageInput(
+          String(
+            pageCount
+          )
+        );
       }
     };
 
@@ -937,13 +1197,63 @@ export default function LibraryPdfReader({
     loading
   ) {
     return (
-      <div className="library-pdf-reader">
-        <div className="library-pdf-status">
-          <span className="status-dot" />
+      <div className="library-pdf-reader library-pdf-reader-opening">
+        <div className="library-pdf-opening">
+          <div className="library-pdf-opening-mark">
+            <span />
+            <span />
+            <span />
+          </div>
 
-          <span>
-            OPENING BOOK
-          </span>
+          <p className="kicker">
+            LIBRARY / READER
+          </p>
+
+          <h2>
+            Opening
+            <br />
+            {title}
+          </h2>
+
+          <div className="library-pdf-progress">
+            <div
+              className="library-pdf-progress-bar"
+              style={
+                loadProgress !==
+                null
+                  ? {
+                      width:
+                        `${loadProgress}%`
+                    }
+                  : {
+                      width:
+                        "34%"
+                    }
+              }
+            />
+          </div>
+
+          <div className="library-pdf-opening-meta">
+            <span>
+              {loadProgress !==
+              null
+                ? `${loadProgress}%`
+                : "PREPARING"}
+            </span>
+
+            {bytesTotal !==
+              null && (
+              <span>
+                {formatBytes(
+                  bytesLoaded
+                )}
+                {" / "}
+                {formatBytes(
+                  bytesTotal
+                )}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -980,6 +1290,34 @@ export default function LibraryPdfReader({
         handleKeyDown
       }
     >
+      <header className="library-pdf-reader-header">
+        <div className="library-pdf-reader-title">
+          <span>
+            BOOK
+          </span>
+
+          <strong>
+            {title}
+          </strong>
+        </div>
+
+        <div className="library-pdf-reader-progress">
+          <span>
+            {readingProgress}
+            %
+          </span>
+
+          <div>
+            <i
+              style={{
+                width:
+                  `${readingProgress}%`
+              }}
+            />
+          </div>
+        </div>
+      </header>
+
       <div className="library-pdf-toolbar">
         <div className="library-pdf-toolbar-group">
           <button
@@ -996,11 +1334,34 @@ export default function LibraryPdfReader({
             ←
           </button>
 
-          <span>
-            {pageNumber}
-            {" / "}
-            {pageCount}
-          </span>
+          <form
+            className="library-pdf-page-form"
+            onSubmit={
+              goToPage
+            }
+          >
+            <input
+              value={
+                pageInput
+              }
+              onChange={(
+                event
+              ) =>
+                setPageInput(
+                  event.target
+                    .value
+                )
+              }
+              inputMode="numeric"
+              aria-label="Page number"
+            />
+
+            <span>
+              /
+              {" "}
+              {pageCount}
+            </span>
+          </form>
 
           <button
             type="button"
@@ -1015,6 +1376,28 @@ export default function LibraryPdfReader({
           >
             →
           </button>
+        </div>
+
+        <div className="library-pdf-reader-state">
+          {rendering && (
+            <span>
+              RENDERING
+            </span>
+          )}
+
+          {!rendering &&
+            backgroundLoading && (
+              <span>
+                LOADING NEXT
+              </span>
+            )}
+
+          {!rendering &&
+            !backgroundLoading && (
+              <span>
+                READY
+              </span>
+            )}
         </div>
 
         <div className="library-pdf-toolbar-group">
@@ -1061,17 +1444,41 @@ export default function LibraryPdfReader({
         ref={stageRef}
         className="library-pdf-stage"
       >
-        {rendering && (
-          <div className="library-pdf-rendering">
-            RENDERING
-          </div>
-        )}
+        <div className="library-pdf-reading-indicator">
+          <span>
+            {readingProgress}
+            %
+          </span>
+        </div>
 
         <div
           ref={pageRef}
           className="library-pdf-page-host"
         />
       </div>
+
+      <footer className="library-pdf-reader-footer">
+        <span>
+          PAGE{" "}
+          {String(
+            pageNumber
+          ).padStart(
+            2,
+            "0"
+          )}
+        </span>
+
+        <span>
+          {readingProgress}
+          % READ
+        </span>
+
+        {backgroundLoading && (
+          <span>
+            PREFETCHING
+          </span>
+        )}
+      </footer>
     </div>
   );
 }
