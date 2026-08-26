@@ -51,8 +51,18 @@ function LinkIcon({
     case "instagram":
       return (
         <svg {...commonProps}>
-          <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
-          <circle cx="12" cy="12" r="4" />
+          <rect
+            x="3.5"
+            y="3.5"
+            width="17"
+            height="17"
+            rx="5"
+          />
+          <circle
+            cx="12"
+            cy="12"
+            r="4"
+          />
           <circle
             cx="17.5"
             cy="6.5"
@@ -66,7 +76,13 @@ function LinkIcon({
     case "email":
       return (
         <svg {...commonProps}>
-          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <rect
+            x="3"
+            y="5"
+            width="18"
+            height="14"
+            rx="2"
+          />
           <path d="m4 7 8 6 8-6" />
         </svg>
       );
@@ -74,7 +90,13 @@ function LinkIcon({
     case "linkedin":
       return (
         <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="2" />
+          <rect
+            x="4"
+            y="4"
+            width="16"
+            height="16"
+            rx="2"
+          />
           <path d="M8 10v6" />
           <path d="M8 8h.01" />
           <path d="M12 16v-3.2a2.2 2.2 0 0 1 4.4 0V16" />
@@ -128,7 +150,11 @@ function LinkIcon({
     case "pinterest":
       return (
         <svg {...commonProps}>
-          <circle cx="12" cy="12" r="8.5" />
+          <circle
+            cx="12"
+            cy="12"
+            r="8.5"
+          />
           <path d="M10.5 18.8c.7-2.1 1.1-3.4 1.4-4.6" />
           <path d="M10.8 13.2c-.6-.6-.9-1.4-.9-2.4 0-1.9 1.4-3.3 3.3-3.3 1.7 0 3 1.1 3 2.8 0 2.2-1 4.2-2.7 4.2-.8 0-1.4-.7-1.2-1.5l.4-1.6" />
         </svg>
@@ -175,9 +201,7 @@ function LinkIcon({
   }
 }
 
-function getHost(
-  href: string
-) {
+function getHost(href: string) {
   if (
     href.startsWith(
       "mailto:"
@@ -274,6 +298,7 @@ function LinkCard({
 
         <span className="public-link-card-action">
           OPEN
+
           <span
             aria-hidden="true"
           >
@@ -313,6 +338,16 @@ export default function PublicLinks({
     }
   ];
 
+  const compactSocialIds =
+    new Set([
+      "x",
+      "whatsapp",
+      "instagram",
+      "github",
+      "linkedin",
+      "discord"
+    ]);
+
   return (
     <section
       className="section-tight public-links"
@@ -336,13 +371,15 @@ export default function PublicLinks({
           (group) => {
             const links =
               compact
-                ? group.links.slice(
-                    0,
-                    group.label ===
-                      "SOCIAL"
-                      ? 4
-                      : group.links.length
-                  )
+                ? group.label ===
+                  "SOCIAL"
+                  ? group.links.filter(
+                      (link) =>
+                        compactSocialIds.has(
+                          link.id
+                        )
+                    )
+                  : []
                 : group.links;
 
             if (
