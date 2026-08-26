@@ -357,6 +357,84 @@ export default function HomeScene() {
         </div>
       </section>
 
+<section className="section home-direction">
+  <div className="page-container">
+    <div className="home-direction-grid">
+      <div>
+        <p className="kicker">
+          DIRECTION
+        </p>
+
+        <h2 className="section-title">
+          Understand
+          <br />
+          intelligence.
+          <br />
+          Build better systems.
+        </h2>
+      </div>
+
+      <div className="home-direction-copy">
+        <p className="body-large">
+          The work is an ongoing attempt to
+          understand intelligence, strengthen
+          reasoning, and turn ideas into systems
+          that can be tested and improved.
+        </p>
+
+        <div className="home-direction-goals">
+          <div>
+            <span>
+              NOW
+            </span>
+
+            <strong>
+              RESEARCH
+            </strong>
+
+            <small>
+              Explore intelligence,
+              reasoning, and systems.
+            </small>
+          </div>
+
+          <div>
+            <span>
+              BUILD
+            </span>
+
+            <strong>
+              EXPERIMENT
+            </strong>
+
+            <small>
+              Turn research into
+              software, frameworks,
+              simulations, and art.
+            </small>
+          </div>
+
+          <div>
+            <span>
+              TOWARD
+            </span>
+
+            <strong>
+              BETTER INTELLIGENCE
+            </strong>
+
+            <small>
+              Build systems that are
+              measurable, testable,
+              and improvable.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+      
       <PublicLinks
         compact
         title="CONNECT"
