@@ -1,96 +1,272 @@
 <svg
   xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 64 64"
+  viewBox="0 0 128 128"
+  fill="none"
 >
   <defs>
-    <radialGradient
-      id="core"
-      cx="50%"
-      cy="45%"
-      r="55%"
+    <!-- Deep blood red star -->
+    <linearGradient
+      id="starRed"
+      x1="22"
+      y1="10"
+      x2="106"
+      y2="118"
+      gradientUnits="userSpaceOnUse"
     >
       <stop
-        offset="0%"
-        stop-color="#ff5252"
+        offset="0"
+        stop-color="#9b1515"
       />
       <stop
-        offset="55%"
-        stop-color="#ff1717"
+        offset="0.42"
+        stop-color="#720808"
       />
       <stop
-        offset="100%"
-        stop-color="#a60000"
+        offset="0.72"
+        stop-color="#560303"
+      />
+      <stop
+        offset="1"
+        stop-color="#350000"
+      />
+    </linearGradient>
+
+    <!-- Eye red -->
+    <linearGradient
+      id="eyeRed"
+      x1="42"
+      y1="44"
+      x2="86"
+      y2="82"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop
+        offset="0"
+        stop-color="#ff4141"
+      />
+      <stop
+        offset="0.45"
+        stop-color="#e01515"
+      />
+      <stop
+        offset="1"
+        stop-color="#8f0505"
+      />
+    </linearGradient>
+
+    <!-- Iris -->
+    <radialGradient
+      id="iris"
+      cx="50%"
+      cy="45%"
+      r="58%"
+    >
+      <stop
+        offset="0"
+        stop-color="#ff6a6a"
+      />
+      <stop
+        offset="0.32"
+        stop-color="#ef2020"
+      />
+      <stop
+        offset="0.68"
+        stop-color="#a80808"
+      />
+      <stop
+        offset="1"
+        stop-color="#4b0000"
       />
     </radialGradient>
 
-    <filter
-      id="glow"
-      x="-100%"
-      y="-100%"
-      width="300%"
-      height="300%"
+    <!-- Pupil -->
+    <radialGradient
+      id="pupil"
+      cx="45%"
+      cy="42%"
+      r="58%"
     >
-      <feGaussianBlur
-        stdDeviation="2.4"
-        result="blur"
+      <stop
+        offset="0"
+        stop-color="#ff3d3d"
       />
-
-      <feMerge>
-        <feMergeNode
-          in="blur"
-        />
-        <feMergeNode
-          in="SourceGraphic"
-        />
-      </feMerge>
-    </filter>
+      <stop
+        offset="0.35"
+        stop-color="#9d0000"
+      />
+      <stop
+        offset="1"
+        stop-color="#160000"
+      />
+    </radialGradient>
   </defs>
 
-  <rect
-    width="64"
-    height="64"
-    rx="14"
-    fill="#070707"
+  <!--
+    EXACT 13-FOLD STAR
+
+    360° / 13 =
+    27.692307692°
+
+    All principal points follow
+    the same angular interval.
+  -->
+  <polygon
+    points="
+      64.000,6.000
+      70.940,35.843
+      90.954,12.644
+      83.231,42.293
+      111.733,31.052
+      91.115,53.716
+      121.577,57.009
+      92.789,67.496
+      118.231,84.567
+      87.867,80.474
+      102.461,107.414
+      77.477,89.678
+      77.880,120.315
+      64.000,93.000
+      50.120,120.315
+      50.523,89.678
+      25.539,107.414
+      40.133,80.474
+      9.769,84.567
+      35.211,67.496
+      6.423,57.009
+      36.885,53.716
+      16.267,31.052
+      44.769,42.293
+      37.046,12.644
+      57.060,35.843
+    "
+    fill="url(#starRed)"
   />
 
+  <!-- Central eye outer almond -->
   <path
-    d="M32 7 56 53 32 45 8 53 32 7Z"
-    fill="#0b0b0b"
-    stroke="#ff1717"
-    stroke-width="2"
-    stroke-linejoin="round"
-  />
-
-  <path
-    d="M32 16 47 47 32 42 17 47 32 16Z"
-    fill="#110000"
+    d="
+      M37 64
+      C44.7 49.7 54.1 43.2 64 43.2
+      C73.9 43.2 83.3 49.7 91 64
+      C83.3 78.3 73.9 84.8 64 84.8
+      C54.1 84.8 44.7 78.3 37 64
+      Z
+    "
+    fill="#310000"
     stroke="#ff2424"
-    stroke-width="1.5"
+    stroke-width="2.2"
     stroke-linejoin="round"
-    filter="url(#glow)"
   />
 
+  <!-- Eye upper contour -->
+  <path
+    d="
+      M37 64
+      C44.8 49.4 54.2 43.2 64 43.2
+      C73.8 43.2 83.2 49.4 91 64
+    "
+    stroke="#ff4a4a"
+    stroke-width="2.4"
+    stroke-linecap="round"
+  />
+
+  <!-- Eye lower contour -->
+  <path
+    d="
+      M37 64
+      C44.8 78.6 54.2 84.8 64 84.8
+      C73.8 84.8 83.2 78.6 91 64
+    "
+    stroke="#b80c0c"
+    stroke-width="1.8"
+    stroke-linecap="round"
+  />
+
+  <!-- Iris -->
   <circle
-    cx="32"
-    cy="31"
-    r="8"
-    fill="#160000"
+    cx="64"
+    cy="64"
+    r="16.5"
+    fill="url(#iris)"
     stroke="#ff2929"
-    stroke-width="1.5"
+    stroke-width="1.3"
   />
 
+  <!-- Iris precision ring -->
   <circle
-    cx="32"
-    cy="31"
-    r="4.5"
-    fill="url(#core)"
-    filter="url(#glow)"
+    cx="64"
+    cy="64"
+    r="12.5"
+    stroke="#ff5555"
+    stroke-opacity="0.7"
+    stroke-width="1"
   />
 
-  <circle
-    cx="32"
-    cy="31"
-    r="1.6"
-    fill="#ffffff"
+  <!-- Iris radial structure -->
+  <g
+    stroke="#ff4646"
+    stroke-width="0.8"
+    stroke-linecap="round"
+    opacity="0.8"
+  >
+    <path d="M64 48v7" />
+    <path d="M64 73v7" />
+    <path d="M48 64h7" />
+    <path d="M73 64h7" />
+
+    <path d="m52.7 52.7 5 5" />
+    <path d="m70.3 70.3 5 5" />
+    <path d="m75.3 52.7-5 5" />
+    <path d="m57.7 70.3-5 5" />
+  </g>
+
+  <!-- Pupil -->
+  <ellipse
+    cx="64"
+    cy="64"
+    rx="6.4"
+    ry="9.2"
+    fill="url(#pupil)"
+  />
+
+  <!-- Pupil vertical slit -->
+  <ellipse
+    cx="64"
+    cy="64"
+    rx="2"
+    ry="7"
+    fill="#120000"
+  />
+
+  <!-- Red-hot pupil centre -->
+  <ellipse
+    cx="63.4"
+    cy="61.2"
+    rx="0.9"
+    ry="3.2"
+    fill="#ff5050"
+  />
+
+  <!-- Specular eye highlight -->
+  <ellipse
+    cx="58.5"
+    cy="56.8"
+    rx="2.2"
+    ry="1.4"
+    fill="#ffb2b2"
+    opacity="0.85"
+  />
+
+  <!-- Small upper eye crown -->
+  <path
+    d="
+      M49.5 48.8
+      C55.3 44.9 59.8 43 64 43
+      C68.2 43 72.7 44.9 78.5 48.8
+    "
+    stroke="#ff3030"
+    stroke-width="1"
+    stroke-linecap="round"
+    opacity="0.8"
   />
 </svg>
