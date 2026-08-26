@@ -8,6 +8,16 @@ import type {
   SceneId
 } from "@/components/LivingShell";
 
+const SCENE_ORDER:
+  readonly SceneId[] =
+  [
+    "home",
+    "about",
+    "systems",
+    "magic",
+    "work"
+  ];
+
 const preloaders: Record<
   SceneId,
   () => Promise<unknown>
@@ -38,6 +48,36 @@ const preloaders: Record<
     )
 };
 
+function getAdjacentScenes(
+  scene: SceneId
+): readonly SceneId[] {
+  const index =
+    SCENE_ORDER.indexOf(
+      scene
+    );
+
+  if (index < 0) {
+    return ["home", "about"];
+  }
+
+  const previous =
+    SCENE_ORDER[
+      (index - 1 + SCENE_ORDER.length) %
+        SCENE_ORDER.length
+    ];
+
+  const next =
+    SCENE_ORDER[
+      (index + 1) %
+        SCENE_ORDER.length
+    ];
+
+  return [
+    previous,
+    next
+  ];
+}
+
 export function preloadScene(
   scene: SceneId
 ) {
@@ -51,6 +91,26 @@ export function preloadScene(
   void preload();
 }
 
+export function preloadAdjacentScenes(
+  scene: SceneId
+) {
+  const adjacent =
+    getAdjacentScenes(
+      scene
+    );
+
+  const unique =
+    new Set(adjacent);
+
+  unique.forEach(
+    (adjacentScene) => {
+      preloadScene(
+        adjacentScene
+      );
+    }
+  );
+}
+
 type ScenePreloaderProps = {
   scene: SceneId;
 };
@@ -59,15 +119,10 @@ export default function ScenePreloader({
   scene
 }: ScenePreloaderProps) {
   useEffect(() => {
-    const preload =
-      preloaders[scene];
-
-    if (!preload) {
-      return;
-    }
-
     const run = () => {
-      void preload();
+      preloadAdjacentScenes(
+        scene
+      );
     };
 
     if (
@@ -102,7 +157,7 @@ export default function ScenePreloader({
     const id =
       globalThis.setTimeout(
         run,
-        300
+        250
       );
 
     return () => {
