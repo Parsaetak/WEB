@@ -76,10 +76,6 @@ const PDF_JS_URL =
 const PDF_WORKER_URL =
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/build/pdf.worker.min.mjs";
 
-/*
- * 256 KiB gives the network layer a useful chunk size without
- * making the first interaction unnecessarily heavy.
- */
 const RANGE_CHUNK_SIZE =
   256 * 1024;
 
@@ -123,23 +119,11 @@ function scheduleIdle(
   if (
     typeof window !==
       "undefined" &&
-    "requestIdleCallback" in
-      window
+    typeof window.requestIdleCallback ===
+      "function"
   ) {
-    const idleWindow =
-      window as typeof window & {
-        requestIdleCallback: (
-          callback: (
-            deadline: IdleDeadline
-          ) => void,
-          options?: {
-            timeout?: number;
-          }
-        ) => number;
-      };
-
     const id =
-      idleWindow.requestIdleCallback(
+      window.requestIdleCallback(
         () => {
           callback();
         },
@@ -150,32 +134,20 @@ function scheduleIdle(
       );
 
     return () => {
-      if (
-        "cancelIdleCallback" in
-        window
-      ) {
-        const cancelWindow =
-          window as typeof window & {
-            cancelIdleCallback: (
-              id: number
-            ) => void;
-          };
-
-        cancelWindow.cancelIdleCallback(
-          id
-        );
-      }
+      window.cancelIdleCallback(
+        id
+      );
     };
   }
 
   const id =
-    window.setTimeout(
+    globalThis.setTimeout(
       callback,
       300
     );
 
   return () => {
-    window.clearTimeout(
+    globalThis.clearTimeout(
       id
     );
   };
@@ -296,24 +268,12 @@ export default function LibraryPdfReader({
               withCredentials:
                 false,
 
-              /*
-               * Keep the network layer range-capable.
-               * PDF.js will request only the byte ranges it needs.
-               */
               disableRange:
                 false,
 
-              /*
-               * Keep streaming enabled so the first useful
-               * information can arrive before the whole file.
-               */
               disableStream:
                 false,
 
-              /*
-               * Leave auto-fetch enabled so PDF.js can continue
-               * warming nearby document data while the user reads.
-               */
               disableAutoFetch:
                 false,
 
@@ -464,7 +424,8 @@ export default function LibraryPdfReader({
     void calculateFitScale();
 
     return () => {
-      cancelled = true;
+      cancelled =
+        true;
     };
   }, [
     pdf,
@@ -560,6 +521,10 @@ export default function LibraryPdfReader({
       async () => {
         setRendering(
           true
+        );
+
+        setError(
+          null
         );
 
         try {
@@ -658,14 +623,12 @@ export default function LibraryPdfReader({
           await activeRenderTask.promise;
 
           if (
-            cancelled
+            !cancelled
           ) {
-            return;
+            setRendering(
+              false
+            );
           }
-
-          setRendering(
-            false
-          );
         } catch (
           reason
         ) {
@@ -691,7 +654,9 @@ export default function LibraryPdfReader({
     void renderPage();
 
     return () => {
-      cancelled = true;
+      cancelled =
+        true;
+
       activeRenderTask?.cancel();
     };
   }, [
@@ -701,11 +666,10 @@ export default function LibraryPdfReader({
   ]);
 
   /*
-   * Warm the next pages during idle time.
+   * Warm only the next page during browser idle time.
    *
-   * getPage() asks PDF.js for whatever document byte ranges are
-   * needed to resolve that page. We deliberately do NOT render
-   * those pages yet, so memory use stays low.
+   * PDF.js resolves the required PDF byte ranges internally.
+   * We intentionally do not render the speculative page.
    */
   useEffect(() => {
     if (
@@ -731,9 +695,8 @@ export default function LibraryPdfReader({
             .catch(
               () => {
                 /*
-                 * Look-ahead is an optimisation.
-                 * A failed speculative fetch must never
-                 * interrupt the current reading experience.
+                 * Speculative loading must never
+                 * interrupt the active reader.
                  */
               }
             );
