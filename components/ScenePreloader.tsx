@@ -62,7 +62,9 @@ function getAdjacentScenes(
       scene
     );
 
-  if (index < 0) {
+  if (
+    index < 0
+  ) {
     return [
       "home",
       "about"
@@ -71,7 +73,8 @@ function getAdjacentScenes(
 
   const previous =
     SCENE_ORDER[
-      (index - 1 +
+      (index -
+        1 +
         SCENE_ORDER.length) %
         SCENE_ORDER.length
     ];
@@ -96,14 +99,18 @@ export function preloadScene(
       scene
     );
 
-  if (cached) {
+  if (
+    cached
+  ) {
     return cached;
   }
 
   const preload =
     preloaders[scene];
 
-  if (!preload) {
+  if (
+    !preload
+  ) {
     return Promise.resolve();
   }
 
@@ -139,12 +146,65 @@ export async function preloadAdjacentScenes(
 
   await Promise.allSettled(
     unique.map(
-      (adjacentScene) =>
+      (
+        adjacentScene
+      ) =>
         preloadScene(
           adjacentScene
         )
     )
   );
+}
+
+function scheduleIdle(
+  callback: () => void
+) {
+  if (
+    typeof window !==
+      "undefined" &&
+    "requestIdleCallback" in
+      window
+  ) {
+    const idleWindow =
+      window as typeof window & {
+        requestIdleCallback: (
+          callback: () => void,
+          options?: {
+            timeout?: number;
+          }
+        ) => number;
+
+        cancelIdleCallback: (
+          id: number
+        ) => void;
+      };
+
+    const id =
+      idleWindow.requestIdleCallback(
+        callback,
+        {
+          timeout: 1500
+        }
+      );
+
+    return () => {
+      idleWindow.cancelIdleCallback(
+        id
+      );
+    };
+  }
+
+  const id =
+    globalThis.setTimeout(
+      callback,
+      250
+    );
+
+  return () => {
+    globalThis.clearTimeout(
+      id
+    );
+  };
 }
 
 type ScenePreloaderProps = {
@@ -155,53 +215,16 @@ export default function ScenePreloader({
   scene
 }: ScenePreloaderProps) {
   useEffect(() => {
-    const run = () => {
-      void preloadAdjacentScenes(
-        scene
-      );
-    };
-
-    if (
-      typeof window !==
-        "undefined" &&
-      "requestIdleCallback" in
-        window
-    ) {
-      const idleWindow =
-        window as typeof window & {
-          requestIdleCallback: (
-            callback: () => void
-          ) => number;
-
-          cancelIdleCallback: (
-            id: number
-          ) => void;
-        };
-
-      const id =
-        idleWindow.requestIdleCallback(
-          run
+    return scheduleIdle(
+      () => {
+        void preloadAdjacentScenes(
+          scene
         );
-
-      return () => {
-        idleWindow.cancelIdleCallback(
-          id
-        );
-      };
-    }
-
-    const id =
-      globalThis.setTimeout(
-        run,
-        250
-      );
-
-    return () => {
-      globalThis.clearTimeout(
-        id
-      );
-    };
-  }, [scene]);
+      }
+    );
+  }, [
+    scene
+  ]);
 
   return null;
 }
