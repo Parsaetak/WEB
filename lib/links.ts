@@ -1,4 +1,3 @@
-```ts
 export type PublicLink = {
   readonly id: string;
   readonly label: string;
@@ -118,4 +117,3 @@ export const ALL_PUBLIC_LINKS = [
   ...PUBLIC_LINKS.resources,
   ...PUBLIC_LINKS.meta
 ] as const;
-```
