@@ -12,13 +12,30 @@ export default function SceneLoadingScreen({
   return (
     <div
       className="scene-loading-screen"
-      data-visible={visible ? "true" : "false"}
+      data-visible={
+        visible
+          ? "true"
+          : "false"
+      }
       role="status"
       aria-live="polite"
       aria-label="Loading"
+      aria-hidden={
+        visible
+          ? "false"
+          : "true"
+      }
     >
+      <div
+        className="scene-loading-screen-backdrop"
+        aria-hidden="true"
+      />
+
       <div className="scene-loading-screen-inner">
-        <div className="scene-loading-screen-eye">
+        <div
+          className="scene-loading-screen-eye"
+          aria-hidden="true"
+        >
           <RedEye size={56} />
         </div>
 
@@ -40,8 +57,13 @@ export default function SceneLoadingScreen({
         </div>
 
         <div className="scene-loading-screen-meta">
-          <span>LIVE WORLD</span>
-          <span>SYNC</span>
+          <span>
+            LIVE WORLD
+          </span>
+
+          <span>
+            SYNC
+          </span>
         </div>
       </div>
     </div>
