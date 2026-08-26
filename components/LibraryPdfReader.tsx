@@ -57,6 +57,10 @@ type PdfJs = {
     source: {
       url: string;
       withCredentials?: boolean;
+      rangeChunkSize?: number;
+      disableRange?: boolean;
+      disableStream?: boolean;
+      disableAutoFetch?: boolean;
     }
   ) => PdfLoadingTask;
 };
@@ -71,6 +75,13 @@ const PDF_JS_URL =
 
 const PDF_WORKER_URL =
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/build/pdf.worker.min.mjs";
+
+/*
+ * 256 KiB gives the network layer a useful chunk size without
+ * making the first interaction unnecessarily heavy.
+ */
+const RANGE_CHUNK_SIZE =
+  256 * 1024;
 
 let pdfJsPromise:
   | Promise<PdfJs>
@@ -106,6 +117,70 @@ function clamp(
   );
 }
 
+function scheduleIdle(
+  callback: () => void
+) {
+  if (
+    typeof window !==
+      "undefined" &&
+    "requestIdleCallback" in
+      window
+  ) {
+    const idleWindow =
+      window as typeof window & {
+        requestIdleCallback: (
+          callback: (
+            deadline: IdleDeadline
+          ) => void,
+          options?: {
+            timeout?: number;
+          }
+        ) => number;
+      };
+
+    const id =
+      idleWindow.requestIdleCallback(
+        () => {
+          callback();
+        },
+        {
+          timeout:
+            1200
+        }
+      );
+
+    return () => {
+      if (
+        "cancelIdleCallback" in
+        window
+      ) {
+        const cancelWindow =
+          window as typeof window & {
+            cancelIdleCallback: (
+              id: number
+            ) => void;
+          };
+
+        cancelWindow.cancelIdleCallback(
+          id
+        );
+      }
+    };
+  }
+
+  const id =
+    window.setTimeout(
+      callback,
+      300
+    );
+
+  return () => {
+    window.clearTimeout(
+      id
+    );
+  };
+}
+
 export default function LibraryPdfReader({
   src,
   title
@@ -129,6 +204,11 @@ export default function LibraryPdfReader({
     useRef<PdfLoadingTask | null>(
       null
     );
+
+  const lookAheadCancelRef =
+    useRef<
+      (() => void) | null
+    >(null);
 
   const [
     pdf,
@@ -212,8 +292,33 @@ export default function LibraryPdfReader({
           const loadingTask =
             pdfjs.getDocument({
               url: src,
+
               withCredentials:
-                false
+                false,
+
+              /*
+               * Keep the network layer range-capable.
+               * PDF.js will request only the byte ranges it needs.
+               */
+              disableRange:
+                false,
+
+              /*
+               * Keep streaming enabled so the first useful
+               * information can arrive before the whole file.
+               */
+              disableStream:
+                false,
+
+              /*
+               * Leave auto-fetch enabled so PDF.js can continue
+               * warming nearby document data while the user reads.
+               */
+              disableAutoFetch:
+                false,
+
+              rangeChunkSize:
+                RANGE_CHUNK_SIZE
             });
 
           loadingTaskRef.current =
@@ -268,6 +373,11 @@ export default function LibraryPdfReader({
     return () => {
       cancelled =
         true;
+
+      lookAheadCancelRef.current?.();
+
+      lookAheadCancelRef.current =
+        null;
 
       const document =
         documentRef.current;
@@ -339,16 +449,6 @@ export default function LibraryPdfReader({
             setFitScale(
               nextFit
             );
-
-            setScale(
-              (
-                current
-              ) =>
-                current ===
-                fitScale
-                  ? nextFit
-                  : current
-            );
           }
         } catch {
           if (
@@ -369,167 +469,6 @@ export default function LibraryPdfReader({
   }, [
     pdf,
     pageNumber
-  ]);
-
-  useEffect(() => {
-    if (
-      !pdf ||
-      !pageRef.current
-    ) {
-      return;
-    }
-
-    let cancelled =
-      false;
-
-    let activeRenderTask:
-      | PdfRenderTask
-      | null = null;
-
-    const renderPage =
-      async () => {
-        setRendering(
-          true
-        );
-
-        setError(
-          null
-        );
-
-        try {
-          const page =
-            await pdf.getPage(
-              pageNumber
-            );
-
-          if (
-            cancelled ||
-            !pageRef.current
-          ) {
-            return;
-          }
-
-          const viewport =
-            page.getViewport({
-              scale
-            });
-
-          const dpr =
-            Math.min(
-              window.devicePixelRatio ||
-                1,
-              2
-            );
-
-          const canvas =
-            document.createElement(
-              "canvas"
-            );
-
-          const context =
-            canvas.getContext(
-              "2d",
-              {
-                alpha: false
-              }
-            );
-
-          if (!context) {
-            throw new Error(
-              "Canvas rendering is unavailable."
-            );
-          }
-
-          canvas.width =
-            Math.max(
-              1,
-              Math.ceil(
-                viewport.width *
-                  dpr
-              )
-            );
-
-          canvas.height =
-            Math.max(
-              1,
-              Math.ceil(
-                viewport.height *
-                  dpr
-              )
-            );
-
-          canvas.style.width =
-            `${viewport.width}px`;
-
-          canvas.style.height =
-            `${viewport.height}px`;
-
-          canvas.className =
-            "library-pdf-page";
-
-          context.setTransform(
-            dpr,
-            0,
-            0,
-            dpr,
-            0,
-            0
-          );
-
-          pageRef.current.replaceChildren(
-            canvas
-          );
-
-          activeRenderTask =
-            page.render({
-              canvas,
-              canvasContext:
-                context,
-              viewport
-            });
-
-          await activeRenderTask.promise;
-
-          if (
-            !cancelled
-          ) {
-            setRendering(
-              false
-            );
-          }
-        } catch (
-          reason
-        ) {
-          if (
-            cancelled
-          ) {
-            return;
-          }
-
-          setRendering(
-            false
-          );
-
-          setError(
-            reason instanceof
-              Error
-              ? reason.message
-              : "Unable to render this page."
-          );
-        }
-      };
-
-    void renderPage();
-
-    return () => {
-      cancelled = true;
-
-      activeRenderTask?.cancel();
-    };
-  }, [
-    pdf,
-    pageNumber,
-    scale
   ]);
 
   useEffect(() => {
@@ -596,6 +535,216 @@ export default function LibraryPdfReader({
 
     return () => {
       observer.disconnect();
+    };
+  }, [
+    pdf,
+    pageNumber
+  ]);
+
+  useEffect(() => {
+    if (
+      !pdf ||
+      !pageRef.current
+    ) {
+      return;
+    }
+
+    let cancelled =
+      false;
+
+    let activeRenderTask:
+      | PdfRenderTask
+      | null = null;
+
+    const renderPage =
+      async () => {
+        setRendering(
+          true
+        );
+
+        try {
+          const page =
+            await pdf.getPage(
+              pageNumber
+            );
+
+          if (
+            cancelled ||
+            !pageRef.current
+          ) {
+            return;
+          }
+
+          const viewport =
+            page.getViewport({
+              scale
+            });
+
+          const devicePixelRatio =
+            Math.min(
+              window.devicePixelRatio ||
+                1,
+              2
+            );
+
+          const canvas =
+            document.createElement(
+              "canvas"
+            );
+
+          const context =
+            canvas.getContext(
+              "2d",
+              {
+                alpha:
+                  false
+              }
+            );
+
+          if (!context) {
+            throw new Error(
+              "Canvas rendering is unavailable."
+            );
+          }
+
+          canvas.width =
+            Math.max(
+              1,
+              Math.ceil(
+                viewport.width *
+                  devicePixelRatio
+              )
+            );
+
+          canvas.height =
+            Math.max(
+              1,
+              Math.ceil(
+                viewport.height *
+                  devicePixelRatio
+              )
+            );
+
+          canvas.style.width =
+            `${viewport.width}px`;
+
+          canvas.style.height =
+            `${viewport.height}px`;
+
+          canvas.className =
+            "library-pdf-page";
+
+          context.setTransform(
+            devicePixelRatio,
+            0,
+            0,
+            devicePixelRatio,
+            0,
+            0
+          );
+
+          pageRef.current.replaceChildren(
+            canvas
+          );
+
+          activeRenderTask =
+            page.render({
+              canvas,
+              canvasContext:
+                context,
+              viewport
+            });
+
+          await activeRenderTask.promise;
+
+          if (
+            cancelled
+          ) {
+            return;
+          }
+
+          setRendering(
+            false
+          );
+        } catch (
+          reason
+        ) {
+          if (
+            cancelled
+          ) {
+            return;
+          }
+
+          setRendering(
+            false
+          );
+
+          setError(
+            reason instanceof
+              Error
+              ? reason.message
+              : "Unable to render this page."
+          );
+        }
+      };
+
+    void renderPage();
+
+    return () => {
+      cancelled = true;
+      activeRenderTask?.cancel();
+    };
+  }, [
+    pdf,
+    pageNumber,
+    scale
+  ]);
+
+  /*
+   * Warm the next pages during idle time.
+   *
+   * getPage() asks PDF.js for whatever document byte ranges are
+   * needed to resolve that page. We deliberately do NOT render
+   * those pages yet, so memory use stays low.
+   */
+  useEffect(() => {
+    if (
+      !pdf ||
+      pageNumber >=
+        pdf.numPages
+    ) {
+      return;
+    }
+
+    lookAheadCancelRef.current?.();
+
+    const nextPageNumber =
+      pageNumber + 1;
+
+    lookAheadCancelRef.current =
+      scheduleIdle(
+        () => {
+          void pdf
+            .getPage(
+              nextPageNumber
+            )
+            .catch(
+              () => {
+                /*
+                 * Look-ahead is an optimisation.
+                 * A failed speculative fetch must never
+                 * interrupt the current reading experience.
+                 */
+              }
+            );
+        }
+      );
+
+    return () => {
+      lookAheadCancelRef.current?.();
+
+      lookAheadCancelRef.current =
+        null;
     };
   }, [
     pdf,
@@ -797,7 +946,8 @@ export default function LibraryPdfReader({
 
           <span>
             {Math.round(
-              scale * 100
+              scale *
+                100
             )}
             %
           </span>
