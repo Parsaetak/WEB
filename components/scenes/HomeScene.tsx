@@ -2,13 +2,6 @@ import PublicLinks from "@/components/PublicLinks";
 import RedMagic from "@/components/RedMagic";
 import { PUBLIC_LINKS } from "@/lib/links";
 
-const roles = [
-  "RESEARCHER",
-  "WRITER",
-  "ARTIST",
-  "PROGRAMMER"
-];
-
 const fields = [
   "AI",
   "REASONING",
@@ -35,33 +28,20 @@ const systems = [
   }
 ];
 
-function RoleStrip() {
-  return (
-    <div className="home-role-strip">
-      {roles.map(
-        (
-          role,
-          index
-        ) => (
-          <span
-            key={role}
-          >
-            <small>
-              {String(
-                index + 1
-              ).padStart(
-                2,
-                "0"
-              )}
-            </small>
-
-            {role}
-          </span>
-        )
-      )}
-    </div>
-  );
-}
+const directionStages = [
+  {
+    label: "RESEARCH",
+    copy: "Explore intelligence, reasoning, and systems."
+  },
+  {
+    label: "EXPERIMENT",
+    copy: "Turn research into software, frameworks, simulations, and art."
+  },
+  {
+    label: "BETTER INTELLIGENCE",
+    copy: "Build systems that are measurable, testable, and improvable."
+  }
+];
 
 export default function HomeScene() {
   const github =
@@ -100,14 +80,14 @@ export default function HomeScene() {
             </p>
 
             <h1 className="hero-title home-identity-title">
-  Researcher
-  <br />
-  Writer
-  <br />
-  Artist
-  <br />
-  Programmer
-</h1>
+              Researcher
+              <br />
+              Writer
+              <br />
+              Artist
+              <br />
+              Programmer
+            </h1>
 
             <p className="body-large hero-description home-identity-lead">
               Exploring intelligence through
@@ -183,24 +163,13 @@ export default function HomeScene() {
             </p>
           </div>
 
-          <div className="home-field-strip">
+          <div className="home-exploration-field">
             {fields.map(
-              (
-                field,
-                index
-              ) => (
+              (field) => (
                 <span
                   key={field}
+                  className="home-exploration-item"
                 >
-                  <small>
-                    {String(
-                      index + 1
-                    ).padStart(
-                      2,
-                      "0"
-                    )}
-                  </small>
-
                   {field}
                 </span>
               )
@@ -355,84 +324,70 @@ export default function HomeScene() {
         </div>
       </section>
 
-<section className="section home-direction">
-  <div className="page-container">
-    <div className="home-direction-grid">
-      <div>
-        <p className="kicker">
-          DIRECTION
-        </p>
+      <section className="section home-direction">
+        <div className="page-container">
+          <div className="home-direction-grid">
+            <div>
+              <p className="kicker">
+                DIRECTION
+              </p>
 
-        <h2 className="section-title">
-          Understand
-          <br />
-          intelligence
-          <br />
-          Build better systems
-        </h2>
-      </div>
+              <h2 className="section-title">
+                Understand
+                <br />
+                intelligence
+                <br />
+                Build better systems
+              </h2>
+            </div>
 
-      <div className="home-direction-copy">
-        <p className="body-large">
-          The work is an ongoing attempt to
-          understand intelligence, strengthen
-          reasoning, and turn ideas into systems
-          that can be tested and improved.
-        </p>
+            <div className="home-direction-copy">
+              <p className="body-large">
+                The work is an ongoing attempt to
+                understand intelligence, strengthen
+                reasoning, and turn ideas into systems
+                that can be tested and improved.
+              </p>
 
-        <div className="home-direction-goals">
-          <div>
-            <span>
-              NOW
-            </span>
+              <div className="home-direction-stages">
+                {directionStages.map(
+                  (
+                    stage,
+                    index
+                  ) => (
+                    <div
+                      className="home-direction-stage"
+                      key={stage.label}
+                    >
+                      <div className="home-direction-stage-main">
+                        <strong>
+                          {stage.label}
+                        </strong>
 
-            <strong>
-              RESEARCH
-            </strong>
+                        <p>
+                          {stage.copy}
+                        </p>
+                      </div>
 
-            <small>
-              Explore intelligence,
-              reasoning, and systems.
-            </small>
-          </div>
-
-          <div>
-            <span>
-              BUILD
-            </span>
-
-            <strong>
-              EXPERIMENT
-            </strong>
-
-            <small>
-              Turn research into
-              software, frameworks,
-              simulations, and art.
-            </small>
-          </div>
-
-          <div>
-            <span>
-              TOWARD
-            </span>
-
-            <strong>
-              BETTER INTELLIGENCE
-            </strong>
-
-            <small>
-              Build systems that are
-              measurable, testable,
-              and improvable.
-            </small>
+                      {index <
+                        directionStages.length -
+                          1 && (
+                        <span
+                          className="home-direction-stage-arrow"
+                          aria-hidden="true"
+                        >
+                          →
+                        </span>
+                      )}
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
-      
+      </section>
+
       <PublicLinks
         compact
         title="CONNECT"
