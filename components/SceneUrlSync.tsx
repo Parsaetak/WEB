@@ -9,7 +9,107 @@ import type {
 } from "@/components/LivingShell";
 
 type SceneUrlSyncProps = {
+  scene: SceneId;"use client";
+
+import {
+  useEffect
+} from "react";
+
+import type {
+  SceneId
+} from "@/components/LivingShell";
+
+type SceneUrlSyncProps = {
   scene: SceneId;
+  onSceneChange: (
+    scene: SceneId
+  ) => void;
+};
+
+const VALID_SCENES:
+  readonly SceneId[] =
+  [
+    "home",
+    "about",
+    "systems",
+    "magic",
+    "work"
+  ];
+
+function readSceneFromHash():
+  | SceneId
+  | null {
+  const hash =
+    window.location.hash
+      .replace(
+        /^#/,
+        ""
+      )
+      .toLowerCase();
+
+  return VALID_SCENES.includes(
+    hash as SceneId
+  )
+    ? (hash as SceneId)
+    : null;
+}
+
+export default function SceneUrlSync({
+  scene,
+  onSceneChange
+}: SceneUrlSyncProps) {
+  useEffect(() => {
+    const initialScene =
+      readSceneFromHash();
+
+    if (
+      initialScene &&
+      initialScene !== scene
+    ) {
+      onSceneChange(
+        initialScene
+      );
+    }
+
+    const handleNavigation =
+      () => {
+        const nextScene =
+          readSceneFromHash();
+
+        onSceneChange(
+          nextScene ??
+            "home"
+        );
+      };
+
+    window.addEventListener(
+      "hashchange",
+      handleNavigation
+    );
+
+    window.addEventListener(
+      "popstate",
+      handleNavigation
+    );
+
+    return () => {
+      window.removeEventListener(
+        "hashchange",
+        handleNavigation
+      );
+
+      window.removeEventListener(
+        "popstate",
+        handleNavigation
+      );
+    };
+  }, [
+    onSceneChange,
+    scene
+  ]);
+
+  return null;
+}
   onSceneChange: (
     scene: SceneId
   ) => void;
