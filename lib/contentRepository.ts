@@ -248,8 +248,17 @@ export async function listBranchContent(
   return request;
 }
 
+export const CONTENT_BRANCHES =
+  [
+    "Books",
+    "Projects",
+    "AI-frameworks",
+    "AI-Tests"
+  ] as const;
+
 export async function listContent(
-  branches: string[]
+  branches: readonly string[] =
+    CONTENT_BRANCHES
 ): Promise<ContentItem[]> {
   const uniqueBranches =
     Array.from(
