@@ -36,6 +36,51 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Sync Library manifest
+        run: |
+          mkdir -p data
+          curl --fail --silent --show-error --location \
+            "https://raw.githubusercontent.com/Parsaetak/Contents/Projects/library.json" \
+            --output data/library.json
+
+      - name: Validate Library manifest
+        run: |
+          node -e "
+          const fs = require('fs');
+
+          const file = 'data/library.json';
+          const data = JSON.parse(
+            fs.readFileSync(file, 'utf8')
+          );
+
+          if (
+            typeof data.version !== 'number' ||
+            typeof data.updated !== 'string' ||
+            !Array.isArray(data.items)
+          ) {
+            throw new Error('Invalid Library manifest');
+          }
+
+          for (const item of data.items) {
+            if (
+              typeof item.branch !== 'string' ||
+              typeof item.source !== 'string' ||
+              typeof item.title !== 'string' ||
+              typeof item.type !== 'string'
+            ) {
+              throw new Error(
+                'Invalid Library manifest item'
+              );
+            }
+          }
+
+          console.log(
+            'Library manifest valid:',
+            data.items.length,
+            'items'
+          );
+          "
+
       - name: Build Next.js site
         run: npm run build
 
