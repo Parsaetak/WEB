@@ -13,12 +13,15 @@ import SceneLoadingScreen from "@/components/SceneLoadingScreen";
 
 type SceneLoaderProps = {
   scene: SceneId;
+  loading?: boolean;
   children: ReactNode;
 };
 
 function SceneFallback() {
   return (
-    <SceneLoadingScreen />
+    <SceneLoadingScreen
+      visible={true}
+    />
   );
 }
 
@@ -43,6 +46,7 @@ function SceneErrorState() {
 
 export default function SceneViewport({
   scene,
+  loading = false,
   children
 }: SceneLoaderProps) {
   return (
@@ -56,6 +60,10 @@ export default function SceneViewport({
           {children}
         </div>
       </Suspense>
+
+      <SceneLoadingScreen
+        visible={loading}
+      />
 
       <div
         className="scene-viewport-frame"
