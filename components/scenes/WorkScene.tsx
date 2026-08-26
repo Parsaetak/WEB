@@ -53,20 +53,7 @@ const projects = [
   }
 ];
 
-const states = [
-  {
-    label: "FOCUS",
-    value: "INTELLIGENCE"
-  },
-  {
-    label: "OUTPUT",
-    value: "SYSTEMS"
-  },
-  {
-    label: "MODE",
-    value: "RESEARCH"
-  }
-];
+
 
 export default function WorkScene() {
   const github =
@@ -210,42 +197,23 @@ export default function WorkScene() {
           </div>
 
           <div className="work-laboratory-footer">
-            <div className="work-state-grid">
-              {states.map(
-                (state) => (
-                  <div
-                    className="work-state"
-                    key={state.label}
-                  >
-                    <span>
-                      {state.label}
-                    </span>
+  {github && (
+    <a
+      className="work-archive-link"
+      href={github.href}
+      target="_blank"
+      rel="noreferrer"
+    >
+      <span>
+        FULL ARCHIVE
+      </span>
 
-                    <strong>
-                      {state.value}
-                    </strong>
-                  </div>
-                )
-              )}
-            </div>
-
-            {github && (
-              <a
-                className="work-archive-link"
-                href={github.href}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span>
-                  FULL ARCHIVE
-                </span>
-
-                <strong>
-                  GitHub ↗
-                </strong>
-              </a>
-            )}
-          </div>
+      <strong>
+        GitHub ↗
+      </strong>
+    </a>
+  )}
+</div>
         </div>
       </section>
     </div>
