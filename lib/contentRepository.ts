@@ -1,4 +1,4 @@
-import libraryManifest from "@/data/library.json";
+import rawLibraryManifest from "@/data/library.json";
 
 export type ContentKind =
   | "pdf"
@@ -64,6 +64,15 @@ const MIME_EXTENSIONS: Record<
   webp: true,
   gif: true
 };
+
+/*
+ * JSON imports are intentionally widened by TypeScript.
+ * The deployment workflow validates the external manifest,
+ * and this explicit boundary gives the application its
+ * stable domain type.
+ */
+const LIBRARY_MANIFEST =
+  rawLibraryManifest as unknown as LibraryManifest;
 
 function getContentKind(
   path: string
@@ -186,13 +195,13 @@ function createContentItem(
 export async function loadLibraryManifest(): Promise<
   LibraryManifest
 > {
-  return libraryManifest as LibraryManifest;
+  return LIBRARY_MANIFEST;
 }
 
 export async function listContent(): Promise<
   ContentItem[]
 > {
-  return libraryManifest.items
+  return LIBRARY_MANIFEST.items
     .map(
       createContentItem
     )
