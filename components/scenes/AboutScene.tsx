@@ -73,41 +73,50 @@ export default function AboutScene() {
           </header>
 
           <div className="about-identity">
-            <div className="about-identity-main">
-              <p className="kicker">
-                IN PRACTICE
-              </p>
+  <div className="about-identity-main">
+    <p className="kicker">
+      IN PRACTICE
+    </p>
 
-              <p className="about-identity-statement">
-                I research ideas about intelligence,
-                build systems to test them,
-                write about what I learn,
-                and create visual work around the same questions.
-              </p>
-            </div>
+    <p className="about-identity-statement">
+      I research ideas about intelligence,
+      build systems to test them,
+      write about what I learn,
+      and create visual work around
+      the same questions.
+    </p>
+  </div>
 
-            <div className="about-identity-side">
-              <div>
-                <span>
-                  BASED AROUND
-                </span>
+  <div className="about-identity-side">
+    <div className="about-identity-card">
+      <span className="about-identity-card-label">
+        BASED AROUND
+      </span>
 
-                <strong>
-                  AI · REASONING · SYSTEMS
-                </strong>
-              </div>
+      <strong className="about-identity-card-value">
+        AI
+        <span>·</span>
+        REASONING
+        <span>·</span>
+        SYSTEMS
+      </strong>
+    </div>
 
-              <div>
-                <span>
-                  OUTPUT
-                </span>
+    <div className="about-identity-card">
+      <span className="about-identity-card-label">
+        OUTPUT
+      </span>
 
-                <strong>
-                  SOFTWARE · WRITING · ART
-                </strong>
-              </div>
-            </div>
-          </div>
+      <strong className="about-identity-card-value">
+        SOFTWARE
+        <span>·</span>
+        WRITING
+        <span>·</span>
+        ART
+      </strong>
+    </div>
+  </div>
+</div>
 
           <div className="about-method">
             <div className="about-method-header">
