@@ -1,3 +1,5 @@
+import PublicLinks from "@/components/PublicLinks";
+
 const principles = [
   {
     label: "PERSONALITY",
@@ -148,6 +150,10 @@ export default function AboutScene() {
               )}
             </div>
           </div>
+
+          <PublicLinks
+            title="PUBLIC NETWORK"
+          />
         </div>
       </section>
     </div>
