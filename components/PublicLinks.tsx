@@ -1,5 +1,6 @@
 import type {
   CSSProperties,
+  ReactNode,
   SVGProps
 } from "react";
 
@@ -33,7 +34,7 @@ const ICON_PROPS = {
 
 const LINK_ICONS: Record<
   PublicLinkIcon,
-  (props: IconProps) => React.ReactNode
+  (props: IconProps) => ReactNode
 > = {
   x: (props) => (
     <svg {...ICON_PROPS} {...props}>
