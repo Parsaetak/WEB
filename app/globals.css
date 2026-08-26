@@ -16200,11 +16200,23 @@ html.red-cursor-enabled * {
   position:
     fixed;
 
-  inset:
+  top:
+    var(--shell-header);
+
+  right:
+    0;
+
+  bottom:
+    0;
+
+  left:
     0;
 
   z-index:
-    1000;
+    1100;
+
+  overflow:
+    hidden;
 
   display:
     flex;
@@ -16216,19 +16228,24 @@ html.red-cursor-enabled * {
     center;
 
   padding:
-    22px;
+    0;
 
   background:
     rgba(
-      0,
-      0,
-      0,
-      0.78
+      3,
+      4,
+      6,
+      0.97
     );
 
   backdrop-filter:
     blur(
-      18px
+      14px
+    );
+
+  -webkit-backdrop-filter:
+    blur(
+      14px
     );
 }
 
