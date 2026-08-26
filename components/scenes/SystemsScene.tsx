@@ -1,144 +1,50 @@
 const systems = [
   {
     number: "01",
-    code: "AI",
-    title: "INSTRUCTIONS",
-    signal: "GOVERN",
-    copy: "Defines the operating rules."
+    code: "AI INSTRUCTIONS",
+    layer: "OPERATING CONSTITUTION",
+    role: "GOVERN",
+    title: "Defines the environment.",
+    copy: "Sets the rules for how an intelligent system operates: instruction hierarchy, evidence handling, tools, context, security, memory, and self-governance."
   },
   {
     number: "02",
     code: "REP",
-    title: "REASONING",
-    signal: "REASON",
-    copy: "Verifies and strengthens thought."
+    layer: "REASONING PROTOCOL",
+    role: "REASON",
+    title: "Strengthens the thinking.",
+    copy: "Structures reasoning through decomposition, verification, critique, adversarial checking, uncertainty handling, and iterative refinement."
   },
   {
     number: "03",
     code: "USEF",
-    title: "EVOLUTION",
-    signal: "IMPROVE",
-    copy: "Tests and improves the system."
+    layer: "SYSTEM IMPROVEMENT",
+    role: "IMPROVE",
+    title: "Changes the system.",
+    copy: "Provides a discipline for finding weaknesses, redesigning components, testing consequences, measuring results, and iterating."
   }
 ];
 
-const architecture = [
+const flow = [
   {
     number: "01",
     label: "GOVERN",
-    copy: "Set the rules."
+    title: "AI INSTRUCTIONS",
+    copy: "Define how the system should operate."
   },
   {
     number: "02",
     label: "REASON",
-    copy: "Test the thinking."
+    title: "REP",
+    copy: "Improve how the system thinks."
   },
   {
     number: "03",
     label: "IMPROVE",
-    copy: "Change the system."
+    title: "USEF",
+    copy: "Improve the system itself."
   }
 ];
-
-function SectionHeading() {
-  return (
-    <div className="systems-header">
-      <div>
-        <p className="kicker">
-          02 / SYSTEMS
-        </p>
-
-        <h1 className="section-title systems-title">
-          Intelligence
-          <br />
-          by architecture.
-        </h1>
-      </div>
-
-      <div className="systems-status">
-        <span className="systems-status-dot" />
-
-        <span>
-          ONLINE
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function SystemCard({
-  system
-}: {
-  system: (typeof systems)[number];
-}) {
-  return (
-    <article
-      className="systems-module"
-      data-module={system.number}
-    >
-      <div className="systems-module-frame">
-        <div className="systems-module-corner systems-module-corner-tl" />
-        <div className="systems-module-corner systems-module-corner-tr" />
-        <div className="systems-module-corner systems-module-corner-bl" />
-        <div className="systems-module-corner systems-module-corner-br" />
-
-        <div className="systems-module-top">
-          <span>
-            {system.number}
-          </span>
-
-          <span>
-            {system.signal}
-          </span>
-        </div>
-
-        <div className="systems-module-core">
-          <span className="systems-module-code">
-            {system.code}
-          </span>
-
-          <h2>
-            {system.title}
-          </h2>
-        </div>
-
-        <p>
-          {system.copy}
-        </p>
-
-        <div className="systems-module-line">
-          <span />
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function ArchitectureNode({
-  node
-}: {
-  node: (typeof architecture)[number];
-}) {
-  return (
-    <div className="systems-architecture-node">
-      <div className="systems-architecture-marker">
-        <span>
-          {node.number}
-        </span>
-      </div>
-
-      <div>
-        <strong>
-          {node.label}
-        </strong>
-
-        <small>
-          {node.copy}
-        </small>
-      </div>
-    </div>
-  );
-}
 
 export default function SystemsScene() {
   return (
@@ -156,15 +62,86 @@ export default function SystemsScene() {
         </div>
 
         <div className="page-container">
-          <SectionHeading />
+          <header className="systems-header">
+            <div>
+              <p className="kicker">
+                02 / SYSTEMS
+              </p>
+
+              <h1 className="section-title systems-title">
+                How the
+                <br />
+                thinking becomes
+                <br />
+                a system.
+              </h1>
+
+              <p className="body-large systems-lead">
+                Three connected frameworks:
+                govern the environment,
+                strengthen reasoning,
+                improve the system.
+              </p>
+            </div>
+
+            <div className="systems-status">
+              <span className="systems-status-dot" />
+
+              <span>
+                ARCHITECTURE
+              </span>
+            </div>
+          </header>
 
           <div className="systems-modules">
             {systems.map(
               (system) => (
-                <SystemCard
+                <article
+                  className="systems-module"
                   key={system.number}
-                  system={system}
-                />
+                  data-module={
+                    system.number
+                  }
+                >
+                  <div className="systems-module-frame">
+                    <div className="systems-module-corner systems-module-corner-tl" />
+                    <div className="systems-module-corner systems-module-corner-tr" />
+                    <div className="systems-module-corner systems-module-corner-bl" />
+                    <div className="systems-module-corner systems-module-corner-br" />
+
+                    <div className="systems-module-top">
+                      <span>
+                        {system.number}
+                      </span>
+
+                      <span>
+                        {system.role}
+                      </span>
+                    </div>
+
+                    <div className="systems-module-core">
+                      <span className="systems-module-code">
+                        {system.code}
+                      </span>
+
+                      <span className="systems-module-layer">
+                        {system.layer}
+                      </span>
+
+                      <h2>
+                        {system.title}
+                      </h2>
+                    </div>
+
+                    <p className="systems-module-copy">
+                      {system.copy}
+                    </p>
+
+                    <div className="systems-module-line">
+                      <span />
+                    </div>
+                  </div>
+                </article>
               )
             )}
           </div>
@@ -173,13 +150,13 @@ export default function SystemsScene() {
             <div className="systems-architecture-map-header">
               <div>
                 <p className="kicker">
-                  ARCHITECTURE
+                  THE MODEL
                 </p>
 
                 <h2>
-                  One system.
+                  One architecture.
                   <br />
-                  Three layers.
+                  Three responsibilities.
                 </h2>
               </div>
 
@@ -189,18 +166,40 @@ export default function SystemsScene() {
             </div>
 
             <div className="systems-architecture-flow">
-              {architecture.map(
-                (node, index) => (
+              {flow.map(
+                (
+                  node,
+                  index
+                ) => (
                   <div
                     className="systems-architecture-step"
                     key={node.number}
                   >
-                    <ArchitectureNode
-                      node={node}
-                    />
+                    <div className="systems-architecture-node">
+                      <div className="systems-architecture-marker">
+                        <span>
+                          {node.number}
+                        </span>
+                      </div>
+
+                      <div>
+                        <strong>
+                          {node.label}
+                        </strong>
+
+                        <span>
+                          {node.title}
+                        </span>
+
+                        <small>
+                          {node.copy}
+                        </small>
+                      </div>
+                    </div>
 
                     {index <
-                      architecture.length - 1 && (
+                      flow.length -
+                        1 && (
                       <span
                         className="systems-architecture-connector"
                         aria-hidden="true"
@@ -210,6 +209,28 @@ export default function SystemsScene() {
                 )
               )}
             </div>
+          </section>
+
+          <section className="systems-principle">
+            <div>
+              <p className="kicker">
+                CORE IDEA
+              </p>
+
+              <h2 className="section-title">
+                Intelligence is
+                <br />
+                not just a model.
+              </h2>
+            </div>
+
+            <p className="body-large systems-principle-copy">
+              The surrounding system matters:
+              how instructions are defined,
+              how reasoning is checked,
+              and how the system learns from
+              its own weaknesses.
+            </p>
           </section>
 
           <div className="systems-equation">
