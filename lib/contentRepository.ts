@@ -1,3 +1,5 @@
+import libraryManifest from "@/data/library.json";
+
 export type ContentKind =
   | "pdf"
   | "mp3"
@@ -61,73 +63,6 @@ const MIME_EXTENSIONS: Record<
   jpeg: true,
   webp: true,
   gif: true
-};
-
-const LIBRARY_MANIFEST: LibraryManifest = {
-  version: 1,
-  updated: "2026-08-26",
-  items: [
-    {
-      branch: "Books",
-      source: "RED MAGIC.pdf",
-      title: "RED MAGIC",
-      type: "book",
-      description:
-        "A living work exploring intelligence, systems, consciousness, adaptation, and the possibility of computational life.",
-      year: "2026",
-      author: "Parsa Tak",
-      featured: true,
-      tags: [
-        "RED MAGIC",
-        "AI",
-        "intelligence",
-        "systems",
-        "consciousness",
-        "simulation",
-        "adaptation"
-      ]
-    },
-    {
-      branch: "Books",
-      source:
-        "RED MAGIC 0_ MAGIC FOR KIDS.pdf",
-      title:
-        "RED MAGIC 0: MAGIC FOR KIDS",
-      type: "book",
-      description:
-        "An accessible entry point into the ideas behind RED MAGIC, introducing its concepts in a more approachable form.",
-      year: "2026",
-      author: "Parsa Tak",
-      featured: false,
-      tags: [
-        "RED MAGIC",
-        "intelligence",
-        "systems",
-        "introduction"
-      ]
-    },
-    {
-      branch: "Books",
-      source:
-        "RED MAGIC II_ THE BOOK OF THE DEMIURGE.pdf",
-      title:
-        "RED MAGIC II: THE BOOK OF THE DEMIURGE",
-      type: "book",
-      description:
-        "A deeper exploration of creation, intelligence, systems, and the forces that shape synthetic life.",
-      year: "2026",
-      author: "Parsa Tak",
-      featured: false,
-      tags: [
-        "RED MAGIC",
-        "systems",
-        "creation",
-        "intelligence",
-        "synthetic life",
-        "demiurge"
-      ]
-    }
-  ]
 };
 
 function getContentKind(
@@ -251,13 +186,13 @@ function createContentItem(
 export async function loadLibraryManifest(): Promise<
   LibraryManifest
 > {
-  return LIBRARY_MANIFEST;
+  return libraryManifest as LibraryManifest;
 }
 
 export async function listContent(): Promise<
   ContentItem[]
 > {
-  return LIBRARY_MANIFEST.items
+  return libraryManifest.items
     .map(
       createContentItem
     )
