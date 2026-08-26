@@ -1,5 +1,6 @@
 import {
-  PUBLIC_LINKS
+  PUBLIC_LINKS,
+  type PublicLink
 } from "@/lib/links";
 
 type PublicLinksProps = {
@@ -9,7 +10,7 @@ type PublicLinksProps = {
 
 type LinkGroup = {
   label: string;
-  links: typeof PUBLIC_LINKS.social;
+  links: readonly PublicLink[];
 };
 
 export default function PublicLinks({
@@ -127,9 +128,7 @@ export default function PublicLinks({
                               OPEN
                             </span>
 
-                            <span
-                              aria-hidden="true"
-                            >
+                            <span aria-hidden="true">
                               ↗
                             </span>
                           </div>
