@@ -2,11 +2,13 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useState
 } from "react";
 
 import RedEye from "@/components/RedEye";
+import SceneLoadingScreen from "@/components/SceneLoadingScreen";
 import SceneNavigator, {
   type SceneNavigationItem
 } from "@/components/SceneNavigator";
@@ -61,18 +63,99 @@ type LivingShellProps = {
   initialScene?: SceneId;
 };
 
+function readInitialScene(): SceneId {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return "home";
+  }
+
+  const hash =
+    window.location.hash
+      .replace(
+        /^#/,
+        ""
+      )
+      .toLowerCase();
+
+  return SCENES.some(
+    (scene) =>
+      scene.id === hash
+  )
+    ? (hash as SceneId)
+    : "home";
+}
+
+function normalizeInitialHash(
+  scene: SceneId
+) {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return;
+  }
+
+  const targetHash =
+    scene === "home"
+      ? ""
+      : `#${scene}`;
+
+  if (
+    window.location.hash ===
+    targetHash
+  ) {
+    return;
+  }
+
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}${targetHash}`
+  );
+}
+
 export default function LivingShell({
   initialScene = "home"
 }: LivingShellProps) {
-  const [activeScene, setActiveScene] =
-    useState<SceneId>(
-      initialScene
+  const [
+    activeScene,
+    setActiveScene
+  ] = useState<SceneId>(
+    initialScene
+  );
+
+  const [
+    urlReady,
+    setUrlReady
+  ] = useState(false);
+
+  useEffect(() => {
+    const initialUrlScene =
+      readInitialScene();
+
+    normalizeInitialHash(
+      initialUrlScene
     );
+
+    if (
+      initialUrlScene !==
+      activeScene
+    ) {
+      setActiveScene(
+        initialUrlScene
+      );
+    }
+
+    setUrlReady(true);
+  }, []);
 
   const changeScene = useCallback(
     (
       scene: SceneId,
-      source: SceneChangeSource = "navigation"
+      source: SceneChangeSource =
+        "navigation"
     ) => {
       if (
         scene === activeScene
@@ -81,10 +164,12 @@ export default function LivingShell({
       }
 
       if (
-        source === "navigation"
+        source ===
+        "navigation"
       ) {
         const hash =
-          scene === "home"
+          scene ===
+          "home"
             ? ""
             : `#${scene}`;
 
@@ -105,7 +190,8 @@ export default function LivingShell({
   const activeSceneDefinition =
     SCENES.find(
       (scene) =>
-        scene.id === activeScene
+        scene.id ===
+        activeScene
     );
 
   const nextScene =
@@ -113,10 +199,13 @@ export default function LivingShell({
       const index =
         SCENES.findIndex(
           (scene) =>
-            scene.id === activeScene
+            scene.id ===
+            activeScene
         );
 
-      if (index < 0) {
+      if (
+        index < 0
+      ) {
         return "about" as SceneId;
       }
 
@@ -127,12 +216,15 @@ export default function LivingShell({
         ]?.id ??
         "home"
       );
-    }, [activeScene]);
+    }, [
+      activeScene
+    ]);
 
   const github =
     PUBLIC_LINKS.social.find(
       (link) =>
-        link.id === "github"
+        link.id ===
+        "github"
     );
 
   return (
@@ -165,8 +257,11 @@ export default function LivingShell({
             className="living-shell-brand"
             href="#top"
             aria-label="Parsa Tak home"
-            onClick={(event) => {
+            onClick={(
+              event
+            ) => {
               event.preventDefault();
+
               changeScene(
                 "home"
               );
@@ -191,16 +286,22 @@ export default function LivingShell({
             />
 
             <span>
-              {activeSceneDefinition?.label ??
-                "Home"}
+              {
+                activeSceneDefinition?.label ??
+                "Home"
+              }
             </span>
           </div>
 
           <SceneNavigator
             scenes={SCENES}
-            activeScene={activeScene}
+            activeScene={
+              activeScene
+            }
             onSceneChange={
-              (scene) =>
+              (
+                scene
+              ) =>
                 changeScene(
                   scene,
                   "navigation"
@@ -211,7 +312,9 @@ export default function LivingShell({
           {github && (
             <a
               className="living-shell-github"
-              href={github.href}
+              href={
+                github.href
+              }
               target="_blank"
               rel="noreferrer"
             >
@@ -232,6 +335,10 @@ export default function LivingShell({
           scene={activeScene}
         />
       </main>
+
+      <SceneLoadingScreen
+        visible={!urlReady}
+      />
     </div>
   );
 }
