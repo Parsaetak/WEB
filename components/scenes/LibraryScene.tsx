@@ -52,7 +52,10 @@ const MEDIA_FILTERS:
 function formatSize(
   bytes: number
 ) {
-  if (bytes < 1024) {
+  if (
+    bytes <
+    1024
+  ) {
     return `${bytes} B`;
   }
 
@@ -93,15 +96,24 @@ function titleFromFileName(
 function getMediaFilter(
   kind: ContentKind
 ): MediaFilter {
-  if (kind === "pdf") {
+  if (
+    kind ===
+    "pdf"
+  ) {
     return "book";
   }
 
-  if (kind === "mp3") {
+  if (
+    kind ===
+    "mp3"
+  ) {
     return "audio";
   }
 
-  if (kind === "mp4") {
+  if (
+    kind ===
+    "mp4"
+  ) {
     return "video";
   }
 
@@ -138,13 +150,107 @@ function getCatalogLabel(
   );
 }
 
+function getActionLabel(
+  kind: ContentKind
+) {
+  if (
+    kind ===
+    "pdf"
+  ) {
+    return "READ";
+  }
+
+  if (
+    kind ===
+    "mp3"
+  ) {
+    return "LISTEN";
+  }
+
+  if (
+    kind ===
+    "mp4"
+  ) {
+    return "WATCH";
+  }
+
+  return "VIEW";
+}
+
+function getDescription(
+  item: ContentItem
+) {
+  const title =
+    titleFromFileName(
+      item.name
+    );
+
+  if (
+    item.kind ===
+    "pdf"
+  ) {
+    return `${title} is a written work published through the ${getBranchLabel(
+      item.branch
+    )} collection. Open it when you are ready to read the complete document.`;
+  }
+
+  if (
+    item.kind ===
+    "mp3"
+  ) {
+    return `${title} is an audio work from the ${getBranchLabel(
+      item.branch
+    )} collection. Open it when you are ready to listen.`;
+  }
+
+  if (
+    item.kind ===
+    "mp4"
+  ) {
+    return `${title} is a video work from the ${getBranchLabel(
+      item.branch
+    )} collection. Open it when you are ready to watch.`;
+  }
+
+  return `${title} is visual work from the ${getBranchLabel(
+    item.branch
+  )} collection. Open it to view the full-resolution original.`;
+}
+
+function getPreviewGlyph(
+  kind: ContentKind
+) {
+  if (
+    kind ===
+    "pdf"
+  ) {
+    return "BOOK";
+  }
+
+  if (
+    kind ===
+    "mp3"
+  ) {
+    return "AUDIO";
+  }
+
+  if (
+    kind ===
+    "mp4"
+  ) {
+    return "VIDEO";
+  }
+
+  return "IMAGE";
+}
+
 export default function LibraryScene() {
   const [
     items,
     setItems
-  ] = useState<ContentItem[]>(
-    []
-  );
+  ] = useState<
+    ContentItem[]
+  >([]);
 
   const [
     selected,
@@ -159,6 +265,11 @@ export default function LibraryScene() {
   ] = useState<MediaFilter>(
     "all"
   );
+
+  const [
+    opened,
+    setOpened
+  ] = useState(false);
 
   const [
     loading,
@@ -183,7 +294,9 @@ export default function LibraryScene() {
       CONTENT_BRANCHES
     )
       .then(
-        (content) => {
+        (
+          content
+        ) => {
           if (
             cancelled
           ) {
@@ -195,13 +308,14 @@ export default function LibraryScene() {
           );
 
           setSelected(
-            content[0] ??
-              null
+            null
           );
         }
       )
       .catch(
-        (reason) => {
+        (
+          reason
+        ) => {
           if (
             cancelled
           ) {
@@ -232,155 +346,76 @@ export default function LibraryScene() {
     };
   }, []);
 
-  const filteredItems =
-    useMemo(() => {
-      if (
-        filter ===
-        "all"
-      ) {
-        return items;
-      }
-
-      return items.filter(
-        (
-          item
-        ) =>
-          getMediaFilter(
-            item.kind
-          ) === filter
-      );
-    }, [
-      items,
-      filter
-    ]);
-
   useEffect(() => {
+    if (!opened) {
+      document.body.style.overflow =
+        "";
+      return;
+    }
+
+    document.body.style.overflow =
+      "hidden";
+
+    return () => {
+      document.body.style.overflow =
+        "";
+    };
+  }, [opened]);
+
+  const filteredItems =
+    useMemo(
+      () => {
+        if (
+          filter ===
+          "all"
+        ) {
+          return items;
+        }
+
+        return items.filter(
+          (
+            item
+          ) =>
+            getMediaFilter(
+              item.kind
+            ) ===
+            filter
+        );
+      },
+      [
+        items,
+        filter
+      ]
+    );
+
+  const selectItem = (
+    item: ContentItem
+  ) => {
+    setSelected(
+      item
+    );
+
+    setOpened(
+      false
+    );
+  };
+
+  const openItem = () => {
     if (
-      selected &&
-      filteredItems.some(
-        (
-          item
-        ) =>
-          item.sha ===
-          selected.sha
-      )
+      !selected
     ) {
       return;
     }
 
-    setSelected(
-      filteredItems[0] ??
-        null
+    setOpened(
+      true
     );
-  }, [
-    filter,
-    filteredItems,
-    selected
-  ]);
+  };
 
-  const renderViewer =
+  const closeViewer =
     () => {
-      if (
-        !selected
-      ) {
-        return (
-          <div className="library-viewer-empty">
-            <strong>
-              No work selected
-            </strong>
-
-            <span>
-              Choose an item from the collection.
-            </span>
-          </div>
-        );
-      }
-
-      if (
-        selected.kind ===
-        "pdf"
-      ) {
-        return (
-          <div className="library-pdf-viewer">
-            <iframe
-              title={
-                selected.name
-              }
-              src={
-                selected.rawUrl
-              }
-              className="library-pdf-frame"
-            />
-          </div>
-        );
-      }
-
-      if (
-        selected.kind ===
-        "mp3"
-      ) {
-        return (
-          <div className="library-media-viewer library-audio-viewer">
-            <div className="library-media-symbol">
-              AUDIO
-            </div>
-
-            <h2>
-              {titleFromFileName(
-                selected.name
-              )}
-            </h2>
-
-            <p className="library-media-meta">
-              {getBranchLabel(
-                selected.branch
-              )}
-            </p>
-
-            <audio
-              className="library-audio-player"
-              controls
-              preload="metadata"
-              src={
-                selected.rawUrl
-              }
-            />
-          </div>
-        );
-      }
-
-      if (
-        selected.kind ===
-        "mp4"
-      ) {
-        return (
-          <div className="library-media-viewer">
-            <video
-              className="library-video-player"
-              controls
-              preload="metadata"
-              src={
-                selected.rawUrl
-              }
-            />
-          </div>
-        );
-      }
-
-      return (
-        <div className="library-image-viewer">
-          <img
-            src={
-              selected.rawUrl
-            }
-            alt={
-              titleFromFileName(
-                selected.name
-              )
-            }
-            className="library-image"
-          />
-        </div>
+      setOpened(
+        false
       );
     };
 
@@ -392,8 +427,11 @@ export default function LibraryScene() {
           aria-hidden="true"
         >
           <span className="library-atmosphere-orbit library-atmosphere-orbit-one" />
+
           <span className="library-atmosphere-orbit library-atmosphere-orbit-two" />
+
           <span className="library-atmosphere-axis library-atmosphere-axis-x" />
+
           <span className="library-atmosphere-axis library-atmosphere-axis-y" />
         </div>
 
@@ -413,9 +451,10 @@ export default function LibraryScene() {
               </h1>
 
               <p className="body-large library-lead">
-                A living archive of books,
-                experiments, media, and
-                other original work.
+                A living archive of
+                books, experiments,
+                media, and other
+                original work.
               </p>
             </div>
 
@@ -491,7 +530,7 @@ export default function LibraryScene() {
               <span className="status-dot" />
 
               <span>
-                LOADING CONTENT
+                DISCOVERING CONTENT
               </span>
             </div>
           )}
@@ -567,7 +606,7 @@ export default function LibraryScene() {
                               `${item.branch}:${item.path}`
                             }
                             onClick={() =>
-                              setSelected(
+                              selectItem(
                                 item
                               )
                             }
@@ -612,9 +651,8 @@ export default function LibraryScene() {
                     {filteredItems.length ===
                       0 && (
                       <div className="library-empty">
-                        No published media
-                        exists in this
-                        category yet.
+                        No published media exists
+                        in this category yet.
                       </div>
                     )}
                   </div>
@@ -628,48 +666,247 @@ export default function LibraryScene() {
                   </p>
                 </aside>
 
-                <section className="library-viewer">
-                  <div className="library-viewer-header">
-                    <div>
-                      <span>
-                        {selected
-                          ? getCatalogLabel(
-                              selected
-                            )
-                          : "SELECT"}
+                <section className="library-preview">
+                  {!selected && (
+                    <div className="library-preview-empty">
+                      <span className="library-preview-empty-glyph">
+                        SELECT
                       </span>
 
-                      <h2>
-                        {selected
-                          ? titleFromFileName(
-                              selected.name
-                            )
-                          : "Choose a work"}
-                      </h2>
+                      <strong>
+                        Choose a work
+                      </strong>
+
+                      <p>
+                        Select an item from
+                        the collection to
+                        see its preview,
+                        description, and
+                        publication details.
+                      </p>
                     </div>
+                  )}
 
-                    {selected && (
-                      <a
-                        href={
-                          selected.githubUrl
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        className="library-source-link"
-                      >
-                        SOURCE ↗
-                      </a>
-                    )}
-                  </div>
+                  {selected && (
+                    <article className="library-preview-card">
+                      <div className="library-preview-art">
+                        <div className="library-preview-art-orbit" />
+                        <span>
+                          {getPreviewGlyph(
+                            selected.kind
+                          )}
+                        </span>
 
-                  <div className="library-viewer-content">
-                    {renderViewer()}
-                  </div>
+                        <strong>
+                          {titleFromFileName(
+                            selected.name
+                          )}
+                        </strong>
+                      </div>
+
+                      <div className="library-preview-content">
+                        <div className="library-preview-kicker">
+                          {getCatalogLabel(
+                            selected
+                          )}
+                          {" · "}
+                          {getBranchLabel(
+                            selected.branch
+                          )}
+                        </div>
+
+                        <h2>
+                          {titleFromFileName(
+                            selected.name
+                          )}
+                        </h2>
+
+                        <p>
+                          {getDescription(
+                            selected
+                          )}
+                        </p>
+
+                        <div className="library-preview-meta">
+                          <span>
+                            {formatSize(
+                              selected.size
+                            )}
+                          </span>
+
+                          <span>
+                            ORIGINAL
+                          </span>
+                        </div>
+
+                        <div className="library-preview-actions">
+                          <button
+                            type="button"
+                            className="library-open-button"
+                            onClick={
+                              openItem
+                            }
+                          >
+                            {getActionLabel(
+                              selected.kind
+                            )}
+                            {" "}
+                            WORK
+                            <span>
+                              →
+                            </span>
+                          </button>
+
+                          <a
+                            href={
+                              selected.githubUrl
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                            className="library-source-link"
+                          >
+                            SOURCE ↗
+                          </a>
+                        </div>
+                      </div>
+                    </article>
+                  )}
                 </section>
               </div>
             )}
         </div>
       </section>
+
+      {opened &&
+        selected && (
+          <div
+            className="library-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={
+              titleFromFileName(
+                selected.name
+              )
+            }
+            onMouseDown={(
+              event
+            ) => {
+              if (
+                event.target ===
+                event.currentTarget
+              ) {
+                closeViewer();
+              }
+            }}
+          >
+            <div className="library-modal-shell">
+              <header className="library-modal-header">
+                <div>
+                  <span>
+                    {getCatalogLabel(
+                      selected
+                    )}
+                  </span>
+
+                  <h2>
+                    {titleFromFileName(
+                      selected.name
+                    )}
+                  </h2>
+                </div>
+
+                <button
+                  type="button"
+                  className="library-modal-close"
+                  onClick={
+                    closeViewer
+                  }
+                  aria-label="Close viewer"
+                >
+                  ×
+                </button>
+              </header>
+
+              <div className="library-modal-content">
+                {selected.kind ===
+                  "pdf" && (
+                  <iframe
+                    title={
+                      selected.name
+                    }
+                    src={
+                      selected.rawUrl
+                    }
+                    className="library-pdf-frame"
+                  />
+                )}
+
+                {selected.kind ===
+                  "mp3" && (
+                  <div className="library-modal-media">
+                    <div className="library-media-symbol">
+                      AUDIO
+                    </div>
+
+                    <h3>
+                      {titleFromFileName(
+                        selected.name
+                      )}
+                    </h3>
+
+                    <audio
+                      controls
+                      autoPlay
+                      preload="metadata"
+                      src={
+                        selected.rawUrl
+                      }
+                      className="library-audio-player"
+                    />
+                  </div>
+                )}
+
+                {selected.kind ===
+                  "mp4" && (
+                  <video
+                    controls
+                    autoPlay
+                    preload="metadata"
+                    src={
+                      selected.rawUrl
+                    }
+                    className="library-video-player"
+                  />
+                )}
+
+                {(
+                  selected.kind ===
+                    "png" ||
+                  selected.kind ===
+                    "jpg" ||
+                  selected.kind ===
+                    "jpeg" ||
+                  selected.kind ===
+                    "webp" ||
+                  selected.kind ===
+                    "gif"
+                ) && (
+                  <img
+                    src={
+                      selected.rawUrl
+                    }
+                    alt={
+                      titleFromFileName(
+                        selected.name
+                      )
+                    }
+                    className="library-image"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
