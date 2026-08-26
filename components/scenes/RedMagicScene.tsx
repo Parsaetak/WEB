@@ -102,37 +102,7 @@ export default function RedMagicScene() {
             </div>
           </div>
 
-          <div className="magic-organism-metrics">
-            <div className="magic-organism-metric">
-              <span>
-                STATE
-              </span>
-
-              <strong>
-                ALIVE
-              </strong>
-            </div>
-
-            <div className="magic-organism-metric">
-              <span>
-                MODE
-              </span>
-
-              <strong>
-                ADAPTIVE
-              </strong>
-            </div>
-
-            <div className="magic-organism-metric">
-              <span>
-                CORE
-              </span>
-
-              <strong>
-                RED
-              </strong>
-            </div>
-          </div>
+          
 
           <section className="magic-organism-principles">
             <div className="magic-organism-principles-header">
@@ -193,31 +163,7 @@ export default function RedMagicScene() {
             </p>
           </section>
 
-          <div className="magic-organism-statement">
-            <span>
-              INPUT
-            </span>
-
-            <strong>
-              INTERACTION
-            </strong>
-
-            <span>
-              →
-            </span>
-
-            <strong>
-              RESPONSE
-            </strong>
-
-            <span>
-              →
-            </span>
-
-            <strong>
-              ADAPTATION
-            </strong>
-          </div>
+          
         </div>
       </section>
     </div>
