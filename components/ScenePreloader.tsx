@@ -48,6 +48,12 @@ const preloaders: Record<
     )
 };
 
+const preloadCache =
+  new Map<
+    SceneId,
+    Promise<unknown>
+  >();
+
 function getAdjacentScenes(
   scene: SceneId
 ): readonly SceneId[] {
@@ -57,12 +63,16 @@ function getAdjacentScenes(
     );
 
   if (index < 0) {
-    return ["home", "about"];
+    return [
+      "home",
+      "about"
+    ];
   }
 
   const previous =
     SCENE_ORDER[
-      (index - 1 + SCENE_ORDER.length) %
+      (index - 1 +
+        SCENE_ORDER.length) %
         SCENE_ORDER.length
     ];
 
@@ -80,34 +90,60 @@ function getAdjacentScenes(
 
 export function preloadScene(
   scene: SceneId
-) {
+): Promise<unknown> {
+  const cached =
+    preloadCache.get(
+      scene
+    );
+
+  if (cached) {
+    return cached;
+  }
+
   const preload =
     preloaders[scene];
 
   if (!preload) {
-    return;
+    return Promise.resolve();
   }
 
-  void preload();
+  const promise =
+    preload();
+
+  preloadCache.set(
+    scene,
+    promise
+  );
+
+  promise.catch(() => {
+    preloadCache.delete(
+      scene
+    );
+  });
+
+  return promise;
 }
 
-export function preloadAdjacentScenes(
+export async function preloadAdjacentScenes(
   scene: SceneId
-) {
+): Promise<void> {
   const adjacent =
     getAdjacentScenes(
       scene
     );
 
   const unique =
-    new Set(adjacent);
+    Array.from(
+      new Set(adjacent)
+    );
 
-  unique.forEach(
-    (adjacentScene) => {
-      preloadScene(
-        adjacentScene
-      );
-    }
+  await Promise.allSettled(
+    unique.map(
+      (adjacentScene) =>
+        preloadScene(
+          adjacentScene
+        )
+    )
   );
 }
 
@@ -120,7 +156,7 @@ export default function ScenePreloader({
 }: ScenePreloaderProps) {
   useEffect(() => {
     const run = () => {
-      preloadAdjacentScenes(
+      void preloadAdjacentScenes(
         scene
       );
     };
