@@ -12,8 +12,6 @@ export type SceneNavigationItem = {
   id: SceneId;
   label: string;
   shortLabel: string;
-  identity: string;
-  symbol: string;
 };
 
 type SceneNavigatorProps = {
@@ -69,7 +67,10 @@ export default function SceneNavigator({
     >
       <div className="scene-navigator-track">
         {scenes.map(
-          (scene, index) => {
+          (
+            scene,
+            index
+          ) => {
             const active =
               scene.id ===
               activeScene;
@@ -142,7 +143,9 @@ export default function SceneNavigator({
                   className="scene-navigator-symbol"
                   aria-hidden="true"
                 >
-                  {metadata.symbol}
+                  {
+                    metadata.symbol
+                  }
                 </span>
 
                 <span className="scene-navigator-copy">
