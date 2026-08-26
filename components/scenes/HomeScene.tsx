@@ -117,8 +117,6 @@ export default function HomeScene() {
               simulation, and creative technology.
             </p>
 
-            <RoleStrip />
-
             <div className="hero-actions home-origin-actions">
               <a
                 className="button button-primary"
