@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import {
   useEffect,
+  useRef,
   useState,
   type ComponentType
 } from "react";
@@ -56,8 +57,10 @@ const WorkScene = dynamic(
 );
 
 const SCENE_COMPONENTS:
-  Record<SceneId, SceneComponent> =
-  {
+  Record<
+    SceneId,
+    SceneComponent
+  > = {
     home: HomeScene,
     about: AboutScene,
     systems: SystemsScene,
@@ -100,6 +103,9 @@ export default function SceneRegistry({
     setTransitioning
   ] = useState(false);
 
+  const transitionId =
+    useRef(0);
+
   useEffect(() => {
     if (
       scene === renderedScene
@@ -107,12 +113,12 @@ export default function SceneRegistry({
       return;
     }
 
-    let cancelled =
-      false;
+    const currentTransitionId =
+      ++transitionId.current;
 
-    setTransitioning(
-      true
-    );
+    let cancelled = false;
+
+    setTransitioning(true);
 
     const loadScene =
       preloadScene(
@@ -129,7 +135,9 @@ export default function SceneRegistry({
       minimumTransition
     ]).then(() => {
       if (
-        cancelled
+        cancelled ||
+        currentTransitionId !==
+          transitionId.current
       ) {
         return;
       }
