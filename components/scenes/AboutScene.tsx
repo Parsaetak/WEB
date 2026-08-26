@@ -1,41 +1,42 @@
-import PublicLinks from "@/components/PublicLinks";
-
 const principles = [
   {
-    index: "01",
-    label: "MIND",
-    title: "CURIOUS",
-    copy: "Find patterns. Question assumptions."
+    number: "01",
+    label: "CURIOSITY",
+    title: "QUESTION",
+    copy: "Look past the obvious."
   },
   {
-    index: "02",
+    number: "02",
     label: "METHOD",
-    title: "RIGOROUS",
-    copy: "Build. Test. Stress-test. Refine."
+    title: "BUILD",
+    copy: "Turn ideas into working systems."
   },
   {
-    index: "03",
-    label: "DIRECTION",
-    title: "INDEPENDENT",
-    copy: "Follow the question, not the trend."
+    number: "03",
+    label: "DISCIPLINE",
+    title: "STRESS-TEST",
+    copy: "Break assumptions before trusting them."
+  },
+  {
+    number: "04",
+    label: "CREATION",
+    title: "REFINE",
+    copy: "Keep what works. Change what does not."
   }
 ];
 
-const disciplines = [
-  "AI",
+const fields = [
+  "ARTIFICIAL INTELLIGENCE",
   "REASONING",
   "SYSTEMS",
-  "DESIGN",
-  "SIMULATION",
-  "ART"
+  "EXPERIMENTAL TECHNOLOGY",
+  "PHILOSOPHY",
+  "CREATIVE TECHNOLOGY"
 ];
 
 export default function AboutScene() {
   return (
-    <div
-      id="about"
-      className="about-scene"
-    >
+    <div className="about-scene">
       <section className="section about-observer">
         <div
           className="about-orbit-field"
@@ -54,7 +55,7 @@ export default function AboutScene() {
         </div>
 
         <div className="page-container">
-          <div className="about-header">
+          <header className="about-header">
             <div>
               <p className="kicker">
                 01 / ABOUT
@@ -65,10 +66,9 @@ export default function AboutScene() {
               </h1>
 
               <p className="body-large about-lead">
-                Researcher.
-                Writer.
-                Artist.
-                Programmer.
+                Independent researcher and creator
+                working across intelligence,
+                technology, systems, and art.
               </p>
             </div>
 
@@ -79,46 +79,81 @@ export default function AboutScene() {
                 OBSERVE
               </span>
             </div>
+          </header>
+
+          <div className="about-identity">
+            <div className="about-identity-main">
+              <p className="kicker">
+                IN PRACTICE
+              </p>
+
+              <p className="about-identity-statement">
+                I research ideas about intelligence,
+                build systems to test them,
+                write about what I learn,
+                and create visual work around the same questions.
+              </p>
+            </div>
+
+            <div className="about-identity-side">
+              <div>
+                <span>
+                  BASED AROUND
+                </span>
+
+                <strong>
+                  AI · REASONING · SYSTEMS
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  OUTPUT
+                </span>
+
+                <strong>
+                  SOFTWARE · WRITING · ART
+                </strong>
+              </div>
+            </div>
           </div>
 
-          <div className="about-observer-grid">
-            <article className="panel panel-red about-observer-panel">
-              <div className="panel-content">
-                <div className="about-observer-mark">
-                  <span />
-                </div>
-
+          <div className="about-method">
+            <div className="about-method-header">
+              <div>
                 <p className="kicker">
-                  FOCUS
+                  METHOD
                 </p>
 
-                <p className="about-focus">
-                  Intelligence
+                <h2 className="section-title">
+                  Question.
                   <br />
-                  Systems
+                  Build.
                   <br />
-                  Creation
-                </p>
-
-                <p className="body about-observer-copy">
-                  Exploring how ideas become systems,
-                  and how systems change the way ideas
-                  are understood.
-                </p>
+                  Stress-test.
+                  <br />
+                  Refine.
+                </h2>
               </div>
-            </article>
+
+              <p className="body-large about-method-copy">
+                The process matters as much as the result.
+                Ideas become useful when they survive contact
+                with reality.
+              </p>
+            </div>
 
             <div className="about-principles">
               {principles.map(
                 (principle) => (
                   <article
                     className="panel about-principle"
-                    key={principle.index}
+                    key={principle.number}
                   >
                     <div className="panel-content">
                       <div className="about-principle-top">
                         <span className="system-number">
-                          {principle.index}
+                          {principle.number}
                         </span>
 
                         <span className="system-type">
@@ -126,9 +161,9 @@ export default function AboutScene() {
                         </span>
                       </div>
 
-                      <h2 className="system-title">
+                      <h3 className="system-title">
                         {principle.title}
-                      </h2>
+                      </h3>
 
                       <p className="system-copy">
                         {principle.copy}
@@ -140,8 +175,8 @@ export default function AboutScene() {
             </div>
           </div>
 
-          <div className="about-disciplines">
-            <div className="about-disciplines-header">
+          <div className="about-fields">
+            <div className="about-fields-header">
               <p className="kicker">
                 FIELD
               </p>
@@ -151,15 +186,15 @@ export default function AboutScene() {
               </span>
             </div>
 
-            <div className="about-disciplines-list">
-              {disciplines.map(
+            <div className="about-fields-list">
+              {fields.map(
                 (
-                  discipline,
+                  field,
                   index
                 ) => (
                   <span
-                    key={discipline}
-                    className="about-discipline"
+                    key={field}
+                    className="about-field"
                   >
                     <small>
                       {String(
@@ -170,7 +205,7 @@ export default function AboutScene() {
                       )}
                     </small>
 
-                    {discipline}
+                    {field}
                   </span>
                 )
               )}
@@ -178,10 +213,6 @@ export default function AboutScene() {
           </div>
         </div>
       </section>
-
-      <PublicLinks
-        title="CONNECT"
-      />
     </div>
   );
 }
