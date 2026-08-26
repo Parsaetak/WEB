@@ -1,5 +1,3 @@
-Create `WEB/worklog.md` with the following complete content:
-
 ````md
 # Parsa Tak WEB — Project Worklog
 
