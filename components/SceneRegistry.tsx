@@ -56,17 +56,25 @@ const WorkScene = dynamic(
     )
 );
 
+const LibraryScene = dynamic(
+  () =>
+    import(
+      "@/components/scenes/LibraryScene"
+    )
+);
+
 const SCENE_COMPONENTS:
   Record<
     SceneId,
     SceneComponent
   > = {
-    home: HomeScene,
-    about: AboutScene,
-    systems: SystemsScene,
-    magic: RedMagicScene,
-    work: WorkScene
-  };
+  home: HomeScene,
+  about: AboutScene,
+  systems: SystemsScene,
+  magic: RedMagicScene,
+  work: WorkScene,
+  library: LibraryScene
+};
 
 const MIN_TRANSITION_MS =
   160;
