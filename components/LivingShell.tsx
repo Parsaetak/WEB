@@ -3,7 +3,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useState
 } from "react";
 
@@ -191,32 +190,6 @@ export default function LivingShell({
         activeScene
     );
 
-  const nextScene =
-    useMemo(() => {
-      const index =
-        SCENES.findIndex(
-          (scene) =>
-            scene.id ===
-            activeScene
-        );
-
-      if (
-        index < 0
-      ) {
-        return "about" as SceneId;
-      }
-
-      return (
-        SCENES[
-          (index + 1) %
-            SCENES.length
-        ]?.id ??
-        "home"
-      );
-    }, [
-      activeScene
-    ]);
-
   const github =
     PUBLIC_LINKS.social.find(
       (link) =>
@@ -246,8 +219,8 @@ export default function LivingShell({
 
       {urlReady && (
         <ScenePreloader
-  scene={activeScene}
-/>
+          scene={activeScene}
+        />
       )}
 
       <header className="living-shell-hud">
