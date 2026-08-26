@@ -22,39 +22,6 @@ type SceneNavigatorProps = {
   ) => void;
 };
 
-const SCENE_IDENTITIES: Record<
-  SceneId,
-  {
-    identity: string;
-    symbol: string;
-  }
-> = {
-  home: {
-    identity: "ORIGIN",
-    symbol: "◉"
-  },
-
-  about: {
-    identity: "OBSERVER",
-    symbol: "◌"
-  },
-
-  systems: {
-    identity: "ARCHITECT",
-    symbol: "◇"
-  },
-
-  magic: {
-    identity: "ORGANISM",
-    symbol: "✦"
-  },
-
-  work: {
-    identity: "LABORATORY",
-    symbol: "▣"
-  }
-};
-
 export default function SceneNavigator({
   scenes,
   activeScene,
@@ -63,7 +30,7 @@ export default function SceneNavigator({
   return (
     <nav
       className="scene-navigator"
-      aria-label="Living system scenes"
+      aria-label="Site scenes"
     >
       <div className="scene-navigator-track">
         {scenes.map(
@@ -75,16 +42,9 @@ export default function SceneNavigator({
               scene.id ===
               activeScene;
 
-            const metadata =
-              SCENE_IDENTITIES[
-                scene.id
-              ];
-
             const warmScene =
               () => {
-                if (
-                  !active
-                ) {
+                if (!active) {
                   void preloadScene(
                     scene.id
                   );
@@ -93,9 +53,7 @@ export default function SceneNavigator({
 
             return (
               <button
-                key={
-                  scene.id
-                }
+                key={scene.id}
                 type="button"
                 className="scene-navigator-item"
                 data-active={
@@ -106,15 +64,12 @@ export default function SceneNavigator({
                 data-scene={
                   scene.id
                 }
-                data-identity={
-                  metadata.identity
-                }
                 aria-current={
                   active
                     ? "page"
                     : undefined
                 }
-                aria-label={`Open ${scene.label} — ${metadata.identity} scene`}
+                aria-label={`Open ${scene.label}`}
                 onPointerEnter={
                   warmScene
                 }
@@ -139,26 +94,9 @@ export default function SceneNavigator({
                   )}
                 </span>
 
-                <span
-                  className="scene-navigator-symbol"
-                  aria-hidden="true"
-                >
-                  {
-                    metadata.symbol
-                  }
-                </span>
-
                 <span className="scene-navigator-copy">
                   <span className="scene-navigator-label">
-                    {
-                      scene.shortLabel
-                    }
-                  </span>
-
-                  <span className="scene-navigator-identity">
-                    {
-                      metadata.identity
-                    }
+                    {scene.shortLabel}
                   </span>
                 </span>
 
