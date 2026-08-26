@@ -187,9 +187,6 @@ export default function LibraryScene() {
     let cancelled =
       false;
 
-    setLoading(true);
-    setError(null);
-
     void listContent()
       .then(
         (
@@ -205,18 +202,16 @@ export default function LibraryScene() {
             content
           );
 
-          const firstFeatured =
-            content.find(
-              (
-                item
-              ) =>
-                item.featured
-            );
-
+          /*
+           * Do not automatically select a work.
+           * The Library is a gallery first and a reader second.
+           */
           setSelected(
-            firstFeatured ??
-              content[0] ??
-              null
+            null
+          );
+
+          setError(
+            null
           );
         }
       )
@@ -488,7 +483,7 @@ export default function LibraryScene() {
               <span className="status-dot" />
 
               <span>
-                DISCOVERING CONTENT
+                LOADING
               </span>
             </div>
           )}
@@ -702,10 +697,10 @@ export default function LibraryScene() {
 
                       <p>
                         Choose a work to
-                        see what it is
-                        about before
-                        opening the full
-                        media.
+                        see its preview,
+                        story, and
+                        publication
+                        details.
                       </p>
                     </div>
                   )}
