@@ -1,3 +1,7 @@
+import {
+  PUBLIC_LINKS
+} from "@/lib/links";
+
 const projects = [
   {
     number: "01",
@@ -56,6 +60,14 @@ function SectionHeading() {
 }
 
 export default function WorkScene() {
+  const github = PUBLIC_LINKS.social.find(
+    (link) => link.id === "github"
+  );
+
+  const websiteRepository = {
+    href: "https://github.com/Parsaetak/WEB"
+  };
+
   return (
     <div className="work-scene">
       <section className="section">
@@ -106,18 +118,20 @@ export default function WorkScene() {
                   marginTop: "28px"
                 }}
               >
-                <a
-                  className="button button-primary"
-                  href="https://github.com/Parsaetak"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open GitHub ↗
-                </a>
+                {github && (
+                  <a
+                    className="button button-primary"
+                    href={github.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open GitHub ↗
+                  </a>
+                )}
 
                 <a
                   className="button button-secondary"
-                  href="https://github.com/Parsaetak/WEB"
+                  href={websiteRepository.href}
                   target="_blank"
                   rel="noreferrer"
                 >
