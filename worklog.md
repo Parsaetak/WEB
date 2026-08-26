@@ -1,530 +1,671 @@
 ````md
 # Parsa Tak WEB — Project Worklog
 
-## Project
+## 0. Continuation Rule
 
-**Website:** https://parsaetak.github.io/WEB/  
-**Repository:** https://github.com/Parsaetak/WEB  
-**Content repository:** https://github.com/Parsaetak/Contents
+This file is the project's persistent handoff document.
 
-**Owner / Designer:** Parsa Tak  
-**Project identity:** Parsa Tak / SHEYTAN  
-**Current date:** 2026-08-26
+Any future AI continuing this project must:
 
----
+1. Read this entire file before making changes.
+2. Inspect the actual current repository before trusting any statement here.
+3. Verify the newest GitHub Actions run before declaring the site healthy.
+4. Prefer root-cause fixes over patches.
+5. When several edits affect one file, provide the complete replacement file in one code block.
+6. Keep frontend experience visually strong and technical infrastructure mostly invisible.
+7. Never assume a selector, file, component, dependency, or architecture exists without checking it.
+8. Update this worklog only after major milestones, not after every small edit.
+9. Never rely on an older workflow run when a newer one exists.
+10. Preserve GitHub Pages static-export compatibility.
 
-# 1. Project Purpose
+The repository owner usually edits files manually and pushes them. The normal collaboration pattern is:
 
-The WEB project is a personal interactive website for Parsa Tak.
-
-The site should feel like a living digital environment rather than a conventional portfolio.
-
-Primary goals:
-
-- Present Parsa Tak's identity, ideas, systems, projects, and media.
-- Make the website visually distinctive and entertaining.
-- Keep technical infrastructure mostly invisible to visitors.
-- Prioritise smooth interaction, fast foreground rendering, and deferred background work.
-- Allow the site to evolve continuously as new projects and media are created.
-- Support a growing personal media library backed by the public `Contents` repository.
-
----
-
-# 2. Core UX Principle
-
-## Front-end
-
-The user should primarily experience:
-
-- visual design
-- typography
-- motion
-- interaction
-- books
-- art
-- audio
-- video
-- projects
-- ideas
-
-The visitor should NOT be exposed unnecessarily to:
-
-- GitHub branches
-- SHA values
-- raw repository paths
-- implementation details
-- technical loading systems
-- internal architecture
-- unnecessary HUD-like micro labels
-- duplicated explanatory text
-
-## Background
-
-Technical work should happen invisibly whenever possible:
-
-- scene code splitting
-- dynamic imports
-- idle preloading
-- media discovery
-- manifest loading
-- animation throttling
-- visibility detection
-- caching
-- deferred media loading
-
-The foreground should remain the highest priority.
+```text
+AI inspects repository
+        ↓
+AI identifies root cause / next improvement
+        ↓
+AI gives exact edit
+        ↓
+Owner edits and pushes
+        ↓
+AI verifies actual repository
+        ↓
+AI verifies Actions / deployment
+        ↓
+AI continues
+````
 
 ---
 
-# 3. Current Scene Architecture
+# 1. Project Identity
+
+**Website:** [https://parsaetak.github.io/WEB/](https://parsaetak.github.io/WEB/)
+**Repository:** [https://github.com/Parsaetak/WEB](https://github.com/Parsaetak/WEB)
+**Content repository:** [https://github.com/Parsaetak/Contents](https://github.com/Parsaetak/Contents)
+
+**Owner / Designer:** Parsa Tak
+**Project identity:** Parsa Tak / SHEYTAN
+
+The WEB project is a personal interactive website intended to feel like a living digital environment rather than a conventional portfolio.
+
+The site combines:
+
+* identity
+* writing
+* research
+* software
+* systems
+* RED MAGIC
+* projects
+* books
+* art
+* audio
+* video
+* interactive visual experiences
+
+---
+
+# 2. Core Product Philosophy
+
+The public-facing website should prioritise:
+
+```text
+visual design
+typography
+motion
+interaction
+meaning
+media
+entertainment
+```
+
+Technical complexity should generally stay in the background.
+
+Visitors should not be unnecessarily exposed to:
+
+* GitHub branches
+* commit hashes
+* raw repository paths
+* implementation details
+* internal architecture
+* excessive HUD microtext
+* redundant labels
+* duplicated explanations
+* technical loading processes
+
+The site should feel:
+
+* distinctive
+* intelligent
+* cinematic
+* experimental
+* polished
+* fast
+* calm where appropriate
+* interactive where useful
+
+---
+
+# 3. Performance Philosophy
+
+Primary rule:
+
+```text
+foreground experience first
+background work second
+heavy work only when needed
+```
+
+Desired execution model:
+
+```text
+current visible scene
+        ↓
+render immediately
+        ↓
+user interaction
+        ↓
+load only what interaction requires
+        ↓
+background work during idle time
+```
+
+Background work may include:
+
+* dynamic scene loading
+* idle scene preloading
+* manifest synchronization
+* browser caching
+* deferred media preparation
+* controlled media look-ahead
+* adaptive visual quality
+
+Do not move heavy work into the initial critical path unless there is a proven user-experience benefit.
+
+---
+
+# 4. Current Scene Architecture
 
 Current scenes:
 
-1. Home
-2. About
-3. Systems
-4. RED Magic
-5. Work
-6. Library
-
-Scene ID type currently contains:
-
-- `home`
-- `about`
-- `systems`
-- `magic`
-- `work`
-- `library`
-
-Scene navigation is defined in:
-
-`components/LivingShell.tsx`
-
-Scene implementation mapping is defined in:
-
-`components/SceneRegistry.tsx`
-
-Scene preloading is handled by:
-
-`components/ScenePreloader.tsx`
-
----
-
-# 4. Current Scene Responsibilities
-
-## Home
-
-Purpose:
-
-- establish identity
-- establish overall direction
-- provide the strongest first impression
-- introduce major ideas without excessive explanation
-- retain RED MAGIC as a distinctive part of the Home experience
-
-Important:
-
-RED MAGIC is intentionally allowed on Home because it gives the website character.
-
-Do not remove RED MAGIC from Home merely because a dedicated RED MAGIC scene exists.
-
-Home should introduce and express the concept.
-
-The dedicated RED MAGIC scene should contain the deeper explanation.
-
----
-
-## About
-
-Purpose:
-
-- explain who Parsa Tak is
-- explain working philosophy
-- explain practice and creative direction
-
-Current conceptual structure includes:
-
-- identity
-- IN PRACTICE
-- statement about researching, building, writing and creating
-- BASED AROUND
-- OUTPUT
-
-Avoid repeating the same exact explanation elsewhere unless another scene presents a genuinely different concept.
-
----
-
-## Systems
-
-Purpose:
-
-- contain the technical/intellectual systems
-- AI Instructions
-- REP
-- USEF
-
-Do not duplicate these detailed frameworks in Home or unrelated scenes.
-
----
-
-## RED Magic
-
-Purpose:
-
-- own the deeper RED MAGIC concept
-- explain the living computational experiment
-- contain its principles and long-term direction
-
-Home may reference and visually express RED MAGIC, but the dedicated scene owns the detailed explanation.
-
----
-
-## Work
-
-Purpose:
-
-- projects and completed work
-- selected outputs
-- project presentation
-
-Avoid duplicating Systems, RED MAGIC, or About content here.
-
----
-
-## Library
-
-Purpose:
-
-- public-facing media experience
-- books
-- audio
-- video
-- visual art
-- future published media
-
-The Library should feel like a media gallery / publishing surface.
-
-It should NOT feel like a GitHub repository browser.
-
----
-
-# 5. Legal / Attribution
-
-The project already contains:
-
-`LICENSE.md`
-
-and:
-
-`TRADEMARKS.md`
-
-Current trademark direction includes:
-
-- Parsa Tak™
-- SHEYTAN™
-- RED MAGIC™
-- RED THEORY™
-- REP™
-- USEF™
-
-Global legal presentation is handled through `LivingShell.tsx`.
-
-Do not recreate or duplicate legal text unnecessarily throughout scenes.
-
----
-
-# 6. Content Repository
-
-Current public content repository:
-
-`Parsaetak/Contents`
-
-The repository is intentionally kept public for the current architecture.
-
-Current branches:
-
-- `AI-Tests`
-- `AI-frameworks`
-- `Archive-old-files`
-- `Books`
-- `Projects`
-
-The repository default branch is currently:
-
-`Projects`
-
-This is important when constructing direct manifest URLs.
-
----
-
-# 7. Library Architecture
-
-The Library does NOT download complete media when the Library scene opens.
-
-Current intended flow:
+```text
+1. HOME
+2. ABOUT
+3. SYSTEMS
+4. MAGIC
+5. WORK
+6. LIBRARY
+```
+
+Current `SceneId` values:
 
 ```text
-Enter Library
-      ↓
-load lightweight library.json
-      ↓
-show catalogue / preview
-      ↓
-user selects a work
-      ↓
-show editorial preview
-      ↓
-user explicitly opens work
-      ↓
-load full media
-````
+home
+about
+systems
+magic
+work
+library
+```
 
-Heavy media must remain deferred.
+Important files:
 
----
+```text
+components/LivingShell.tsx
+components/SceneRegistry.tsx
+components/ScenePreloader.tsx
+components/SceneUrlSync.tsx
+```
 
-# 8. Supported Media
+`SceneRegistry.tsx` maps each scene ID to its scene component.
 
-Current supported media types:
+`SceneUrlSync.tsx` must accept all six scenes.
 
-* `.pdf`
-* `.mp3`
-* `.mp4`
-* `.png`
-* `.jpg`
-* `.jpeg`
-* `.webp`
-* `.gif`
+Library URL:
 
-Mapping:
+```text
+#library
+```
 
-* PDF → BOOK
-* MP3 → AUDIO
-* MP4 → VIDEO
-* image formats → ART
+Home uses the empty hash.
 
 ---
 
-# 9. Current Contents / Books
+# 5. Scene Responsibilities
 
-The current `Books` branch contains three PDFs:
+## HOME
 
-* `RED MAGIC.pdf`
-* `RED MAGIC 0_ MAGIC FOR KIDS.pdf`
-* `RED MAGIC II_ THE BOOK OF THE DEMIURGE.pdf`
-
-The books are currently the main media available to the Library.
-
----
-
-# 10. Library Manifest
-
-Current manifest:
-
-`Contents/library.json`
-
-Current manifest location:
-
-`Projects` branch
-
-The manifest is the editorial source of truth for public Library presentation.
-
-Current metadata model includes:
-
-* `branch`
-* `source`
-* `title`
-* `type`
-* `description`
-* `year`
-* `featured`
-* `author`
-* `tags`
-* `cover`
-
-The site should use manifest metadata for presentation instead of generating descriptions from filenames.
-
----
-
-# 11. Content Reader
-
-Current file:
-
-`lib/contentRepository.ts`
+Home is the strongest first impression.
 
 Responsibilities:
 
-* load `library.json`
-* validate manifest structure
-* convert manifest records into `ContentItem`
-* construct raw GitHub media URLs
-* construct GitHub source URLs
-* determine media type
-* support optional cover URLs
+* establish identity
+* introduce direction
+* introduce major ideas
+* visually entertain
+* remain relatively concise
+* provide an atmospheric experience
 
-The current manifest URL points to:
+Important special rule:
 
-```text
-https://raw.githubusercontent.com/Parsaetak/Contents/Projects/library.json
-```
+**RED MAGIC is intentionally allowed on Home.**
 
-Do NOT accidentally change this to `main`.
+RED MAGIC gives the website character and should not be removed simply because there is a dedicated RED MAGIC scene.
 
----
+Home should introduce RED MAGIC visually and conceptually.
 
-# 12. Library UX
+The dedicated RED MAGIC scene owns the deeper explanation and interactive experience.
 
-Library should be:
-
-* visually rich
-* calm
-* cinematic
-* easy to browse
-* media-first
-* low on technical information
-
-Users should mainly see:
-
-* artwork / covers
-* title
-* short description
-* author
-* year
-* tags
-* featured status
-* action such as READ / LISTEN / WATCH / VIEW
-
-Technical repository information should stay hidden unless explicitly exposed later.
-
-Do not prominently display:
-
-* branch names
-* file hashes
-* GitHub paths
-* raw file names
-* unnecessary file sizes
-* internal loading architecture
+Do not make Home reproduce the entire RED MAGIC explanation.
 
 ---
 
-# 13. Library Loading Philosophy
+## ABOUT
 
-Current design requirement:
+About owns:
 
-Entering Library must NOT immediately load:
+* identity
+* philosophy
+* personal practice
+* creative direction
+* research/build/write/create relationship
 
-* full PDFs
-* full MP3s
-* full MP4s
-* full-resolution images
-
-Selecting a work must NOT automatically open it.
-
-The current desired interaction is:
+Existing conceptual areas include:
 
 ```text
-SELECT
-  ↓
-PREVIEW
-  ↓
-READ / LISTEN / WATCH / VIEW
-  ↓
-FULL MEDIA
+identity
+IN PRACTICE
+research / build / write / create statement
+BASED AROUND
+OUTPUT
 ```
 
-Only the final action should create the heavy media element.
+Avoid copying the same paragraph or conceptual explanation into other scenes unless the second usage expresses a genuinely different concept.
 
 ---
 
-# 14. Library Viewer
+## SYSTEMS
 
-Current full-media viewer supports:
+Systems owns:
 
-## PDF
+* AI Instructions
+* REP
+* USEF
+* system-level intellectual frameworks
+* related methodology
 
-Embedded PDF viewer through an iframe.
-
-## MP3
-
-Native audio element.
-
-## MP4
-
-Native video element.
-
-## Images
-
-Native image display.
-
-The viewer uses a modal-style full-screen presentation.
-
-`Escape` closes the viewer.
-
-Clicking outside the modal content can close it.
-
-The document body is locked while the viewer is open.
+Do not reproduce full Systems explanations in Home, About, Work, or RED MAGIC.
 
 ---
 
-# 15. Library Visual Direction
+## RED MAGIC / MAGIC
 
-The Library is evolving from:
+The dedicated RED MAGIC scene should become the deeper RED MAGIC experience.
+
+It should own:
+
+* RED MAGIC explanation
+* deeper principles
+* interactive visualisation
+* computational experiment concepts
+* system behaviour
+* future interactive elements
+* future explanatory material
+
+Home may retain a RED MAGIC visual/atmospheric presence.
+
+Future goal:
 
 ```text
-technical catalog
+HOME
+→ RED MAGIC atmosphere / character
+
+MAGIC
+→ complete RED MAGIC experience
 ```
 
-toward:
+The user specifically wants RED MAGIC to become more complete now that it has its own page.
+
+---
+
+## WORK
+
+Work owns:
+
+* projects
+* selected outputs
+* project presentation
+* project-specific material
+
+Avoid duplicating Systems or RED MAGIC explanations here.
+
+---
+
+## LIBRARY
+
+Library is a public-facing publishing/media experience.
+
+It should feel like:
 
 ```text
-digital gallery / publishing platform
+digital gallery
++
+publishing platform
++
+media room
 ```
 
-The desired visual hierarchy is:
+It should NOT feel like:
 
 ```text
-visual
-  ↓
+GitHub browser
+repository explorer
+file manager
+```
+
+Library should contain:
+
+* books
+* audio
+* video
+* visual art
+* future published media
+
+The technical content system should remain mostly invisible.
+
+---
+
+# 6. Text / Visual Rules
+
+The site previously became weaker because of excessive tiny technical-looking text.
+
+Avoid gratuitous text such as:
+
+```text
+01RESEARCHER02WRITER03ARTIST04PROGRAMMER
+```
+
+and similar decorative sequences when they do not add real value.
+
+Meaningful small typography is acceptable.
+
+Use small labels only when they:
+
+* communicate useful context
+* reinforce hierarchy
+* reinforce the design language
+* improve navigation
+* identify a meaningful section
+
+Do not add tiny text merely because space is available.
+
+---
+
+# 7. No Repeated Concept Rule
+
+The same exact explanation should not appear in multiple scenes.
+
+Ownership model:
+
+```text
+ABOUT
+→ identity / philosophy
+
+SYSTEMS
+→ AI Instructions / REP / USEF
+
+MAGIC
+→ RED MAGIC itself
+
+WORK
+→ projects
+
+LIBRARY
+→ media
+
+HOME
+→ introduction / atmosphere
+```
+
+A concept may appear on Home as a preview and again in its own scene as a deeper treatment.
+
+It should not be duplicated verbatim.
+
+---
+
+# 8. Legal / Attribution
+
+The project already contains:
+
+```text
+LICENSE.md
+TRADEMARKS.md
+```
+
+Current trademark direction includes:
+
+```text
+Parsa Tak™
+SHEYTAN™
+RED MAGIC™
+RED THEORY™
+REP™
+USEF™
+```
+
+Legal presentation is centrally handled rather than repeated throughout scenes.
+
+Do not duplicate legal blocks unnecessarily.
+
+---
+
+# 9. Content Repository
+
+Current public content repository:
+
+```text
+Parsaetak/Contents
+```
+
+It is intentionally public for the current architecture.
+
+Known branches:
+
+```text
+AI-Tests
+AI-frameworks
+Archive-old-files
+Books
+Projects
+```
+
+Important:
+
+The current manifest is on the `Projects` branch.
+
+Do not accidentally change the manifest branch to `main`.
+
+---
+
+# 10. Library Content Source of Truth
+
+Current manifest:
+
+```text
+Contents/library.json
+```
+
+Current manifest branch:
+
+```text
+Projects
+```
+
+This manifest is the editorial source of truth for the Library.
+
+Production build synchronises the manifest into the WEB project.
+
+Desired architecture:
+
+```text
+Contents/library.json
+        ↓
+GitHub Actions
+        ↓
+download at build time
+        ↓
+validate
+        ↓
+WEB/data/library.json
+        ↓
+static Library catalog
+```
+
+Important principle:
+
+**Do not maintain a second manually edited production manifest.**
+
+The local `WEB/data/library.json` is a build-time/generated snapshot.
+
+---
+
+# 11. Current Library Metadata Model
+
+`LibraryMetadata` currently supports:
+
+```text
+branch
+source
 title
-  ↓
-meaning
-  ↓
-action
-  ↓
-technical source
+type
+description
+subtitle
+year
+language
+author
+series
+volume
+featured
+status
+readingTime
+tags
+cover
 ```
 
-not:
+Current media type values:
 
 ```text
-technical metadata
-  ↓
-filename
-  ↓
-repository information
-  ↓
-media
+book
+audio
+video
+art
+```
+
+The site converts the underlying file extension into a `ContentKind`.
+
+Supported file extensions:
+
+```text
+.pdf
+.mp3
+.mp4
+.png
+.jpg
+.jpeg
+.webp
+.gif
+```
+
+Mapping:
+
+```text
+PDF     → BOOK
+MP3     → AUDIO
+MP4     → VIDEO
+images  → ART
 ```
 
 ---
 
-# 16. Cover / Thumbnail System
+# 12. Current Library Books
 
-`LibraryMetadata` already supports:
+Current `Books` branch contains:
 
-```ts
-cover?: string;
+```text
+RED MAGIC.pdf
+RED MAGIC 0_ MAGIC FOR KIDS.pdf
+RED MAGIC II_ THE BOOK OF THE DEMIURGE.pdf
 ```
 
-and `ContentItem` supports:
+These are currently the principal Library items.
 
-```ts
-coverUrl?: string;
+---
+
+# 13. Library UX Rules
+
+The user should experience:
+
+```text
+ENTER LIBRARY
+      ↓
+instant lightweight catalog
+      ↓
+choose a work
+      ↓
+see preview
+      ↓
+explicit READ / LISTEN / WATCH / VIEW
+      ↓
+load heavy media
 ```
 
-The next intended evolution is to add small cover/thumbnail assets to `Contents`.
+The Library must NOT automatically:
 
-Example:
+* open a book
+* download a complete PDF
+* stream a complete video
+* load a full audio file unnecessarily
+* load full-resolution media just because the Library tab opened
+
+Selecting a work should only select it and reveal editorial information.
+
+The final media action should load the heavy resource.
+
+---
+
+# 14. Current Library UI
+
+Important file:
+
+```text
+components/scenes/LibraryScene.tsx
+```
+
+Current behaviour:
+
+* loads the static catalog
+* filters by media type
+* supports featured items
+* allows user selection
+* shows an editorial preview
+* does not automatically select the first work
+* opens heavy media only after explicit action
+* uses a modal-style viewer
+* closes with Escape
+* closes from the modal background
+* locks document scrolling while open
+
+Current filter categories:
+
+```text
+ALL
+BOOKS
+AUDIO
+VIDEO
+ART
+```
+
+---
+
+# 15. Content Repository Layer
+
+Important file:
+
+```text
+lib/contentRepository.ts
+```
+
+Responsibilities:
+
+* provide typed Library metadata
+* resolve supported media kinds
+* produce `ContentItem`
+* produce raw media URLs
+* produce GitHub source URLs
+* support optional cover URLs
+* expose Library content to the scene
+
+`ContentItem` currently includes:
+
+```text
+name
+path
+kind
+size
+sha
+rawUrl
+githubUrl
+coverUrl?
+```
+
+The media source is still GitHub Raw.
+
+---
+
+# 16. Library Cover System
+
+Optional manifest property:
 
 ```json
 {
@@ -532,228 +673,503 @@ Example:
 }
 ```
 
-The cover should be lightweight.
+Current `ContentItem` supports:
 
-The full media must remain deferred.
-
-Preferred architecture:
-
-```text
-small cover
-    ↓
-Library preview
-    ↓
-user clicks READ
-    ↓
-large PDF
+```ts
+coverUrl?: string;
 ```
 
+No assumption should be made that covers currently exist.
+
+The preferred future design is:
+
+```text
+small lightweight cover
+        ↓
+catalog / preview
+        ↓
+user clicks READ
+        ↓
+full PDF
+```
+
+The cover should remain lightweight and cacheable.
+
 ---
 
-# 17. Performance Architecture
+# 17. Library PDF Reader
 
-The project currently uses Next.js dynamic scene imports.
+Important file:
 
-`SceneRegistry.tsx` uses `next/dynamic` for scenes:
+```text
+components/LibraryPdfReader.tsx
+```
 
-* Home
-* About
-* Systems
-* RED Magic
-* Work
-* Library
+The project does NOT use the npm `pdfjs-dist` package anymore.
 
-This keeps scene code split.
+Reason:
+
+The npm dependency caused Next.js build integration problems.
+
+The current implementation loads PDF.js in the browser through a remote browser-side import from jsDelivr.
+
+Current URLs:
+
+```text
+https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/build/pdf.min.mjs
+
+https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/build/pdf.worker.min.mjs
+```
+
+Do not reintroduce the npm dependency unless there is a deliberate architectural reason and current build compatibility has been verified.
 
 ---
 
-# 18. Scene Preloading
+# 18. Current PDF Loading Architecture
 
-Current file:
+Current intended flow:
 
-`components/ScenePreloader.tsx`
+```text
+user clicks READ
+        ↓
+LibraryPdfReader loads
+        ↓
+PDF.js loads in browser
+        ↓
+PDF document is opened
+        ↓
+current page is rendered
+        ↓
+nearby pages are warmed during idle time
+```
 
-The preloader now:
+Current configuration:
 
-* waits for browser idle time
-* checks connection quality
-* avoids background preload when Data Saver is enabled
-* avoids preload on slow 2G / 2G
-* preloads the next scene first
-* yields
-* then preloads the previous scene
+```text
+disableRange      = false
+disableStream     = true
+disableAutoFetch  = true
+rangeChunkSize    = 256 KiB
+```
+
+The intention is:
+
+```text
+range loading enabled
+automatic document-wide prefetch disabled
+explicit page look-ahead controlled by application
+```
+
+Current look-ahead:
+
+```text
+3 pages ahead
+```
+
+Do not render all warmed pages.
+
+Only the current page is rendered into the active canvas.
+
+---
+
+# 19. PDF Reader Loading States
+
+The PDF reader now has an actual opening/loading presentation.
+
+Initial state can display:
+
+```text
+LIBRARY / READER
+
+Opening
+BOOK TITLE
+
+progress / preparing
+```
+
+The reader distinguishes conceptually between:
+
+```text
+OPENING BOOK
+RENDERING
+READY
+LOADING NEXT
+```
+
+Exact byte percentage may not always be available.
+
+Do not fake exact percentages when PDF.js does not provide meaningful total byte information.
+
+Stage-based messaging is preferable when exact progress is unavailable.
+
+---
+
+# 20. PDF Reader Controls
+
+Current intended controls:
+
+```text
+previous page
+page input
+total pages
+next page
+
+zoom out
+zoom percentage
+zoom in
+FIT
+
+reading percentage
+background loading state
+```
+
+Keyboard navigation:
+
+```text
+ArrowLeft
+ArrowRight
+Home
+End
+```
+
+Escape is handled by the parent viewer.
+
+---
+
+# 21. PDF Reader Rendering Rules
+
+Current rendering behaviour:
+
+* one active canvas
+* current page only
+* device pixel ratio capped at 2
+* rendering can be cancelled
+* previous render is discarded when page changes
+* PDF document is destroyed when reader closes
+* reader is dynamically loaded from `LibraryScene`
+
+Do not introduce a design that renders every page simultaneously.
+
+Memory must stay controlled.
+
+---
+
+# 22. Progressive PDF Loading Goal
+
+The user's desired model:
+
+```text
+show first useful page quickly
+        ↓
+read
+        ↓
+load nearby pages in background
+        ↓
+continue reading
+        ↓
+jump ahead when requested
+        ↓
+fetch only what is required
+```
+
+Preferred future model:
+
+```text
+current page
++
+small look-ahead window
++
+minimal retained render memory
+```
+
+Do not download an entire large book merely because the reader opened.
+
+---
+
+# 23. PDF Range-Request Limitation
+
+Important unresolved verification point:
+
+The application is configured for PDF.js range loading, but **the project has not established via repository/Actions verification alone that GitHub Raw is actually returning effective `206 Partial Content` responses for the specific PDFs.**
+
+Browser DevTools are required for definitive verification.
+
+The correct browser test is:
+
+```text
+Network
+→ open RED MAGIC.pdf
+→ inspect PDF requests
+→ check whether Range / Partial Content behaviour occurs
+```
+
+Ideal evidence:
+
+```text
+206 Partial Content
+Content-Range
+multiple byte requests
+```
+
+A single full:
+
+```text
+200 OK
+entire PDF
+```
+
+would mean the host is not giving us the expected progressive network behaviour.
+
+Do not claim page-by-page network downloading is proven until this has been observed.
+
+---
+
+# 24. Important PDF Concept
+
+A PDF is not normally stored as:
+
+```text
+page1.pdf
+page2.pdf
+page3.pdf
+```
+
+Therefore the site does not literally request a page file.
+
+Instead:
+
+```text
+PDF.js
+→ requests the PDF byte ranges needed
+→ resolves the requested page
+→ renders that page
+```
+
+This is the technically correct interpretation of progressive PDF loading.
+
+---
+
+# 25. Library Future Roadmap
+
+After the current reader is proven stable, the next Library upgrades should be considered in roughly this order:
+
+```text
+1. browser-verify range behaviour
+2. persistent reading position
+3. richer publication metadata presentation
+4. lightweight cover / thumbnail system
+5. improved reader navigation
+6. media-specific viewers
+7. additional content types
+8. more advanced publishing experience
+```
+
+Persistent reading position idea:
+
+```text
+RED MAGIC
+page 37 / 184
+20% read
+
+close
+
+return later
+→ Resume from page 37
+```
+
+This should use local browser storage rather than a backend.
+
+---
+
+# 26. RED MAGIC Architecture
+
+Important file:
+
+```text
+components/RedMagic.tsx
+```
+
+RED MAGIC contains a canvas-based visual system.
+
+Current capabilities include:
+
+* requestAnimationFrame
+* pointer interaction
+* intersection visibility detection
+* document visibility detection
+* reduced-motion support
+* adaptive quality
+* multiple visual systems
+* simulation-like behaviour
+
+Important performance rule:
+
+```text
+RED MAGIC ON HOME
+→ atmospheric
+→ cheaper
+→ subtle
+→ blended into background
+
+RED MAGIC TAB
+→ full experience
+→ richer interaction
+→ more complex visualisation
+```
+
+The user specifically likes the RED MAGIC visual on Home and wants it preserved.
+
+Do not remove it from Home.
+
+---
+
+# 27. RED MAGIC Visual Direction
+
+The Home RED MAGIC canvas should be:
+
+* cleaner
+* lower visual weight
+* blended into the page background
+* less intrusive
+* still recognisably RED MAGIC
+
+The dedicated RED MAGIC scene can afford:
+
+* richer interaction
+* more visible simulation
+* additional explanations
+* advanced controls
+* deeper visual systems
+
+Do not put every technical RED MAGIC control on Home.
+
+---
+
+# 28. Cursor
+
+Important file:
+
+```text
+components/RedCursor.tsx
+```
+
+Current goals:
+
+* custom red cursor
+* smooth high-refresh movement
+* RAF-driven animation
+* trail
+* hover reaction
+* pointer interaction
+* reduced-motion fallback
+
+The user wants the cursor to feel extremely smooth, targeting high-refresh displays including approximately 120 Hz and above.
+
+Important historical issue:
+
+A previous implementation accidentally duplicated cursor runtime logic and caused a build problem.
+
+There must be only one cursor runtime effect.
+
+Preserve the existing SVG visual unless doing a deliberate visual redesign.
+
+---
+
+# 29. Cursor Performance Rule
+
+Preferred model:
+
+```text
+pointer event
+      ↓
+update target position only
+      ↓
+one RAF loop
+      ↓
+interpolate / write transform
+```
+
+Avoid:
+
+* multiple RAF loops for the same cursor
+* unnecessary DOM reads every frame
+* layout-triggering properties
+* duplicate cursor effects
+* repeated event registration
+
+---
+
+# 30. Scene Preloading
+
+Important file:
+
+```text
+components/ScenePreloader.tsx
+```
+
+Current intent:
+
+* wait for idle time
+* respect connection quality
+* respect Data Saver
+* avoid background work on slow networks
+* prioritize next scene
+* then previous scene
+* yield between work
 
 Desired priority:
 
 ```text
-Priority 1
-current scene
-
-Priority 2
-next scene
-
-Priority 3
-previous scene
-
-Priority 4
-heavy media
-only after explicit user action
+1. current scene
+2. next scene
+3. previous scene
+4. heavy media only after user action
 ```
 
-The foreground must always win over background work.
+Never let background preloading dominate the visible experience.
 
 ---
 
-# 19. RED MAGIC Performance
+# 31. Global CSS
 
-`RedMagic.tsx` contains a canvas-based simulation/visual system.
-
-Current implementation already uses:
-
-* `requestAnimationFrame`
-* intersection detection
-* document visibility detection
-* reduced-motion detection
-* adaptive quality
-* pointer interaction
-
-It stops rendering when the visual is not meaningfully visible.
-
-Do not remove these protections.
-
----
-
-# 20. Cursor
-
-Current cursor file:
-
-`components/RedCursor.tsx`
-
-Current design goals:
-
-* smooth custom cursor
-* high-refresh compatibility
-* RAF-driven position updates
-* smooth tracking
-* visual trail
-* hover reaction
-* reduced-motion fallback
-
-Current cursor optimisation changed direct pointer transform writes into a RAF-driven animation path.
-
-Current target is very smooth operation on high-refresh displays.
-
-Do not duplicate cursor effects.
-
-There must be only one runtime cursor effect.
-
-The cursor's SVG visual design should be preserved unless a deliberate visual redesign is being made.
-
----
-
-# 21. Important Cursor History
-
-A previous mistake caused two cursor effects to be inserted into `RedCursor.tsx`.
-
-This resulted in a build failure.
-
-The corrected version contains:
+Important file:
 
 ```text
-mount effect
-      ↓
-one RAF-driven cursor effect
-      ↓
-existing SVG / cursor visual
+app/globals.css
 ```
 
-There must never again be duplicated legacy cursor runtime logic.
-
----
-
-# 22. Global CSS
-
-Main stylesheet:
-
-`app/globals.css`
-
-The project already contains:
+Contains:
 
 * global typography
 * scene styling
-* background system
-* cursor styling
-* RED MAGIC styling
-* Library styling
-* responsive rules
-* reduced-motion rules
-* legal/footer styling
-
-Avoid assuming a selector exists before checking the current file.
+* background
+* responsive design
+* reduced-motion handling
+* cursor styles
+* RED MAGIC styles
+* Library styles
+* PDF reader styles
+* legal/footer styles
 
 Past mistake:
 
-`.about-identity`
-
-was discussed even though it did not exist.
+An `.about-identity` selector was discussed even though it did not exist in the actual stylesheet.
 
 Rule:
 
-Always inspect the current file before giving replacement instructions.
+**Never assume a selector exists. Inspect the current CSS first.**
+
+Another past mistake involved damaging formatting in a global CSS edit.
+
+Rule:
+
+When editing major CSS, prefer a complete replacement file if many related changes are involved.
 
 ---
 
-# 23. Visual Design Rules
+# 32. Navigation CSS
 
-The site should avoid:
-
-* unnecessary tiny labels
-* repeated numbers
-* excessive HUD styling
-* repeated statements
-* overly dense information
-* decorative technical text with no user value
-
-Meaningful small typography is allowed.
-
-Technical-looking labels should exist only when they reinforce the visual language or communicate useful context.
-
----
-
-# 24. Text Repetition Rule
-
-Do not repeat the same conceptual text across scenes.
-
-Each scene should own its subject.
-
-Example:
-
-```text
-About
-→ identity and philosophy
-
-Systems
-→ AI Instructions / REP / USEF
-
-RED Magic
-→ living computational experiment
-
-Work
-→ projects
-
-Library
-→ media
-```
-
-Home can preview these ideas, but should not reproduce their complete explanations.
-
-RED MAGIC is specifically allowed to remain prominent on Home because it gives the site character.
-
----
-
-# 25. Navigation
-
-Current navigation contains six scenes:
+Navigation contains six items:
 
 ```text
 HOME
@@ -764,79 +1180,198 @@ WORK
 LIBRARY
 ```
 
-Navigation state is synchronized to URL hash.
+Important past bug:
 
-Examples:
+The navigation CSS was configured for five columns, which pushed Library out of the main row.
+
+It was corrected to six columns.
+
+If Library becomes inaccessible again, inspect these first:
 
 ```text
-#about
-#systems
-#magic
-#work
-#library
+components/LivingShell.tsx
+components/SceneUrlSync.tsx
+components/SceneRegistry.tsx
+app/globals.css
 ```
 
-Home uses the empty hash.
+Do not immediately rewrite Library itself.
 
 ---
 
-# 26. GitHub Pages Deployment
+# 33. URL Routing
 
-Deployment workflow:
+Important file:
 
-`.github/workflows/deploy.yml`
-
-Current action versions were upgraded after GitHub's Node 20 deprecation warning.
-
-Current target versions:
-
-```yaml
-actions/checkout@v5
-actions/setup-node@v5
-actions/configure-pages@v6
-actions/upload-pages-artifact@v4
-actions/deploy-pages@v5
+```text
+components/SceneUrlSync.tsx
 ```
 
-Do not downgrade these without checking current GitHub documentation.
-
----
-
-# 27. Next.js Static Export
-
-Current configuration is designed for GitHub Pages static export.
-
-Relevant configuration:
+Current valid scenes:
 
 ```ts
+[
+  "home",
+  "about",
+  "systems",
+  "magic",
+  "work",
+  "library"
+]
+```
+
+A previous bug omitted `library`, making `#library` invalid and redirecting to Home.
+
+If Library navigation breaks, check the valid-scene list before changing LibraryScene.
+
+---
+
+# 34. Next.js / Static Export
+
+The project is deployed using GitHub Pages.
+
+Important principle:
+
+```text
 output: "export"
 ```
 
-with:
+The deployment uses:
 
 ```text
 basePath: "/WEB"
 ```
 
-when deployed through GitHub Actions.
+The site must remain compatible with static export.
 
-The site must remain compatible with GitHub Pages.
+Avoid introducing server-only requirements.
+
+Do not introduce a backend merely to solve a frontend problem unless there is a proven requirement.
 
 ---
 
-# 28. Package Environment
+# 35. GitHub Actions
 
-Current package environment includes:
+Workflow:
+
+```text
+.github/workflows/deploy.yml
+```
+
+Current intended workflow stages:
+
+```text
+checkout
+↓
+restore Next.js cache
+↓
+setup Node
+↓
+setup Pages
+↓
+npm ci
+↓
+sync Contents/library.json
+↓
+validate manifest
+↓
+npm run build
+↓
+upload Pages artifact
+↓
+deploy
+```
+
+Current action targets:
+
+```text
+actions/checkout@v5
+actions/cache@v5
+actions/setup-node@v5
+actions/configure-pages@v6
+actions/upload-pages-artifact@v5
+actions/deploy-pages@v5
+```
+
+These versions were updated after the GitHub Actions Node 20 deprecation warnings.
+
+Do not downgrade without checking current official GitHub documentation.
+
+---
+
+# 36. Library Manifest Build Sync
+
+The production workflow downloads:
+
+```text
+https://raw.githubusercontent.com/Parsaetak/Contents/Projects/library.json
+```
+
+into:
+
+```text
+WEB/data/library.json
+```
+
+before building.
+
+The workflow validates:
+
+```text
+version
+updated
+items
+branch
+source
+title
+type
+```
+
+This allows the public site to have a static Library catalog without making users wait for a runtime manifest request.
+
+---
+
+# 37. Build Caching
+
+The workflow caches:
+
+```text
+.next/cache
+```
+
+using:
+
+```text
+actions/cache@v5
+```
+
+and hashes:
+
+```text
+package-lock.json
+```
+
+The project also uses npm dependency caching through `actions/setup-node`.
+
+The cache was previously missing; this was corrected.
+
+A successful run should restore the Next.js cache.
+
+---
+
+# 38. Package Environment
+
+Current project environment has been observed around:
 
 ```text
 Next.js 16.3.3
 React 19.2.8
 React DOM 19.2.8
 TypeScript 5.9+
-ESLint 10
+ESLint 10.x
 ```
 
-Current project build command:
+Current build command:
 
 ```text
 npm run build
@@ -848,350 +1383,614 @@ Current lint command:
 npm run lint
 ```
 
----
+The exact dependency versions must always be verified against the actual current `package.json` before editing.
 
-# 29. Verification Protocol
-
-After every substantial change:
-
-1. Inspect the current repository state.
-2. Verify the exact modified file(s).
-3. Check related files for integration errors.
-4. Check GitHub Actions.
-5. Fix actual errors rather than guessing.
-6. Push.
-7. Verify the new deployment.
-8. Update this worklog.
-
-For deployment failures:
-
-* inspect the newest workflow run
-* inspect the actual failed job
-* inspect the first real compiler/runtime error
-* trace it to the source file
-* fix the root cause
-* verify again
-
-Never rely on an older run when a newer run exists.
+Do not rely on this section for exact current versions if the project has changed since this worklog was updated.
 
 ---
 
-# 30. Editing Protocol
+# 39. PDF.js Dependency Rule
 
-For future project work:
+Important:
 
-### Whole-file replacement
+`pdfjs-dist` was removed from npm dependencies.
 
-When multiple edits are required in the same file, provide the **complete updated file in one code block**.
+The reader currently loads browser-side PDF.js dynamically from jsDelivr.
 
-Preferred for:
-
-* `.tsx`
-* `.ts`
-* major `.css` changes
-* workflows with multiple related modifications
-* large configuration updates
-
-### Exact replacements
-
-Use small `from → to` instructions only when the change is isolated and genuinely simpler.
-
-The project owner explicitly prefers complete files when there are many edits in the same file because this keeps the repository cleaner and reduces editing mistakes.
-
----
-
-# 31. Git Workflow
-
-The typical workflow is:
+Do not accidentally reinstall:
 
 ```text
-Assistant checks repository
-        ↓
-Assistant gives exact change
-        ↓
-User edits locally / in GitHub
-        ↓
-User pushes
-        ↓
-Assistant checks actual repository
-        ↓
-Assistant verifies Actions
-        ↓
-Assistant continues
+pdfjs-dist
 ```
 
-The user commonly performs the actual file replacement and push.
+into `package.json` / `package-lock.json`.
 
-Never claim a file was changed remotely unless the repository confirms it.
+A previous attempt to install it caused a Next.js build failure.
 
----
-
-# 32. Current Known Direction
-
-The website is moving toward:
-
-```text
-TECHNICAL ENGINE
-        ↓
-mostly invisible
-        ↓
-FAST FOREGROUND
-        ↓
-VISUAL EXPERIENCE
-        ↓
-MEDIA
-        ↓
-INTERACTION
-```
-
-Heavy work should be divided into chunks and executed in the background where possible.
-
-Examples:
-
-```text
-scene code
-→ dynamic chunk
-
-next scene
-→ idle preload
-
-previous scene
-→ later idle preload
-
-cover image
-→ lightweight lazy asset
-
-full book
-→ explicit user action
-
-full video
-→ explicit user action
-
-full audio
-→ explicit user action
-```
+The current architecture intentionally keeps PDF.js outside the Next.js application bundle.
 
 ---
 
-# 33. Current Library Long-Term Plan
+# 40. Browser-Only Heavy Reader Rule
 
-Target architecture:
+`LibraryScene.tsx` dynamically loads:
 
 ```text
-                 CONTENTS
-                    │
-              library.json
-                    │
-                    ▼
-                WEB LIBRARY
-                    │
-        ┌───────────┼───────────┐
-        ▼           ▼           ▼
-      visual      metadata     filters
-      preview
+components/LibraryPdfReader.tsx
+```
+
+using:
+
+```text
+next/dynamic
+```
+
+with:
+
+```text
+ssr: false
+```
+
+This is intentional.
+
+PDF.js should not enter the initial Home or Library catalog critical path.
+
+---
+
+# 41. Media Viewer Rules
+
+Current intended media behaviour:
+
+```text
+PDF
+→ custom PDF.js reader
+
+MP3
+→ native audio element
+
+MP4
+→ native video element
+
+image
+→ native image element
+```
+
+All are loaded only after explicit user action.
+
+---
+
+# 42. Mobile / Responsive Rules
+
+The site must remain usable on:
+
+* desktop
+* laptop
+* tablet
+* mobile
+
+PDF reader controls need to collapse gracefully on small screens.
+
+Do not allow long metadata rows or large controls to overflow.
+
+Avoid introducing fixed widths where responsive layouts are required.
+
+---
+
+# 43. Reduced Motion
+
+The site should respect:
+
+```text
+prefers-reduced-motion
+```
+
+This applies to:
+
+* cursor
+* RED MAGIC
+* Library decorative motion
+* PDF opening animation
+* transitions where appropriate
+
+Do not remove reduced-motion support to gain visual polish.
+
+---
+
+# 44. Verification Protocol
+
+After a substantial modification:
+
+```text
+1. inspect repository
+2. inspect changed file
+3. inspect directly related files
+4. run / verify build
+5. inspect newest Actions run
+6. inspect failed job if needed
+7. fix root cause
+8. verify new deployment
+9. test relevant browser behaviour
+10. update worklog only at milestone
+```
+
+For Actions failures:
+
+```text
+newest run
+↓
+failed job
+↓
+failed step
+↓
+first real compiler/runtime error
+↓
+source file
+↓
+root cause
+```
+
+Do not debug from an old run when a newer one exists.
+
+---
+
+# 45. Editing Protocol
+
+## Complete-file replacement preferred
+
+When multiple related edits affect the same file, send:
+
+```text
+the whole updated file
+```
+
+in one TypeScript / CSS / JSON / YAML code block.
+
+This is especially preferred for:
+
+```text
+.tsx
+.ts
+.css
+workflows
+large configuration files
+```
+
+Use small `find → replace` instructions only for genuinely isolated edits.
+
+The repository owner explicitly prefers complete files because it reduces accidental drift and keeps the project cleaner.
+
+---
+
+# 46. Do Not Over-Engineer
+
+The user prefers the website to feel sophisticated while its infrastructure remains mostly invisible.
+
+Do not create unnecessary:
+
+* services
+* APIs
+* databases
+* backends
+* abstractions
+* configuration layers
+* technical UI
+
+when a simpler static/client architecture works.
+
+The current project is intentionally compatible with GitHub Pages.
+
+---
+
+# 47. Current Major Milestones
+
+## Completed
+
+### Site architecture
+
+* six-scene architecture established
+* URL-based scene navigation established
+* Library route integrated
+* scene code splitting established
+* scene preloading established
+
+### Visual direction
+
+* excessive repeated tiny text reduced
+* scene responsibilities separated
+* RED MAGIC retained on Home
+* RED MAGIC dedicated scene retained for deeper experience
+* cursor performance architecture improved
+* RED MAGIC visibility/performance protections retained
+
+### Legal
+
+* LICENSE.md exists
+* TRADEMARKS.md exists
+* Parsa Tak / SHEYTAN / RED MAGIC / RED THEORY / REP / USEF trademark direction established
+
+### Library
+
+* public Contents repository integrated
+* static manifest sync implemented
+* manifest validation implemented
+* lightweight catalog implemented
+* user-driven selection implemented
+* heavy media deferred
+* publication metadata expanded
+* PDF reader implemented
+* PDF reader loading state implemented
+* PDF progress/navigation implemented
+* PDF progressive range architecture implemented
+* PDF look-ahead implemented
+* PDF reader dynamically loaded
+* PDF.js npm dependency removed after build issues
+* browser-side PDF.js loading implemented
+* Next.js cache implemented
+
+### Deployment
+
+* GitHub Actions Node warning handled
+* Pages deployment workflow updated
+* Next.js cache implemented
+* manifest build sync implemented
+* production builds have been successfully restored to green after previous PDF-related failures
+
+---
+
+# 48. Current Known Open Items
+
+These are the most important continuation points.
+
+## HIGH PRIORITY — Library
+
+### A. Verify real PDF network behaviour
+
+Browser verification is still required to establish whether:
+
+```text
+raw.githubusercontent.com
+```
+
+actually provides effective partial/range requests for the published PDFs.
+
+Do not claim this is proven until observed in browser Network tools.
+
+### B. Persistent reading position
+
+Future goal:
+
+```text
+save last page locally
+resume later
+```
+
+Use local browser storage.
+
+No backend required.
+
+### C. Cover system
+
+Add lightweight cover assets to `Contents` when appropriate.
+
+### D. Improve publication presentation
+
+Expose the newer metadata gracefully:
+
+```text
+subtitle
+series
+volume
+language
+status
+reading time
+```
+
+Do not dump all metadata onto the screen.
+
+Use strong visual hierarchy.
+
+---
+
+# 49. RED MAGIC Next Direction
+
+Once Library is stable:
+
+```text
+RED MAGIC dedicated scene
+        ↓
+much richer experience
+```
+
+Potential directions:
+
+* deeper explanation
+* interactive controls
+* more sophisticated visualisation
+* clearer simulation model
+* visual states
+* user-controlled experiments
+* structured sections
+* better integration of concept + visual system
+
+The dedicated scene can be substantially more complicated than Home.
+
+Home should remain comparatively clean.
+
+---
+
+# 50. Home RED MAGIC Rule
+
+Never remove the Home RED MAGIC simply because the dedicated Magic scene becomes more advanced.
+
+The current intent is:
+
+```text
+Home
+→ character
+
+Magic
+→ depth
+```
+
+---
+
+# 51. Quality Bar
+
+Before declaring a milestone complete, check:
+
+```text
+FUNCTION
+Does it actually work?
+
+UX
+Does it feel good?
+
+VISUAL
+Does it look intentional?
+
+PERFORMANCE
+Does heavy work stay deferred?
+
+ARCHITECTURE
+Is the responsibility in the correct scene/component?
+
+MAINTAINABILITY
+Is the solution understandable?
+
+DEPLOYMENT
+Does production build and deploy cleanly?
+
+CONTENT
+Is the user-facing text readable and non-repetitive?
+```
+
+A feature is not complete just because TypeScript compiles.
+
+---
+
+# 52. Avoid Past Mistakes
+
+Known mistakes from previous iterations:
+
+### Mistake 1
+
+Changing too many files with scattered edits.
+
+**Correction:** provide complete-file replacements when a file needs multiple related changes.
+
+### Mistake 2
+
+Assuming `.about-identity` existed.
+
+**Correction:** inspect actual CSS first.
+
+### Mistake 3
+
+Navigation configured for five items while six scenes existed.
+
+**Correction:** inspect navigation layout whenever adding a scene.
+
+### Mistake 4
+
+Library route existed in scene architecture but was omitted from URL validation.
+
+**Correction:** verify every integration layer when adding a route.
+
+### Mistake 5
+
+Installing `pdfjs-dist` directly into the Next.js app caused build problems.
+
+**Correction:** current browser-only CDN loading architecture.
+
+### Mistake 6
+
+Calling a PDF solution "page-by-page downloads" without proving range requests.
+
+**Correction:** distinguish:
+
+```text
+page-level rendering
+```
+
+from:
+
+```text
+HTTP byte-range transfer
+```
+
+### Mistake 7
+
+Declaring deployment success from an older run.
+
+**Correction:** always verify the newest run.
+
+---
+
+# 53. Preferred Development Style
+
+Work in small verified milestones.
+
+Preferred progression:
+
+```text
+inspect
+↓
+one coherent change
+↓
+push
+↓
+verify
+↓
+continue
+```
+
+Do not stack many unverified architectural changes.
+
+For large feature upgrades:
+
+```text
+architecture
+↓
+implementation
+↓
+build verification
+↓
+runtime verification
+↓
+polish
+```
+
+---
+
+# 54. Current Continuation Point
+
+The project is currently in the:
+
+```text
+LIBRARY / PUBLISHING EXPERIENCE
+```
+
+phase.
+
+The Library is already:
+
+```text
+reachable
+static-catalog based
+user-driven
+metadata aware
+PDF-capable
+lazy-loaded
+progressive-loading capable
+```
+
+The next high-value technical verification is:
+
+```text
+browser Network inspection
+→ confirm actual PDF range behaviour
+```
+
+After that, the next user-facing Library upgrade should be:
+
+```text
+persistent reading position
++
+better publication metadata presentation
++
+lightweight covers
+```
+
+After Library reaches a stable milestone, return to:
+
+```text
+RED MAGIC dedicated scene
+```
+
+and make it substantially richer than its Home representation.
+
+---
+
+# 55. Worklog Update Rule
+
+Update this file only after a meaningful milestone such as:
+
+* a major architecture change
+* a new media system
+* a new scene capability
+* a deployment architecture change
+* a major performance milestone
+* a completed Library publishing milestone
+* a completed RED MAGIC milestone
+
+Do not add a new worklog entry after every tiny CSS fix.
+
+Keep this document detailed enough that another AI can continue the project without conversation history, but do not turn it into a diary.
+
+---
+
+# 56. Last Verified Direction
+
+Current high-level architecture:
+
+```text
+                         WEB
+                          │
+        ┌─────────────────┼─────────────────┐
+        │                 │                 │
+     Scenes            Systems           Library
+        │                                   │
+        │                              static catalog
+        │                                   │
+        │                              user selection
+        │                                   │
+        │                              editorial preview
+        │                                   │
+        │                              explicit open
+        │                                   │
+        │                         ┌─────────┴─────────┐
+        │                         │         │         │
+        │                        PDF      AUDIO     VIDEO/ART
+        │                         │
+        │                     PDF.js
+        │                         │
+        │                  range-capable
+        │                  controlled loading
         │
-        ▼
-   user chooses
-        │
-        ▼
-   editorial view
-        │
-        ▼
- READ / WATCH / LISTEN / VIEW
-        │
-        ▼
-     full media
+        └── RED MAGIC
+              │
+          Home atmosphere
+              +
+          dedicated deeper scene
 ```
 
-Future enhancements:
-
-* real book covers
-* artwork thumbnails
-* video poster images
-* better audio visualisation
-* immersive PDF reader
-* book page navigation
-* progress persistence
-* shareable work URLs
-* featured works
-* curated collections
-* richer publication metadata
-* optional source/details panel
-* media search
-* favourites / recently opened works
-* accessibility improvements
-
----
-
-# 34. Performance Roadmap
-
-Next performance areas to investigate:
-
-1. Font loading
-2. CSS animation cost
-3. RED MAGIC canvas adaptive quality
-4. Cover/image loading
-5. Library catalog caching
-6. Scene transition cost
-7. Initial JavaScript payload
-8. unnecessary client components
-9. long-running background loops
-10. mobile performance
-11. high-refresh cursor performance
-12. memory usage during media viewing
-
-Prioritise measurable improvements over speculative optimisation.
-
----
-
-# 35. UX Roadmap
-
-The next visual evolution should focus on:
-
-* stronger media presentation
-* actual covers
-* more elegant Library browsing
-* better typography hierarchy
-* richer hover interactions
-* subtle transitions
-* responsive mobile layouts
-* immersive readers
-* less technical presentation
-* stronger emotional/visual impact
-
-The site should remain sophisticated rather than becoming cluttered.
-
----
-
-# 36. Current Important Decisions
-
-These decisions are intentional:
-
-### RED MAGIC remains on Home
-
-Do not remove it merely because a RED MAGIC scene exists.
-
-### Contents remains public
-
-This simplifies direct public media delivery.
-
-### Library is lazy
-
-Do not load full media on entering Library.
-
-### Manifest is the editorial source
-
-`Contents/library.json` controls public Library metadata.
-
-### Technical details stay backstage
-
-The user experience should not resemble GitHub.
-
-### Dynamic scene imports remain
-
-Do not collapse all scenes into one large client bundle.
-
-### Progressive idle preload remains
-
-Do not preload everything immediately.
-
-### Whole-file edits are preferred
-
-When a file needs multiple changes, provide the full replacement file.
-
----
-
-# 37. Current Project Status
-
-## Stable / implemented
-
-* six-scene architecture
-* URL-hash scene navigation
-* dynamic scene imports
-* progressive scene preloading
-* visibility-aware RED MAGIC rendering
-* high-refresh cursor architecture
-* legal attribution layer
-* trademark layer
-* public Contents repository integration
-* Library scene
-* Library manifest
-* lazy media opening
-* PDF support
-* MP3 support
-* MP4 support
-* image support
-* responsive Library styling
-* featured metadata
-* editorial metadata
-* GitHub Pages Node 24-compatible workflow
-
-## Current main area of development
-
-**Library / media experience**
-
-Priority:
+Core rule:
 
 ```text
-make Library feel like a premium personal media platform
+make the website feel simple
+while the system underneath remains sophisticated
 ```
 
-rather than a repository interface.
-
 ---
 
-# 38. Worklog Maintenance Rule
+# 57. Final Handoff Instruction
 
-This file is the persistent continuity document for the project.
-
-After each substantial project response:
-
-1. verify current repository state
-2. record what changed
-3. record what was verified
-4. record remaining issues
-5. record the next intended action
-
-Future sessions must read this file before continuing major WEB work.
-
-Never assume an earlier chat contains the complete current state.
-
-The repository plus this worklog are the authoritative continuation sources.
-
----
-
-# 39. Latest Session Continuation
-
-Current active direction:
-
-**Upgrade the entire user experience while moving heavy work into deferred/background chunks.**
-
-Immediate focus:
+When another AI resumes this project, its first action should be:
 
 ```text
-Library
-→ visual media first
-→ lightweight previews
-→ explicit full-media loading
-→ covers / thumbnails
-→ smoother browsing
-→ immersive readers
+Inspect current main branch.
+Inspect newest commit.
+Inspect newest GitHub Actions run.
+Read the current files relevant to the requested change.
+Compare reality against this worklog.
+Only then propose the next change.
 ```
 
-Performance philosophy:
+Never assume this file is newer than the repository.
 
-```text
-foreground first
-background second
-heavy work deferred
-media explicitly opened
-```
+The repository is the source of truth.
 
-Next major target:
-
-**real cover/thumbnail system + increasingly immersive media presentation.**
-
----
+The worklog is the architectural memory.
 
 ```
 ```
