@@ -100,14 +100,14 @@ export default function HomeScene() {
             </p>
 
             <h1 className="hero-title home-identity-title">
-              Researcher.
-              <br />
-              Writer.
-              <br />
-              Artist.
-              <br />
-              Programmer.
-            </h1>
+  Researcher
+  <br />
+  Writer
+  <br />
+  Artist
+  <br />
+  Programmer
+</h1>
 
             <p className="body-large hero-description home-identity-lead">
               Exploring intelligence through
