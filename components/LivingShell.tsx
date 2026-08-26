@@ -14,6 +14,7 @@ import ScenePreloader from "@/components/ScenePreloader";
 import SceneRegistry from "@/components/SceneRegistry";
 import SceneUrlSync from "@/components/SceneUrlSync";
 import WorldBackground from "@/components/WorldBackground";
+import { PUBLIC_LINKS } from "@/lib/links";
 
 export type SceneId =
   | "home"
@@ -65,28 +66,28 @@ export default function LivingShell({
     );
 
   const changeScene = useCallback(
-  (scene: SceneId) => {
-    if (
-      scene === activeScene
-    ) {
-      return;
-    }
+    (scene: SceneId) => {
+      if (
+        scene === activeScene
+      ) {
+        return;
+      }
 
-    const hash =
-      scene === "home"
-        ? ""
-        : `#${scene}`;
+      const hash =
+        scene === "home"
+          ? ""
+          : `#${scene}`;
 
-    window.history.pushState(
-      null,
-      "",
-      `${window.location.pathname}${window.location.search}${hash}`
-    );
+      window.history.pushState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}${hash}`
+      );
 
-    setActiveScene(scene);
-  },
-  [activeScene]
-);
+      setActiveScene(scene);
+    },
+    [activeScene]
+  );
 
   const activeSceneDefinition =
     SCENES.find(
@@ -114,6 +115,12 @@ export default function LivingShell({
         "home"
       );
     }, [activeScene]);
+
+  const github =
+    PUBLIC_LINKS.social.find(
+      (link) =>
+        link.id === "github"
+    );
 
   return (
     <div
@@ -177,14 +184,16 @@ export default function LivingShell({
             }
           />
 
-          <a
-            className="living-shell-github"
-            href="https://github.com/Parsaetak"
-            target="_blank"
-            rel="noreferrer"
-          >
-            GitHub ↗
-          </a>
+          {github && (
+            <a
+              className="living-shell-github"
+              href={github.href}
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub ↗
+            </a>
+          )}
         </div>
       </header>
 
