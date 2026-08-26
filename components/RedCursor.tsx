@@ -64,11 +64,8 @@ export default function RedCursor() {
     }
 
     let running = true;
-
     let frameRequested = false;
-
     let pointerInside = false;
-
     let hoverTarget = false;
 
     const pointer = {
@@ -166,15 +163,14 @@ export default function RedCursor() {
             trailPosition.y
         );
 
-      const shouldContinue =
+      if (
         pointerInside &&
         (
-          cursorDelta > 0.05 ||
-          trailDelta > 0.05
-        );
-
-      if (
-        shouldContinue
+          cursorDelta >
+            0.05 ||
+          trailDelta >
+            0.05
+        )
       ) {
         frameRef.current =
           window.requestAnimationFrame(
@@ -182,11 +178,9 @@ export default function RedCursor() {
           );
 
         frameRequested = true;
-
-        return;
+      } else {
+        frameRef.current = 0;
       }
-
-      frameRef.current = 0;
     };
 
     const requestFrame = () => {
@@ -270,18 +264,18 @@ export default function RedCursor() {
       pointerInside = false;
       hoverTarget = false;
 
-      requestFrame();
+      applyState();
     };
 
     const handleVisibility =
       () => {
-        if (
+        const visible =
           document.visibilityState ===
-          "visible"
-        ) {
+          "visible";
+
+        if (visible) {
           running = true;
           requestFrame();
-
           return;
         }
 
@@ -354,8 +348,7 @@ export default function RedCursor() {
         );
       }
 
-      frameRequested = false;
-      frameRef.current = 0;
+      stopFrame();
 
       window.removeEventListener(
         "pointermove",
@@ -482,12 +475,6 @@ export default function RedCursor() {
               </feMerge>
             </filter>
           </defs>
-
-          {/*
-            True pointer silhouette:
-            the sharp upper-left point is the click tip,
-            while the rest forms a pyramid.
-          */}
 
           <path
             className="red-cursor-pointer-shadow"
