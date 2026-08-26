@@ -20257,3 +20257,380 @@ html.red-cursor-enabled * {
     13px;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Library modal / reader viewport                                             */
+/* -------------------------------------------------------------------------- */
+
+.library-modal {
+  position:
+    fixed;
+
+  top:
+    var(--shell-header);
+
+  right:
+    0;
+
+  bottom:
+    0;
+
+  left:
+    0;
+
+  z-index:
+    120;
+
+  display:
+    flex;
+
+  align-items:
+    stretch;
+
+  justify-content:
+    center;
+
+  overflow:
+    hidden;
+
+  padding:
+    0;
+
+  background:
+    rgba(
+      3,
+      4,
+      6,
+      0.96
+    );
+
+  backdrop-filter:
+    blur(
+      14px
+    );
+
+  -webkit-backdrop-filter:
+    blur(
+      14px
+    );
+}
+
+.library-modal-shell {
+  position:
+    relative;
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  min-height:
+    0;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  overflow:
+    hidden;
+
+  background:
+    rgba(
+      5,
+      6,
+      8,
+      0.98
+    );
+
+  border-top:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.06
+    );
+}
+
+.library-modal-header {
+  flex:
+    0 0 auto;
+
+  min-height:
+    58px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    20px;
+
+  padding:
+    8px 16px;
+
+  border-bottom:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.06
+    );
+
+  background:
+    rgba(
+      9,
+      10,
+      13,
+      0.96
+    );
+
+  backdrop-filter:
+    blur(
+      18px
+    );
+
+  -webkit-backdrop-filter:
+    blur(
+      18px
+    );
+}
+
+.library-modal-header > div {
+  min-width:
+    0;
+}
+
+.library-modal-header > div > span {
+  display:
+    block;
+
+  margin-bottom:
+    3px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.28
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    6px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+
+  text-transform:
+    uppercase;
+}
+
+.library-modal-header h2 {
+  margin:
+    0;
+
+  overflow:
+    hidden;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.9
+    );
+
+  font-size:
+    clamp(
+      0.95rem,
+      1.8vw,
+      1.25rem
+    );
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    -0.025em;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+.library-modal-close {
+  flex:
+    0 0 auto;
+
+  width:
+    34px;
+
+  height:
+    34px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.08
+    );
+
+  border-radius:
+    8px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.62
+    );
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.025
+    );
+
+  font-size:
+    18px;
+
+  line-height:
+    1;
+
+  cursor:
+    pointer;
+
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.library-modal-close:hover {
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.28
+    );
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.95
+    );
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.05
+    );
+}
+
+.library-modal-content {
+  flex:
+    1 1 auto;
+
+  min-height:
+    0;
+
+  overflow:
+    hidden;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+}
+
+.library-modal-content > .library-pdf-reader {
+  flex:
+    1 1 auto;
+
+  min-height:
+    0;
+}
+
+.library-modal-download {
+  flex:
+    0 0 auto;
+
+  padding:
+    0 14px 14px;
+
+  background:
+    rgba(
+      7,
+      8,
+      11,
+      0.96
+    );
+}
+
+.library-modal-download .library-download-button {
+  margin-top:
+    0;
+}
+
+@media (max-width: 560px) {
+  .library-modal {
+    top:
+      var(--shell-header);
+  }
+
+  .library-modal-header {
+    min-height:
+      52px;
+
+    padding:
+      7px 9px;
+  }
+
+  .library-modal-close {
+    width:
+      30px;
+
+    height:
+      30px;
+  }
+
+  .library-modal-download {
+    padding:
+      0 9px 9px;
+  }
+}
+
