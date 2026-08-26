@@ -18,6 +18,21 @@ const principles = [
   }
 ];
 
+const metrics = [
+  {
+    label: "STATE",
+    value: "ALIVE"
+  },
+  {
+    label: "MODE",
+    value: "ADAPTIVE"
+  },
+  {
+    label: "CORE",
+    value: "RED"
+  }
+];
+
 export default function RedMagicScene() {
   return (
     <div className="red-magic-scene">
@@ -86,23 +101,64 @@ export default function RedMagicScene() {
             </p>
           </div>
 
-          <div className="magic-organism-core">
-            <div className="magic-organism-canvas">
-              <RedMagic />
+          <div className="magic-system">
+            <div className="magic-system-organism">
+              <div className="magic-system-organism-shell">
+                <RedMagic />
+              </div>
             </div>
 
-            <div className="magic-organism-label">
-              <span>
-                CORE
-              </span>
+            <div className="magic-system-copy">
+              <div className="magic-status">
+                <span className="status-dot" />
 
-              <strong>
-                RED
-              </strong>
+                <span>
+                  ALIVE
+                </span>
+              </div>
+
+              <p className="kicker">
+                RESPONSIVE · ADAPTIVE · COMPUTATIONAL
+              </p>
+
+              <h2 className="section-title">
+                The interface
+                <br />
+                is part of the experiment.
+              </h2>
+
+              <p className="body-large magic-system-description">
+                Move through the organism and observe
+                how the system responds. The visual field
+                is not a decoration placed on top of the
+                website. It is the experiment made visible.
+              </p>
+
+              <div className="magic-metrics">
+                {metrics.map(
+                  (
+                    metric
+                  ) => (
+                    <div
+                      key={metric.label}
+                    >
+                      <span>
+                        {
+                          metric.label
+                        }
+                      </span>
+
+                      <strong>
+                        {
+                          metric.value
+                        }
+                      </strong>
+                    </div>
+                  )
+                )}
+              </div>
             </div>
           </div>
-
-          
 
           <section className="magic-organism-principles">
             <div className="magic-organism-principles-header">
@@ -115,6 +171,11 @@ export default function RedMagicScene() {
                   Living behaviour.
                 </h2>
               </div>
+
+              <p className="body magic-principles-intro">
+                The organism is designed around
+                response, adaptation, and persistence.
+              </p>
             </div>
 
             <div className="magic-organism-principles-grid">
@@ -122,18 +183,26 @@ export default function RedMagicScene() {
                 (principle) => (
                   <article
                     className="magic-organism-principle"
-                    key={principle.number}
+                    key={
+                      principle.number
+                    }
                   >
                     <span>
-                      {principle.number}
+                      {
+                        principle.number
+                      }
                     </span>
 
                     <h3>
-                      {principle.title}
+                      {
+                        principle.title
+                      }
                     </h3>
 
                     <p>
-                      {principle.copy}
+                      {
+                        principle.copy
+                      }
                     </p>
                   </article>
                 )
@@ -162,8 +231,6 @@ export default function RedMagicScene() {
               observable behaviour?
             </p>
           </section>
-
-          
         </div>
       </section>
     </div>
