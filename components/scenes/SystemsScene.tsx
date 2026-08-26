@@ -25,26 +25,7 @@ const systems = [
   }
 ];
 
-const flow = [
-  {
-    number: "01",
-    label: "GOVERN",
-    title: "AI INSTRUCTIONS",
-    copy: "Define how the system should operate."
-  },
-  {
-    number: "02",
-    label: "REASON",
-    title: "REP",
-    copy: "Improve how the system thinks."
-  },
-  {
-    number: "03",
-    label: "IMPROVE",
-    title: "USEF",
-    copy: "Improve the system itself."
-  }
-];
+
 
 export default function SystemsScene() {
   return (
@@ -109,15 +90,7 @@ export default function SystemsScene() {
                     <div className="systems-module-corner systems-module-corner-bl" />
                     <div className="systems-module-corner systems-module-corner-br" />
 
-                    <div className="systems-module-top">
-                      <span>
-                        {system.number}
-                      </span>
-
-                      <span>
-                        {system.role}
-                      </span>
-                    </div>
+                    
 
                     <div className="systems-module-core">
                       <span className="systems-module-code">
@@ -146,71 +119,7 @@ export default function SystemsScene() {
             )}
           </div>
 
-          <section className="systems-architecture-map">
-            <div className="systems-architecture-map-header">
-              <div>
-                <p className="kicker">
-                  THE MODEL
-                </p>
-
-                <h2>
-                  One architecture
-                  <br />
-                  Three responsibilities
-                </h2>
-              </div>
-
-              <span>
-                03
-              </span>
-            </div>
-
-            <div className="systems-architecture-flow">
-              {flow.map(
-                (
-                  node,
-                  index
-                ) => (
-                  <div
-                    className="systems-architecture-step"
-                    key={node.number}
-                  >
-                    <div className="systems-architecture-node">
-                      <div className="systems-architecture-marker">
-                        <span>
-                          {node.number}
-                        </span>
-                      </div>
-
-                      <div>
-                        <strong>
-                          {node.label}
-                        </strong>
-
-                        <span>
-                          {node.title}
-                        </span>
-
-                        <small>
-                          {node.copy}
-                        </small>
-                      </div>
-                    </div>
-
-                    {index <
-                      flow.length -
-                        1 && (
-                      <span
-                        className="systems-architecture-connector"
-                        aria-hidden="true"
-                      />
-                    )}
-                  </div>
-                )
-              )}
-            </div>
-          </section>
-
+          
           <section className="systems-principle">
             <div>
               <p className="kicker">
@@ -233,27 +142,7 @@ export default function SystemsScene() {
             </p>
           </section>
 
-          <div className="systems-equation">
-            <span>
-              GOVERN
-            </span>
-
-            <strong>
-              →
-            </strong>
-
-            <span>
-              REASON
-            </span>
-
-            <strong>
-              →
-            </strong>
-
-            <span>
-              IMPROVE
-            </span>
-          </div>
+          
         </div>
       </section>
     </div>
