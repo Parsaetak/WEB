@@ -81,7 +81,9 @@ export default function SceneRegistry({
   ] = useState(false);
 
   useEffect(() => {
-    if (scene === renderedScene) {
+    if (
+      scene === renderedScene
+    ) {
       return;
     }
 
@@ -109,6 +111,7 @@ export default function SceneRegistry({
   return (
     <SceneViewport
       scene={renderedScene}
+      loading={transitioning}
     >
       <div
         className="scene-transition-layer"
