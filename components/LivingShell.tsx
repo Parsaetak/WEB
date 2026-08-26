@@ -297,22 +297,63 @@ export default function LivingShell({
       </header>
 
       <main
-        id="top"
-        className="living-shell-viewport"
-        data-active-scene={
-          activeScene
-        }
-      >
-        {urlReady && (
-          <SceneRegistry
-            scene={activeScene}
-          />
-        )}
-      </main>
+  id="top"
+  className="living-shell-viewport"
+  data-active-scene={
+    activeScene
+  >
+  {urlReady && (
+    <SceneRegistry
+      scene={activeScene}
+    />
+  )}
+</main>
 
-      <SceneLoadingScreen
-        visible={!urlReady}
-      />
+<footer className="living-shell-legal">
+  <div className="living-shell-legal-inner">
+    <div className="living-shell-legal-primary">
+      <strong>
+        © 2026 Parsa Tak. All rights reserved.
+      </strong>
+
+      <span>
+        Parsa Tak™
+      </span>
+    </div>
+
+    <p>
+      Original website design, visual identity,
+      writing, artwork, and other original creative
+      materials presented on this website are the
+      work of Parsa Tak and may not be reproduced,
+      redistributed, modified, or commercially
+      exploited without prior written permission,
+      except where a specific material states otherwise.
+    </p>
+
+    <div className="living-shell-legal-links">
+      <a
+        href="https://github.com/Parsaetak/WEB/blob/main/LICENSE.md"
+        target="_blank"
+        rel="noreferrer"
+      >
+        LICENSE
+      </a>
+
+      <a
+        href="https://github.com/Parsaetak/WEB/blob/main/TRADEMARKS.md"
+        target="_blank"
+        rel="noreferrer"
+      >
+        TRADEMARKS
+      </a>
+    </div>
+  </div>
+</footer>
+
+<SceneLoadingScreen
+  visible={!urlReady}
+/>
     </div>
   );
 }
