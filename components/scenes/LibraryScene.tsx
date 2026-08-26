@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import {
   useEffect,
   useMemo,
@@ -12,6 +14,17 @@ import {
   type ContentItem,
   type ContentKind
 } from "@/lib/contentRepository";
+
+const LibraryPdfReader =
+  dynamic(
+    () =>
+      import(
+        "@/components/LibraryPdfReader"
+      ),
+    {
+      ssr: false
+    }
+  );
 
 type MediaFilter =
   | "all"
@@ -202,10 +215,6 @@ export default function LibraryScene() {
             content
           );
 
-          /*
-           * Do not automatically select a work.
-           * The Library is a gallery first and a reader second.
-           */
           setSelected(
             null
           );
@@ -926,14 +935,13 @@ export default function LibraryScene() {
               <div className="library-modal-content">
                 {selected.kind ===
                   "pdf" && (
-                  <iframe
-                    title={
-                      selected.title
-                    }
+                  <LibraryPdfReader
                     src={
                       selected.rawUrl
                     }
-                    className="library-pdf-frame"
+                    title={
+                      selected.title
+                    }
                   />
                 )}
 
