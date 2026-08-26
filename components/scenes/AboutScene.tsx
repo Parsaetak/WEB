@@ -2,50 +2,33 @@ import PublicLinks from "@/components/PublicLinks";
 
 const principles = [
   {
-    label: "PERSONALITY",
-    title: "Curious. Intense. Systemic.",
-    copy:
-      "Look for patterns, weak points, hidden assumptions, and stronger structures."
+    index: "01",
+    label: "MIND",
+    title: "CURIOUS",
+    copy: "Find patterns. Question assumptions."
   },
   {
-    label: "WORKING STYLE",
-    title:
-      "Question → Build → Stress-test → Refine.",
-    copy:
-      "Ideas become prototypes. Stronger versions survive criticism; weaker versions are replaced."
+    index: "02",
+    label: "METHOD",
+    title: "RIGOROUS",
+    copy: "Build. Test. Stress-test. Refine."
   },
   {
-    label: "VALUES",
-    title:
-      "Independence. Precision. Creativity.",
-    copy:
-      "Freedom to explore, discipline to verify, and enough imagination to see possibilities early."
+    index: "03",
+    label: "DIRECTION",
+    title: "INDEPENDENT",
+    copy: "Follow the question, not the trend."
   }
 ];
 
-function AboutHeading() {
-  return (
-    <div className="section-heading">
-      <div className="section-heading-line">
-        <span
-          className="section-signal"
-          aria-hidden="true"
-        />
-
-        <p className="kicker">
-          01 / ABOUT
-        </p>
-      </div>
-
-      <p className="body-large section-heading-description">
-        The person behind the systems is less interested
-        in collecting technologies than in understanding
-        what happens when intelligence becomes an
-        architecture.
-      </p>
-    </div>
-  );
-}
+const disciplines = [
+  "AI",
+  "REASONING",
+  "SYSTEMS",
+  "DESIGN",
+  "SIMULATION",
+  "ART"
+];
 
 export default function AboutScene() {
   return (
@@ -53,98 +36,101 @@ export default function AboutScene() {
       id="about"
       className="about-scene"
     >
-      <section className="section">
+      <section className="section about-observer">
+        <div
+          className="about-orbit-field"
+          aria-hidden="true"
+        >
+          <span className="about-orbit about-orbit-one" />
+          <span className="about-orbit about-orbit-two" />
+          <span className="about-orbit about-orbit-three" />
+
+          <span className="about-orbit-axis about-orbit-axis-x" />
+          <span className="about-orbit-axis about-orbit-axis-y" />
+
+          <span className="about-orbit-node about-orbit-node-one" />
+          <span className="about-orbit-node about-orbit-node-two" />
+          <span className="about-orbit-node about-orbit-node-three" />
+        </div>
+
         <div className="page-container">
-          <AboutHeading />
+          <div className="about-header">
+            <div>
+              <p className="kicker">
+                01 / ABOUT
+              </p>
 
-          <div className="two-column">
-            <div className="glow-border">
-              <article className="panel panel-red magic-panel">
-                <div className="panel-content">
-                  <p className="body-large">
-                    Parsa Tak is an independent creator
-                    and systems-oriented builder whose work
-                    increasingly centres on artificial
-                    intelligence, reasoning, design, and
-                    experimental technology.
-                  </p>
+              <h1 className="section-title about-title">
+                Parsa Tak
+              </h1>
 
-                  <p
-                    className="body"
-                    style={{
-                      marginTop: "22px"
-                    }}
-                  >
-                    The direction moved naturally from
-                    prompts and isolated experiments toward
-                    architecture: systems that can reason
-                    deliberately, preserve context, use tools
-                    intelligently, verify what matters, and
-                    remain understandable as they evolve.
-                  </p>
-
-                  <p
-                    className="body"
-                    style={{
-                      marginTop: "22px"
-                    }}
-                  >
-                    The creative side is equally important.
-                    AI, visual art, narrative, philosophy,
-                    design, strategy, and simulation are
-                    treated as connected materials rather than
-                    separate disciplines.
-                  </p>
-
-                  <div
-                    className="magic-divider"
-                    aria-hidden="true"
-                  >
-                    <span />
-                  </div>
-                </div>
-              </article>
+              <p className="body-large about-lead">
+                Researcher.
+                Writer.
+                Artist.
+                Programmer.
+              </p>
             </div>
+
+            <div className="about-signal">
+              <span className="about-signal-dot" />
+
+              <span>
+                OBSERVE
+              </span>
+            </div>
+          </div>
+
+          <div className="about-observer-grid">
+            <article className="panel panel-red about-observer-panel">
+              <div className="panel-content">
+                <div className="about-observer-mark">
+                  <span />
+                </div>
+
+                <p className="kicker">
+                  FOCUS
+                </p>
+
+                <p className="about-focus">
+                  Intelligence
+                  <br />
+                  Systems
+                  <br />
+                  Creation
+                </p>
+
+                <p className="body about-observer-copy">
+                  Exploring how ideas become systems,
+                  and how systems change the way ideas
+                  are understood.
+                </p>
+              </div>
+            </article>
 
             <div className="about-principles">
               {principles.map(
                 (principle) => (
                   <article
-                    className="panel magic-panel"
-                    key={principle.label}
+                    className="panel about-principle"
+                    key={principle.index}
                   >
                     <div className="panel-content">
-                      <div
-                        className="panel-signal"
-                        aria-hidden="true"
-                      >
-                        <span />
-                        <span />
-                        <span />
+                      <div className="about-principle-top">
+                        <span className="system-number">
+                          {principle.index}
+                        </span>
+
+                        <span className="system-type">
+                          {principle.label}
+                        </span>
                       </div>
 
-                      <p className="kicker">
-                        {principle.label}
-                      </p>
-
-                      <h2
-                        style={{
-                          margin:
-                            "12px 0 0",
-                          fontSize:
-                            "26px"
-                        }}
-                      >
+                      <h2 className="system-title">
                         {principle.title}
                       </h2>
 
-                      <p
-                        className="body"
-                        style={{
-                          marginTop:
-                            "10px"
-                        }}
-                      >
+                      <p className="system-copy">
                         {principle.copy}
                       </p>
                     </div>
@@ -154,11 +140,48 @@ export default function AboutScene() {
             </div>
           </div>
 
-          <PublicLinks
-            title="PUBLIC NETWORK"
-          />
+          <div className="about-disciplines">
+            <div className="about-disciplines-header">
+              <p className="kicker">
+                FIELD
+              </p>
+
+              <span>
+                06
+              </span>
+            </div>
+
+            <div className="about-disciplines-list">
+              {disciplines.map(
+                (
+                  discipline,
+                  index
+                ) => (
+                  <span
+                    key={discipline}
+                    className="about-discipline"
+                  >
+                    <small>
+                      {String(
+                        index + 1
+                      ).padStart(
+                        2,
+                        "0"
+                      )}
+                    </small>
+
+                    {discipline}
+                  </span>
+                )
+              )}
+            </div>
+          </div>
         </div>
       </section>
+
+      <PublicLinks
+        title="CONNECT"
+      />
     </div>
   );
 }
