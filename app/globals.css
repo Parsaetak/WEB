@@ -16605,3 +16605,384 @@ html.red-cursor-enabled * {
   }
 }
 
+.library-featured-strip {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(
+        220px,
+        1fr
+      )
+    );
+
+  gap:
+    10px;
+
+  padding:
+    10px;
+
+  border-bottom:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.055
+    );
+}
+
+.library-featured-card {
+  min-width:
+    0;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    72px
+    minmax(
+      0,
+      1fr
+    );
+
+  gap:
+    12px;
+
+  padding:
+    9px;
+
+  border:
+    1px solid
+    transparent;
+
+  border-radius:
+    13px;
+
+  color:
+    inherit;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.018
+    );
+
+  text-align:
+    left;
+
+  cursor:
+    pointer;
+
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.library-featured-card:hover {
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.16
+    );
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.035
+    );
+
+  transform:
+    translateY(
+      -2px
+    );
+}
+
+.library-featured-card[data-active="true"] {
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.24
+    );
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.06
+    );
+}
+
+.library-featured-card-visual {
+  width:
+    72px;
+
+  height:
+    88px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    9px;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.07
+    );
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(
+        255,
+        32,
+        32,
+        0.12
+      ),
+      transparent 70%
+    );
+}
+
+.library-featured-card-visual img {
+  width:
+    100%;
+
+  height:
+    100%;
+
+  object-fit:
+    cover;
+}
+
+.library-featured-card-visual span {
+  color:
+    rgba(
+      255,
+      32,
+      32,
+      0.72
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    7px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.12em;
+}
+
+.library-featured-card-content {
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  justify-content:
+    center;
+
+  flex-direction:
+    column;
+
+  gap:
+    5px;
+}
+
+.library-featured-card-content span {
+  color:
+    rgba(
+      255,
+      32,
+      32,
+      0.68
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    7px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.13em;
+}
+
+.library-featured-card-content strong {
+  color:
+    var(--text);
+
+  font-size:
+    0.92rem;
+
+  line-height:
+    1.25;
+}
+
+.library-featured-card-content small {
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+}
+
+.library-preview-cover {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  width:
+    min(
+      68%,
+      320px
+    );
+
+  height:
+    76%;
+
+  object-fit:
+    contain;
+
+  border-radius:
+    8px;
+
+  box-shadow:
+    0 24px 60px
+    rgba(
+      0,
+      0,
+      0,
+      0.42
+    );
+
+  transition:
+    transform 300ms ease,
+    filter 300ms ease;
+}
+
+.library-preview-art:hover
+  .library-preview-cover {
+  transform:
+    translateY(
+      -4px
+    )
+    scale(
+      1.015
+    );
+
+  filter:
+    brightness(
+      1.04
+    );
+}
+
+.library-preview-cover-author {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  margin-top:
+    4px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.44
+    ) !important;
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  letter-spacing:
+    0.12em;
+
+  text-transform:
+    uppercase;
+}
+
+@media (max-width: 720px) {
+  .library-featured-strip {
+    grid-template-columns:
+      1fr;
+  }
+
+  .library-featured-card {
+    grid-template-columns:
+      60px
+      minmax(
+        0,
+        1fr
+      );
+  }
+
+  .library-featured-card-visual {
+    width:
+      60px;
+
+    height:
+      74px;
+  }
+
+  .library-preview-cover {
+    width:
+      min(
+        72%,
+        280px
+      );
+
+    height:
+      70%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library-featured-card,
+  .library-preview-cover {
+    transition:
+      none;
+  }
+}
+
