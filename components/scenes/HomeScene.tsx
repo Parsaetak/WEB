@@ -65,6 +65,10 @@ export default function HomeScene() {
           <span className="home-origin-axis home-origin-axis-y" />
         </div>
 
+        <div className="home-origin-magic-background">
+          <RedMagic />
+        </div>
+
         <div className="page-container hero-grid home-origin-content">
           <div className="hero-copy home-origin-copy">
             <div className="hero-status">
@@ -118,12 +122,11 @@ export default function HomeScene() {
             </div>
           </div>
 
-          <div
-            className="hero-magic home-origin-core"
-            aria-label="RED MAGIC"
-          >
-            <div className="hero-magic-frame">
-              <RedMagic />
+          <div className="home-origin-core">
+            <div className="home-origin-core-atmosphere">
+              <span />
+              <span />
+              <span />
             </div>
 
             <div className="home-origin-core-label">
@@ -179,115 +182,36 @@ export default function HomeScene() {
       </section>
 
       <section className="section home-systems">
-  <div className="page-container">
-    <div className="home-systems-intro">
-      <div>
-        <p className="kicker">
-          WHAT I BUILD
-        </p>
-
-        <h2 className="section-title">
-          Ideas
-          <br />
-          made concrete
-        </h2>
-      </div>
-
-      <p className="body home-systems-copy">
-        I turn research into frameworks,
-        software, experiments, simulations,
-        and other working systems.
-      </p>
-    </div>
-
-    <div className="home-systems-overview">
-  <div className="home-systems-overview-link">
-    <span>
-      SYSTEMS
-    </span>
-
-    <strong>
-      AI · REASONING · SYSTEMS
-    </strong>
-  </div>
-</div>
-  </div>
-</section>
-
-      <section className="section-tight magic-section home-magic-section">
         <div className="page-container">
-          <div className="home-magic-intro">
+          <div className="home-systems-intro">
             <div>
               <p className="kicker">
-                EXPERIMENT
+                WHAT I BUILD
               </p>
 
               <h2 className="section-title">
-                RED MAGIC
+                Ideas
+                <br />
+                made concrete
               </h2>
             </div>
 
-            <p className="body-large home-magic-copy">
-              A living computational organism
-              built into the site itself.
+            <p className="body home-systems-copy">
+              I turn research into frameworks,
+              software, experiments, simulations,
+              and other working systems.
             </p>
           </div>
 
-          <div className="magic-system home-magic-system">
-            <div className="magic-system-organism">
-              <RedMagic />
-            </div>
+          <div className="home-systems-overview">
+            <div className="home-systems-overview-link">
+              <span>
+                SYSTEMS
+              </span>
 
-            <div className="magic-system-copy">
-              <div className="magic-status">
-                <span className="status-dot" />
-
-                <span>
-                  ALIVE
-                </span>
-              </div>
-
-              <p className="kicker">
-                RESPONSIVE · ADAPTIVE · COMPUTATIONAL
-              </p>
-
-              <h3 className="section-title">
-                The website
-                <br />
-                is part of the experiment
-              </h3>
-
-              <div className="magic-metrics">
-                <div>
-                  <span>
-                    STATE
-                  </span>
-
-                  <strong>
-                    ALIVE
-                  </strong>
-                </div>
-
-                <div>
-                  <span>
-                    MODE
-                  </span>
-
-                  <strong>
-                    ADAPTIVE
-                  </strong>
-                </div>
-
-                <div>
-                  <span>
-                    CORE
-                  </span>
-
-                  <strong>
-                    RED
-                  </strong>
-                </div>
-              </div>
+              <strong>
+                AI · REASONING · SYSTEMS
+              </strong>
             </div>
           </div>
         </div>
