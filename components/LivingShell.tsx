@@ -22,7 +22,8 @@ export type SceneId =
   | "about"
   | "systems"
   | "magic"
-  | "work";
+  | "work"
+  | "library";
 
 export type SceneChangeSource =
   | "navigation"
@@ -52,10 +53,15 @@ export const SCENES:
       shortLabel: "MAGIC"
     },
     {
-      id: "work",
-      label: "Work",
-      shortLabel: "WORK"
-    }
+  id: "work",
+  label: "Work",
+  shortLabel: "WORK"
+},
+{
+  id: "library",
+  label: "Library",
+  shortLabel: "LIBRARY"
+}
   ];
 
 type LivingShellProps = {
