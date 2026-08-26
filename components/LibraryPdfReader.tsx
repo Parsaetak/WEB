@@ -217,12 +217,12 @@ export default function LibraryPdfReader({
     );
 
   const thumbnailRefs =
-    useRef(
-      new Map<
-        number,
-        HTMLDivElement
-      >()
-    );
+  useRef(
+    new Map<
+      number,
+      HTMLSpanElement
+    >()
+  );
 
   const documentRef =
     useRef<PdfDocument | null>(
@@ -398,9 +398,9 @@ export default function LibraryPdfReader({
             );
 
           const canvas =
-            document.createElement(
-              "canvas"
-            );
+  globalThis.document.createElement(
+    "canvas"
+  );
 
           const context =
             canvas.getContext(
@@ -814,9 +814,25 @@ export default function LibraryPdfReader({
         }
       );
 
-    observer.observe(
-      stageRef.current
-    );
+    const stage =
+  stageRef.current;
+
+if (
+  !stage
+) {
+  return;
+}
+
+const observer =
+  new ResizeObserver(
+    () => {
+      void updateFit();
+    }
+  );
+
+observer.observe(
+  stage
+);
 
     return () => {
       observer.disconnect();
