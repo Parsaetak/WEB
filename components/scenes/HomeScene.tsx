@@ -179,71 +179,46 @@ export default function HomeScene() {
       </section>
 
       <section className="section home-systems">
-        <div className="page-container">
-          <div className="home-systems-intro">
-            <div>
-              <p className="kicker">
-                WHAT I BUILD
-              </p>
+  <div className="page-container">
+    <div className="home-systems-intro">
+      <div>
+        <p className="kicker">
+          WHAT I BUILD
+        </p>
 
-              <h2 className="section-title">
-                Thinking
-                <br />
-                made concrete
-              </h2>
-            </div>
+        <h2 className="section-title">
+          Ideas
+          <br />
+          made concrete
+        </h2>
+      </div>
 
-            <p className="body home-systems-copy">
-              AI Instructions, REP, and USEF form
-              the foundation of my current systems
-              work.
-            </p>
-          </div>
+      <p className="body home-systems-copy">
+        I turn research into frameworks,
+        software, experiments, simulations,
+        and other working systems.
+      </p>
+    </div>
 
-          <div className="three-column home-system-grid">
-            {systems.map(
-              (system) => (
-                <article
-                  className="glow-border home-system-card"
-                  key={system.number}
-                >
-                  <div className="panel system-card magic-panel">
-                    <div className="panel-content">
-                      <div className="panel-topline">
-                        <span className="system-number">
-                          {system.number}
-                        </span>
+    <div className="home-systems-overview">
+      <a
+        className="home-systems-overview-link"
+        href="#systems"
+      >
+        <span>
+          EXPLORE THE SYSTEMS
+        </span>
 
-                        <span className="system-type">
-                          SYSTEM
-                        </span>
-                      </div>
-
-                      <h3 className="system-title">
-                        {system.title}
-                      </h3>
-
-                      <p className="system-copy">
-                        {system.copy}
-                      </p>
-
-                      <div
-                        className="system-pulse"
-                        aria-hidden="true"
-                      >
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              )
-            )}
-          </div>
-        </div>
-      </section>
+        <strong>
+          AI · REASONING · SYSTEMS
+          <span aria-hidden="true">
+            →
+          </span>
+        </strong>
+      </a>
+    </div>
+  </div>
+</section>
 
       <section className="section-tight magic-section home-magic-section">
         <div className="page-container">
