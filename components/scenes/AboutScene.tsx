@@ -49,7 +49,10 @@ function AboutHeading() {
 
 export default function AboutScene() {
   return (
-    <div className="about-scene">
+    <div
+      id="about"
+      className="about-scene"
+    >
       <section className="section">
         <div className="page-container">
           <AboutHeading />
