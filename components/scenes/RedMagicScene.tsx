@@ -1,24 +1,21 @@
 import RedMagic from "@/components/RedMagic";
 
-const metrics = [
+const principles = [
   {
-    label: "STATE",
-    value: "ALIVE"
+    number: "01",
+    title: "RESPOND",
+    copy: "React to the environment."
   },
   {
-    label: "MODE",
-    value: "ADAPTIVE"
+    number: "02",
+    title: "ADAPT",
+    copy: "Change behaviour with conditions."
   },
   {
-    label: "CORE",
-    value: "RED"
+    number: "03",
+    title: "PERSIST",
+    copy: "Remain coherent while changing."
   }
-];
-
-const signals = [
-  "RESPONSIVE",
-  "ADAPTIVE",
-  "PERFORMANT"
 ];
 
 export default function RedMagicScene() {
@@ -43,7 +40,7 @@ export default function RedMagicScene() {
         </div>
 
         <div className="page-container">
-          <div className="magic-organism-header">
+          <header className="magic-organism-header">
             <div>
               <p className="kicker">
                 03 / MAGIC
@@ -54,7 +51,8 @@ export default function RedMagicScene() {
               </h1>
 
               <p className="body-large magic-organism-lead">
-                A living system.
+                A living interface for exploring
+                responsive systems.
               </p>
             </div>
 
@@ -65,6 +63,27 @@ export default function RedMagicScene() {
                 ALIVE
               </span>
             </div>
+          </header>
+
+          <div className="magic-organism-purpose">
+            <div>
+              <p className="kicker">
+                PURPOSE
+              </p>
+
+              <h2 className="section-title">
+                Not decoration.
+                <br />
+                An experiment.
+              </h2>
+            </div>
+
+            <p className="body-large magic-organism-purpose-copy">
+              RED MAGIC explores what happens when
+              a digital interface behaves less like
+              a static page and more like a living system:
+              responsive, adaptive, and continuously changing.
+            </p>
           </div>
 
           <div className="magic-organism-core">
@@ -84,52 +103,95 @@ export default function RedMagicScene() {
           </div>
 
           <div className="magic-organism-metrics">
-            {metrics.map(
-              (metric) => (
-                <div
-                  key={metric.label}
-                  className="magic-organism-metric"
-                >
-                  <span>
-                    {metric.label}
-                  </span>
+            <div className="magic-organism-metric">
+              <span>
+                STATE
+              </span>
 
-                  <strong>
-                    {metric.value}
-                  </strong>
-                </div>
-              )
-            )}
+              <strong>
+                ALIVE
+              </strong>
+            </div>
+
+            <div className="magic-organism-metric">
+              <span>
+                MODE
+              </span>
+
+              <strong>
+                ADAPTIVE
+              </strong>
+            </div>
+
+            <div className="magic-organism-metric">
+              <span>
+                CORE
+              </span>
+
+              <strong>
+                RED
+              </strong>
+            </div>
           </div>
 
-          <div className="magic-organism-signals">
-            {signals.map(
-              (
-                signal,
-                index
-              ) => (
-                <div
-                  key={signal}
-                  className="magic-organism-signal"
-                >
-                  <span>
-                    {String(
-                      index + 1
-                    ).padStart(
-                      2,
-                      "0"
-                    )}
-                  </span>
+          <section className="magic-organism-principles">
+            <div className="magic-organism-principles-header">
+              <div>
+                <p className="kicker">
+                  PRINCIPLES
+                </p>
 
-                  <strong>
-                    {signal}
-                  </strong>
+                <h2 className="section-title">
+                  Living behaviour.
+                </h2>
+              </div>
+            </div>
 
-                  <i aria-hidden="true" />
-                </div>
-              )
-            )}
-          </div>
+            <div className="magic-organism-principles-grid">
+              {principles.map(
+                (principle) => (
+                  <article
+                    className="magic-organism-principle"
+                    key={principle.number}
+                  >
+                    <span>
+                      {principle.number}
+                    </span>
+
+                    <h3>
+                      {principle.title}
+                    </h3>
+
+                    <p>
+                      {principle.copy}
+                    </p>
+                  </article>
+                )
+              )}
+            </div>
+          </section>
+
+          <section className="magic-organism-future">
+            <div>
+              <p className="kicker">
+                LONG TERM
+              </p>
+
+              <h2 className="section-title">
+                Toward living
+                <br />
+                digital systems.
+              </h2>
+            </div>
+
+            <p className="body-large magic-organism-future-copy">
+              RED MAGIC is one small experiment inside
+              a larger question: how far can software
+              move from being a passive tool toward
+              becoming an adaptive system with its own
+              observable behaviour?
+            </p>
+          </section>
 
           <div className="magic-organism-statement">
             <span>
@@ -141,8 +203,12 @@ export default function RedMagicScene() {
             </strong>
 
             <span>
-              RESPONSE
+              →
             </span>
+
+            <strong>
+              RESPONSE
+            </strong>
 
             <span>
               →
