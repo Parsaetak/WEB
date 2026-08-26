@@ -119,21 +119,6 @@ function getMediaFilter(
   return "art";
 }
 
-function getBranchLabel(
-  branch: string
-) {
-  return branch
-    .replace(
-      /[_-]+/g,
-      " "
-    )
-    .replace(
-      /\s+/g,
-      " "
-    )
-    .trim();
-}
-
 function getCatalogLabel(
   item: ContentItem
 ) {
@@ -179,41 +164,10 @@ function getActionLabel(
 function getDescription(
   item: ContentItem
 ) {
-  const title =
-    titleFromFileName(
-      item.name
-    );
-
-  if (
-    item.kind ===
-    "pdf"
-  ) {
-    return `${title} is a written work published through the ${getBranchLabel(
-      item.branch
-    )} collection. Open it when you are ready to read the complete document.`;
-  }
-
-  if (
-    item.kind ===
-    "mp3"
-  ) {
-    return `${title} is an audio work from the ${getBranchLabel(
-      item.branch
-    )} collection. Open it when you are ready to listen.`;
-  }
-
-  if (
-    item.kind ===
-    "mp4"
-  ) {
-    return `${title} is a video work from the ${getBranchLabel(
-      item.branch
-    )} collection. Open it when you are ready to watch.`;
-  }
-
-  return `${title} is visual work from the ${getBranchLabel(
-    item.branch
-  )} collection. Open it to view the full-resolution original.`;
+  return (
+    item.description ??
+    "An original work from the Parsa Tak archive."
+  );
 }
 
 function getPreviewGlyph(
@@ -344,18 +298,48 @@ export default function LibraryScene() {
   }, []);
 
   useEffect(() => {
-    if (!opened) {
+    if (
+      !opened
+    ) {
       document.body.style.overflow =
         "";
+
       return;
     }
+
+    const previousOverflow =
+      document.body.style.overflow;
+
+    const handleKeyDown =
+      (
+        event: KeyboardEvent
+      ) => {
+        if (
+          event.key ===
+          "Escape"
+        ) {
+          setOpened(
+            false
+          );
+        }
+      };
 
     document.body.style.overflow =
       "hidden";
 
+    window.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
     return () => {
       document.body.style.overflow =
-        "";
+        previousOverflow;
+
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
     };
   }, [opened]);
 
@@ -454,14 +438,6 @@ export default function LibraryScene() {
                 original work.
               </p>
             </div>
-
-            <div className="library-status">
-              <span className="status-dot" />
-
-              <span>
-                {items.length} PUBLISHED
-              </span>
-            </div>
           </header>
 
           <div className="library-filters">
@@ -550,17 +526,17 @@ export default function LibraryScene() {
           {!loading &&
             !error && (
               <div className="library-layout">
-                <aside className="library-catalog">
+                <section className="library-gallery">
                   <div className="library-catalog-header">
                     <div>
                       <p className="kicker">
-                        COLLECTION
+                        SELECT A WORK
                       </p>
 
                       <h2>
                         {filter ===
                         "all"
-                          ? "All works"
+                          ? "Gallery"
                           : MEDIA_FILTERS.find(
                               (
                                 item
@@ -618,17 +594,14 @@ export default function LibraryScene() {
 
                             <span className="library-item-main">
                               <strong>
-                                {titleFromFileName(
-                                  item.name
-                                )}
+                                {
+                                  item.title
+                                }
                               </strong>
 
                               <small>
-                                {getBranchLabel(
-                                  item.branch
-                                )}
-                                {" · "}
-                                MEDIA
+                                {item.year ??
+                                  "ORIGINAL WORK"}
                               </small>
                             </span>
 
@@ -646,20 +619,13 @@ export default function LibraryScene() {
                     {filteredItems.length ===
                       0 && (
                       <div className="library-empty">
-                        No published media exists
-                        in this category yet.
+                        No published media
+                        exists in this
+                        category yet.
                       </div>
                     )}
                   </div>
-
-                  <p className="library-source">
-                    Source:
-                    {" "}
-                    <strong>
-                      Parsaetak / Contents
-                    </strong>
-                  </p>
-                </aside>
+                </section>
 
                 <section className="library-preview">
                   {!selected && (
@@ -673,62 +639,129 @@ export default function LibraryScene() {
                       </strong>
 
                       <p>
-                        Select an item from
-                        the collection to
-                        see its preview,
-                        description, and
-                        publication details.
+                        Select a work to
+                        discover what it
+                        is about before
+                        opening the full
+                        media.
                       </p>
                     </div>
                   )}
 
                   {selected && (
                     <article className="library-preview-card">
-                      <div className="library-preview-art">
+                      <div
+                        className="library-preview-art"
+                        data-kind={
+                          selected.kind
+                        }
+                        data-featured={
+                          selected.featured
+                            ? "true"
+                            : "false"
+                        }
+                      >
+                        <div className="library-preview-art-grid" />
+
                         <div className="library-preview-art-orbit" />
-                        <span>
-                          {getPreviewGlyph(
-                            selected.kind
-                          )}
+
+                        <span className="library-preview-art-type">
+                          {
+                            getPreviewGlyph(
+                              selected.kind
+                            )
+                          }
                         </span>
 
                         <strong>
-                          {titleFromFileName(
-                            selected.name
-                          )}
+                          {
+                            selected.title
+                          }
                         </strong>
+
+                        {selected.author && (
+                          <small>
+                            {
+                              selected.author
+                            }
+                          </small>
+                        )}
+
+                        {selected.featured && (
+                          <span className="library-featured-mark">
+                            FEATURED
+                          </span>
+                        )}
                       </div>
 
                       <div className="library-preview-content">
                         <div className="library-preview-kicker">
-                          {getCatalogLabel(
-                            selected
-                          )}
-                          {" · "}
-                          {getBranchLabel(
-                            selected.branch
-                          )}
+                          {
+                            getCatalogLabel(
+                              selected
+                            )
+                          }
                         </div>
 
                         <h2>
-                          {titleFromFileName(
-                            selected.name
-                          )}
+                          {
+                            selected.title
+                          }
                         </h2>
 
                         <p>
-                          {getDescription(
-                            selected
-                          )}
+                          {
+                            getDescription(
+                              selected
+                            )
+                          }
                         </p>
 
+                        {selected.tags &&
+                          selected.tags.length >
+                            0 && (
+                            <div className="library-preview-tags">
+                              {selected.tags.map(
+                                (
+                                  tag
+                                ) => (
+                                  <span
+                                    key={
+                                      tag
+                                    }
+                                  >
+                                    {
+                                      tag
+                                    }
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          )}
+
                         <div className="library-preview-meta">
-                          <span>
-                            PUBLISHED
-                          </span>
+                          {selected.author && (
+                            <span>
+                              {
+                                selected.author
+                              }
+                            </span>
+                          )}
+
+                          {selected.year && (
+                            <span>
+                              {
+                                selected.year
+                              }
+                            </span>
+                          )}
 
                           <span>
-                            ORIGINAL
+                            {
+                              getCatalogLabel(
+                                selected
+                              )
+                            }
                           </span>
                         </div>
 
@@ -740,26 +773,17 @@ export default function LibraryScene() {
                               openItem
                             }
                           >
-                            {getActionLabel(
-                              selected.kind
-                            )}
-                            {" "}
+                            {
+                              getActionLabel(
+                                selected.kind
+                              )
+                            }{" "}
                             WORK
+
                             <span>
                               →
                             </span>
                           </button>
-
-                          <a
-                            href={
-                              selected.githubUrl
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            className="library-source-link"
-                          >
-                            SOURCE ↗
-                          </a>
                         </div>
                       </div>
                     </article>
@@ -777,9 +801,7 @@ export default function LibraryScene() {
             role="dialog"
             aria-modal="true"
             aria-label={
-              titleFromFileName(
-                selected.name
-              )
+              selected.title
             }
             onMouseDown={(
               event
@@ -796,15 +818,17 @@ export default function LibraryScene() {
               <header className="library-modal-header">
                 <div>
                   <span>
-                    {getCatalogLabel(
-                      selected
-                    )}
+                    {
+                      getCatalogLabel(
+                        selected
+                      )
+                    }
                   </span>
 
                   <h2>
-                    {titleFromFileName(
-                      selected.name
-                    )}
+                    {
+                      selected.title
+                    }
                   </h2>
                 </div>
 
@@ -825,7 +849,7 @@ export default function LibraryScene() {
                   "pdf" && (
                   <iframe
                     title={
-                      selected.name
+                      selected.title
                     }
                     src={
                       selected.rawUrl
@@ -842,9 +866,9 @@ export default function LibraryScene() {
                     </div>
 
                     <h3>
-                      {titleFromFileName(
-                        selected.name
-                      )}
+                      {
+                        selected.title
+                      }
                     </h3>
 
                     <audio
@@ -889,9 +913,7 @@ export default function LibraryScene() {
                       selected.rawUrl
                     }
                     alt={
-                      titleFromFileName(
-                        selected.name
-                      )
+                      selected.title
                     }
                     className="library-image"
                   />
