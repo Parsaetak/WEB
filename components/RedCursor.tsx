@@ -21,7 +21,6 @@ export default function RedCursor() {
       null
     );
 
-
   const frameRef =
     useRef(0);
 
@@ -29,397 +28,13 @@ export default function RedCursor() {
     useState(false);
 
   useEffect(() => {
-  setMounted(true);
-}, []);
+    setMounted(true);
+  }, []);
 
-useEffect(() => {
-  if (!mounted) {
-    return;
-  }
-
-  const cursor =
-    cursorRef.current;
-
-  const trail =
-    trailRef.current;
-
-  if (!cursor || !trail) {
-    return;
-  }
-
-  const finePointer =
-    window.matchMedia(
-      "(hover: hover) and (pointer: fine)"
-    );
-
-  const reduceMotion =
-    window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    );
-
-  if (
-    !finePointer.matches ||
-    reduceMotion.matches
-  ) {
-    return;
-  }
-
-  let running = true;
-
-  let frameRequested =
-    false;
-
-  let pointerInside =
-    false;
-
-  let hoverTarget =
-    false;
-
-  const pointer = {
-    x: -100,
-    y: -100
-  };
-
-  const cursorPosition = {
-    x: -100,
-    y: -100
-  };
-
-  const trailPosition = {
-    x: -100,
-    y: -100
-  };
-
-  const applyState = () => {
-    cursor.dataset.visible =
-      String(pointerInside);
-
-    trail.dataset.visible =
-      String(pointerInside);
-
-    cursor.dataset.hover =
-      hoverTarget
-        ? "true"
-        : "false";
-  };
-
-  const stopFrame = () => {
-    frameRequested = false;
-
-    frameRef.current = 0;
-  };
-
-  const animate = () => {
-    frameRequested = false;
-
-    if (!running) {
-      frameRef.current = 0;
+  useEffect(() => {
+    if (!mounted) {
       return;
     }
-
-    const cursorSmoothing =
-  0.82;
-
-const trailSmoothing =
-  0.18;
-
-    cursorPosition.x +=
-      (pointer.x -
-        cursorPosition.x) *
-      cursorSmoothing;
-
-    cursorPosition.y +=
-      (pointer.y -
-        cursorPosition.y) *
-      cursorSmoothing;
-
-    trailPosition.x +=
-      (cursorPosition.x -
-        trailPosition.x) *
-      trailSmoothing;
-
-    trailPosition.y +=
-      (cursorPosition.y -
-        trailPosition.y) *
-      trailSmoothing;
-
-    cursor.style.transform =
-      `translate3d(${cursorPosition.x}px, ${cursorPosition.y}px, 0)`;
-
-    trail.style.transform =
-      `translate3d(${trailPosition.x}px, ${trailPosition.y}px, 0)`;
-
-    applyState();
-
-    const cursorDelta =
-      Math.abs(
-        pointer.x -
-          cursorPosition.x
-      ) +
-      Math.abs(
-        pointer.y -
-          cursorPosition.y
-      );
-
-    const trailDelta =
-      Math.abs(
-        cursorPosition.x -
-          trailPosition.x
-      ) +
-      Math.abs(
-        cursorPosition.y -
-          trailPosition.y
-      );
-
-    const shouldContinue =
-      pointerInside &&
-      (
-        cursorDelta >
-          0.05 ||
-        trailDelta >
-          0.05
-      );
-
-    if (
-      shouldContinue
-    ) {
-      frameRef.current =
-        window.requestAnimationFrame(
-          animate
-        );
-
-      frameRequested = true;
-
-      return;
-    }
-
-    frameRef.current = 0;
-  };
-
-  const requestFrame = () => {
-    if (
-      !running ||
-      frameRequested
-    ) {
-      return;
-    }
-
-    frameRequested = true;
-
-    frameRef.current =
-      window.requestAnimationFrame(
-        animate
-      );
-  };
-
-  const updateHoverState = (
-    event: PointerEvent
-  ) => {
-    const target =
-      event.target;
-
-    if (
-      !(target instanceof Element)
-    ) {
-      return;
-    }
-
-    hoverTarget =
-      Boolean(
-        target.closest(
-          [
-            "a",
-            "button",
-            "[role='button']",
-            "input",
-            "textarea",
-            "select",
-            "summary"
-          ].join(", ")
-        )
-      );
-
-    requestFrame();
-  };
-
-  const updatePointer = (
-    event: PointerEvent
-  ) => {
-    pointer.x =
-      event.clientX;
-
-    pointer.y =
-      event.clientY;
-
-    pointerInside =
-      true;
-
-    if (
-      cursorPosition.x <
-        -50
-    ) {
-      cursorPosition.x =
-        event.clientX;
-
-      cursorPosition.y =
-        event.clientY;
-
-      trailPosition.x =
-        event.clientX;
-
-      trailPosition.y =
-        event.clientY;
-    }
-
-    requestFrame();
-  };
-
-  const hidePointer = () => {
-    pointerInside =
-      false;
-
-    hoverTarget =
-      false;
-
-    requestFrame();
-  };
-
-  const handleVisibility =
-    () => {
-      if (
-        document.visibilityState ===
-        "visible"
-      ) {
-        running = true;
-
-        requestFrame();
-
-        return;
-      }
-
-      running = false;
-
-      if (
-        frameRef.current
-      ) {
-        window.cancelAnimationFrame(
-          frameRef.current
-        );
-      }
-
-      stopFrame();
-
-      pointerInside =
-        false;
-
-      hoverTarget =
-        false;
-
-      applyState();
-    };
-
-  window.addEventListener(
-    "pointermove",
-    updatePointer,
-    {
-      passive: true
-    }
-  );
-
-  window.addEventListener(
-    "pointerover",
-    updateHoverState,
-    {
-      passive: true
-    }
-  );
-
-  window.addEventListener(
-    "pointerout",
-    updateHoverState,
-    {
-      passive: true
-    }
-  );
-
-  document.addEventListener(
-    "mouseleave",
-    hidePointer
-  );
-
-  document.addEventListener(
-    "visibilitychange",
-    handleVisibility
-  );
-
-  document.documentElement.classList.add(
-    "red-cursor-enabled"
-  );
-
-  applyState();
-
-
-
-  cursorPosition.x =
-    pointer.x;
-
-  cursorPosition.y =
-    pointer.y;
-
-  trailPosition.x =
-    pointer.x;
-
-  trailPosition.y =
-    pointer.y;
-
-
-  return () => {
-    running = false;
-
-    if (
-      frameRef.current
-    ) {
-      window.cancelAnimationFrame(
-        frameRef.current
-      );
-    }
-
-    frameRequested =
-      false;
-
-    frameRef.current =
-      0;
-
-    window.removeEventListener(
-      "pointermove",
-      updatePointer
-    );
-
-    window.removeEventListener(
-      "pointerover",
-      updateHoverState
-    );
-
-    window.removeEventListener(
-      "pointerout",
-      updateHoverState
-    );
-
-    document.removeEventListener(
-      "mouseleave",
-      hidePointer
-    );
-
-    document.removeEventListener(
-      "visibilitychange",
-      handleVisibility
-    );
-
-    document.documentElement.classList.remove(
-      "red-cursor-enabled"
-    );
-  };
-}, [mounted]);
 
     const cursor =
       cursorRef.current;
@@ -450,14 +65,144 @@ const trailSmoothing =
 
     let running = true;
 
-    const setVisible = (
-      visible: boolean
-    ) => {
+    let frameRequested = false;
+
+    let pointerInside = false;
+
+    let hoverTarget = false;
+
+    const pointer = {
+      x: -100,
+      y: -100
+    };
+
+    const cursorPosition = {
+      x: -100,
+      y: -100
+    };
+
+    const trailPosition = {
+      x: -100,
+      y: -100
+    };
+
+    const applyState = () => {
       cursor.dataset.visible =
-        String(visible);
+        String(pointerInside);
 
       trail.dataset.visible =
-        String(visible);
+        String(pointerInside);
+
+      cursor.dataset.hover =
+        hoverTarget
+          ? "true"
+          : "false";
+    };
+
+    const stopFrame = () => {
+      frameRequested = false;
+      frameRef.current = 0;
+    };
+
+    const animate = () => {
+      frameRequested = false;
+
+      if (!running) {
+        frameRef.current = 0;
+        return;
+      }
+
+      const cursorSmoothing =
+        0.82;
+
+      const trailSmoothing =
+        0.18;
+
+      cursorPosition.x +=
+        (pointer.x -
+          cursorPosition.x) *
+        cursorSmoothing;
+
+      cursorPosition.y +=
+        (pointer.y -
+          cursorPosition.y) *
+        cursorSmoothing;
+
+      trailPosition.x +=
+        (cursorPosition.x -
+          trailPosition.x) *
+        trailSmoothing;
+
+      trailPosition.y +=
+        (cursorPosition.y -
+          trailPosition.y) *
+        trailSmoothing;
+
+      cursor.style.transform =
+        `translate3d(${cursorPosition.x}px, ${cursorPosition.y}px, 0)`;
+
+      trail.style.transform =
+        `translate3d(${trailPosition.x}px, ${trailPosition.y}px, 0)`;
+
+      applyState();
+
+      const cursorDelta =
+        Math.abs(
+          pointer.x -
+            cursorPosition.x
+        ) +
+        Math.abs(
+          pointer.y -
+            cursorPosition.y
+        );
+
+      const trailDelta =
+        Math.abs(
+          cursorPosition.x -
+            trailPosition.x
+        ) +
+        Math.abs(
+          cursorPosition.y -
+            trailPosition.y
+        );
+
+      const shouldContinue =
+        pointerInside &&
+        (
+          cursorDelta > 0.05 ||
+          trailDelta > 0.05
+        );
+
+      if (
+        shouldContinue
+      ) {
+        frameRef.current =
+          window.requestAnimationFrame(
+            animate
+          );
+
+        frameRequested = true;
+
+        return;
+      }
+
+      frameRef.current = 0;
+    };
+
+    const requestFrame = () => {
+      if (
+        !running ||
+        frameRequested
+      ) {
+        return;
+      }
+
+      frameRequested = true;
+
+      frameRef.current =
+        window.requestAnimationFrame(
+          animate
+        );
     };
 
     const updateHoverState = (
@@ -472,90 +217,60 @@ const trailSmoothing =
         return;
       }
 
-      const interactive =
-        target.closest(
-          [
-            "a",
-            "button",
-            "[role='button']",
-            "input",
-            "textarea",
-            "select",
-            "summary"
-          ].join(", ")
+      hoverTarget =
+        Boolean(
+          target.closest(
+            [
+              "a",
+              "button",
+              "[role='button']",
+              "input",
+              "textarea",
+              "select",
+              "summary"
+            ].join(", ")
+          )
         );
 
-      cursor.dataset.hover =
-        interactive
-          ? "true"
-          : "false";
+      requestFrame();
     };
 
     const updatePointer = (
       event: PointerEvent
     ) => {
-      pointerRef.current.x =
+      pointer.x =
         event.clientX;
 
-      pointerRef.current.y =
+      pointer.y =
         event.clientY;
 
-      cursor.style.transform =
-        `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
+      pointerInside = true;
 
       if (
-        trail.dataset.visible !==
-        "true"
+        cursorPosition.x <
+        -50
       ) {
-        trailPositionRef.current.x =
+        cursorPosition.x =
           event.clientX;
 
-        trailPositionRef.current.y =
+        cursorPosition.y =
           event.clientY;
 
-        trail.style.transform =
-          `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
+        trailPosition.x =
+          event.clientX;
 
-        setVisible(true);
-      }
-    };
-
-    const animateTrail = () => {
-      if (!running) {
-        frameRef.current = 0;
-        return;
+        trailPosition.y =
+          event.clientY;
       }
 
-      const target =
-        pointerRef.current;
-
-      const trailPosition =
-        trailPositionRef.current;
-
-      const smoothing =
-        0.2;
-
-      trailPosition.x +=
-        (target.x -
-          trailPosition.x) *
-        smoothing;
-
-      trailPosition.y +=
-        (target.y -
-          trailPosition.y) *
-        smoothing;
-
-      trail.style.transform =
-        `translate3d(${trailPosition.x}px, ${trailPosition.y}px, 0)`;
-
-      frameRef.current =
-        window.requestAnimationFrame(
-          animateTrail
-        );
+      requestFrame();
     };
 
     const hidePointer = () => {
-      setVisible(false);
+      pointerInside = false;
+      hoverTarget = false;
+
+      requestFrame();
     };
 
     const handleVisibility =
@@ -565,15 +280,7 @@ const trailSmoothing =
           "visible"
         ) {
           running = true;
-
-          if (
-            !frameRef.current
-          ) {
-            frameRef.current =
-              window.requestAnimationFrame(
-                animateTrail
-              );
-          }
+          requestFrame();
 
           return;
         }
@@ -586,11 +293,14 @@ const trailSmoothing =
           window.cancelAnimationFrame(
             frameRef.current
           );
-
-          frameRef.current = 0;
         }
 
-        setVisible(false);
+        stopFrame();
+
+        pointerInside = false;
+        hoverTarget = false;
+
+        applyState();
       };
 
     window.addEventListener(
@@ -631,12 +341,7 @@ const trailSmoothing =
       "red-cursor-enabled"
     );
 
-    setVisible(false);
-
-    frameRef.current =
-      window.requestAnimationFrame(
-        animateTrail
-      );
+    applyState();
 
     return () => {
       running = false;
@@ -648,6 +353,9 @@ const trailSmoothing =
           frameRef.current
         );
       }
+
+      frameRequested = false;
+      frameRef.current = 0;
 
       window.removeEventListener(
         "pointermove",
@@ -721,10 +429,12 @@ const trailSmoothing =
                 offset="0%"
                 stopColor="#ff5848"
               />
+
               <stop
                 offset="42%"
                 stopColor="#d20f0f"
               />
+
               <stop
                 offset="100%"
                 stopColor="#460000"
@@ -742,6 +452,7 @@ const trailSmoothing =
                 offset="0%"
                 stopColor="#ff3028"
               />
+
               <stop
                 offset="100%"
                 stopColor="#680000"
@@ -764,6 +475,7 @@ const trailSmoothing =
                 <feMergeNode
                   in="blur"
                 />
+
                 <feMergeNode
                   in="SourceGraphic"
                 />
@@ -776,6 +488,7 @@ const trailSmoothing =
             the sharp upper-left point is the click tip,
             while the rest forms a pyramid.
           */}
+
           <path
             className="red-cursor-pointer-shadow"
             d="
