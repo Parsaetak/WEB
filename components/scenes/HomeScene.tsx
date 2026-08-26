@@ -170,9 +170,9 @@ export default function HomeScene() {
               </p>
 
               <h2 className="section-title">
-                Questions first.
+                Questions first
                 <br />
-                Systems second.
+                Systems second
               </h2>
             </div>
 
@@ -222,7 +222,7 @@ export default function HomeScene() {
               <h2 className="section-title">
                 Thinking
                 <br />
-                made concrete.
+                made concrete
               </h2>
             </div>
 
@@ -318,7 +318,7 @@ export default function HomeScene() {
               <h3 className="section-title">
                 The website
                 <br />
-                is part of the experiment.
+                is part of the experiment
               </h3>
 
               <div className="magic-metrics">
@@ -368,9 +368,9 @@ export default function HomeScene() {
         <h2 className="section-title">
           Understand
           <br />
-          intelligence.
+          intelligence
           <br />
-          Build better systems.
+          Build better systems
         </h2>
       </div>
 
