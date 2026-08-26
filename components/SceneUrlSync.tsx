@@ -33,13 +33,21 @@ function readSceneFromHash():
         /^#/,
         ""
       )
+      .trim()
       .toLowerCase();
+
+  if (
+    hash === "" ||
+    hash === "home"
+  ) {
+    return "home";
+  }
 
   return VALID_SCENES.includes(
     hash as SceneId
   )
     ? (hash as SceneId)
-    : null;
+    : "home";
 }
 
 function normalizeHash(
