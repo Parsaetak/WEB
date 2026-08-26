@@ -42,6 +42,31 @@ function readSceneFromHash():
     : null;
 }
 
+function normalizeHash(
+  scene: SceneId
+) {
+  const targetHash =
+    scene === "home"
+      ? ""
+      : `#${scene}`;
+
+  const currentHash =
+    window.location.hash;
+
+  if (
+    currentHash ===
+    targetHash
+  ) {
+    return;
+  }
+
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}${targetHash}`
+  );
+}
+
 export default function SceneUrlSync({
   scene,
   onSceneChange
@@ -51,22 +76,45 @@ export default function SceneUrlSync({
       readSceneFromHash();
 
     if (
-      initialScene &&
-      initialScene !== scene
+      initialScene
     ) {
-      onSceneChange(
-        initialScene
-      );
+      if (
+        initialScene !==
+        scene
+      ) {
+        onSceneChange(
+          initialScene
+        );
+      }
+
+      return;
     }
 
+    normalizeHash(
+      scene
+    );
+  }, [
+    onSceneChange,
+    scene
+  ]);
+
+  useEffect(() => {
     const handleNavigation =
       () => {
         const nextScene =
           readSceneFromHash();
 
-        onSceneChange(
-          nextScene ??
-            "home"
+        if (
+          nextScene
+        ) {
+          onSceneChange(
+            nextScene
+          );
+          return;
+        }
+
+        normalizeHash(
+          scene
         );
       };
 
@@ -92,7 +140,8 @@ export default function SceneUrlSync({
       );
     };
   }, [
-    onSceneChange
+    onSceneChange,
+    scene
   ]);
 
   return null;
