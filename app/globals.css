@@ -4774,8 +4774,8 @@ html.red-cursor-enabled * {
 
 /* Monochrome / developer --------------------------------------------------- */
 
-.public-link-card[style*="#f5f7fb"],
-.public-link-card[style*="#F0F6FC"] {
+.public-link-card[data-theme="x"],
+.public-link-card[data-theme="github"] {
   background:
     linear-gradient(
       145deg,
@@ -4786,7 +4786,7 @@ html.red-cursor-enabled * {
 
 /* WhatsApp ----------------------------------------------------------------- */
 
-.public-link-card[style*="#25D366"]
+.public-link-card[data-theme="whatsapp"]
   .public-link-card-icon {
   box-shadow:
     inset 0 0 20px
@@ -4795,7 +4795,7 @@ html.red-cursor-enabled * {
       rgba(37, 211, 102, 0.08);
 }
 
-.public-link-card[style*="#25D366"]:hover
+.public-link-card[data-theme="whatsapp"]:hover
   .public-link-card-icon {
   box-shadow:
     inset 0 0 22px
@@ -4806,7 +4806,7 @@ html.red-cursor-enabled * {
 
 /* Instagram ---------------------------------------------------------------- */
 
-.public-link-card[style*="#E1306C"] {
+.public-link-card[data-theme="instagram"] {
   background:
     linear-gradient(
       145deg,
@@ -4815,7 +4815,7 @@ html.red-cursor-enabled * {
     );
 }
 
-.public-link-card[style*="#E1306C"]::before {
+.public-link-card[data-theme="instagram"]::before {
   background:
     linear-gradient(
       115deg,
@@ -4829,7 +4829,7 @@ html.red-cursor-enabled * {
 
 /* LinkedIn ----------------------------------------------------------------- */
 
-.public-link-card[style*="#0A66C2"] {
+.public-link-card[data-theme="linkedin"] {
   background:
     linear-gradient(
       145deg,
@@ -4840,7 +4840,7 @@ html.red-cursor-enabled * {
 
 /* Discord ------------------------------------------------------------------ */
 
-.public-link-card[style*="#5865F2"] {
+.public-link-card[data-theme="discord"] {
   background:
     linear-gradient(
       145deg,
@@ -4851,7 +4851,7 @@ html.red-cursor-enabled * {
 
 /* TikTok ------------------------------------------------------------------- */
 
-.public-link-card[style*="#00F2EA"] {
+.public-link-card[data-theme="tiktok"] {
   background:
     linear-gradient(
       145deg,
@@ -4863,7 +4863,7 @@ html.red-cursor-enabled * {
 
 /* YouTube ------------------------------------------------------------------ */
 
-.public-link-card[style*="#FF0000"] {
+.public-link-card[data-theme="youtube"] {
   background:
     linear-gradient(
       145deg,
@@ -4874,7 +4874,7 @@ html.red-cursor-enabled * {
 
 /* Patreon ------------------------------------------------------------------ */
 
-.public-link-card[style*="#FF424D"] {
+.public-link-card[data-theme="patreon"] {
   background:
     linear-gradient(
       145deg,
@@ -4885,7 +4885,7 @@ html.red-cursor-enabled * {
 
 /* Pinterest ---------------------------------------------------------------- */
 
-.public-link-card[style*="#E60023"] {
+.public-link-card[data-theme="pinterest"] {
   background:
     linear-gradient(
       145deg,
@@ -4896,7 +4896,8 @@ html.red-cursor-enabled * {
 
 /* Telegram ----------------------------------------------------------------- */
 
-.public-link-card[style*="#229ED9"] {
+.public-link-card[data-theme="telegram-channel"],
+.public-link-card[data-theme="telegram"] {
   background:
     linear-gradient(
       145deg,
@@ -4907,7 +4908,7 @@ html.red-cursor-enabled * {
 
 /* PayPal ------------------------------------------------------------------- */
 
-.public-link-card[style*="#0070BA"] {
+.public-link-card[data-theme="paypal"] {
   background:
     linear-gradient(
       145deg,
@@ -4916,9 +4917,20 @@ html.red-cursor-enabled * {
     );
 }
 
+/* Email -------------------------------------------------------------------- */
+
+.public-link-card[data-theme="email"] {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 32, 32, 0.055),
+      rgba(9, 10, 13, 0.95)
+    );
+}
+
 /* Linktree ----------------------------------------------------------------- */
 
-.public-link-card[style*="#43E660"] {
+.public-link-card[data-theme="linktree"] {
   background:
     linear-gradient(
       145deg,
