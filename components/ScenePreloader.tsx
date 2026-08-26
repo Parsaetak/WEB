@@ -15,7 +15,8 @@ const SCENE_ORDER:
     "about",
     "systems",
     "magic",
-    "work"
+    "work",
+    "library"
   ];
 
 const preloaders: Record<
@@ -43,9 +44,14 @@ const preloaders: Record<
     ),
 
   work: () =>
-    import(
-      "@/components/scenes/WorkScene"
-    )
+  import(
+    "@/components/scenes/WorkScene"
+  ),
+
+library: () =>
+  import(
+    "@/components/scenes/LibraryScene"
+  )
 };
 
 const preloadCache =
