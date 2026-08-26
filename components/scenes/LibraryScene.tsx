@@ -130,6 +130,33 @@ function getActionLabel(
   return "VIEW";
 }
 
+function getDownloadLabel(
+  kind: ContentKind
+) {
+  if (
+    kind ===
+    "pdf"
+  ) {
+    return "DOWNLOAD PDF";
+  }
+
+  if (
+    kind ===
+    "mp3"
+  ) {
+    return "DOWNLOAD AUDIO";
+  }
+
+  if (
+    kind ===
+    "mp4"
+  ) {
+    return "DOWNLOAD VIDEO";
+  }
+
+  return "DOWNLOAD IMAGE";
+}
+
 function getPreviewGlyph(
   kind: ContentKind
 ) {
@@ -528,9 +555,9 @@ export default function LibraryScene() {
                           ? "Gallery"
                           : MEDIA_FILTERS.find(
                               (
-                                item
+                                mediaFilter
                               ) =>
-                                item.id ===
+                                mediaFilter.id ===
                                 filter
                             )?.label}
                       </h2>
@@ -798,6 +825,14 @@ export default function LibraryScene() {
                           }
                         </h2>
 
+                        {selected.subtitle && (
+                          <p className="library-preview-subtitle">
+                            {
+                              selected.subtitle
+                            }
+                          </p>
+                        )}
+
                         <p>
                           {
                             selected.description ??
@@ -844,13 +879,38 @@ export default function LibraryScene() {
                             </span>
                           )}
 
-                          <span>
-                            {
-                              getCatalogLabel(
-                                selected
-                              )
-                            }
-                          </span>
+                          {selected.language && (
+                            <span>
+                              {
+                                selected.language
+                              }
+                            </span>
+                          )}
+
+                          {selected.series &&
+                            typeof selected.volume ===
+                              "number" && (
+                              <span>
+                                {
+                                  selected.series
+                                }{" "}
+                                · V
+                                {String(
+                                  selected.volume
+                                ).padStart(
+                                  2,
+                                  "0"
+                                )}
+                              </span>
+                            )}
+
+                          {selected.readingTime && (
+                            <span>
+                              {
+                                selected.readingTime
+                              }
+                            </span>
+                          )}
                         </div>
 
                         <div className="library-preview-actions">
@@ -995,16 +1055,42 @@ export default function LibraryScene() {
                   selected.kind ===
                     "gif"
                 ) && (
-                  <img
-                    src={
+                  <div className="library-modal-image-wrap">
+                    <img
+                      src={
+                        selected.rawUrl
+                      }
+                      alt={
+                        selected.title
+                      }
+                      className="library-image"
+                    />
+                  </div>
+                )}
+
+                <div className="library-modal-download">
+                  <a
+                    className="library-download-button"
+                    href={
                       selected.rawUrl
                     }
-                    alt={
-                      selected.title
-                    }
-                    className="library-image"
-                  />
-                )}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span>
+                      {
+                        getDownloadLabel(
+                          selected.kind
+                        )
+                      }
+                    </span>
+
+                    <span>
+                      ↓
+                    </span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
