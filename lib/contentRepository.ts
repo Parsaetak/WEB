@@ -20,9 +20,15 @@ export type LibraryMetadata = {
     | "video"
     | "art";
   description?: string;
+  subtitle?: string;
   year?: string;
-  featured?: boolean;
+  language?: string;
   author?: string;
+  series?: string;
+  volume?: number;
+  featured?: boolean;
+  status?: string;
+  readingTime?: string;
   tags?: string[];
   cover?: string;
 };
