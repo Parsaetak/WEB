@@ -16986,3 +16986,345 @@ html.red-cursor-enabled * {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Home RED MAGIC atmosphere                                                   */
+/* -------------------------------------------------------------------------- */
+
+.home-origin {
+  position:
+    relative;
+
+  isolation:
+    isolate;
+
+  overflow:
+    hidden;
+}
+
+.home-origin-magic-background {
+  position:
+    absolute;
+
+  inset:
+    -12%;
+
+  z-index:
+    -1;
+
+  pointer-events:
+    none;
+
+  opacity:
+    0.34;
+
+  filter:
+    saturate(
+      0.72
+    )
+    brightness(
+      0.62
+    )
+    contrast(
+      0.9
+    );
+
+  mask-image:
+    radial-gradient(
+      ellipse at center,
+      black 0%,
+      rgba(
+        0,
+        0,
+        0,
+        0.92
+      ) 34%,
+      rgba(
+        0,
+        0,
+        0,
+        0.52
+      ) 62%,
+      transparent 86%
+    );
+
+  -webkit-mask-image:
+    radial-gradient(
+      ellipse at center,
+      black 0%,
+      rgba(
+        0,
+        0,
+        0,
+        0.92
+      ) 34%,
+      rgba(
+        0,
+        0,
+        0,
+        0.52
+      ) 62%,
+      transparent 86%
+    );
+}
+
+.home-origin-magic-background
+  .red-magic {
+  width:
+    100%;
+
+  height:
+    100%;
+
+  pointer-events:
+    none;
+
+  mix-blend-mode:
+    screen;
+}
+
+.home-origin-magic-background
+  canvas {
+  pointer-events:
+    none;
+
+  opacity:
+    0.9;
+}
+
+.home-origin-core {
+  position:
+    relative;
+
+  min-height:
+    540px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  pointer-events:
+    none;
+}
+
+.home-origin-core-atmosphere {
+  position:
+    absolute;
+
+  inset:
+    12%;
+
+  pointer-events:
+    none;
+}
+
+.home-origin-core-atmosphere span {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.045
+    );
+
+  border-radius:
+    50%;
+}
+
+.home-origin-core-atmosphere span:nth-child(
+  1
+) {
+  transform:
+    scale(
+      0.72
+    );
+}
+
+.home-origin-core-atmosphere span:nth-child(
+  2
+) {
+  transform:
+    scale(
+      0.86
+    );
+}
+
+.home-origin-core-atmosphere span:nth-child(
+  3
+) {
+  transform:
+    scale(
+      1
+    );
+}
+
+.home-origin-core-label {
+  position:
+    absolute;
+
+  left:
+    50%;
+
+  bottom:
+    9%;
+
+  z-index:
+    2;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  flex-direction:
+    column;
+
+  gap:
+    6px;
+
+  transform:
+    translateX(
+      -50%
+    );
+
+  text-align:
+    center;
+
+  pointer-events:
+    none;
+}
+
+.home-origin-core-label span {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.34
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    7px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.15em;
+}
+
+.home-origin-core-label strong {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.72
+    );
+
+  font-size:
+    0.9rem;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.1em;
+}
+
+.magic-system-organism-shell {
+  position:
+    relative;
+
+  width:
+    100%;
+
+  height:
+    100%;
+}
+
+.magic-system-organism-shell
+  .red-magic {
+  width:
+    100%;
+
+  height:
+    100%;
+}
+
+.magic-principles-intro {
+  max-width:
+    450px;
+
+  margin:
+    0;
+
+  color:
+    var(--text-soft);
+
+  line-height:
+    1.7;
+}
+
+.magic-system-description {
+  max-width:
+    620px;
+
+  margin:
+    24px 0 0;
+}
+
+@media (max-width: 900px) {
+  .home-origin-magic-background {
+    inset:
+      -4%;
+
+    opacity:
+      0.25;
+  }
+
+  .home-origin-core {
+    min-height:
+      390px;
+  }
+}
+
+@media (max-width: 720px) {
+  .home-origin-magic-background {
+    inset:
+      8% -20%;
+
+    opacity:
+      0.18;
+  }
+
+  .home-origin-core {
+    min-height:
+      280px;
+  }
+
+  .home-origin-core-label {
+    bottom:
+      4%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-origin-magic-background {
+    opacity:
+      0.16;
+  }
+}
+
