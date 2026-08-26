@@ -16,13 +16,15 @@ type SceneUrlSyncProps = {
 };
 
 const VALID_SCENES:
-  readonly SceneId[] = [
-  "home",
-  "about",
-  "systems",
-  "magic",
-  "work"
-];
+  readonly SceneId[] =
+  [
+    "home",
+    "about",
+    "systems",
+    "magic",
+    "work",
+    "library"
+  ];
 
 function readSceneFromHash():
   | SceneId
@@ -84,20 +86,21 @@ export default function SceneUrlSync({
       readSceneFromHash();
 
     const nextScene =
-  initialScene ?? "home";
+      initialScene ??
+      "home";
 
-if (
-  nextScene !==
-  scene
-) {
-  onSceneChange(
-    nextScene
-  );
-}
+    if (
+      nextScene !==
+      scene
+    ) {
+      onSceneChange(
+        nextScene
+      );
+    }
 
-normalizeHash(
-  nextScene
-);
+    normalizeHash(
+      nextScene
+    );
   }, [
     onSceneChange,
     scene
