@@ -11,32 +11,34 @@ export default function PublicLinks({
   compact = false,
   title = "PUBLIC NETWORK"
 }: PublicLinksProps) {
+  const links = compact
+    ? ALL_PUBLIC_LINKS.slice(0, 8)
+    : ALL_PUBLIC_LINKS;
+
   return (
     <section
-      className={
-        compact
-          ? "public-links public-links-compact"
-          : "public-links"
-      }
+      className="section-tight"
       aria-label={title}
     >
-      <div className="section-heading-line">
-        <span
-          className="section-signal"
-          aria-hidden="true"
-        />
+      <div className="section-heading">
+        <div className="section-heading-line">
+          <span
+            className="section-signal"
+            aria-hidden="true"
+          />
 
-        <p className="kicker">
-          {title}
-        </p>
+          <p className="kicker">
+            {title}
+          </p>
+        </div>
       </div>
 
-      <div className="public-links-grid">
-        {ALL_PUBLIC_LINKS.map(
-          (link) => (
+      <div className="work-grid">
+        {links.map(
+          (link, index) => (
             <a
               key={link.id}
-              className="panel public-link-card"
+              className="glow-border"
               href={link.href}
               target={
                 link.href.startsWith(
@@ -53,24 +55,40 @@ export default function PublicLinks({
                   : "noreferrer"
               }
             >
-              <span className="public-link-card-index">
-                {String(
-                  ALL_PUBLIC_LINKS.indexOf(
-                    link
-                  ) + 1
-                ).padStart(2, "0")}
-              </span>
+              <div className="panel magic-panel">
+                <div className="panel-content">
+                  <div className="panel-topline">
+                    <span className="system-number">
+                      {String(
+                        index + 1
+                      ).padStart(2, "0")}
+                    </span>
 
-              <span className="public-link-card-label">
-                {link.label}
-              </span>
+                    <span className="system-type">
+                      {link.verified
+                        ? "VERIFIED"
+                        : "REFERENCE"}
+                    </span>
+                  </div>
 
-              <span
-                className="public-link-card-arrow"
-                aria-hidden="true"
-              >
-                ↗
-              </span>
+                  <h2 className="system-title">
+                    {link.label}
+                  </h2>
+
+                  <div className="work-card-footer">
+                    <span>
+                      OPEN
+                    </span>
+
+                    <span
+                      className="public-link-card-arrow"
+                      aria-hidden="true"
+                    >
+                      ↗
+                    </span>
+                  </div>
+                </div>
+              </div>
             </a>
           )
         )}
