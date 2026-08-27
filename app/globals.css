@@ -6859,8 +6859,7 @@ html.red-cursor-enabled * {
     none !important;
 }
 
-.red-cursor,
-.red-cursor-trail {
+.red-cursor {
   position:
     fixed !important;
 
@@ -6911,6 +6910,12 @@ html.red-cursor-enabled * {
     1;
 }
 
+/*
+ * No blur, no drop-shadow, no glow: the cursor reads as one crisp
+ * instrument. Definition comes from a clean contour stroke instead of
+ * light effects, and hover feedback is a precise scale step rather
+ * than a bloom. This also removes a per-frame filter repaint.
+ */
 .red-cursor-svg {
   position:
     absolute;
@@ -6933,46 +6938,34 @@ html.red-cursor-enabled * {
   transform-origin:
     0 0;
 
-  filter:
-    drop-shadow(
-      0 0 4px
-      rgba(255, 24, 24, 0.8)
-    )
-    drop-shadow(
-      0 0 12px
-      rgba(255, 0, 0, 0.28)
-    );
-
   transition:
-    filter 120ms ease;
+    transform 140ms ease;
 }
 
-.red-cursor-pointer-shadow {
-  fill:
-    rgba(18, 0, 0, 0.92);
-
-  stroke:
-    rgba(255, 108, 92, 0.62);
-
-  stroke-width:
-    1.25px;
-
-  stroke-linejoin:
-    round;
-
+.red-cursor[data-hover="true"]
+  .red-cursor-svg {
   transform:
-    translate(
-      0.9px,
-      1px
-    );
+    translateZ(0)
+    scale(1.07);
 }
 
 .red-cursor-pointer {
   stroke:
-    rgba(255, 174, 156, 0.82);
+    rgba(255, 190, 168, 0.88);
 
   stroke-width:
-    0.8px;
+    0.9px;
+
+  stroke-linejoin:
+    round;
+}
+
+.red-cursor-pointer-contour {
+  stroke:
+    rgba(255, 226, 214, 0.9);
+
+  stroke-width:
+    0.7px;
 
   stroke-linejoin:
     round;
@@ -7003,11 +6996,6 @@ html.red-cursor-enabled * {
     0.72;
 }
 
-.red-cursor-eye-glow {
-  fill:
-    rgba(255, 38, 28, 0.24);
-}
-
 .red-cursor-eye {
   fill:
     #ff6b58;
@@ -7022,12 +7010,6 @@ html.red-cursor-enabled * {
 .red-cursor-eye-core {
   fill:
     #fff6f2;
-
-  filter:
-    drop-shadow(
-      0 0 4px
-      rgba(255, 255, 255, 0.96)
-    );
 }
 
 .red-cursor-ring {
@@ -7084,111 +7066,6 @@ html.red-cursor-enabled * {
 
   border-color:
     rgba(255, 58, 44, 0.72);
-
-  box-shadow:
-    0 0 16px
-      rgba(255, 32, 32, 0.18),
-    inset
-      0 0 10px
-      rgba(255, 32, 32, 0.08);
-}
-
-.red-cursor[data-hover="true"]
-  .red-cursor-svg {
-  filter:
-    drop-shadow(
-      0 0 6px
-      rgba(255, 24, 24, 0.9)
-    )
-    drop-shadow(
-      0 0 16px
-      rgba(255, 0, 0, 0.32)
-    );
-}
-
-.red-cursor-trail {
-  width:
-    22px !important;
-
-  height:
-    22px !important;
-
-  opacity:
-    0;
-
-  z-index:
-    2147483646 !important;
-}
-
-.red-cursor-trail[data-visible="true"] {
-  opacity:
-    1;
-}
-
-.red-cursor-trail span {
-  position:
-    absolute;
-
-  left:
-    50%;
-
-  top:
-    50%;
-
-  width:
-    5px;
-
-  height:
-    5px;
-
-  margin:
-    -2.5px;
-
-  border-radius:
-    50%;
-
-  background:
-    rgba(255, 42, 30, 0.48);
-
-  box-shadow:
-    0 0 10px
-      rgba(255, 24, 24, 0.34);
-}
-
-.red-cursor-trail span:nth-child(1) {
-  opacity:
-    0.56;
-
-  transform:
-    translate(
-      -5px,
-      4px
-    )
-    scale(1);
-}
-
-.red-cursor-trail span:nth-child(2) {
-  opacity:
-    0.3;
-
-  transform:
-    translate(
-      -12px,
-      9px
-    )
-    scale(0.72);
-}
-
-.red-cursor-trail span:nth-child(3) {
-  opacity:
-    0.16;
-
-  transform:
-    translate(
-      -18px,
-      14px
-    )
-    scale(0.46);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -8881,8 +8758,7 @@ html.red-cursor-enabled * {
       auto !important;
   }
 
-  .red-cursor,
-  .red-cursor-trail {
+  .red-cursor {
     display:
       none !important;
   }
@@ -8938,8 +8814,7 @@ html.red-cursor-enabled * {
       none !important;
   }
 
-  .red-cursor,
-  .red-cursor-trail {
+  .red-cursor {
     display:
       none !important;
   }
@@ -20873,4 +20748,516 @@ html.red-cursor-enabled * {
 
   white-space:
     nowrap;
+}
+
+/* -------------------------------------------------------------------------- */
+/* MAGIC scene — lab console, simulation model, principles (2026-08-28 layer)  */
+/* -------------------------------------------------------------------------- */
+
+.magic-lab-intro {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  justify-content:
+    space-between;
+
+  gap:
+    40px;
+
+  margin:
+    110px 0 26px;
+}
+
+.magic-lab-intro-copy {
+  max-width:
+    560px;
+
+  margin:
+    0;
+}
+
+.magic-lab {
+  position:
+    relative;
+
+  z-index:
+    2;
+}
+
+.magic-lab-bar {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    16px;
+
+  flex-wrap:
+    wrap;
+
+  margin-bottom:
+    14px;
+}
+
+.magic-controls {
+  display:
+    inline-flex;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    6px;
+
+  max-width:
+    100%;
+
+  padding:
+    5px;
+
+  border:
+    1px solid
+    rgba(255, 32, 32, 0.12);
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(255, 32, 32, 0.03);
+}
+
+.magic-control {
+  appearance:
+    none;
+
+  border:
+    1px solid
+    transparent;
+
+  border-radius:
+    999px;
+
+  background:
+    transparent;
+
+  color:
+    #9199a8;
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  letter-spacing:
+    0.18em;
+
+  text-transform:
+    uppercase;
+
+  padding:
+    9px 18px;
+
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.magic-control:hover {
+  color:
+    #f0f2f6;
+}
+
+.magic-control[aria-pressed="true"] {
+  color:
+    #ffd9d0;
+
+  border-color:
+    rgba(255, 58, 44, 0.55);
+
+  background:
+    rgba(255, 32, 32, 0.12);
+}
+
+.magic-control:focus-visible {
+  outline:
+    2px solid
+    rgba(255, 90, 72, 0.8);
+
+  outline-offset:
+    2px;
+}
+
+.magic-lab-note {
+  margin:
+    0;
+
+  color:
+    #646d7b;
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  letter-spacing:
+    0.14em;
+
+  text-transform:
+    uppercase;
+}
+
+.magic-lab-frame {
+  position:
+    relative;
+
+  height:
+    clamp(360px, 58vh, 560px);
+
+  border:
+    1px solid
+    rgba(255, 32, 32, 0.1);
+
+  border-radius:
+    18px;
+
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 30, 30, 0.045),
+      rgba(255, 30, 30, 0.012) 46%,
+      transparent 74%
+    );
+
+  overflow:
+    hidden;
+}
+
+.magic-lab-shell {
+  width:
+    100%;
+
+  height:
+    100%;
+}
+
+.magic-vitals {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+
+  gap:
+    10px;
+
+  margin-top:
+    14px;
+}
+
+.magic-vitals div {
+  padding:
+    15px;
+
+  border:
+    1px solid
+    rgba(255, 32, 32, 0.1);
+
+  border-radius:
+    13px;
+
+  background:
+    rgba(255, 32, 32, 0.025);
+}
+
+.magic-vitals span {
+  display:
+    block;
+
+  color:
+    #646d7b;
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    9px;
+
+  letter-spacing:
+    0.16em;
+}
+
+.magic-vitals strong {
+  display:
+    block;
+
+  margin-top:
+    7px;
+
+  color:
+    #f0f2f6;
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    12px;
+
+  letter-spacing:
+    0.08em;
+}
+
+.magic-model {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  margin-top:
+    130px;
+}
+
+.magic-model-header {
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  justify-content:
+    space-between;
+
+  gap:
+    40px;
+
+  margin-bottom:
+    34px;
+}
+
+.magic-model-intro {
+  max-width:
+    470px;
+
+  margin:
+    0;
+
+  color:
+    var(--text-soft);
+
+  line-height:
+    1.7;
+}
+
+.magic-model-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+
+  gap:
+    14px;
+}
+
+.magic-model-layer,
+.magic-organism-principle {
+  position:
+    relative;
+
+  padding:
+    20px;
+
+  border:
+    1px solid
+    rgba(255, 32, 32, 0.1);
+
+  border-radius:
+    14px;
+
+  background:
+    rgba(255, 32, 32, 0.02);
+}
+
+.magic-model-layer span,
+.magic-organism-principle span {
+  display:
+    block;
+
+  color:
+    rgba(255, 82, 62, 0.85);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  letter-spacing:
+    0.2em;
+}
+
+.magic-model-layer h3,
+.magic-organism-principle h3 {
+  margin:
+    12px 0 0;
+
+  font-size:
+    1.05rem;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.12em;
+
+  text-transform:
+    uppercase;
+
+  color:
+    #f0f2f6;
+}
+
+.magic-model-layer p,
+.magic-organism-principle p {
+  margin:
+    9px 0 0;
+
+  color:
+    var(--text-soft);
+
+  font-size:
+    0.95rem;
+
+  line-height:
+    1.6;
+}
+
+.magic-organism-principles {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  margin-top:
+    130px;
+}
+
+.magic-organism-principles-header {
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  justify-content:
+    space-between;
+
+  gap:
+    40px;
+
+  margin-bottom:
+    34px;
+}
+
+.magic-organism-principles-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+
+  gap:
+    14px;
+}
+
+@media (max-width: 900px) {
+  .magic-lab-intro,
+  .magic-model-header,
+  .magic-organism-principles-header {
+    flex-direction:
+      column;
+
+    align-items:
+      flex-start;
+
+    gap:
+      18px;
+  }
+
+  .magic-model,
+  .magic-organism-principles {
+    margin-top:
+      80px;
+  }
+
+  .magic-model-grid,
+  .magic-organism-principles-grid {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
+
+  .magic-lab-frame {
+    height:
+      clamp(320px, 52vh, 460px);
+  }
+}
+
+@media (max-width: 560px) {
+  .magic-lab-bar {
+    flex-direction:
+      column;
+
+    align-items:
+      stretch;
+  }
+
+  .magic-controls {
+    justify-content:
+      center;
+  }
+
+  .magic-lab-note {
+    text-align:
+      center;
+  }
+
+  .magic-lab-frame {
+    height:
+      320px;
+
+    border-radius:
+      14px;
+  }
+
+  .magic-vitals {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
 }

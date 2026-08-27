@@ -43,6 +43,60 @@ type QualityName =
   | "medium"
   | "low";
 
+/*
+ * Behaviour modes. "listen" reproduces the original engine values
+ * exactly, so <RedMagic /> without props (Home) is unchanged; the MAGIC
+ * scene exposes drift/surge as visitor-selectable organism states.
+ */
+export type RedMagicMode =
+  | "drift"
+  | "listen"
+  | "surge";
+
+type ModeProfile = {
+  /* Simulation clock speed (1 = original). */
+  timeScale: number;
+
+  /* Pointer-energy targets while a pointer is inside / has left. */
+  energyCeiling: number;
+  energyFloor: number;
+
+  /* How strongly the pointer bends membrane, field and particles. */
+  pointerGain: number;
+
+  /* Extra core pulse amplitude per unit of pointer energy. */
+  coreGain: number;
+};
+
+const MODE_PROFILES: Record<
+  RedMagicMode,
+  ModeProfile
+> = {
+  drift: {
+    timeScale: 0.55,
+    energyCeiling: 0.55,
+    energyFloor: 0.06,
+    pointerGain: 0.7,
+    coreGain: 0.85
+  },
+
+  listen: {
+    timeScale: 1,
+    energyCeiling: 1,
+    energyFloor: 0,
+    pointerGain: 1,
+    coreGain: 1
+  },
+
+  surge: {
+    timeScale: 1.45,
+    energyCeiling: 1,
+    energyFloor: 0.42,
+    pointerGain: 1.45,
+    coreGain: 1.3
+  }
+};
+
 function createGlowSprite(): HTMLCanvasElement | null {
   if (
     typeof document ===
@@ -334,11 +388,27 @@ function qualityFromArea(
   return "high";
 }
 
-export default function RedMagic() {
+export default function RedMagic({
+  mode = "listen"
+}: {
+  mode?: RedMagicMode;
+} = {}) {
   const canvasRef =
     useRef<HTMLCanvasElement | null>(
       null
     );
+
+  /*
+   * Mode is delivered to the running engine through a ref so switching
+   * behaviour never remounts the effect or rebuilds the particle world:
+   * it is a parameter change, not a lifecycle change.
+   */
+  const modeRef =
+    useRef<RedMagicMode>(mode);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   useEffect(() => {
     const canvas =
@@ -448,6 +518,15 @@ export default function RedMagic() {
     let membraneGradient:
       CanvasGradient | null =
       null;
+
+    /*
+     * Read every frame from the render loop; closures below (membrane,
+     * core, particles, interaction field) consume it without rebinding.
+     */
+    let profile =
+      MODE_PROFILES[
+        modeRef.current
+      ];
 
     const buildWorld = (
       name: QualityName
@@ -709,7 +788,8 @@ export default function RedMagic() {
           interaction =
             influence *
             distanceFactor *
-            0.075;
+            0.075 *
+            profile.pointerGain;
         }
 
         return (
@@ -811,7 +891,8 @@ export default function RedMagic() {
 
       const activePulse =
         pointerEnergy *
-        0.11;
+        0.11 *
+        profile.coreGain;
 
       const coreRadius =
         radius *
@@ -826,7 +907,8 @@ export default function RedMagic() {
         coreRadius * 1.75,
         0.11 +
           pointerEnergy *
-            0.04
+            0.04 *
+            profile.coreGain
       );
 
       const coreGradient =
@@ -1194,18 +1276,25 @@ export default function RedMagic() {
                   ) /
                     (radius *
                       0.62)
-              )
+              ) *
+              profile.pointerGain
             : 0;
+
+        const clampedInfluence =
+          Math.min(
+            1,
+            pointerInfluence
+          );
 
         const size =
           particle.size *
           (1 +
-            pointerInfluence *
+            clampedInfluence *
               0.75);
 
         context.globalAlpha =
           0.28 +
-          pointerInfluence *
+          clampedInfluence *
             0.42;
 
         context.beginPath();
@@ -1348,7 +1437,8 @@ export default function RedMagic() {
           radius *
           (0.25 +
             pointerEnergy *
-              0.8);
+              0.8) *
+          profile.pointerGain;
 
         const gradient =
           context.createRadialGradient(
@@ -1456,7 +1546,12 @@ publishRedMagicPerformance({
     qualityName,
   dpr,
   width,
-  height
+  height,
+  pointerEnergy:
+    Math.round(
+      pointerEnergy *
+        100
+    ) / 100
 });
 
         if (
@@ -1552,16 +1647,37 @@ publishRedMagicPerformance({
       lastTimestamp =
         timestamp;
 
+      /*
+       * The active behaviour profile is resolved per frame so a mode
+       * switch takes effect on the next frame without any re-render.
+       */
+      profile =
+        MODE_PROFILES[
+          modeRef.current
+        ];
+
       if (
         !reducedMotion
       ) {
-        elapsed += delta;
+        elapsed +=
+          delta *
+          profile.timeScale;
       }
 
       const time =
         reducedMotion
           ? 0
           : elapsed;
+
+      /*
+       * Particle and node stepping uses the scaled clock too, so drift
+       * genuinely slows the whole organism, not just its waves.
+       */
+      const stepDelta =
+        reducedMotion
+          ? 0
+          : delta *
+            profile.timeScale;
 
       pointer.x +=
         (pointerTarget.x -
@@ -1583,8 +1699,8 @@ publishRedMagicPerformance({
 
       const targetEnergy =
         pointerActive
-          ? 1
-          : 0;
+          ? profile.energyCeiling
+          : profile.energyFloor;
 
       pointerEnergy +=
         (targetEnergy -
@@ -1618,11 +1734,11 @@ publishRedMagicPerformance({
       );
       drawParticles(
         time,
-        delta
+        stepDelta
       );
       drawNodes(
         time,
-        delta
+        stepDelta
       );
 
       maybeAdaptQuality(

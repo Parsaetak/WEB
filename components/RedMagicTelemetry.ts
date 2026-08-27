@@ -7,6 +7,12 @@ export type RedMagicPerformanceSample = {
   dpr: number;
   width: number;
   height: number;
+
+  /*
+   * Normalised pointer energy (0..1) at sample time. Optional so older
+   * publishers stay type-compatible.
+   */
+  pointerEnergy?: number;
 };
 
 type Listener =

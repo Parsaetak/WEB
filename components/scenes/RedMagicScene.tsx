@@ -1,4 +1,32 @@
-import RedMagic from "@/components/RedMagic";
+import MagicConsole from "@/components/MagicConsole";
+
+const layers = [
+  {
+    number: "01",
+    title: "CORE",
+    copy: "A dense red heart. Its pulse sets the rhythm every other layer follows."
+  },
+  {
+    number: "02",
+    title: "MEMBRANE",
+    copy: "A breathing boundary. It swells toward your pointer and settles when the pointer rests."
+  },
+  {
+    number: "03",
+    title: "FLOWS",
+    copy: "Currents running between the core and the membrane, carrying energy outward."
+  },
+  {
+    number: "04",
+    title: "PARTICLES",
+    copy: "Orbiting bodies drifting through the field, brightening as the pointer passes them."
+  },
+  {
+    number: "05",
+    title: "SIGNAL",
+    copy: "You. Pointer movement becomes energy the organism absorbs and radiates back."
+  }
+];
 
 const principles = [
   {
@@ -15,21 +43,6 @@ const principles = [
     number: "03",
     title: "PERSIST",
     copy: "Remain coherent while changing."
-  }
-];
-
-const metrics = [
-  {
-    label: "STATE",
-    value: "ALIVE"
-  },
-  {
-    label: "MODE",
-    value: "ADAPTIVE"
-  },
-  {
-    label: "CORE",
-    value: "RED"
   }
 ];
 
@@ -80,7 +93,32 @@ export default function RedMagicScene() {
             </div>
           </header>
 
-          <div className="magic-organism-purpose">
+          <div className="magic-lab-intro">
+            <div>
+              <p className="kicker">
+                LIVE ORGANISM
+              </p>
+
+              <h2 className="section-title">
+                Run the
+                <br />
+                experiment.
+              </h2>
+            </div>
+
+            <p className="body-large magic-lab-intro-copy">
+              This is the organism itself, running
+              in front of you. Choose a behaviour
+              and move through its field: every
+              change you see is computed live, from
+              the pulse of the core to the reach of
+              the membrane.
+            </p>
+          </div>
+
+          <MagicConsole />
+
+          <section className="magic-organism-purpose">
             <div>
               <p className="kicker">
                 PURPOSE
@@ -99,66 +137,61 @@ export default function RedMagicScene() {
               a static page and more like a living system:
               responsive, adaptive, and continuously changing.
             </p>
-          </div>
+          </section>
 
-          <div className="magic-system">
-            <div className="magic-system-organism">
-              <div className="magic-system-organism-shell">
-                <RedMagic />
+          <section className="magic-model">
+            <div className="magic-model-header">
+              <div>
+                <p className="kicker">
+                  SIMULATION MODEL
+                </p>
+
+                <h2 className="section-title">
+                  One organism,
+                  <br />
+                  five layers.
+                </h2>
               </div>
+
+              <p className="body magic-model-intro">
+                Everything you saw in the console is
+                produced by five simple layers working
+                together. Nothing is prerecorded, and
+                nothing is random noise.
+              </p>
             </div>
 
-            <div className="magic-system-copy">
-              <div className="magic-status">
-                <span className="status-dot" />
+            <div className="magic-model-grid">
+              {layers.map(
+                (layer) => (
+                  <article
+                    className="magic-model-layer"
+                    key={
+                      layer.number
+                    }
+                  >
+                    <span>
+                      {
+                        layer.number
+                      }
+                    </span>
 
-                <span>
-                  ALIVE
-                </span>
-              </div>
+                    <h3>
+                      {
+                        layer.title
+                      }
+                    </h3>
 
-              <p className="kicker">
-                RESPONSIVE · ADAPTIVE · COMPUTATIONAL
-              </p>
-
-              <h2 className="section-title">
-                The interface
-                <br />
-                is part of the experiment.
-              </h2>
-
-              <p className="body-large magic-system-description">
-                Move through the organism and observe
-                how the system responds. The visual field
-                is not a decoration placed on top of the
-                website. It is the experiment made visible.
-              </p>
-
-              <div className="magic-metrics">
-                {metrics.map(
-                  (
-                    metric
-                  ) => (
-                    <div
-                      key={metric.label}
-                    >
-                      <span>
-                        {
-                          metric.label
-                        }
-                      </span>
-
-                      <strong>
-                        {
-                          metric.value
-                        }
-                      </strong>
-                    </div>
-                  )
-                )}
-              </div>
+                    <p>
+                      {
+                        layer.copy
+                      }
+                    </p>
+                  </article>
+                )
+              )}
             </div>
-          </div>
+          </section>
 
           <section className="magic-organism-principles">
             <div className="magic-organism-principles-header">

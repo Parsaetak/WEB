@@ -24,13 +24,15 @@ const HOVER_TARGET_SELECTOR = [
   "summary"
 ].join(", ");
 
+/*
+ * The cursor is a single crisp vector instrument: no drop-shadow
+ * filters, no glow circles, no trailing lights. Blur filters on a
+ * per-frame translated element force expensive repaints and read as
+ * haze; clean geometry with geometric precision stays sharp on any
+ * display density.
+ */
 export default function RedCursor() {
   const cursorRef =
-    useRef<HTMLDivElement | null>(
-      null
-    );
-
-  const trailRef =
     useRef<HTMLDivElement | null>(
       null
     );
@@ -53,10 +55,7 @@ export default function RedCursor() {
     const cursor =
       cursorRef.current;
 
-    const trail =
-      trailRef.current;
-
-    if (!cursor || !trail) {
+    if (!cursor) {
       return;
     }
 
@@ -92,16 +91,8 @@ export default function RedCursor() {
       y: -100
     };
 
-    const trailPosition = {
-      x: -100,
-      y: -100
-    };
-
     const applyState = () => {
       cursor.dataset.visible =
-        String(pointerInside);
-
-      trail.dataset.visible =
         String(pointerInside);
 
       cursor.dataset.hover =
@@ -126,9 +117,6 @@ export default function RedCursor() {
       const cursorSmoothing =
         0.82;
 
-      const trailSmoothing =
-        0.18;
-
       cursorPosition.x +=
         (pointer.x -
           cursorPosition.x) *
@@ -139,21 +127,8 @@ export default function RedCursor() {
           cursorPosition.y) *
         cursorSmoothing;
 
-      trailPosition.x +=
-        (cursorPosition.x -
-          trailPosition.x) *
-        trailSmoothing;
-
-      trailPosition.y +=
-        (cursorPosition.y -
-          trailPosition.y) *
-        trailSmoothing;
-
       cursor.style.transform =
         `translate3d(${cursorPosition.x}px, ${cursorPosition.y}px, 0)`;
-
-      trail.style.transform =
-        `translate3d(${trailPosition.x}px, ${trailPosition.y}px, 0)`;
 
       applyState();
 
@@ -167,24 +142,9 @@ export default function RedCursor() {
             cursorPosition.y
         );
 
-      const trailDelta =
-        Math.abs(
-          cursorPosition.x -
-            trailPosition.x
-        ) +
-        Math.abs(
-          cursorPosition.y -
-            trailPosition.y
-        );
-
       if (
         pointerInside &&
-        (
-          cursorDelta >
-            0.05 ||
-          trailDelta >
-            0.05
-        )
+        cursorDelta > 0.05
       ) {
         frameRef.current =
           window.requestAnimationFrame(
@@ -254,12 +214,6 @@ export default function RedCursor() {
           event.clientX;
 
         cursorPosition.y =
-          event.clientY;
-
-        trailPosition.x =
-          event.clientX;
-
-        trailPosition.y =
           event.clientY;
       }
 
@@ -392,173 +346,131 @@ export default function RedCursor() {
   }
 
   return createPortal(
-    <>
-      <div
-        ref={trailRef}
-        className="red-cursor-trail"
+    <div
+      ref={cursorRef}
+      className="red-cursor"
+      aria-hidden="true"
+      data-visible="false"
+      data-hover="false"
+    >
+      <svg
+        className="red-cursor-svg"
+        viewBox="0 0 48 58"
         aria-hidden="true"
-        data-visible="false"
+        shape-rendering="geometricPrecision"
       >
-        <span />
-        <span />
-        <span />
-      </div>
+        <defs>
+          <linearGradient
+            id="redCursorFace"
+            x1="0"
+            y1="0"
+            x2="1"
+            y2="1"
+          >
+            <stop
+              offset="0%"
+              stopColor="#ff5848"
+            />
 
-      <div
-        ref={cursorRef}
-        className="red-cursor"
-        aria-hidden="true"
-        data-visible="false"
-        data-hover="false"
-      >
-        <svg
-          className="red-cursor-svg"
-          viewBox="0 0 48 58"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient
-              id="redCursorFace"
-              x1="0"
-              y1="0"
-              x2="1"
-              y2="1"
-            >
-              <stop
-                offset="0%"
-                stopColor="#ff5848"
-              />
+            <stop
+              offset="42%"
+              stopColor="#d20f0f"
+            />
 
-              <stop
-                offset="42%"
-                stopColor="#d20f0f"
-              />
+            <stop
+              offset="100%"
+              stopColor="#460000"
+            />
+          </linearGradient>
 
-              <stop
-                offset="100%"
-                stopColor="#460000"
-              />
-            </linearGradient>
+          <linearGradient
+            id="redCursorSide"
+            x1="0"
+            y1="0"
+            x2="1"
+            y2="1"
+          >
+            <stop
+              offset="0%"
+              stopColor="#ff3028"
+            />
 
-            <linearGradient
-              id="redCursorSide"
-              x1="0"
-              y1="0"
-              x2="1"
-              y2="1"
-            >
-              <stop
-                offset="0%"
-                stopColor="#ff3028"
-              />
+            <stop
+              offset="100%"
+              stopColor="#680000"
+            />
+          </linearGradient>
+        </defs>
 
-              <stop
-                offset="100%"
-                stopColor="#680000"
-              />
-            </linearGradient>
+        <path
+          className="red-cursor-pointer"
+          fill="url(#redCursorFace)"
+          d="
+            M 1.5 1.5
+            L 1.5 49
+            L 14.5 36.5
+            L 26.5 53.5
+            L 34 48.5
+            L 22.5 32.5
+            L 41.5 32.5
+            Z
+          "
+        />
 
-            <filter
-              id="redCursorGlow"
-              x="-100%"
-              y="-100%"
-              width="300%"
-              height="300%"
-            >
-              <feGaussianBlur
-                stdDeviation="1.8"
-                result="blur"
-              />
+        <path
+          className="red-cursor-pointer-edge"
+          fill="url(#redCursorSide)"
+          d="
+            M 1.5 1.5
+            L 22.5 32.5
+            L 41.5 32.5
+            L 1.5 1.5
+            Z
+          "
+        />
 
-              <feMerge>
-                <feMergeNode
-                  in="blur"
-                />
+        <path
+          className="red-cursor-pointer-contour"
+          d="
+            M 1.5 1.5
+            L 1.5 49
+            L 14.5 36.5
+            L 26.5 53.5
+            L 34 48.5
+            L 22.5 32.5
+            L 41.5 32.5
+            Z
+          "
+          fill="none"
+        />
 
-                <feMergeNode
-                  in="SourceGraphic"
-                />
-              </feMerge>
-            </filter>
-          </defs>
+        <path
+          className="red-cursor-pointer-highlight"
+          d="
+            M 3.5 5
+            L 3.5 43
+            L 13.5 33.5
+          "
+          fill="none"
+        />
 
-          <path
-            className="red-cursor-pointer-shadow"
-            d="
-              M 2 2
-              L 2 52
-              L 15 39
-              L 27 56
-              L 36 51
-              L 24 34
-              L 43 34
-              Z
-            "
-          />
+        <circle
+          className="red-cursor-eye"
+          cx="14.5"
+          cy="23"
+          r="4"
+        />
 
-          <path
-            className="red-cursor-pointer"
-            fill="url(#redCursorFace)"
-            d="
-              M 1.5 1.5
-              L 1.5 49
-              L 14.5 36.5
-              L 26.5 53.5
-              L 34 48.5
-              L 22.5 32.5
-              L 41.5 32.5
-              Z
-            "
-          />
+        <circle
+          className="red-cursor-eye-core"
+          cx="14.5"
+          cy="23"
+          r="1.6"
+        />
+      </svg>
 
-          <path
-            className="red-cursor-pointer-edge"
-            fill="url(#redCursorSide)"
-            d="
-              M 1.5 1.5
-              L 22.5 32.5
-              L 41.5 32.5
-              L 1.5 1.5
-              Z
-            "
-          />
-
-          <path
-            className="red-cursor-pointer-highlight"
-            d="
-              M 3.5 5
-              L 3.5 43
-              L 13.5 33.5
-            "
-            fill="none"
-          />
-
-          <circle
-            className="red-cursor-eye-glow"
-            cx="14.5"
-            cy="23"
-            r="8.5"
-            filter="url(#redCursorGlow)"
-          />
-
-          <circle
-            className="red-cursor-eye"
-            cx="14.5"
-            cy="23"
-            r="4"
-          />
-
-          <circle
-            className="red-cursor-eye-core"
-            cx="14.5"
-            cy="23"
-            r="1.5"
-          />
-        </svg>
-
-        <span className="red-cursor-ring" />
-      </div>
-    </>,
+      <span className="red-cursor-ring" />
+    </div>,
     document.body
   );
 }

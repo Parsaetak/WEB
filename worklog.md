@@ -72,8 +72,10 @@ components/LivingShell.tsx          shell: fixed header (z 1000, isolation: isol
 components/SceneRegistry.tsx        scene id → component map
 components/SceneUrlSync.tsx         hash ↔ scene (valid scenes list lives here)
 components/ScenePreloader.tsx       idle-time scene preload (current → next → previous)
-components/RedCursor.tsx            custom cursor (single RAF loop)
-components/RedMagic.tsx             canvas visual system (Home = atmospheric, MAGIC = full)
+components/RedCursor.tsx            custom cursor (single RAF loop, zero filters)
+components/MagicConsole.tsx         MAGIC-scene client console (mode controls + vitals)
+components/RedMagic.tsx             canvas visual system (Home = atmospheric, MAGIC = full;
+                                    optional `mode` prop, default keeps Home unchanged)
 components/scenes/LibraryScene.tsx  catalog, filters, editorial preview, modal viewer (portal)
 components/LibraryPdfReader.tsx     PDF.js reader (dynamically imported, ssr: false)
 lib/contentRepository.ts            manifest → ContentItem; builds media URLs
@@ -177,6 +179,67 @@ Audit invariants: never declare the same `const`/function twice in one module
 because JSX renders no whitespace between them; RedMagic glow = sprite stamps,
 do not revert to per-frame gradients.
 
+MAGIC scene console + cursor refinement (2026-08-28):
+
+```text
+RedCursor.tsx        REBUILT: single crisp vector cursor. REMOVED entirely:
+                     SVG glow filter (feGaussianBlur), eye-glow circle,
+                     pointer drop-shadow path, both CSS drop-shadow halos,
+                     ring box-shadow, and the 3-dot glowing trail element
+                     (and its RAF work). ADDED: crisp contour stroke,
+                     shape-rendering=geometricPrecision, hover feedback =
+                     precise 1.07 scale step (no bloom). Rationale: owner
+                     asked for higher quality with no red lights around the
+                     cursor; blur filters on a per-frame translated element
+                     were also the most expensive paint on the page.
+RedMagic.tsx         Behaviour modes: optional prop `mode` ("drift" |
+                     "listen" | "surge", default "listen" = byte-for-byte
+                     original values, so Home <RedMagic /> is UNCHANGED).
+                     MODE_PROFILES scale the sim clock, pointer-energy
+                     targets, pointer gain and core gain. Mode is delivered
+                     via ref (no remount, no world rebuild on switch).
+                     Telemetry sample now includes pointerEnergy (0..1).
+MagicConsole.tsx     NEW client component (MAGIC scene only): behaviour
+                     buttons (role=group, aria-pressed, keyboard native) +
+                     live vitals strip (SIGNAL/VITALITY/FORM) subscribing to
+                     engine telemetry, mapped to qualitative organism states
+                     — no fps numbers, no jargon (hard rule 14).
+RedMagicScene.tsx    Restructured: hero → LIVE ORGANISM lab (MagicConsole,
+                     the one and only canvas) → SIMULATION MODEL (5 layer
+                     cards) → principles → future. Old magic-system section
+                     (2nd organism + static metrics) absorbed into the lab.
+globals.css          Cursor section replaced in place; new layer appended
+                     at end: .magic-lab*, .magic-controls, .magic-vitals,
+                     .magic-model*, and REAL grid/card styles for
+                     .magic-organism-principles(-grid)/.magic-organism-
+                     principle which previously had NO CSS (only h3/p font
+                     sizes) — cards were rendering as unstyled stacks.
+```
+
+Verification (2026-08-28): tsc + build green. Browser: LISTEN default pressed;
+SURGE click → aria-pressed moves, note swaps, vitals go live (SIGNAL AWAKE
+from surge energy floor with NO pointer — proves mode→energy chain);
+DRIFT → SIGNAL RESTING. Canvas centre probes: SURGE 195 > LISTEN 188 >
+DRIFT 185 (red channel). Cursor DOM: trail/eye-glow/shadow absent, computed
+svg filter = none, ring box-shadow = none (headless reports pointer:coarse so
+the cursor runtime itself does not mount there — CSS verified via injected
+nodes). Scenes cycle, Home atmosphere pixel-identical intent, keyboard Enter
+activates controls, 390px: no overflow, controls 366px, vitals 1-col.
+Reduced motion: verified at code+CSS level (global RM block intact; engine
+freezes elapsed/stepDelta) — not live-emulated (CLI lacks the toggle).
+
+New invariants:
+
+```text
+15. The cursor ships ZERO filters/shadows/blur: definition = contour stroke
+    + geometricPrecision. Do not reintroduce drop-shadow/box-shadow/feGlow.
+16. RedMagic `mode` default ("listen") must equal the original engine
+    constants — Home depends on it. Mode changes are ref-delivered, never
+    remount the effect.
+17. Exactly ONE RedMagic canvas per page (MAGIC scene lab). Do not add a
+    second organism instance to any scene.
+```
+
 ---
 
 ## 4. Completed Baseline (context — do not redo)
@@ -190,7 +253,9 @@ polish), full-viewport modal fix, reduced-motion support, LICENSE.md /
 TRADEMARKS.md, Actions workflow on current action versions, Next.js build cache,
 full-repo performance/quality audit (2026-08-27 — see section 3 notes; compile
 errors fixed, sprite render path, stable callbacks, preconnect, mobile preview
-overflow fix). Production deploys green.
+overflow fix), RED MAGIC dedicated scene: live behaviour console + vitals +
+simulation-model section (2026-08-28), cursor rebuilt crisp with zero
+glow/shadow/lights (2026-08-28). Production deploys green.
 
 ---
 
@@ -246,11 +311,14 @@ Arrow-key navigation requires the reader div to have focus (click inside first).
 Pre-existing. Consider moving focus into the reader on modal open; keep Escape
 handled by the parent viewer.
 
-### 6. RED MAGIC dedicated scene (post-Library focus)
+### 6. RED MAGIC dedicated scene — DONE (2026-08-28)
 
-Make the MAGIC scene substantially richer than Home's atmospheric version:
-deeper explanation, interactive controls, clearer simulation model, structured
-sections. Home stays clean.
+Implemented on the existing engine (the version the owner confirmed as the
+reference): MAGIC scene now hosts a live lab (DRIFT / LISTEN / SURGE
+behaviour console + SIGNAL / VITALITY / FORM vitals) and a structured
+simulation-model section. Home stays atmospheric and untouched. Follow-up
+polish ideas (non-blocking): pointer-hold gesture, more behaviour modes,
+mobile touch responsiveness tuning.
 
 ---
 
