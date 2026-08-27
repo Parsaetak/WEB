@@ -1,6 +1,6 @@
 import PublicLinks from "@/components/PublicLinks";
 import RedMagic from "@/components/RedMagic";
-import { PUBLIC_LINKS } from "@/lib/links";
+import { GITHUB_LINK } from "@/lib/links";
 
 const fields = [
   "AI",
@@ -44,12 +44,7 @@ const directionStages = [
 ];
 
 export default function HomeScene() {
-  const github =
-    PUBLIC_LINKS.social.find(
-      (link) =>
-        link.id ===
-        "github"
-    );
+  const github = GITHUB_LINK;
 
   return (
     <div className="home-scene">

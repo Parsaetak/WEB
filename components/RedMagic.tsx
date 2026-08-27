@@ -43,6 +43,82 @@ type QualityName =
   | "medium"
   | "low";
 
+function createGlowSprite(): HTMLCanvasElement | null {
+  if (
+    typeof document ===
+    "undefined"
+  ) {
+    return null;
+  }
+
+  const sprite =
+    document.createElement(
+      "canvas"
+    );
+
+  sprite.width =
+    GLOW_SPRITE_SIZE;
+
+  sprite.height =
+    GLOW_SPRITE_SIZE;
+
+  const spriteContext =
+    sprite.getContext(
+      "2d"
+    );
+
+  if (
+    !spriteContext
+  ) {
+    return null;
+  }
+
+  const half =
+    GLOW_SPRITE_SIZE / 2;
+
+  const gradient =
+    spriteContext.createRadialGradient(
+      half,
+      half,
+      0,
+      half,
+      half,
+      half
+    );
+
+  /*
+   * Same stops the per-frame gradients used:
+   * hot centre, mid falloff at 35%, transparent edge.
+   * Alpha is applied at draw time via globalAlpha.
+   */
+  gradient.addColorStop(
+    0,
+    "rgba(255, 50, 35, 1)"
+  );
+
+  gradient.addColorStop(
+    0.35,
+    "rgba(255, 20, 20, 0.46)"
+  );
+
+  gradient.addColorStop(
+    1,
+    "rgba(255, 0, 0, 0)"
+  );
+
+  spriteContext.fillStyle =
+    gradient;
+
+  spriteContext.fillRect(
+    0,
+    0,
+    GLOW_SPRITE_SIZE,
+    GLOW_SPRITE_SIZE
+  );
+
+  return sprite;
+}
+
 type Quality = {
   particles: number;
   nodes: number;
@@ -55,6 +131,14 @@ const TAU =
   Math.PI * 2;
 
 const MAX_DPR = 2;
+
+/*
+ * Soft glow sprites are baked once into an offscreen canvas and stamped
+ * with drawImage + globalAlpha. This replaces three radial-gradient
+ * allocations per frame (outer core glow, nucleus glow, pointer field)
+ * with texture draws, which are dramatically cheaper on every engine.
+ */
+const GLOW_SPRITE_SIZE = 256;
 
 const QUALITY: Record<
   QualityName,
@@ -277,6 +361,13 @@ export default function RedMagic() {
       return;
     }
 
+    /*
+     * Baked glow sprite, created once per mount. Cheap texture stamps
+     * replace per-frame gradient allocations in drawGlow.
+     */
+    const glowSprite =
+      createGlowSprite();
+
     const reduceMotionQuery =
       window.matchMedia(
         "(prefers-reduced-motion: reduce)"
@@ -343,6 +434,11 @@ export default function RedMagic() {
 
     let pointerAngle = 0;
     let pointerDistance = 0;
+
+    /* Canvas position cached once per resize/scroll instead of a
+     * getBoundingClientRect() forced layout on every pointermove. */
+    let canvasRectLeft = 0;
+    let canvasRectTop = 0;
 
     let performanceSampleTime = 0;
     let performanceFrames = 0;
@@ -412,23 +508,26 @@ export default function RedMagic() {
         );
       };
 
-    const chooseInitialQuality =
-      () => {
-        const rect =
-          canvas.getBoundingClientRect();
+    const refreshCanvasRect = () => {
+      const rect =
+        canvas.getBoundingClientRect();
 
-        const area =
-          rect.width *
-          rect.height;
+      canvasRectLeft =
+        rect.left;
 
-        buildWorld(
-          qualityFromArea(area)
-        );
-      };
+      canvasRectTop =
+        rect.top;
+    };
 
     const resize = () => {
       const rect =
         canvas.getBoundingClientRect();
+
+      canvasRectLeft =
+        rect.left;
+
+      canvasRectTop =
+        rect.top;
 
       width = Math.max(
         1,
@@ -479,20 +578,36 @@ export default function RedMagic() {
 
       rebuildMembraneGradient();
 
-      chooseInitialQuality();
+      /*
+       * Quality is derived from the rect this resize already measured,
+       * and the world is only rebuilt when the quality band changes
+       * (or on the very first build) so window drags no longer
+       * re-allocate every particle/node/boundary on each
+       * ResizeObserver tick.
+       */
+      const desiredQuality =
+        qualityFromArea(
+          rect.width * rect.height
+        );
+
+      if (
+        particles.length === 0 ||
+        desiredQuality !== qualityName
+      ) {
+        buildWorld(
+          desiredQuality
+        );
+      }
     };
 
     const updatePointer = (
       clientX: number,
       clientY: number
     ) => {
-      const rect =
-        canvas.getBoundingClientRect();
-
       pointerTarget.x =
         clamp(
           clientX -
-            rect.left,
+            canvasRectLeft,
           0,
           width
         );
@@ -500,7 +615,7 @@ export default function RedMagic() {
       pointerTarget.y =
         clamp(
           clientY -
-            rect.top,
+            canvasRectTop,
           0,
           height
         );
@@ -606,6 +721,12 @@ export default function RedMagic() {
         );
       };
 
+    /*
+     * The sprite is baked once with the exact colour stops the old
+     * per-frame gradient used; alpha is applied at draw time via
+     * globalAlpha and restored afterwards. The gradient path stays
+     * as a fallback for the rare case the sprite cannot be created.
+     */
     const drawGlow =
       (
         x: number,
@@ -614,6 +735,23 @@ export default function RedMagic() {
         outerRadius: number,
         alpha: number
       ) => {
+        if (glowSprite) {
+          context.globalAlpha =
+            alpha;
+
+          context.drawImage(
+            glowSprite,
+            x - outerRadius,
+            y - outerRadius,
+            outerRadius * 2,
+            outerRadius * 2
+          );
+
+          context.globalAlpha = 1;
+
+          return;
+        }
+
         const gradient =
           context.createRadialGradient(
             x,
@@ -1561,7 +1699,11 @@ publishRedMagicPerformance({
             "low"
           );
         } else {
-          chooseInitialQuality();
+          buildWorld(
+            qualityFromArea(
+              width * height
+            )
+          );
         }
       };
 

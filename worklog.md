@@ -110,6 +110,10 @@ range loading ON, streaming OFF, autoFetch OFF, rangeChunkSize 256 KiB
 3-page look-ahead, single active canvas, DPR capped at 2
 render cancelable, document destroyed on close
 loading states: OPENING → RENDERING → READY / LOADING NEXT (never fake percentages)
+nav strip = sliding window: 10 slots anchored current−2, shows range in header;
+canvas thumbnails render ONLY for current page .. +3 look-ahead — numbered
+placeholders elsewhere are INTENTIONAL (byte budget), not a bug. Do not
+"fix" them by rendering all slots.
 ```
 
 Persistent reading position (added 2026-08-27):
@@ -123,6 +127,56 @@ resume:     on open, if saved page > 1 → jump there; "RESUMED AT PAGE N" chip 
 page 1 is never resumed; storage failures are silently ignored (private mode safe)
 ```
 
+Reader modernization (added 2026-08-27):
+
+```text
+footer scrubber:  range input, debounced seek 140 ms, red fill via --scrub-progress
+fullscreen:       ⛶ button on reader root; Escape inside fullscreen is swallowed by
+                  the reader (stopPropagation) so the parent window handler does
+                  NOT close the viewer — browser exits fullscreen only
+double-click stage: toggle FIT ↔ 1.6× reading zoom
+keyboard:         ← → pages, PageUp/PageDown pages, Home/End first/last, Escape closes
+                  (only when NOT fullscreen)
+aria-pressed on FIT + fullscreen buttons; reduced-motion kills all reader animation
+```
+
+Site-wide code audit (2026-08-27, every source file reviewed):
+
+```text
+RedMagic.tsx        FIXED: file did not compile (createGlowSprite + GLOW_SPRITE_SIZE
+                    each declared twice — TS2393/TS2451). Then wired the previously
+                    dead glow sprite into drawGlow (drawImage + globalAlpha instead of
+                    2 radial-gradient allocations/frame; gradient path kept as
+                    fallback). resize() now derives quality from the rect it already
+                    measured and rebuilds the particle world only when the quality
+                    band changes — window drags no longer re-allocate everything per
+                    ResizeObserver tick. Visual output verified identical (canvas
+                    pixel probes: red core + falloff intact).
+LivingShell.tsx     github link now uses lib GITHUB_LINK (was a .find() every render);
+                    changeScene is referentially stable via activeSceneRef, so
+                    SceneUrlSync stops resubscribing URL listeners on every
+                    navigation. Behaviour identical incl. back/forward.
+Home/WorkScene.tsx  same GITHUB_LINK migration (per-render .find() removed).
+RedCursor.tsx       hover-target selector string hoisted to module const (was
+                    rebuilt on every pointerover/out).
+PublicLinks.tsx     link groups + compact-id Set hoisted to module level.
+LibraryScene.tsx    filter counts derived in one useMemo pass (was one .filter()
+                    per filter button per render).
+app/layout.tsx      <link rel="preconnect" href="https://cdn.jsdelivr.net"> so the
+                    first heavy media/PDF.js request skips DNS+TCP+TLS.
+globals.css         MOBILE FIX: .library-preview-tags spans render with no
+                    whitespace between them → zero break opportunities → 513px
+                    unbreakable run forced the 1fr preview grid track wide and
+                    clipped on phones. Now flex + wrap with meta-pill styling
+                    (consistent look, verified 390px: content 316px, no clipping;
+                    desktop unchanged visually apart from intentional pill chips).
+```
+
+Audit invariants: never declare the same `const`/function twice in one module
+(broke the build); adjacent inline spans need a wrapping container (flex/grid)
+because JSX renders no whitespace between them; RedMagic glow = sprite stamps,
+do not revert to per-frame gradients.
+
 ---
 
 ## 4. Completed Baseline (context — do not redo)
@@ -130,28 +184,44 @@ page 1 is never resumed; storage failures are silently ignored (private mode saf
 Six-scene shell, hash routing, scene code-splitting + idle preload, manifest build
 sync + validation, catalog + filters + featured + editorial preview, deferred heavy
 media, PDF reader (CDN PDF.js, progressive range loading verified end-to-end),
-persistent reading position, full-viewport modal fix, reduced-motion support,
-LICENSE.md / TRADEMARKS.md, Actions workflow on current action versions, Next.js
-build cache. Production deploys green.
+persistent reading position, sliding thumbnail window with byte budget, reader
+modernization (scrubber, fullscreen, double-click zoom, keyboard pages, motion
+polish), full-viewport modal fix, reduced-motion support, LICENSE.md /
+TRADEMARKS.md, Actions workflow on current action versions, Next.js build cache,
+full-repo performance/quality audit (2026-08-27 — see section 3 notes; compile
+errors fixed, sprite render path, stable callbacks, preconnect, mobile preview
+overflow fix). Production deploys green.
 
 ---
 
 ## 5. OPEN ITEMS (priority order)
 
-### 1. Large-book open efficiency
+### 1. Large-book open efficiency — agent side DONE, content side OPEN
 
-Opening `RED MAGIC.pdf` (11.5 MB) pulls one ~9.5 MB `206` range (~91% of the file)
-because the 10-page sidebar thumbnail strip forces PDF.js to fetch tail-stored
-objects from the non-linearized PDF. Range infrastructure is fine; the file
-internals are not.
+Reader-side fix shipped 2026-08-27 (see invariants above): thumbnails render in a
+strict byte budget (current page + 3 look-ahead only), the nav strip slides with
+the reading position. Verified: resume-open of RED MAGIC.pdf at page 150 now
+transfers 1.3 MB (10.8% of file) instead of walking the head of the book;
+sliding to a nearby page costs 0 extra bytes; fresh opens unaffected.
 
-Options (either or both):
+The remaining cold-open cost is **file content, not code**. Structural analysis
+of RED MAGIC.pdf (11.5 MB, Skia/PDF m145 = Google Docs export):
 
-* render thumbnails lazily (visible-only / on-demand) instead of all 10 up front
-* ship linearized ("fast web view") PDFs in the Contents `Books` branch
+```text
+page 2 of 270 → object 7: ONE FlateDecode image, 10.24 MB = 84.7% of the file
+stored at file offset 942 (front). Any viewer rendering pages 1→2 must fetch it.
+No client-side change can beat this; do not try.
+```
 
-Acceptance: opening a large book transfers a small fraction of the file for the
-first page + first thumbnails.
+Owner action (Contents repo, Books branch):
+
+* Recompress / re-export that page-2 artwork losslessly-compressed → JPEG
+  (or run the whole book through a recompression pass, e.g. ghostscript
+  `/ebook`). This alone can cut ~85% of book size and fixes cold open.
+* Then optionally `qpdf --linearize` the exports for fast-web-view ordering.
+
+Acceptance: cold-open of the recompressed RED MAGIC.pdf transfers a small
+fraction of the file for the first pages. (Resume-open already meets the bar.)
 
 ### 2. Cover system
 

@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState
 } from "react";
 
@@ -15,7 +16,7 @@ import ScenePreloader from "@/components/ScenePreloader";
 import SceneRegistry from "@/components/SceneRegistry";
 import SceneUrlSync from "@/components/SceneUrlSync";
 import WorldBackground from "@/components/WorldBackground";
-import { PUBLIC_LINKS } from "@/lib/links";
+import { GITHUB_LINK } from "@/lib/links";
 
 export type SceneId =
   | "home"
@@ -131,6 +132,14 @@ export default function LivingShell({
     initialScene
   );
 
+  /*
+   * Mirror of activeScene kept next to the setter so changeScene can
+   * stay referentially stable. SceneUrlSync's URL listeners then stop
+   * resubscribing on every scene change.
+   */
+  const activeSceneRef =
+    useRef<SceneId>(initialScene);
+
   const [
     urlReady,
     setUrlReady
@@ -143,6 +152,9 @@ export default function LivingShell({
     normalizeInitialHash(
       initialUrlScene
     );
+
+    activeSceneRef.current =
+      initialUrlScene;
 
     setActiveScene(
       initialUrlScene
@@ -160,10 +172,14 @@ export default function LivingShell({
         "navigation"
     ) => {
       if (
-        scene === activeScene
+        scene ===
+        activeSceneRef.current
       ) {
         return;
       }
+
+      activeSceneRef.current =
+        scene;
 
       if (
         source ===
@@ -186,8 +202,21 @@ export default function LivingShell({
         scene
       );
     },
-    [activeScene]
+    []
   );
+
+  const changeSceneFromHistory =
+    useCallback(
+      (
+        scene: SceneId
+      ) => {
+        changeScene(
+          scene,
+          "history"
+        );
+      },
+      [changeScene]
+    );
 
   const activeSceneDefinition =
     SCENES.find(
@@ -196,12 +225,7 @@ export default function LivingShell({
         activeScene
     );
 
-  const github =
-    PUBLIC_LINKS.social.find(
-      (link) =>
-        link.id ===
-        "github"
-    );
+  const github = GITHUB_LINK;
 
   return (
     <div
@@ -215,11 +239,7 @@ export default function LivingShell({
       <SceneUrlSync
         scene={activeScene}
         onSceneChange={
-          (scene) =>
-            changeScene(
-              scene,
-              "history"
-            )
+          changeSceneFromHistory
         }
       />
 
@@ -277,13 +297,7 @@ export default function LivingShell({
               activeScene
             }
             onSceneChange={
-              (
-                scene
-              ) =>
-                changeScene(
-                  scene,
-                  "navigation"
-                )
+              changeScene
             }
           />
 

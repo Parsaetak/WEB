@@ -72,6 +72,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/*
+          * All library media and PDF.js come from the jsDelivr CDN.
+          * Warming DNS + TCP + TLS while the shell renders means the
+          * first heavy request starts the moment the user acts.
+          */}
+        <link
+          rel="preconnect"
+          href="https://cdn.jsdelivr.net"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body>
         {children}
       </body>

@@ -10,6 +10,20 @@ import {
   useState
 } from "react";
 
+/*
+ * Hoisted once at module level: building this selector string on every
+ * pointerover/pointerout event allocated needlessly in a hot path.
+ */
+const HOVER_TARGET_SELECTOR = [
+  "a",
+  "button",
+  "[role='button']",
+  "input",
+  "textarea",
+  "select",
+  "summary"
+].join(", ");
+
 export default function RedCursor() {
   const cursorRef =
     useRef<HTMLDivElement | null>(
@@ -214,15 +228,7 @@ export default function RedCursor() {
       hoverTarget =
         Boolean(
           target.closest(
-            [
-              "a",
-              "button",
-              "[role='button']",
-              "input",
-              "textarea",
-              "select",
-              "summary"
-            ].join(", ")
+            HOVER_TARGET_SELECTOR
           )
         );
 

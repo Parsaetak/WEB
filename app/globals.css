@@ -20814,3 +20814,63 @@ html.red-cursor-enabled * {
       none;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Library preview tags — mobile overflow fix (2026-08-27 audit)              */
+/*                                                                            */
+/* Tags render as adjacent <span>s with no whitespace between them, so as     */
+/* inline elements they have no break opportunities: the whole row becomes    */
+/* one unbreakable run (min-content = full row width). On narrow screens the  */
+/* 1fr preview grid track was forced to that width and the card clipped.      */
+/* Flex + wrap restores break opportunities; pill styling matches the meta    */
+/* chips directly below for one consistent look.                              */
+/* -------------------------------------------------------------------------- */
+
+.library-preview-tags {
+  display:
+    flex;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    8px;
+
+  margin-top:
+    24px;
+}
+
+.library-preview-tags span {
+  padding:
+    7px 9px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.07
+    );
+
+  border-radius:
+    999px;
+
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.11em;
+
+  white-space:
+    nowrap;
+}

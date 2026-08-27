@@ -207,3 +207,14 @@ export const ALL_PUBLIC_LINKS = [
   ...PUBLIC_LINKS.resources,
   ...PUBLIC_LINKS.meta
 ] as const;
+
+/*
+ * Resolved once at module load instead of a .find() on every render
+ * in LivingShell, HomeScene, and WorkScene.
+ */
+export const GITHUB_LINK =
+  PUBLIC_LINKS.social.find(
+    (link) =>
+      link.id ===
+      "github"
+  ) ?? null;

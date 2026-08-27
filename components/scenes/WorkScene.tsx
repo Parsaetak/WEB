@@ -1,5 +1,5 @@
 import {
-  PUBLIC_LINKS
+  GITHUB_LINK
 } from "@/lib/links";
 
 const projects = [
@@ -56,12 +56,7 @@ const projects = [
 
 
 export default function WorkScene() {
-  const github =
-    PUBLIC_LINKS.social.find(
-      (link) =>
-        link.id ===
-        "github"
-    );
+  const github = GITHUB_LINK;
 
   return (
     <div className="work-scene">

@@ -389,6 +389,41 @@ export default function LibraryScene() {
       ]
     );
 
+  /*
+   * Per-filter counts are derived in one pass over the items instead
+   * of re-filtering the whole catalog once per filter button on every
+   * render.
+   */
+  const filterCounts =
+    useMemo(
+      () => {
+        const counts = new Map<
+          MediaFilter,
+          number
+        >();
+
+        for (
+          let index = 0;
+          index < items.length;
+          index += 1
+        ) {
+          const mediaFilter =
+            getMediaFilter(
+              items[index].kind
+            );
+
+          counts.set(
+            mediaFilter,
+            (counts.get(mediaFilter) ?? 0) +
+              1
+          );
+        }
+
+        return counts;
+      },
+      [items]
+    );
+
   const selectItem = (
     item: ContentItem
   ) => {
@@ -629,15 +664,9 @@ export default function LibraryScene() {
                     mediaFilter.id ===
                     "all"
                       ? items.length
-                      : items.filter(
-                          (
-                            item
-                          ) =>
-                            getMediaFilter(
-                              item.kind
-                            ) ===
+                      : filterCounts.get(
                             mediaFilter.id
-                        ).length;
+                          ) ?? 0;
 
                   return (
                     <button

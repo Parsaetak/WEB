@@ -198,25 +198,41 @@ function createContentItem(
   };
 }
 
+let contentCache: ContentItem[] | null = null;
+
 export async function loadLibraryManifest(): Promise<
   LibraryManifest
 > {
   return LIBRARY_MANIFEST;
 }
 
+/*
+ * The manifest is static at runtime, so the derived ContentItem list is
+ * built exactly once and reused across scene mounts instead of
+ * re-mapping every item object on each call.
+ */
 export async function listContent(): Promise<
   ContentItem[]
 > {
-  return LIBRARY_MANIFEST.items
-    .map(
-      createContentItem
-    )
-    .filter(
-      (
-        item
-      ): item is ContentItem =>
-        item !== null
-    );
+  if (
+    contentCache
+  ) {
+    return contentCache;
+  }
+
+  contentCache =
+    LIBRARY_MANIFEST.items
+      .map(
+        createContentItem
+      )
+      .filter(
+        (
+          item
+        ): item is ContentItem =>
+          item !== null
+      );
+
+  return contentCache;
 }
 
 export function getContentKindLabel(

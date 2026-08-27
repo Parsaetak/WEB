@@ -8,6 +8,10 @@ import type {
   SceneId
 } from "@/components/LivingShell";
 
+import {
+  scheduleIdle
+} from "@/lib/idleScheduler";
+
 const SCENE_ORDER:
   readonly SceneId[] =
   [
@@ -190,67 +194,19 @@ export function preloadScene(
   return promise;
 }
 
-function scheduleIdle(
-  callback: () => void
-) {
-  if (
-    typeof window !==
-      "undefined" &&
-    "requestIdleCallback" in
-      window
-  ) {
-    const idleWindow =
-      window as typeof window & {
-        requestIdleCallback: (
-          callback: (
-            deadline: IdleDeadline
-          ) => void,
-          options?: {
-            timeout?: number;
-          }
-        ) => number;
-
-        cancelIdleCallback: (
-          id: number
-        ) => void;
-      };
-
-    const id =
-      idleWindow.requestIdleCallback(
-        callback,
-        {
-          timeout:
-            1800
-        }
-      );
-
-    return () => {
-      idleWindow.cancelIdleCallback(
-        id
-      );
-    };
-  }
-
-  const id =
-    globalThis.setTimeout(
-      callback,
-      350
-    );
-
-  return () => {
-    globalThis.clearTimeout(
-      id
-    );
-  };
-}
-
+/*
+ * The idle scheduler is shared (lib/idleScheduler.ts).
+ * Scene preloading uses a slightly longer idle timeout than the reader,
+ * because background scene chunks are the lowest priority work on the page.
+ */
 function waitForIdle(): Promise<void> {
   return new Promise(
     (
       resolve
     ) => {
       scheduleIdle(
-        resolve
+        resolve,
+        1800
       );
     }
   );

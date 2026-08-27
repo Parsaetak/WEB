@@ -20,6 +20,35 @@ type LinkGroup = {
   links: readonly PublicLink[];
 };
 
+/*
+ * Static structures hoisted to module level: rebuilding the group list
+ * and the compact-id Set on every render allocated identical data each
+ * time for no benefit.
+ */
+const LINK_GROUPS: readonly LinkGroup[] = [
+  {
+    label: "SOCIAL",
+    links: PUBLIC_LINKS.social
+  },
+  {
+    label: "RESOURCES",
+    links: PUBLIC_LINKS.resources
+  },
+  {
+    label: "REFERENCE",
+    links: PUBLIC_LINKS.meta
+  }
+];
+
+const COMPACT_SOCIAL_IDS = new Set([
+  "x",
+  "whatsapp",
+  "instagram",
+  "github",
+  "linkedin",
+  "discord"
+]);
+
 type IconProps = SVGProps<SVGSVGElement>;
 
 const ICON_PROPS = {
@@ -326,31 +355,6 @@ export default function PublicLinks({
   compact = false,
   title = "PUBLIC NETWORK"
 }: PublicLinksProps) {
-  const groups: LinkGroup[] = [
-    {
-      label: "SOCIAL",
-      links: PUBLIC_LINKS.social
-    },
-    {
-      label: "RESOURCES",
-      links: PUBLIC_LINKS.resources
-    },
-    {
-      label: "REFERENCE",
-      links: PUBLIC_LINKS.meta
-    }
-  ];
-
-  const compactSocialIds =
-    new Set([
-      "x",
-      "whatsapp",
-      "instagram",
-      "github",
-      "linkedin",
-      "discord"
-    ]);
-
   return (
     <section
       className="section-tight public-links"
@@ -370,7 +374,7 @@ export default function PublicLinks({
           </div>
         </div>
 
-        {groups.map(
+        {LINK_GROUPS.map(
           (group) => {
             const links =
               compact
@@ -378,7 +382,7 @@ export default function PublicLinks({
                   "SOCIAL"
                   ? group.links.filter(
                       (link) =>
-                        compactSocialIds.has(
+                        COMPACT_SOCIAL_IDS.has(
                           link.id
                         )
                     )
