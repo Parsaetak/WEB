@@ -17,20 +17,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  prepare:
+    name: Prepare and validate site
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
-      - name: Restore Next.js build cache
-        uses: actions/cache@v5
-        with:
-          path: .next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -38,16 +31,21 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v6
-
       - name: Install dependencies
         run: npm ci
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
 
       - name: Sync Library manifest
         run: |
           mkdir -p data
-          curl --fail --silent --show-error --location \
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
             "https://raw.githubusercontent.com/Parsaetak/Contents/Projects/library.json" \
             --output data/library.json
 
@@ -57,6 +55,7 @@ jobs:
           const fs = require('fs');
 
           const file = 'data/library.json';
+
           const data = JSON.parse(
             fs.readFileSync(file, 'utf8')
           );
@@ -66,7 +65,9 @@ jobs:
             typeof data.updated !== 'string' ||
             !Array.isArray(data.items)
           ) {
-            throw new Error('Invalid Library manifest');
+            throw new Error(
+              'Invalid Library manifest'
+            );
           }
 
           for (const item of data.items) {
@@ -89,15 +90,61 @@ jobs:
           );
           "
 
+      - name: Upload prepared source
+        uses: actions/upload-artifact@v4
+        with:
+          name: prepared-site
+          path: |
+            .
+            !.git
+            !node_modules
+            !.next
+          retention-days: 1
+
+  build:
+    name: Build site
+    needs:
+      - prepare
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download prepared source
+        uses: actions/download-artifact@v5
+        with:
+          name: prepared-site
+          path: .
+
+      - name: Restore Next.js build cache
+        uses: actions/cache@v5
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
       - name: Build Next.js site
         run: npm run build
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./out
 
   deploy:
+    name: Deploy site
     needs:
       - build
 
