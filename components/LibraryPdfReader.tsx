@@ -200,6 +200,122 @@ function formatBytes(
   )} MB`;
 }
 
+const READING_POSITION_PREFIX =
+  "library-reading-position:";
+
+type SavedReadingPosition = {
+  page: number;
+
+  total: number;
+
+  updatedAt: number;
+};
+
+function getReadingPositionStorageKey(
+  src: string
+) {
+  return READING_POSITION_PREFIX + src;
+}
+
+function readSavedReadingPosition(
+  src: string
+): SavedReadingPosition | null {
+  if (
+    typeof window ===
+      "undefined" ||
+    !window.localStorage
+  ) {
+    return null;
+  }
+
+  try {
+    const raw =
+      window.localStorage.getItem(
+        getReadingPositionStorageKey(
+          src
+        )
+      );
+
+    if (
+      !raw
+    ) {
+      return null;
+    }
+
+    const parsed =
+      JSON.parse(
+        raw
+      ) as Partial<SavedReadingPosition> | null;
+
+    if (
+      !parsed ||
+      typeof parsed.page !==
+        "number" ||
+      !Number.isFinite(
+        parsed.page
+      ) ||
+      parsed.page <
+        1
+    ) {
+      return null;
+    }
+
+    return {
+      page: Math.floor(
+        parsed.page
+      ),
+
+      total:
+        typeof parsed.total ===
+          "number"
+          ? parsed.total
+          : 0,
+
+      updatedAt:
+        typeof parsed.updatedAt ===
+          "number"
+          ? parsed.updatedAt
+          : 0
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeSavedReadingPosition(
+  src: string,
+  page: number,
+  total: number
+) {
+  if (
+    typeof window ===
+      "undefined" ||
+    !window.localStorage
+  ) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      getReadingPositionStorageKey(
+        src
+      ),
+      JSON.stringify(
+        {
+          page,
+          total,
+          updatedAt: Date.now()
+        }
+      )
+    );
+  } catch {
+    /*
+     * Persisting the reading position is best effort.
+     * Private browsing or storage limits must never interrupt reading.
+     */
+  }
+}
+
 export default function LibraryPdfReader({
   src,
   title
@@ -319,6 +435,32 @@ export default function LibraryPdfReader({
   ] = useState<
     string | null
   >(null);
+
+  const [
+    savedPosition,
+    setSavedPosition
+  ] = useState<
+    SavedReadingPosition | null
+  >(() =>
+    readSavedReadingPosition(
+      src
+    )
+  );
+
+  const [
+    resumedAtPage,
+    setResumedAtPage
+  ] = useState<
+    number | null
+  >(null);
+
+  const latestPositionRef =
+    useRef<
+      | (SavedReadingPosition & {
+          src: string;
+        })
+      | null
+    >(null);
 
   const pageCount =
     pdf?.numPages ??
@@ -518,6 +660,10 @@ export default function LibraryPdfReader({
       1
     );
 
+    setResumedAtPage(
+      null
+    );
+
     prefetchedPagesRef.current.clear();
 
     thumbnailPagesRef.current.clear();
@@ -617,6 +763,37 @@ export default function LibraryPdfReader({
 
           documentRef.current =
             pdfDocument;
+
+          const restoredPosition =
+            readSavedReadingPosition(
+              src
+            );
+
+          setSavedPosition(
+            restoredPosition
+          );
+
+          if (
+            restoredPosition &&
+            restoredPosition.page >
+              1 &&
+            restoredPosition.page <=
+              pdfDocument.numPages
+          ) {
+            setPageNumber(
+              restoredPosition.page
+            );
+
+            setPageInput(
+              String(
+                restoredPosition.page
+              )
+            );
+
+            setResumedAtPage(
+              restoredPosition.page
+            );
+          }
 
           setPdf(
             pdfDocument
@@ -1210,6 +1387,97 @@ export default function LibraryPdfReader({
     pageNumber
   ]);
 
+  useEffect(() => {
+    if (
+      !pdf
+    ) {
+      latestPositionRef.current =
+        null;
+
+      return;
+    }
+
+    latestPositionRef.current =
+      {
+        src,
+
+        page: pageNumber,
+
+        total:
+          pdf.numPages,
+
+        updatedAt: Date.now()
+      };
+
+    const timer =
+      window.setTimeout(
+        () => {
+          writeSavedReadingPosition(
+            src,
+            pageNumber,
+            pdf.numPages
+          );
+        },
+        400
+      );
+
+    return () => {
+      window.clearTimeout(
+        timer
+      );
+    };
+  }, [
+    pdf,
+    pageNumber,
+    src
+  ]);
+
+  useEffect(() => {
+    return () => {
+      const latest =
+        latestPositionRef.current;
+
+      if (
+        !latest
+      ) {
+        return;
+      }
+
+      writeSavedReadingPosition(
+        latest.src,
+        latest.page,
+        latest.total
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      resumedAtPage ===
+        null
+    ) {
+      return;
+    }
+
+    const timer =
+      window.setTimeout(
+        () => {
+          setResumedAtPage(
+            null
+          );
+        },
+        4000
+      );
+
+    return () => {
+      window.clearTimeout(
+        timer
+      );
+    };
+  }, [
+    resumedAtPage
+  ]);
+
   const goToPage =
     (
       number: number
@@ -1453,6 +1721,17 @@ export default function LibraryPdfReader({
                 )}
               </span>
             )}
+
+            {savedPosition &&
+              savedPosition.page >
+                1 && (
+              <span>
+                RESUME AT PAGE{" "}
+                {
+                  savedPosition.page
+                }
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -1578,20 +1857,36 @@ export default function LibraryPdfReader({
         </div>
 
         <div className="library-pdf-reader-state">
-          {rendering && (
+          {resumedAtPage !==
+            null && (
             <span>
-              RENDERING
+              RESUMED AT PAGE{" "}
+              {
+                resumedAtPage
+              }
             </span>
           )}
 
-          {!rendering &&
+          {resumedAtPage ===
+            null &&
+            rendering && (
+              <span>
+                RENDERING
+              </span>
+            )}
+
+          {resumedAtPage ===
+            null &&
+            !rendering &&
             backgroundLoading && (
               <span>
                 LOADING NEXT
               </span>
             )}
 
-          {!rendering &&
+          {resumedAtPage ===
+            null &&
+            !rendering &&
             !backgroundLoading && (
               <span>
                 READY
