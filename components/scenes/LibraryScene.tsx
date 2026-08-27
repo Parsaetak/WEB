@@ -9,6 +9,10 @@ import {
 } from "react";
 
 import {
+  createPortal
+} from "react-dom";
+
+import {
   getContentKindLabel,
   listContent,
   type ContentItem,
@@ -416,534 +420,12 @@ export default function LibraryScene() {
       );
     };
 
-  return (
-    <div className="library-scene">
-      <section className="section library-section">
-        <div
-          className="library-atmosphere"
-          aria-hidden="true"
-        >
-          <span className="library-atmosphere-orbit library-atmosphere-orbit-one" />
-
-          <span className="library-atmosphere-orbit library-atmosphere-orbit-two" />
-
-          <span className="library-atmosphere-axis library-atmosphere-axis-x" />
-
-          <span className="library-atmosphere-axis library-atmosphere-axis-y" />
-        </div>
-
-        <div className="page-container">
-          <header className="library-header">
-            <div>
-              <p className="kicker">
-                06 / LIBRARY
-              </p>
-
-              <h1 className="section-title library-title">
-                The works.
-                <br />
-                Read, watch,
-                <br />
-                listen.
-              </h1>
-
-              <p className="body-large library-lead">
-                A living archive of
-                books, experiments,
-                media, and other
-                original work.
-              </p>
-            </div>
-          </header>
-
-          <div className="library-filters">
-            {MEDIA_FILTERS.map(
-              (
-                mediaFilter
-              ) => {
-                const count =
-                  mediaFilter.id ===
-                  "all"
-                    ? items.length
-                    : items.filter(
-                        (
-                          item
-                        ) =>
-                          getMediaFilter(
-                            item.kind
-                          ) ===
-                          mediaFilter.id
-                      ).length;
-
-                return (
-                  <button
-                    type="button"
-                    className="library-filter"
-                    data-active={
-                      filter ===
-                      mediaFilter.id
-                        ? "true"
-                        : "false"
-                    }
-                    key={
-                      mediaFilter.id
-                    }
-                    onClick={() =>
-                      setFilter(
-                        mediaFilter.id
-                      )
-                    }
-                  >
-                    <span>
-                      {
-                        mediaFilter.label
-                      }
-                    </span>
-
-                    <strong>
-                      {String(
-                        count
-                      ).padStart(
-                        2,
-                        "0"
-                      )}
-                    </strong>
-                  </button>
-                );
-              }
-            )}
-          </div>
-
-          {loading && (
-            <div className="library-loading">
-              <span className="status-dot" />
-
-              <span>
-                LOADING
-              </span>
-            </div>
-          )}
-
-          {error && (
-            <div
-              className="library-error"
-              role="alert"
-            >
-              <strong>
-                Library unavailable
-              </strong>
-
-              <p>
-                {error}
-              </p>
-            </div>
-          )}
-
-          {!loading &&
-            !error && (
-              <div className="library-layout">
-                <section className="library-gallery">
-                  <div className="library-catalog-header">
-                    <div>
-                      <p className="kicker">
-                        COLLECTION
-                      </p>
-
-                      <h2>
-                        {filter ===
-                        "all"
-                          ? "Gallery"
-                          : MEDIA_FILTERS.find(
-                              (
-                                mediaFilter
-                              ) =>
-                                mediaFilter.id ===
-                                filter
-                            )?.label}
-                      </h2>
-                    </div>
-
-                    <span>
-                      {String(
-                        filteredItems.length
-                      ).padStart(
-                        2,
-                        "0"
-                      )}
-                    </span>
-                  </div>
-
-                  {featuredItems.length >
-                    0 && (
-                    <div className="library-featured-strip">
-                      {featuredItems.map(
-                        (
-                          item
-                        ) => {
-                          const active =
-                            selected?.sha ===
-                            item.sha;
-
-                          return (
-                            <button
-                              type="button"
-                              className="library-featured-card"
-                              data-active={
-                                active
-                                  ? "true"
-                                  : "false"
-                              }
-                              key={
-                                `${item.branch}:${item.path}`
-                              }
-                              onClick={() =>
-                                selectItem(
-                                  item
-                                )
-                              }
-                            >
-                              <div className="library-featured-card-visual">
-                                {item.coverUrl ? (
-                                  <img
-                                    src={
-                                      item.coverUrl
-                                    }
-                                    alt=""
-                                    loading="lazy"
-                                    decoding="async"
-                                  />
-                                ) : (
-                                  <span>
-                                    {
-                                      getPreviewGlyph(
-                                        item.kind
-                                      )
-                                    }
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="library-featured-card-content">
-                                <span>
-                                  FEATURED
-                                </span>
-
-                                <strong>
-                                  {
-                                    item.title
-                                  }
-                                </strong>
-
-                                {item.year && (
-                                  <small>
-                                    {
-                                      item.year
-                                    }
-                                  </small>
-                                )}
-                              </div>
-                            </button>
-                          );
-                        }
-                      )}
-                    </div>
-                  )}
-
-                  <div className="library-list">
-                    {regularItems.map(
-                      (
-                        item
-                      ) => {
-                        const active =
-                          selected?.sha ===
-                          item.sha;
-
-                        return (
-                          <button
-                            type="button"
-                            className="library-item"
-                            data-active={
-                              active
-                                ? "true"
-                                : "false"
-                            }
-                            key={
-                              `${item.branch}:${item.path}`
-                            }
-                            onClick={() =>
-                              selectItem(
-                                item
-                              )
-                            }
-                          >
-                            <span className="library-item-type">
-                              {
-                                getCatalogLabel(
-                                  item
-                                )
-                              }
-                            </span>
-
-                            <span className="library-item-main">
-                              <strong>
-                                {
-                                  item.title
-                                }
-                              </strong>
-
-                              <small>
-                                {item.year ??
-                                  "ORIGINAL WORK"}
-                              </small>
-                            </span>
-
-                            <span
-                              className="library-item-arrow"
-                              aria-hidden="true"
-                            >
-                              →
-                            </span>
-                          </button>
-                        );
-                      }
-                    )}
-
-                    {filteredItems.length ===
-                      0 && (
-                      <div className="library-empty">
-                        No published media
-                        exists in this
-                        category yet.
-                      </div>
-                    )}
-                  </div>
-                </section>
-
-                <section className="library-preview">
-                  {!selected && (
-                    <div className="library-preview-empty">
-                      <span className="library-preview-empty-glyph">
-                        EXPLORE
-                      </span>
-
-                      <strong>
-                        Discover the
-                        collection
-                      </strong>
-
-                      <p>
-                        Choose a work to
-                        see its preview,
-                        story, and
-                        publication
-                        details.
-                      </p>
-                    </div>
-                  )}
-
-                  {selected && (
-                    <article className="library-preview-card">
-                      <div
-                        className="library-preview-art"
-                        data-kind={
-                          selected.kind
-                        }
-                        data-featured={
-                          selected.featured
-                            ? "true"
-                            : "false"
-                        }
-                      >
-                        <div className="library-preview-art-grid" />
-
-                        <div className="library-preview-art-orbit" />
-
-                        {selected.coverUrl ? (
-                          <img
-                            src={
-                              selected.coverUrl
-                            }
-                            alt=""
-                            loading="lazy"
-                            decoding="async"
-                            className="library-preview-cover"
-                          />
-                        ) : (
-                          <>
-                            <span className="library-preview-art-type">
-                              {
-                                getPreviewGlyph(
-                                  selected.kind
-                                )
-                              }
-                            </span>
-
-                            <strong>
-                              {
-                                selected.title
-                              }
-                            </strong>
-
-                            {selected.author && (
-                              <small>
-                                {
-                                  selected.author
-                                }
-                              </small>
-                            )}
-                          </>
-                        )}
-
-                        {selected.coverUrl &&
-                          selected.author && (
-                            <small className="library-preview-cover-author">
-                              {
-                                selected.author
-                              }
-                            </small>
-                          )}
-
-                        {selected.featured && (
-                          <span className="library-featured-mark">
-                            FEATURED
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="library-preview-content">
-                        <div className="library-preview-kicker">
-                          {
-                            getCatalogLabel(
-                              selected
-                            )
-                          }
-                        </div>
-
-                        <h2>
-                          {
-                            selected.title
-                          }
-                        </h2>
-
-                        {selected.subtitle && (
-                          <p className="library-preview-subtitle">
-                            {
-                              selected.subtitle
-                            }
-                          </p>
-                        )}
-
-                        <p>
-                          {
-                            selected.description ??
-                            "An original work from the Parsa Tak archive."
-                          }
-                        </p>
-
-                        {selected.tags &&
-                          selected.tags.length >
-                            0 && (
-                            <div className="library-preview-tags">
-                              {selected.tags.map(
-                                (
-                                  tag
-                                ) => (
-                                  <span
-                                    key={
-                                      tag
-                                    }
-                                  >
-                                    {
-                                      tag
-                                    }
-                                  </span>
-                                )
-                              )}
-                            </div>
-                          )}
-
-                        <div className="library-preview-meta">
-                          {selected.author && (
-                            <span>
-                              {
-                                selected.author
-                              }
-                            </span>
-                          )}
-
-                          {selected.year && (
-                            <span>
-                              {
-                                selected.year
-                              }
-                            </span>
-                          )}
-
-                          {selected.language && (
-                            <span>
-                              {
-                                selected.language
-                              }
-                            </span>
-                          )}
-
-                          {selected.series &&
-                            typeof selected.volume ===
-                              "number" && (
-                              <span>
-                                {
-                                  selected.series
-                                }{" "}
-                                · V
-                                {String(
-                                  selected.volume
-                                ).padStart(
-                                  2,
-                                  "0"
-                                )}
-                              </span>
-                            )}
-
-                          {selected.readingTime && (
-                            <span>
-                              {
-                                selected.readingTime
-                              }
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="library-preview-actions">
-                          <button
-                            type="button"
-                            className="library-open-button"
-                            onClick={
-                              openItem
-                            }
-                          >
-                            {
-                              getActionLabel(
-                                selected.kind
-                              )
-                            }{" "}
-                            WORK
-
-                            <span>
-                              →
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  )}
-                </section>
-              </div>
-            )}
-        </div>
-      </section>
-
-      {opened &&
-        selected && (
+  const viewer =
+    opened &&
+    selected &&
+    typeof document !==
+      "undefined"
+      ? createPortal(
           <div
             className="library-modal"
             role="dialog"
@@ -1074,7 +556,6 @@ export default function LibraryScene() {
                     href={
                       selected.rawUrl
                     }
-                    download
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -1093,8 +574,540 @@ export default function LibraryScene() {
                 </div>
               </div>
             </div>
+          </div>,
+          document.body
+        )
+      : null;
+
+  return (
+    <>
+      <div className="library-scene">
+        <section className="section library-section">
+          <div
+            className="library-atmosphere"
+            aria-hidden="true"
+          >
+            <span className="library-atmosphere-orbit library-atmosphere-orbit-one" />
+
+            <span className="library-atmosphere-orbit library-atmosphere-orbit-two" />
+
+            <span className="library-atmosphere-axis library-atmosphere-axis-x" />
+
+            <span className="library-atmosphere-axis library-atmosphere-axis-y" />
           </div>
-        )}
-    </div>
+
+          <div className="page-container">
+            <header className="library-header">
+              <div>
+                <p className="kicker">
+                  06 / LIBRARY
+                </p>
+
+                <h1 className="section-title library-title">
+                  The works.
+                  <br />
+                  Read, watch,
+                  <br />
+                  listen.
+                </h1>
+
+                <p className="body-large library-lead">
+                  A living archive of
+                  books, experiments,
+                  media, and other
+                  original work.
+                </p>
+              </div>
+            </header>
+
+            <div className="library-filters">
+              {MEDIA_FILTERS.map(
+                (
+                  mediaFilter
+                ) => {
+                  const count =
+                    mediaFilter.id ===
+                    "all"
+                      ? items.length
+                      : items.filter(
+                          (
+                            item
+                          ) =>
+                            getMediaFilter(
+                              item.kind
+                            ) ===
+                            mediaFilter.id
+                        ).length;
+
+                  return (
+                    <button
+                      type="button"
+                      className="library-filter"
+                      data-active={
+                        filter ===
+                        mediaFilter.id
+                          ? "true"
+                          : "false"
+                      }
+                      key={
+                        mediaFilter.id
+                      }
+                      onClick={() =>
+                        setFilter(
+                          mediaFilter.id
+                        )
+                      }
+                    >
+                      <span>
+                        {
+                          mediaFilter.label
+                        }
+                      </span>
+
+                      <strong>
+                        {String(
+                          count
+                        ).padStart(
+                          2,
+                          "0"
+                        )}
+                      </strong>
+                    </button>
+                  );
+                }
+              )}
+            </div>
+
+            {loading && (
+              <div className="library-loading">
+                <span className="status-dot" />
+
+                <span>
+                  LOADING
+                </span>
+              </div>
+            )}
+
+            {error && (
+              <div
+                className="library-error"
+                role="alert"
+              >
+                <strong>
+                  Library unavailable
+                </strong>
+
+                <p>
+                  {error}
+                </p>
+              </div>
+            )}
+
+            {!loading &&
+              !error && (
+                <div className="library-layout">
+                  <section className="library-gallery">
+                    <div className="library-catalog-header">
+                      <div>
+                        <p className="kicker">
+                          COLLECTION
+                        </p>
+
+                        <h2>
+                          {filter ===
+                          "all"
+                            ? "Gallery"
+                            : MEDIA_FILTERS.find(
+                                (
+                                  mediaFilter
+                                ) =>
+                                  mediaFilter.id ===
+                                  filter
+                              )?.label}
+                        </h2>
+                      </div>
+
+                      <span>
+                        {String(
+                          filteredItems.length
+                        ).padStart(
+                          2,
+                          "0"
+                        )}
+                      </span>
+                    </div>
+
+                    {featuredItems.length >
+                      0 && (
+                      <div className="library-featured-strip">
+                        {featuredItems.map(
+                          (
+                            item
+                          ) => {
+                            const active =
+                              selected?.sha ===
+                              item.sha;
+
+                            return (
+                              <button
+                                type="button"
+                                className="library-featured-card"
+                                data-active={
+                                  active
+                                    ? "true"
+                                    : "false"
+                                }
+                                key={
+                                  `${item.branch}:${item.path}`
+                                }
+                                onClick={() =>
+                                  selectItem(
+                                    item
+                                  )
+                                }
+                              >
+                                <div className="library-featured-card-visual">
+                                  {item.coverUrl ? (
+                                    <img
+                                      src={
+                                        item.coverUrl
+                                      }
+                                      alt=""
+                                      loading="lazy"
+                                      decoding="async"
+                                    />
+                                  ) : (
+                                    <span>
+                                      {
+                                        getPreviewGlyph(
+                                          item.kind
+                                        )
+                                      }
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="library-featured-card-content">
+                                  <span>
+                                    FEATURED
+                                  </span>
+
+                                  <strong>
+                                    {
+                                      item.title
+                                    }
+                                  </strong>
+
+                                  {item.year && (
+                                    <small>
+                                      {
+                                        item.year
+                                      }
+                                    </small>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          }
+                        )}
+                      </div>
+                    )}
+
+                    <div className="library-list">
+                      {regularItems.map(
+                        (
+                          item
+                        ) => {
+                          const active =
+                            selected?.sha ===
+                            item.sha;
+
+                          return (
+                            <button
+                              type="button"
+                              className="library-item"
+                              data-active={
+                                active
+                                  ? "true"
+                                  : "false"
+                              }
+                              key={
+                                `${item.branch}:${item.path}`
+                              }
+                              onClick={() =>
+                                selectItem(
+                                  item
+                                )
+                              }
+                            >
+                              <span className="library-item-type">
+                                {
+                                  getCatalogLabel(
+                                    item
+                                  )
+                                }
+                              </span>
+
+                              <span className="library-item-main">
+                                <strong>
+                                  {
+                                    item.title
+                                  }
+                                </strong>
+
+                                <small>
+                                  {item.year ??
+                                    "ORIGINAL WORK"}
+                                </small>
+                              </span>
+
+                              <span
+                                className="library-item-arrow"
+                                aria-hidden="true"
+                              >
+                                →
+                              </span>
+                            </button>
+                          );
+                        }
+                      )}
+
+                      {filteredItems.length ===
+                        0 && (
+                        <div className="library-empty">
+                          No published media
+                          exists in this
+                          category yet.
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="library-preview">
+                    {!selected && (
+                      <div className="library-preview-empty">
+                        <span className="library-preview-empty-glyph">
+                          EXPLORE
+                        </span>
+
+                        <strong>
+                          Discover the
+                          collection
+                        </strong>
+
+                        <p>
+                          Choose a work to
+                          see its preview,
+                          story, and
+                          publication
+                          details.
+                        </p>
+                      </div>
+                    )}
+
+                    {selected && (
+                      <article className="library-preview-card">
+                        <div
+                          className="library-preview-art"
+                          data-kind={
+                            selected.kind
+                          }
+                          data-featured={
+                            selected.featured
+                              ? "true"
+                              : "false"
+                          }
+                        >
+                          <div className="library-preview-art-grid" />
+
+                          <div className="library-preview-art-orbit" />
+
+                          {selected.coverUrl ? (
+                            <img
+                              src={
+                                selected.coverUrl
+                              }
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              className="library-preview-cover"
+                            />
+                          ) : (
+                            <>
+                              <span className="library-preview-art-type">
+                                {
+                                  getPreviewGlyph(
+                                    selected.kind
+                                  )
+                                }
+                              </span>
+
+                              <strong>
+                                {
+                                  selected.title
+                                }
+                              </strong>
+
+                              {selected.author && (
+                                <small>
+                                  {
+                                    selected.author
+                                  }
+                                </small>
+                              )}
+                            </>
+                          )}
+
+                          {selected.coverUrl &&
+                            selected.author && (
+                              <small className="library-preview-cover-author">
+                                {
+                                  selected.author
+                                }
+                              </small>
+                            )}
+
+                          {selected.featured && (
+                            <span className="library-featured-mark">
+                              FEATURED
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="library-preview-content">
+                          <div className="library-preview-kicker">
+                            {
+                              getCatalogLabel(
+                                selected
+                              )
+                            }
+                          </div>
+
+                          <h2>
+                            {
+                              selected.title
+                            }
+                          </h2>
+
+                          {selected.subtitle && (
+                            <p className="library-preview-subtitle">
+                              {
+                                selected.subtitle
+                              }
+                            </p>
+                          )}
+
+                          <p>
+                            {
+                              selected.description ??
+                              "An original work from the Parsa Tak archive."
+                            }
+                          </p>
+
+                          {selected.tags &&
+                            selected.tags.length >
+                              0 && (
+                              <div className="library-preview-tags">
+                                {selected.tags.map(
+                                  (
+                                    tag
+                                  ) => (
+                                    <span
+                                      key={
+                                        tag
+                                      }
+                                    >
+                                      {
+                                        tag
+                                      }
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            )}
+
+                          <div className="library-preview-meta">
+                            {selected.author && (
+                              <span>
+                                {
+                                  selected.author
+                                }
+                              </span>
+                            )}
+
+                            {selected.year && (
+                              <span>
+                                {
+                                  selected.year
+                                }
+                              </span>
+                            )}
+
+                            {selected.language && (
+                              <span>
+                                {
+                                  selected.language
+                                }
+                              </span>
+                            )}
+
+                            {selected.series &&
+                              typeof selected.volume ===
+                                "number" && (
+                                <span>
+                                  {
+                                    selected.series
+                                  }{" "}
+                                  · V
+                                  {String(
+                                    selected.volume
+                                  ).padStart(
+                                    2,
+                                    "0"
+                                  )}
+                                </span>
+                              )}
+
+                            {selected.readingTime && (
+                              <span>
+                                {
+                                  selected.readingTime
+                                }
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="library-preview-actions">
+                            <button
+                              type="button"
+                              className="library-open-button"
+                              onClick={
+                                openItem
+                              }
+                            >
+                              {
+                                getActionLabel(
+                                  selected.kind
+                                )
+                              }{" "}
+                              WORK
+
+                              <span>
+                                →
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    )}
+                  </section>
+                </div>
+              )}
+          </div>
+        </section>
+      </div>
+
+      {viewer}
+    </>
   );
 }
