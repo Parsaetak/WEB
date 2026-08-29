@@ -4,27 +4,32 @@ const layers = [
   {
     number: "01",
     title: "CORE",
-    copy: "A dense red heart. Its pulse sets the rhythm every other layer follows."
+    copy:
+      "A dense red heart. Its pulse sets the rhythm every other layer follows."
   },
   {
     number: "02",
     title: "MEMBRANE",
-    copy: "A breathing boundary. It swells toward your pointer and settles when the pointer rests."
+    copy:
+      "A breathing boundary. It swells toward your pointer and settles when the pointer rests."
   },
   {
     number: "03",
     title: "FLOWS",
-    copy: "Currents running between the core and the membrane, carrying energy outward."
+    copy:
+      "Currents running between the core and the membrane, carrying energy outward."
   },
   {
     number: "04",
     title: "PARTICLES",
-    copy: "Orbiting bodies drifting through the field, brightening as the pointer passes them."
+    copy:
+      "Orbiting bodies drifting through the field, brightening as the pointer passes them."
   },
   {
     number: "05",
     title: "SIGNAL",
-    copy: "You. Pointer movement becomes energy the organism absorbs and radiates back."
+    copy:
+      "You. Pointer movement becomes energy the organism absorbs and radiates back."
   }
 ];
 
@@ -69,7 +74,7 @@ export default function RedMagicScene() {
 
         <div className="page-container">
           <header className="magic-organism-header">
-            <div>
+            <div className="magic-organism-heading">
               <p className="kicker">
                 03 / MAGIC
               </p>
@@ -79,13 +84,16 @@ export default function RedMagicScene() {
               </h1>
 
               <p className="body-large magic-organism-lead">
-                A living interface for exploring
+                A living interface for exploring{" "}
                 responsive systems.
               </p>
             </div>
 
             <div className="magic-organism-status">
-              <span className="status-dot" />
+              <span
+                className="status-dot"
+                aria-hidden="true"
+              />
 
               <span>
                 ALIVE
@@ -107,11 +115,11 @@ export default function RedMagicScene() {
             </div>
 
             <p className="body-large magic-lab-intro-copy">
-              This is the organism itself, running
-              in front of you. Choose a behaviour
-              and move through its field: every
-              change you see is computed live, from
-              the pulse of the core to the reach of
+              This is the organism itself, running{" "}
+              in front of you. Choose a behaviour{" "}
+              and move through its field: every{" "}
+              change you see is computed live, from{" "}
+              the pulse of the core to the reach of{" "}
               the membrane.
             </p>
           </div>
@@ -132,9 +140,9 @@ export default function RedMagicScene() {
             </div>
 
             <p className="body-large magic-organism-purpose-copy">
-              RED MAGIC explores what happens when
-              a digital interface behaves less like
-              a static page and more like a living system:
+              RED MAGIC explores what happens when{" "}
+              a digital interface behaves less like{" "}
+              a static page and more like a living system:{" "}
               responsive, adaptive, and continuously changing.
             </p>
           </section>
@@ -154,9 +162,9 @@ export default function RedMagicScene() {
               </div>
 
               <p className="body magic-model-intro">
-                Everything you saw in the console is
-                produced by five simple layers working
-                together. Nothing is prerecorded, and
+                Everything you saw in the console is{" "}
+                produced by five simple layers working{" "}
+                together. Nothing is prerecorded, and{" "}
                 nothing is random noise.
               </p>
             </div>
@@ -206,7 +214,7 @@ export default function RedMagicScene() {
               </div>
 
               <p className="body magic-principles-intro">
-                The organism is designed around
+                The organism is designed around{" "}
                 response, adaptation, and persistence.
               </p>
             </div>
@@ -257,10 +265,10 @@ export default function RedMagicScene() {
             </div>
 
             <p className="body-large magic-organism-future-copy">
-              RED MAGIC is one small experiment inside
-              a larger question: how far can software
-              move from being a passive tool toward
-              becoming an adaptive system with its own
+              RED MAGIC is one small experiment inside{" "}
+              a larger question: how far can software{" "}
+              move from being a passive tool toward{" "}
+              becoming an adaptive system with its own{" "}
               observable behaviour?
             </p>
           </section>
