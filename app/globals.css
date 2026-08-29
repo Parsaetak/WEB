@@ -4869,6 +4869,709 @@ span {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Home — RED Magic featured system                                          */
+/* -------------------------------------------------------------------------- */
+
+.home-red-magic {
+  position:
+    relative;
+
+  border-bottom:
+    1px solid
+    var(--line);
+
+  background:
+    radial-gradient(
+      circle at 72% 48%,
+      rgba(
+        255,
+        32,
+        32,
+        0.04
+      ),
+      transparent 32%
+    );
+}
+
+.home-red-magic-header {
+  display:
+    grid;
+
+  grid-template-columns:
+    minmax(
+      0,
+      0.9fr
+    )
+    minmax(
+      0,
+      1.1fr
+    );
+
+  align-items:
+    end;
+
+  gap:
+    72px;
+}
+
+.home-red-magic-copy {
+  max-width:
+    680px;
+
+  justify-self:
+    end;
+}
+
+.home-red-magic-copy
+.body-large {
+  white-space:
+    normal;
+
+  word-spacing:
+    0.025em;
+
+  overflow-wrap:
+    break-word;
+}
+
+.home-red-magic-link {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    14px;
+
+  margin-top:
+    24px;
+
+  min-height:
+    40px;
+
+  padding:
+    0 12px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.18
+    );
+
+  color:
+    var(--text-muted);
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.02
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.13em;
+
+  text-transform:
+    uppercase;
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.home-red-magic-link strong {
+  color:
+    var(--red);
+
+  transition:
+    transform 160ms ease;
+}
+
+.home-red-magic-link:hover {
+  color:
+    var(--text);
+
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.34
+    );
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.05
+    );
+
+  transform:
+    translateY(
+      -2px
+    );
+}
+
+.home-red-magic-link:hover strong {
+  transform:
+    translateX(
+      3px
+    );
+}
+
+.home-red-magic-console {
+  position:
+    relative;
+
+  margin-top:
+    52px;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.12
+    );
+
+  background:
+    #060608;
+
+  box-shadow:
+    0 28px 90px
+      rgba(
+        0,
+        0,
+        0,
+        0.3
+      );
+}
+
+.home-red-magic-console-header {
+  min-height:
+    62px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    20px;
+
+  padding:
+    12px 18px;
+
+  border-bottom:
+    1px solid
+    var(--line);
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.012
+    );
+}
+
+.home-red-magic-console-header > div:first-child {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    12px;
+}
+
+.home-red-magic-console-header span {
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.14em;
+
+  text-transform:
+    uppercase;
+}
+
+.home-red-magic-console-header strong {
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.1em;
+}
+
+.home-red-magic-console-status {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+}
+
+.home-red-magic-console-dot {
+  width:
+    5px;
+
+  height:
+    5px;
+
+  border-radius:
+    50%;
+
+  background:
+    var(--red);
+
+  box-shadow:
+    0 0 9px
+      rgba(
+        255,
+        32,
+        32,
+        0.58
+      );
+}
+
+.home-red-magic-stage {
+  position:
+    relative;
+
+  height:
+    clamp(
+      380px,
+      48vw,
+      620px
+    );
+
+  overflow:
+    hidden;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(
+        255,
+        32,
+        32,
+        0.055
+      ),
+      transparent 48%
+    );
+}
+
+.home-red-magic-stage
+.red-magic {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  display:
+    block;
+}
+
+.home-red-magic-stage
+.red-magic
+canvas {
+  display:
+    block;
+
+  width:
+    100%;
+
+  height:
+    100%;
+}
+
+.home-red-magic-console-footer {
+  min-height:
+    48px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    8px 24px;
+
+  padding:
+    10px 16px;
+
+  border-top:
+    1px solid
+    var(--line-soft);
+
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    7px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.12em;
+
+  text-transform:
+    uppercase;
+}
+
+.home-red-magic-console-footer span {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+}
+
+.home-red-magic-console-footer span::before {
+  content:
+    "";
+
+  width:
+    3px;
+
+  height:
+    3px;
+
+  border-radius:
+    50%;
+
+  background:
+    var(--red);
+
+  opacity:
+    0.55;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Home system list                                                           */
+/* -------------------------------------------------------------------------- */
+
+.home-system-list {
+  margin-top:
+    16px;
+
+  border-top:
+    1px solid
+    var(--line);
+}
+
+.home-system-item {
+  display:
+    grid;
+
+  grid-template-columns:
+    46px
+    minmax(
+      0,
+      1fr
+    )
+    32px;
+
+  align-items:
+    center;
+
+  gap:
+    18px;
+
+  padding:
+    18px 4px;
+
+  border-bottom:
+    1px solid
+    var(--line-soft);
+
+  transition:
+    background-color
+      160ms ease,
+    padding
+      160ms ease;
+}
+
+.home-system-item:hover {
+  padding-left:
+    9px;
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.018
+    );
+}
+
+.home-system-item-number {
+  color:
+    rgba(
+      255,
+      32,
+      32,
+      0.5
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.1em;
+}
+
+.home-system-item h3 {
+  margin:
+    0;
+
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.12em;
+
+  line-height:
+    1.4;
+}
+
+.home-system-item p {
+  max-width:
+    620px;
+
+  margin:
+    5px 0 0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    12px;
+
+  line-height:
+    1.65;
+
+  white-space:
+    normal;
+
+  overflow-wrap:
+    break-word;
+}
+
+.home-system-item-arrow {
+  color:
+    var(--red);
+
+  font-family:
+    var(--font-mono);
+
+  transition:
+    transform
+      160ms ease;
+}
+
+.home-system-item:hover
+.home-system-item-arrow {
+  transform:
+    translateX(
+      3px
+    );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Home responsive additions                                                  */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .home-red-magic-header {
+    grid-template-columns:
+      1fr;
+  }
+
+  .home-red-magic-copy {
+    justify-self:
+      start;
+
+    max-width:
+      760px;
+  }
+}
+
+@media (max-width: 760px) {
+  .home-red-magic-console {
+    margin-top:
+      38px;
+  }
+
+  .home-red-magic-stage {
+    height:
+      420px;
+  }
+
+  .home-red-magic-console-header {
+    padding:
+      11px 14px;
+  }
+
+  .home-red-magic-console-footer {
+    justify-content:
+      flex-start;
+
+    gap:
+      8px 16px;
+  }
+
+  .home-system-item {
+    grid-template-columns:
+      34px
+      minmax(
+        0,
+        1fr
+      )
+      24px;
+  }
+}
+
+@media (max-width: 560px) {
+  .home-red-magic-stage {
+    height:
+      340px;
+  }
+
+  .home-red-magic-console-footer {
+    display:
+      grid;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(
+          0,
+          1fr
+        )
+      );
+
+    gap:
+      7px 12px;
+  }
+
+  .home-red-magic-console-footer span {
+    font-size:
+      6px;
+  }
+
+  .home-system-item {
+    grid-template-columns:
+      28px
+      minmax(
+        0,
+        1fr
+      )
+      20px;
+
+    gap:
+      10px;
+
+    padding:
+      15px 2px;
+  }
+
+  .home-system-item h3 {
+    font-size:
+      9px;
+  }
+
+  .home-system-item p {
+    font-size:
+      10px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* Home capabilities                                                          */
 /* -------------------------------------------------------------------------- */
 
