@@ -183,10 +183,14 @@ export default function HomeScene() {
             {fields.map(
               (field) => (
                 <span
-                  key={field}
+                  key={
+                    field
+                  }
                   className="home-exploration-item"
                 >
-                  {field}
+                  {
+                    field
+                  }
                 </span>
               )
             )}
@@ -233,13 +237,17 @@ export default function HomeScene() {
                   AI
                 </span>
 
-                <i>·</i>
+                <i>
+                  ·
+                </i>
 
                 <span>
                   REASONING
                 </span>
 
-                <i>·</i>
+                <i>
+                  ·
+                </i>
 
                 <span>
                   SYSTEMS
@@ -408,3 +416,4 @@ export default function HomeScene() {
     </div>
   );
 }
+
