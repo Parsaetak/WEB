@@ -9684,6 +9684,17 @@ html.red-cursor-enabled * {
   }
 }
 
+html.pdf-reader-active .red-cursor {
+  display:
+    none !important;
+}
+
+html.pdf-reader-active,
+html.pdf-reader-active * {
+  cursor:
+    auto !important;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Work scene                                                                 */
 /* -------------------------------------------------------------------------- */
