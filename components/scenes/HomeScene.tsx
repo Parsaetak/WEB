@@ -55,6 +55,10 @@ export default function HomeScene() {
 
   return (
     <div className="home-scene">
+      {/* ------------------------------------------------------------------ */}
+      {/* Hero                                                               */}
+      {/* ------------------------------------------------------------------ */}
+
       <section className="hero home-origin">
         <div
           className="home-origin-grid"
@@ -180,6 +184,10 @@ export default function HomeScene() {
         </div>
       </section>
 
+      {/* ------------------------------------------------------------------ */}
+      {/* Exploration                                                         */}
+      {/* ------------------------------------------------------------------ */}
+
       <section className="section home-capabilities">
         <div className="page-container">
           <div className="home-intro-block">
@@ -211,9 +219,7 @@ export default function HomeScene() {
             {fields.map(
               (field) => (
                 <span
-                  key={
-                    field
-                  }
+                  key={field}
                   className="home-exploration-item"
                 >
                   {field}
@@ -223,6 +229,105 @@ export default function HomeScene() {
           </div>
         </div>
       </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* RED Magic featured system                                           */}
+      {/* ------------------------------------------------------------------ */}
+
+      <section className="section home-red-magic">
+        <div className="page-container">
+          <div className="home-red-magic-header">
+            <div>
+              <p className="kicker">
+                00 / LIVE SYSTEM
+              </p>
+
+              <h2 className="section-title">
+                RED Magic
+                <br />
+                is alive.
+              </h2>
+            </div>
+
+            <div className="home-red-magic-copy">
+              <p className="body-large">
+                A small computational organism built{" "}
+                directly into this website. It responds{" "}
+                to movement, changes its behaviour, and{" "}
+                turns interaction into visible energy.
+              </p>
+
+              <a
+                className="home-red-magic-link"
+                href="#magic"
+              >
+                <span>
+                  OPEN RED MAGIC
+                </span>
+
+                <strong>
+                  →
+                </strong>
+              </a>
+            </div>
+          </div>
+
+          <div className="home-red-magic-console">
+            <div className="home-red-magic-console-header">
+              <div>
+                <span>
+                  ORGANISM
+                </span>
+
+                <strong>
+                  RED MAGIC
+                </strong>
+              </div>
+
+              <div className="home-red-magic-console-status">
+                <span
+                  className="home-red-magic-console-dot"
+                  aria-hidden="true"
+                />
+
+                <span>
+                  LIVE
+                </span>
+              </div>
+            </div>
+
+            <div className="home-red-magic-stage">
+              <RedMagic />
+            </div>
+
+            <div className="home-red-magic-console-footer">
+              <span>
+                CORE
+              </span>
+
+              <span>
+                MEMBRANE
+              </span>
+
+              <span>
+                FLOWS
+              </span>
+
+              <span>
+                PARTICLES
+              </span>
+
+              <span>
+                SIGNAL
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Systems                                                             */}
+      {/* ------------------------------------------------------------------ */}
 
       <section className="section home-systems">
         <div className="page-container">
@@ -259,11 +364,21 @@ export default function HomeScene() {
               </div>
 
               <strong>
-                AI
+                <span>
+                  AI
+                </span>
+
                 <i>·</i>
-                REASONING
+
+                <span>
+                  REASONING
+                </span>
+
                 <i>·</i>
-                SYSTEMS
+
+                <span>
+                  SYSTEMS
+                </span>
               </strong>
 
               <span className="home-systems-overview-arrow">
@@ -271,8 +386,52 @@ export default function HomeScene() {
               </span>
             </div>
           </div>
+
+          <div className="home-system-list">
+            {systems.map(
+              (system) => (
+                <article
+                  className="home-system-item"
+                  key={
+                    system.number
+                  }
+                >
+                  <span className="home-system-item-number">
+                    {
+                      system.number
+                    }
+                  </span>
+
+                  <div>
+                    <h3>
+                      {
+                        system.title
+                      }
+                    </h3>
+
+                    <p>
+                      {
+                        system.copy
+                      }
+                    </p>
+                  </div>
+
+                  <span
+                    className="home-system-item-arrow"
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </article>
+              )
+            )}
+          </div>
         </div>
       </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Direction                                                           */}
+      {/* ------------------------------------------------------------------ */}
 
       <section className="section home-direction">
         <div className="page-container">
@@ -354,6 +513,10 @@ export default function HomeScene() {
           </div>
         </div>
       </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Closing statement                                                   */}
+      {/* ------------------------------------------------------------------ */}
 
       <section className="section home-final">
         <div className="page-container">
