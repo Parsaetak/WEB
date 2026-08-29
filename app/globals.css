@@ -2612,15 +2612,38 @@ span {
 }
 
 .home-origin-core {
-  position: relative;
+  position:
+    absolute;
 
-  min-height: 520px;
+  left:
+    79%;
 
-  display: grid;
+  top:
+    48%;
 
-  place-items: center;
+  width:
+    180px;
 
-  isolation: isolate;
+  height:
+    180px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  pointer-events:
+    none;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+
+  z-index:
+    5;
 }
 
 .home-origin-core-atmosphere {
@@ -5679,9 +5702,21 @@ span {
   }
 
   .home-origin-core {
-    min-height:
-      220px;
-  }
+  left:
+    68%;
+
+  top:
+    58%;
+
+  width:
+    150px;
+
+  height:
+    150px;
+
+  min-height:
+    0;
+}
 
   .home-origin-core-mark {
     width:
@@ -5828,9 +5863,21 @@ span {
   }
 
   .home-origin-core {
-    min-height:
-      185px;
-  }
+  left:
+    68%;
+
+  top:
+    57%;
+
+  width:
+    125px;
+
+  height:
+    125px;
+
+  min-height:
+    0;
+}
 
   .home-origin-core-mark {
     width:
