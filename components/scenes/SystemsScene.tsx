@@ -5,7 +5,8 @@ const systems = [
     layer: "OPERATING CONSTITUTION",
     role: "GOVERN",
     title: "Defines the environment",
-    copy: "Sets the rules for how an intelligent system operates: instruction hierarchy, evidence handling, tools, context, security, memory, and self-governance."
+    copy:
+      "Sets the rules for how an intelligent system operates: instruction hierarchy, evidence handling, tools, context, security, memory, and self-governance."
   },
   {
     number: "02",
@@ -13,7 +14,8 @@ const systems = [
     layer: "REASONING PROTOCOL",
     role: "REASON",
     title: "Strengthens the thinking",
-    copy: "Structures reasoning through decomposition, verification, critique, adversarial checking, uncertainty handling, and iterative refinement."
+    copy:
+      "Structures reasoning through decomposition, verification, critique, adversarial checking, uncertainty handling, and iterative refinement."
   },
   {
     number: "03",
@@ -21,11 +23,10 @@ const systems = [
     layer: "SYSTEM IMPROVEMENT",
     role: "IMPROVE",
     title: "Changes the system",
-    copy: "Provides a discipline for finding weaknesses, redesigning components, testing consequences, measuring results, and iterating."
+    copy:
+      "Provides a discipline for finding weaknesses, redesigning components, testing consequences, measuring results, and iterating."
   }
 ];
-
-
 
 export default function SystemsScene() {
   return (
@@ -36,15 +37,27 @@ export default function SystemsScene() {
           aria-hidden="true"
         >
           <span className="systems-blueprint-grid" />
-          <span className="systems-blueprint-cross systems-blueprint-cross-one" />
-          <span className="systems-blueprint-cross systems-blueprint-cross-two" />
-          <span className="systems-blueprint-axis systems-blueprint-axis-x" />
-          <span className="systems-blueprint-axis systems-blueprint-axis-y" />
+
+          <span
+            className="systems-blueprint-cross systems-blueprint-cross-one"
+          />
+
+          <span
+            className="systems-blueprint-cross systems-blueprint-cross-two"
+          />
+
+          <span
+            className="systems-blueprint-axis systems-blueprint-axis-x"
+          />
+
+          <span
+            className="systems-blueprint-axis systems-blueprint-axis-y"
+          />
         </div>
 
         <div className="page-container">
           <header className="systems-header">
-            <div>
+            <div className="systems-header-copy">
               <p className="kicker">
                 02 / SYSTEMS
               </p>
@@ -58,15 +71,21 @@ export default function SystemsScene() {
               </h1>
 
               <p className="body-large systems-lead">
-                Three connected frameworks:
-                govern the environment,
-                strengthen reasoning,
+                Three connected frameworks:{" "}
+                govern the environment,{" "}
+                strengthen reasoning,{" "}
                 improve the system.
               </p>
             </div>
 
-            <div className="systems-status">
-              <span className="systems-status-dot" />
+            <div
+              className="systems-status"
+              aria-label="Systems architecture status"
+            >
+              <span
+                className="systems-status-dot"
+                aria-hidden="true"
+              />
 
               <span>
                 ARCHITECTURE
@@ -79,7 +98,9 @@ export default function SystemsScene() {
               (system) => (
                 <article
                   className="systems-module"
-                  key={system.number}
+                  key={
+                    system.number
+                  }
                   data-module={
                     system.number
                   }
@@ -90,24 +111,42 @@ export default function SystemsScene() {
                     <div className="systems-module-corner systems-module-corner-bl" />
                     <div className="systems-module-corner systems-module-corner-br" />
 
-                    
+                    <div className="systems-module-index">
+                      {
+                        system.number
+                      }
+                    </div>
+
+                    <div className="systems-module-role">
+                      {
+                        system.role
+                      }
+                    </div>
 
                     <div className="systems-module-core">
                       <span className="systems-module-code">
-                        {system.code}
+                        {
+                          system.code
+                        }
                       </span>
 
                       <span className="systems-module-layer">
-                        {system.layer}
+                        {
+                          system.layer
+                        }
                       </span>
 
                       <h2>
-                        {system.title}
+                        {
+                          system.title
+                        }
                       </h2>
                     </div>
 
                     <p className="systems-module-copy">
-                      {system.copy}
+                      {
+                        system.copy
+                      }
                     </p>
 
                     <div className="systems-module-line">
@@ -119,9 +158,8 @@ export default function SystemsScene() {
             )}
           </div>
 
-          
           <section className="systems-principle">
-            <div>
+            <div className="systems-principle-heading">
               <p className="kicker">
                 CORE IDEA
               </p>
@@ -134,15 +172,13 @@ export default function SystemsScene() {
             </div>
 
             <p className="body-large systems-principle-copy">
-              The surrounding system matters:
-              how instructions are defined,
-              how reasoning is checked,
-              and how the system learns from
+              The surrounding system matters:{" "}
+              how instructions are defined,{" "}
+              how reasoning is checked,{" "}
+              and how the system learns from{" "}
               its own weaknesses.
             </p>
           </section>
-
-          
         </div>
       </section>
     </div>
