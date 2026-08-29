@@ -79,9 +79,6 @@ async function inspectPdfResource(
     | string
     | null = null;
 
-  /*
-   * First try HEAD. This is cheap and avoids downloading the document.
-   */
   try {
     const headResponse =
       await fetch(
@@ -89,10 +86,8 @@ async function inspectPdfResource(
         {
           method:
             "HEAD",
-
           cache:
             "no-store",
-
           signal
         }
       );
@@ -141,18 +136,9 @@ async function inspectPdfResource(
         "bytes";
     }
   } catch {
-    /*
-     * HEAD can fail because of CORS or a hosting restriction.
-     * The native viewer should still be allowed to load.
-     */
+    /* Best-effort metadata probe. */
   }
 
-  /*
-   * Verify actual byte-range support with the smallest possible request.
-   *
-   * We request one byte only. This is intentionally not used to render
-   * the PDF. Chrome's native viewer remains responsible for the document.
-   */
   try {
     const rangeResponse =
       await fetch(
@@ -160,15 +146,12 @@ async function inspectPdfResource(
         {
           method:
             "GET",
-
           headers: {
             Range:
               `bytes=0-${RANGE_PROBE_SIZE - 1}`
           },
-
           cache:
             "no-store",
-
           signal
         }
       );
@@ -226,9 +209,7 @@ async function inspectPdfResource(
       }
     }
   } catch {
-    /*
-     * Range verification is best-effort.
-     */
+    /* Range verification is best-effort. */
   }
 
   return {
@@ -264,6 +245,23 @@ export default function LibraryPdfReader({
   ] = useState<PdfResourceInfo | null>(
     null
   );
+
+  /*
+   * Native Chrome PDF viewer owns the iframe. Its internal cursor cannot
+   * be styled from the parent document, so temporarily hide our custom
+   * cursor while the PDF reader is mounted.
+   */
+  useEffect(() => {
+    document.documentElement.classList.add(
+      "pdf-reader-active"
+    );
+
+    return () => {
+      document.documentElement.classList.remove(
+        "pdf-reader-active"
+      );
+    };
+  }, []);
 
   useEffect(() => {
     const controller =
