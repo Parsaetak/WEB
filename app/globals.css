@@ -4711,94 +4711,31 @@ span {
 }
 
 /* -------------------------------------------------------------------------- */
-/* RED Magic                                                                 */
+/* RED Magic                                                                  */
 /* -------------------------------------------------------------------------- */
 
-.magic-section {
+.red-magic-scene {
   position: relative;
+
+  isolation: isolate;
+
+  overflow: clip;
+}
+
+.magic-organism {
+  position: relative;
+
+  min-height:
+    calc(
+      100vh -
+      var(--shell-header)
+    );
 
   overflow: clip;
 
   isolation: isolate;
-}
 
-.magic-section::before {
-  content: "";
-
-  position: absolute;
-
-  inset: 0;
-
-  pointer-events: none;
-
-  background:
-    radial-gradient(
-      circle at 50% 45%,
-      rgba(
-        255,
-        20,
-        20,
-        0.055
-      ),
-      transparent 34%
-    );
-}
-
-.magic-system {
-  position: relative;
-
-  z-index: 2;
-
-  display: grid;
-
-  grid-template-columns:
-    minmax(
-      360px,
-      1fr
-    )
-    minmax(
-      0,
-      0.86fr
-    );
-
-  align-items: center;
-
-  gap: 64px;
-}
-
-.magic-system-copy {
-  min-width: 0;
-}
-
-.magic-system-lead {
-  max-width: 700px;
-
-  margin:
-    24px 0 0;
-}
-
-.magic-system-organism {
-  position: relative;
-
-  min-height: 520px;
-
-  display: grid;
-
-  place-items: center;
-
-  isolation: isolate;
-}
-
-.magic-system-organism::before {
-  content: "";
-
-  position: absolute;
-
-  width: 78%;
-
-  aspect-ratio: 1;
-
-  border:
+  border-bottom:
     1px solid
     rgba(
       255,
@@ -4807,31 +4744,46 @@ span {
       0.08
     );
 
-  border-radius: 50%;
-
-  box-shadow:
-    0 0 80px
+  background:
+    radial-gradient(
+      circle at 72% 18%,
       rgba(
         255,
         32,
         32,
-        0.06
+        0.07
       ),
-    inset 0 0 80px
+      transparent 27%
+    ),
+    radial-gradient(
+      circle at 18% 78%,
       rgba(
-        255,
-        32,
-        32,
-        0.025
-      );
+        120,
+        0,
+        0,
+        0.035
+      ),
+      transparent 30%
+    );
 }
 
-.magic-system-organism::after {
-  content: "";
-
+.magic-organism-field {
   position: absolute;
 
-  width: 54%;
+  inset: 0;
+
+  z-index: 0;
+
+  pointer-events: none;
+
+  overflow: hidden;
+}
+
+.magic-organism-ring {
+  position: absolute;
+
+  left: 72%;
+  top: 38%;
 
   aspect-ratio: 1;
 
@@ -4841,86 +4793,290 @@ span {
       255,
       32,
       32,
-      0.12
-    );
-
-  border-radius:
-    44%
-    56%
-    52%
-    48%;
-
-  transform:
-    rotate(19deg);
-
-  box-shadow:
-    0 0 50px
-      rgba(
-        255,
-        32,
-        32,
-        0.05
-      );
-}
-
-.magic-organism-core {
-  position: relative;
-
-  z-index: 3;
-
-  width: 150px;
-  height: 150px;
-
-  display: grid;
-
-  place-items: center;
-
-  border:
-    1px solid
-    rgba(
-      255,
-      32,
-      32,
-      0.28
+      0.045
     );
 
   border-radius: 50%;
 
-  background:
-    radial-gradient(
-      circle,
-      rgba(
-        255,
-        32,
-        32,
-        0.16
-      ),
-      rgba(
-        6,
-        6,
-        8,
-        0.88
-      ) 62%
+  transform:
+    translate(
+      -50%,
+      -50%
     );
-
-  box-shadow:
-    0 0 70px
-      rgba(
-        255,
-        32,
-        32,
-        0.12
-      );
 }
 
-.magic-organism-core span {
-  color:
-    rgba(
-      255,
-      205,
-      190,
-      0.92
+.magic-organism-ring-one {
+  width: 460px;
+
+  animation:
+    magic-ring-one
+    28s
+    linear
+    infinite;
+}
+
+.magic-organism-ring-two {
+  width: 680px;
+
+  opacity: 0.7;
+
+  animation:
+    magic-ring-two
+    42s
+    linear
+    infinite
+    reverse;
+}
+
+.magic-organism-ring-three {
+  width: 900px;
+
+  opacity: 0.4;
+
+  animation:
+    magic-ring-three
+    58s
+    linear
+    infinite;
+}
+
+@keyframes magic-ring-one {
+  from {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(0deg);
+  }
+
+  to {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(360deg);
+  }
+}
+
+@keyframes magic-ring-two {
+  from {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(0deg);
+  }
+
+  to {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(-360deg);
+  }
+}
+
+@keyframes magic-ring-three {
+  from {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(0deg);
+  }
+
+  to {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(360deg);
+  }
+}
+
+.magic-organism-axis {
+  position: absolute;
+
+  pointer-events: none;
+
+  opacity: 0.38;
+}
+
+.magic-organism-axis-x {
+  left: 42%;
+  top: 38%;
+
+  width: 58%;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(
+        255,
+        32,
+        32,
+        0.09
+      ),
+      transparent
     );
+}
+
+.magic-organism-axis-y {
+  left: 72%;
+  top: 8%;
+
+  width: 1px;
+  height: 62%;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(
+        255,
+        32,
+        32,
+        0.09
+      ),
+      transparent
+    );
+}
+
+.magic-organism-node {
+  position: absolute;
+
+  width: 5px;
+  height: 5px;
+
+  border-radius: 50%;
+
+  background:
+    var(--red);
+
+  box-shadow:
+    0 0 12px
+      rgba(
+        255,
+        32,
+        32,
+        0.6
+      );
+
+  opacity: 0.45;
+
+  animation:
+    magic-node-pulse
+    3.8s
+    ease-in-out
+    infinite;
+}
+
+.magic-organism-node-one {
+  left: 69%;
+  top: 23%;
+}
+
+.magic-organism-node-two {
+  left: 82%;
+  top: 36%;
+
+  animation-delay:
+    0.7s;
+}
+
+.magic-organism-node-three {
+  left: 62%;
+  top: 53%;
+
+  animation-delay:
+    1.2s;
+}
+
+.magic-organism-node-four {
+  left: 78%;
+  top: 68%;
+
+  animation-delay:
+    1.8s;
+}
+
+@keyframes magic-node-pulse {
+  0%,
+  100% {
+    opacity: 0.22;
+
+    transform:
+      scale(0.72);
+  }
+
+  50% {
+    opacity: 0.85;
+
+    transform:
+      scale(1.18);
+  }
+}
+
+.magic-organism > .page-container {
+  position: relative;
+
+  z-index: 2;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Magic organism header                                                      */
+/* -------------------------------------------------------------------------- */
+
+.magic-organism-header {
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+
+  gap: 40px;
+}
+
+.magic-organism-heading {
+  min-width: 0;
+}
+
+.magic-organism-title {
+  margin-top: 10px;
+}
+
+.magic-organism-lead {
+  max-width: 620px;
+
+  margin-top: 22px;
+
+  white-space: normal;
+
+  overflow-wrap: break-word;
+
+  word-spacing: 0.025em;
+}
+
+.magic-organism-status {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  flex:
+    0 0 auto;
+
+  color:
+    var(--text-muted);
 
   font-family:
     var(--font-mono);
@@ -4930,14 +5086,68 @@ span {
   font-weight: 700;
 
   letter-spacing:
-    0.2em;
+    0.16em;
 
   text-transform:
     uppercase;
 }
 
-.magic-organism-orbit {
-  position: absolute;
+/* -------------------------------------------------------------------------- */
+/* Magic laboratory                                                           */
+/* -------------------------------------------------------------------------- */
+
+.magic-lab-intro {
+  display: grid;
+
+  grid-template-columns:
+    minmax(
+      0,
+      0.8fr
+    )
+    minmax(
+      0,
+      1.2fr
+    );
+
+  align-items: end;
+
+  gap: 64px;
+
+  margin-top: 96px;
+}
+
+.magic-lab-intro-copy {
+  max-width: 720px;
+
+  justify-self: end;
+
+  white-space: normal;
+
+  overflow-wrap: break-word;
+
+  word-spacing: 0.025em;
+}
+
+.magic-lab {
+  margin-top: 42px;
+}
+
+.magic-lab-bar {
+  display: grid;
+
+  grid-template-columns:
+    auto
+    minmax(
+      0,
+      1fr
+    );
+
+  align-items: center;
+
+  gap: 18px;
+
+  padding:
+    10px;
 
   border:
     1px solid
@@ -4945,64 +5155,224 @@ span {
       255,
       32,
       32,
-      0.08
+      0.1
     );
 
-  border-radius: 50%;
-
-  pointer-events: none;
-
-  animation:
-    magic-orbit
-    20s
-    linear
-    infinite;
+  background:
+    rgba(
+      8,
+      9,
+      12,
+      0.78
+    );
 }
 
-.magic-organism-orbit-one {
-  width: 66%;
-  aspect-ratio: 1;
+.magic-controls {
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
 }
 
-.magic-organism-orbit-two {
-  width: 86%;
-  aspect-ratio: 0.72;
+.magic-control,
+.magic-sound-control {
+  min-height: 34px;
 
-  transform:
-    rotate(34deg);
+  padding:
+    0 11px;
 
-  animation-duration: 28s;
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.07
+    );
 
-  animation-direction: reverse;
+  color:
+    var(--text-muted);
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.014
+    );
+
+  cursor: pointer;
+
+  font-family:
+    var(--font-mono);
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing:
+    0.11em;
+
+  text-transform:
+    uppercase;
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
 }
 
-.magic-organism-orbit-three {
-  width: 96%;
-  aspect-ratio: 1;
+.magic-control:hover,
+.magic-sound-control:hover {
+  color:
+    var(--text);
 
-  transform:
-    rotate(-21deg);
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.22
+    );
 
-  animation-duration: 36s;
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.035
+    );
 }
 
-@keyframes magic-orbit {
-  from {
-    transform:
-      rotate(0deg);
-  }
+.magic-control[aria-pressed="true"] {
+  color:
+    var(--text);
 
-  to {
-    transform:
-      rotate(360deg);
-  }
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.35
+    );
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.07
+    );
+
+  box-shadow:
+    inset 0 0 20px
+      rgba(
+        255,
+        32,
+        32,
+        0.025
+      );
 }
 
-/* -------------------------------------------------------------------------- */
-/* RED Magic details                                                          */
-/* -------------------------------------------------------------------------- */
+.magic-sound-control:disabled {
+  opacity:
+    0.45;
 
-.magic-metrics {
+  cursor:
+    default;
+}
+
+.magic-lab-actions {
+  min-width: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content:
+    flex-end;
+
+  gap: 12px;
+}
+
+.magic-lab-note {
+  min-width: 0;
+
+  margin: 0;
+
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size: 9px;
+
+  line-height:
+    1.5;
+
+  text-align: right;
+
+  overflow-wrap: break-word;
+}
+
+.magic-lab-frame {
+  position: relative;
+
+  margin-top: 10px;
+
+  padding: 10px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.1
+    );
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(
+        255,
+        32,
+        32,
+        0.045
+      ),
+      transparent 44%
+    ),
+    rgba(
+      5,
+      6,
+      8,
+      0.9
+    );
+}
+
+.magic-lab-shell {
+  position: relative;
+
+  min-height: 560px;
+
+  overflow: hidden;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.045
+    );
+
+  background:
+    #060608;
+}
+
+.magic-vitals {
   display: grid;
 
   grid-template-columns:
@@ -5014,31 +5384,17 @@ span {
       )
     );
 
-  gap: 12px;
+  gap: 1px;
 
-  margin-top: 48px;
-}
-
-.magic-metric {
-  position: relative;
-
-  min-height: 116px;
-
-  display: flex;
-
-  flex-direction: column;
-
-  justify-content: space-between;
-
-  padding: 18px;
+  margin-top: 1px;
 
   border:
     1px solid
     rgba(
       255,
-      32,
-      32,
-      0.08
+      255,
+      255,
+      0.045
     );
 
   background:
@@ -5046,38 +5402,33 @@ span {
       255,
       255,
       255,
-      0.012
+      0.045
     );
-
-  overflow: hidden;
 }
 
-.magic-metric::before {
-  content: "";
+.magic-vitals > div {
+  min-height: 74px;
 
-  position: absolute;
+  display: flex;
 
-  top: 0;
-  left: 0;
+  flex-direction: column;
 
-  width: 100%;
-  height: 1px;
+  justify-content:
+    space-between;
+
+  padding:
+    13px 16px;
 
   background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(
-        255,
-        32,
-        32,
-        0.26
-      ),
-      transparent
+    rgba(
+      7,
+      8,
+      10,
+      0.96
     );
 }
 
-.magic-metric-label {
+.magic-vitals span {
   color:
     var(--text-muted);
 
@@ -5088,193 +5439,646 @@ span {
 
   font-weight: 700;
 
-  letter-spacing: 0.16em;
+  letter-spacing:
+    0.15em;
 
   text-transform:
     uppercase;
 }
 
-.magic-metric-value {
+.magic-vitals strong {
   color:
     var(--text);
 
   font-family:
     var(--font-mono);
 
-  font-size: 18px;
+  font-size: 12px;
 
   font-weight: 800;
 
   letter-spacing:
-    0.05em;
+    0.08em;
 }
 
-.magic-divider {
-  position: relative;
+/* -------------------------------------------------------------------------- */
+/* Magic purpose                                                              */
+/* -------------------------------------------------------------------------- */
 
-  height: 1px;
+.magic-organism-purpose {
+  display: grid;
 
-  margin-top: 30px;
+  grid-template-columns:
+    minmax(
+      0,
+      0.78fr
+    )
+    minmax(
+      0,
+      1.22fr
+    );
 
-  overflow: hidden;
+  align-items: end;
+
+  gap: 64px;
+
+  margin-top: 112px;
+
+  padding-top: 80px;
+
+  border-top:
+    1px solid
+    var(--line);
+}
+
+.magic-organism-purpose-copy {
+  max-width: 700px;
+
+  justify-self: end;
+
+  white-space: normal;
+
+  overflow-wrap:
+    break-word;
+
+  word-spacing:
+    0.025em;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Simulation model                                                           */
+/* -------------------------------------------------------------------------- */
+
+.magic-model {
+  margin-top: 112px;
+
+  padding-top: 80px;
+
+  border-top:
+    1px solid
+    var(--line);
+}
+
+.magic-model-header {
+  display: grid;
+
+  grid-template-columns:
+    minmax(
+      0,
+      0.82fr
+    )
+    minmax(
+      0,
+      1.18fr
+    );
+
+  align-items: end;
+
+  gap: 64px;
+}
+
+.magic-model-intro {
+  max-width: 680px;
+
+  justify-self: end;
+
+  white-space:
+    normal;
+
+  overflow-wrap:
+    break-word;
+
+  word-spacing:
+    0.025em;
+}
+
+.magic-model-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      5,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  margin-top: 52px;
+
+  border-top:
+    1px solid
+    var(--line);
+
+  border-bottom:
+    1px solid
+    var(--line);
+}
+
+.magic-model-layer {
+  min-width: 0;
+
+  min-height: 230px;
+
+  padding:
+    22px 18px;
+
+  border-left:
+    1px solid
+    var(--line-soft);
 
   background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(
-        255,
-        32,
-        32,
-        0.12
-      ),
-      transparent
+    rgba(
+      255,
+      255,
+      255,
+      0.01
     );
 }
 
-.magic-divider span {
-  position: absolute;
-
-  top: 0;
-  left: -20%;
-
-  width: 20%;
-  height: 1px;
-
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(
-        255,
-        60,
-        48,
-        0.9
-      ),
-      transparent
-    );
-
-  animation:
-    divider-scan
-    4.2s
-    linear
-    infinite;
+.magic-model-layer:first-child {
+  border-left: 0;
 }
 
-@keyframes divider-scan {
-  from {
-    transform:
-      translateX(0);
-  }
-
-  to {
-    transform:
-      translateX(600%);
-  }
-}
-
-.system-pulse {
-  display: flex;
-
-  align-items: flex-end;
-
-  gap: 4px;
-
-  height: 18px;
-
-  margin-top: 24px;
-
-  opacity: 0.6;
-}
-
-.system-pulse span {
-  width: 3px;
-
-  border-radius: 999px;
-
-  background:
-    var(--red);
-
-  box-shadow:
-    0 0 8px
-      rgba(
-        255,
-        32,
-        32,
-        0.34
-      );
-
-  animation:
-    system-wave
-    1.8s
-    ease-in-out
-    infinite;
-}
-
-.system-pulse span:nth-child(1) {
-  height: 7px;
-}
-
-.system-pulse span:nth-child(2) {
-  height: 13px;
-
-  animation-delay:
-    0.16s;
-}
-
-.system-pulse span:nth-child(3) {
-  height: 18px;
-
-  animation-delay:
-    0.32s;
-}
-
-.system-pulse span:nth-child(4) {
-  height: 10px;
-
-  animation-delay:
-    0.48s;
-}
-
-@keyframes system-wave {
-  0%,
-  100% {
-    opacity: 0.3;
-
-    transform:
-      scaleY(0.72);
-  }
-
-  50% {
-    opacity: 1;
-
-    transform:
-      scaleY(1);
-  }
-}
-
-.system-signal {
-  margin-top: 18px;
-
+.magic-model-layer > span {
   color:
     rgba(
       255,
-      72,
-      58,
-      0.72
+      32,
+      32,
+      0.58
     );
 
   font-family:
     var(--font-mono);
 
-  font-size: 9px;
+  font-size: 8px;
 
-  font-weight: 700;
+  font-weight: 800;
 
-  letter-spacing: 0.16em;
+  letter-spacing:
+    0.12em;
+}
 
-  text-transform:
-    uppercase;
+.magic-model-layer h3 {
+  margin:
+    32px 0 0;
+
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-mono);
+
+  font-size: 15px;
+
+  font-weight: 800;
+
+  letter-spacing:
+    0.08em;
+
+  line-height:
+    1.1;
+}
+
+.magic-model-layer p {
+  margin:
+    12px 0 0;
+
+  color:
+    var(--text-muted);
+
+  font-size: 12px;
+
+  line-height:
+    1.7;
+
+  overflow-wrap:
+    break-word;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Magic principles                                                           */
+/* -------------------------------------------------------------------------- */
+
+.magic-organism-principles {
+  margin-top: 112px;
+
+  padding-top: 80px;
+
+  border-top:
+    1px solid
+    var(--line);
+}
+
+.magic-organism-principles-header {
+  display: grid;
+
+  grid-template-columns:
+    minmax(
+      0,
+      1fr
+    )
+    minmax(
+      260px,
+      0.7fr
+    );
+
+  align-items: end;
+
+  gap: 64px;
+}
+
+.magic-principles-intro {
+  max-width: 520px;
+
+  justify-self: end;
+
+  white-space:
+    normal;
+
+  overflow-wrap:
+    break-word;
+}
+
+.magic-organism-principles-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap: 14px;
+
+  margin-top: 48px;
+}
+
+.magic-organism-principle {
+  min-height: 190px;
+
+  padding:
+    24px;
+
+  border:
+    1px solid
+    var(--line);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(
+        255,
+        32,
+        32,
+        0.025
+      ),
+      rgba(
+        255,
+        255,
+        255,
+        0.01
+      )
+    );
+}
+
+.magic-organism-principle > span {
+  color:
+    rgba(
+      255,
+      32,
+      32,
+      0.58
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing:
+    0.12em;
+}
+
+.magic-organism-principle h3 {
+  margin:
+    32px 0 0;
+
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-mono);
+
+  font-size: 14px;
+
+  font-weight: 800;
+
+  letter-spacing:
+    0.12em;
+}
+
+.magic-organism-principle p {
+  margin:
+    11px 0 0;
+
+  color:
+    var(--text-muted);
+
+  font-size: 12px;
+
+  line-height:
+    1.7;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Magic future                                                                */
+/* -------------------------------------------------------------------------- */
+
+.magic-organism-future {
+  display: grid;
+
+  grid-template-columns:
+    minmax(
+      0,
+      0.82fr
+    )
+    minmax(
+      0,
+      1.18fr
+    );
+
+  align-items: end;
+
+  gap: 64px;
+
+  margin-top: 112px;
+
+  padding:
+    80px 0 30px;
+
+  border-top:
+    1px solid
+    var(--line);
+}
+
+.magic-organism-future-copy {
+  max-width: 700px;
+
+  justify-self: end;
+
+  white-space:
+    normal;
+
+  overflow-wrap:
+    break-word;
+
+  word-spacing:
+    0.025em;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Magic responsive                                                           */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .magic-lab-intro,
+  .magic-organism-purpose,
+  .magic-model-header,
+  .magic-organism-future {
+    grid-template-columns:
+      1fr;
+  }
+
+  .magic-lab-intro-copy,
+  .magic-organism-purpose-copy,
+  .magic-model-intro,
+  .magic-organism-future-copy {
+    justify-self: start;
+
+    max-width:
+      760px;
+  }
+
+  .magic-model-grid {
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(
+          0,
+          1fr
+        )
+      );
+  }
+
+  .magic-model-layer:nth-child(4) {
+    border-left:
+      0;
+
+    border-top:
+      1px solid
+      var(--line-soft);
+  }
+
+  .magic-model-layer:nth-child(5) {
+    border-top:
+      1px solid
+      var(--line-soft);
+  }
+}
+
+@media (max-width: 760px) {
+  .magic-organism-header {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+
+    gap:
+      20px;
+  }
+
+  .magic-lab-intro {
+    margin-top:
+      72px;
+
+    gap:
+      28px;
+  }
+
+  .magic-lab-bar {
+    grid-template-columns:
+      1fr;
+  }
+
+  .magic-controls {
+    width:
+      100%;
+
+    overflow-x:
+      auto;
+
+    padding-bottom:
+      2px;
+  }
+
+  .magic-control {
+    flex:
+      0 0 auto;
+  }
+
+  .magic-lab-actions {
+    align-items:
+      flex-start;
+
+    justify-content:
+      space-between;
+  }
+
+  .magic-lab-note {
+    text-align:
+      left;
+  }
+
+  .magic-lab-shell {
+    min-height:
+      390px;
+  }
+
+  .magic-vitals {
+    grid-template-columns:
+      1fr;
+  }
+
+  .magic-model-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .magic-model-layer {
+    min-height:
+      auto;
+
+    border-left:
+      0;
+
+    border-top:
+      1px solid
+      var(--line-soft);
+  }
+
+  .magic-model-layer:first-child {
+    border-top:
+      0;
+  }
+
+  .magic-organism-principles-header {
+    grid-template-columns:
+      1fr;
+  }
+
+  .magic-principles-intro {
+    justify-self:
+      start;
+  }
+
+  .magic-organism-principles-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .magic-organism-ring-one {
+    width:
+      320px;
+  }
+
+  .magic-organism-ring-two {
+    width:
+      470px;
+  }
+
+  .magic-organism-ring-three {
+    width:
+      620px;
+  }
+
+  .magic-organism-node-one {
+    left:
+      67%;
+  }
+
+  .magic-organism-node-two {
+    left:
+      82%;
+  }
+
+  .magic-organism-node-three {
+    left:
+      58%;
+  }
+
+  .magic-organism-node-four {
+    left:
+      78%;
+  }
+}
+
+@media (max-width: 560px) {
+  .magic-lab-shell {
+    min-height:
+      310px;
+  }
+
+  .magic-lab-frame {
+    padding:
+      6px;
+  }
+
+  .magic-lab-note {
+    font-size:
+      8px;
+  }
+
+  .magic-vitals > div {
+    min-height:
+      64px;
+
+    padding:
+      11px 13px;
+  }
+
+  .magic-organism-purpose,
+  .magic-model,
+  .magic-organism-principles,
+  .magic-organism-future {
+    margin-top:
+      82px;
+
+    padding-top:
+      58px;
+  }
+
+  .magic-organism-ring-one {
+    width:
+      260px;
+  }
+
+  .magic-organism-ring-two {
+    width:
+      380px;
+  }
+
+  .magic-organism-ring-three {
+    width:
+      500px;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
