@@ -374,85 +374,91 @@ export default function PublicLinks({
           </div>
         </div>
 
-        {LINK_GROUPS.map(
-          (group) => {
-            const links =
-  compact
-    ? COMPACT_LINK_IDS.reduce<
-        PublicLink[]
-      >(
+        {compact ? (
+  <div className="public-link-group public-link-group-compact">
+    <div className="public-link-grid">
+      {COMPACT_LINK_IDS.map(
         (
-          ordered,
-          id
+          id,
+          index
         ) => {
           const link =
-            [...PUBLIC_LINKS.social, ...PUBLIC_LINKS.resources]
-              .find(
-                (item) =>
-                  item.id === id
-              );
+            [
+              ...PUBLIC_LINKS.social,
+              ...PUBLIC_LINKS.resources
+            ].find(
+              (item) =>
+                item.id ===
+                id
+            );
 
           if (
-            link
+            !link
           ) {
-            ordered.push(
-              link
-            );
+            return null;
           }
 
-          return ordered;
-        },
-        []
-      )
-    : group.links;
+          return (
+            <LinkCard
+              key={
+                link.id
+              }
+              link={
+                link
+              }
+              index={
+                index
+              }
+            />
+          );
+        }
+      )}
+    </div>
+  </div>
+) : (
+  LINK_GROUPS.map(
+    (group) => (
+      <div
+        className="public-link-group"
+        key={
+          group.label
+        }
+      >
+        <div className="public-link-group-heading">
+          <p className="kicker">
+            {group.label}
+          </p>
 
-            if (
-              links.length ===
-              0
-            ) {
-              return null;
-            }
+          <span
+            aria-hidden="true"
+            className="public-link-group-line"
+          />
+        </div>
 
-            return (
-              <div
-                className="public-link-group"
-                key={group.label}
-              >
-                <div className="public-link-group-heading">
-                  <p className="kicker">
-                    {group.label}
-                  </p>
-
-                  <span
-                    aria-hidden="true"
-                    className="public-link-group-line"
-                  />
-                </div>
-
-                <div className="public-link-grid">
-                  {links.map(
-                    (
-                      link,
-                      index
-                    ) => (
-                      <LinkCard
-                        key={
-                          link.id
-                        }
-                        link={
-                          link
-                        }
-                        index={
-                          index
-                        }
-                      />
-                    )
-                  )}
-                </div>
-              </div>
-            );
-          }
-        )}
+        <div className="public-link-grid">
+          {group.links.map(
+            (
+              link,
+              index
+            ) => (
+              <LinkCard
+                key={
+                  link.id
+                }
+                link={
+                  link
+                }
+                index={
+                  index
+                }
+              />
+            )
+          )}
+        </div>
+      </div>
+    )
+  )
+)}
       </div>
     </section>
   );
