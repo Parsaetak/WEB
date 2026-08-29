@@ -332,17 +332,19 @@ export default function LivingShell({
       </main>
 
       <footer className="living-shell-legal">
-        <FooterLinks />
-
         <div className="living-shell-legal-inner">
-          <div className="living-shell-legal-primary">
-            <strong>
-              © 2026 Parsa Tak. All rights reserved.
-            </strong>
+          <div className="living-shell-legal-top">
+            <div className="living-shell-legal-primary">
+              <strong>
+                © 2026 Parsa Tak. All rights reserved.
+              </strong>
 
-            <span>
-              Parsa Tak™
-            </span>
+              <span>
+                Parsa Tak™
+              </span>
+            </div>
+
+            <FooterLinks />
           </div>
 
           <p>
