@@ -32,9 +32,11 @@ const ORBIT_THRESHOLD = 0.012;
 
 const FLICK_THRESHOLD = 1.15;
 
-const MIN_SOUND_INTERVAL = 80;
+const MIN_SOUND_INTERVAL = 90;
 
 const CHARGE_RATE = 0.00082;
+
+const CHARGE_SOUND_INTERVAL = 260;
 
 function clamp(
   value: number,
@@ -52,8 +54,12 @@ function angleDelta(
   previous: number
 ) {
   return Math.atan2(
-    Math.sin(next - previous),
-    Math.cos(next - previous)
+    Math.sin(
+      next - previous
+    ),
+    Math.cos(
+      next - previous
+    )
   );
 }
 
@@ -62,7 +68,9 @@ export default function MagicInteractionLayer({
   soundEnabled
 }: MagicInteractionLayerProps) {
   const rootRef =
-    useRef<HTMLDivElement | null>(null);
+    useRef<HTMLDivElement | null>(
+      null
+    );
 
   const pointerRef =
     useRef<Point>({
@@ -86,7 +94,9 @@ export default function MagicInteractionLayer({
     });
 
   const rectRef =
-    useRef<DOMRect | null>(null);
+    useRef<DOMRect | null>(
+      null
+    );
 
   const angleRef =
     useRef(0);
@@ -95,6 +105,9 @@ export default function MagicInteractionLayer({
     useRef(0);
 
   const lastSoundRef =
+    useRef(0);
+
+  const lastChargeSoundRef =
     useRef(0);
 
   const rippleIndexRef =
@@ -119,7 +132,7 @@ export default function MagicInteractionLayer({
   const chargeRef =
     useRef(0);
 
-  const lastEventRef =
+  const interactionStateRef =
     useRef<InteractionKind | null>(
       null
     );
@@ -315,44 +328,63 @@ export default function MagicInteractionLayer({
       case "enter":
         frequency =
           150 +
-          normalized * 70;
+          normalized *
+            70;
+
         duration =
           0.18;
+
         break;
 
       case "impact":
         frequency =
           180 +
-          normalized * 280;
+          normalized *
+            280;
+
         duration =
           0.14;
+
         type =
           "triangle";
+
         break;
 
       case "flick":
         frequency =
           260 +
-          normalized * 520;
+          normalized *
+            520;
+
         duration =
           0.095;
+
         type =
           "sawtooth";
+
         break;
 
       case "orbit":
         frequency =
           320 +
-          normalized * 260;
+          normalized *
+            260;
+
         duration =
           0.22;
+
         type =
           "triangle";
+
         break;
 
       case "leave":
-        frequency = 170;
-        duration = 0.2;
+        frequency =
+          170;
+
+        duration =
+          0.2;
+
         break;
     }
 
@@ -360,7 +392,8 @@ export default function MagicInteractionLayer({
       context.currentTime;
 
     const end =
-      start + duration;
+      start +
+      duration;
 
     oscillator.type =
       type;
@@ -376,7 +409,8 @@ export default function MagicInteractionLayer({
       oscillator.frequency.exponentialRampToValueAtTime(
         Math.max(
           80,
-          frequency * 0.52
+          frequency *
+            0.52
         ),
         end
       );
@@ -386,7 +420,8 @@ export default function MagicInteractionLayer({
       kind === "orbit"
     ) {
       oscillator.frequency.linearRampToValueAtTime(
-        frequency * 1.12,
+        frequency *
+          1.12,
         end
       );
     }
@@ -396,9 +431,13 @@ export default function MagicInteractionLayer({
 
     filter.frequency.setValueAtTime(
       1800 +
-        normalized * 2600,
+        normalized *
+          2600,
       start
     );
+
+    filter.Q.value =
+      0.65;
 
     gain.gain.setValueAtTime(
       0.0001,
@@ -407,8 +446,10 @@ export default function MagicInteractionLayer({
 
     gain.gain.exponentialRampToValueAtTime(
       0.08 +
-        normalized * 0.08,
-      start + 0.008
+        normalized *
+          0.08,
+      start +
+        0.008
     );
 
     gain.gain.exponentialRampToValueAtTime(
@@ -433,7 +474,8 @@ export default function MagicInteractionLayer({
     );
 
     oscillator.stop(
-      end + 0.015
+      end +
+        0.015
     );
   };
 
@@ -489,12 +531,16 @@ export default function MagicInteractionLayer({
 
     ripple.style.setProperty(
       "--ripple-size",
-      `${42 + intensity * 110}px`
+      `${42 +
+        intensity *
+          120}px`
     );
 
     ripple.style.setProperty(
       "--ripple-strength",
-      `${0.38 + intensity * 0.46}`
+      `${0.38 +
+        intensity *
+          0.46}`
     );
 
     ripple.classList.remove(
@@ -519,6 +565,9 @@ export default function MagicInteractionLayer({
     if (!root) {
       return;
     }
+
+    interactionStateRef.current =
+      kind;
 
     root.dataset.interaction =
       kind ?? "idle";
@@ -545,6 +594,17 @@ export default function MagicInteractionLayer({
       event.clientY -
       rect.top;
 
+    const center =
+      centerRef.current;
+
+    const angle =
+      Math.atan2(
+        y -
+          center.y,
+        x -
+          center.x
+      );
+
     pointerRef.current = {
       x,
       y
@@ -559,12 +619,7 @@ export default function MagicInteractionLayer({
       performance.now();
 
     angleRef.current =
-      Math.atan2(
-        y -
-          centerRef.current.y,
-        x -
-          centerRef.current.x
-      );
+      angle;
 
     accumulatedOrbitRef.current =
       0;
@@ -580,7 +635,7 @@ export default function MagicInteractionLayer({
       0,
       0,
       0,
-      angleRef.current,
+      angle,
       chargeRef.current
     );
 
@@ -605,6 +660,7 @@ export default function MagicInteractionLayer({
 
     if (!rect) {
       updateGeometry();
+
       return;
     }
 
@@ -708,13 +764,27 @@ export default function MagicInteractionLayer({
       Math.abs(
         accumulatedOrbitRef.current
       ) >
-        Math.PI * 0.9 &&
+        Math.PI *
+          0.9 &&
       proximity >
         0.18;
 
     const flicking =
       velocity >
       FLICK_THRESHOLD;
+
+    if (
+      pointerHeldRef.current
+    ) {
+      chargeRef.current =
+        clamp(
+          chargeRef.current +
+            deltaTime *
+              CHARGE_RATE,
+          0,
+          1
+        );
+    }
 
     pointerRef.current = {
       x,
@@ -728,17 +798,6 @@ export default function MagicInteractionLayer({
 
     previousTimeRef.current =
       now;
-
-    if (pointerHeldRef.current) {
-      chargeRef.current =
-        clamp(
-          chargeRef.current +
-            deltaTime *
-              CHARGE_RATE,
-          0,
-          1
-        );
-    }
 
     const root =
       rootRef.current;
@@ -762,7 +821,8 @@ export default function MagicInteractionLayer({
       root.style.setProperty(
         "--magic-velocity",
         `${clamp(
-          velocity * 10,
+          velocity *
+            10,
           0,
           1
         )}`
@@ -779,6 +839,17 @@ export default function MagicInteractionLayer({
       );
     }
 
+    emitInteraction(
+      "move",
+      x,
+      y,
+      velocity,
+      proximity,
+      proximity,
+      currentAngle,
+      chargeRef.current
+    );
+
     if (
       pointerHeldRef.current
     ) {
@@ -788,13 +859,37 @@ export default function MagicInteractionLayer({
         y,
         velocity,
         proximity,
-        proximity,
+        chargeRef.current,
         currentAngle,
         chargeRef.current
       );
+
+      const charge =
+        chargeRef.current;
+
+      const chargeNow =
+        performance.now();
+
+      if (
+        charge >
+          0.35 &&
+        chargeNow -
+          lastChargeSoundRef.current >
+          CHARGE_SOUND_INTERVAL
+      ) {
+        lastChargeSoundRef.current =
+          chargeNow;
+
+        void playTone(
+          "orbit",
+          charge * 0.4
+        );
+      }
     }
 
-    if (flicking) {
+    if (
+      flicking
+    ) {
       setInteractionState(
         "flick"
       );
@@ -805,7 +900,12 @@ export default function MagicInteractionLayer({
         y,
         velocity,
         proximity,
-        1,
+        clamp(
+          velocity /
+            10,
+          0,
+          1
+        ),
         currentAngle,
         chargeRef.current
       );
@@ -814,7 +914,8 @@ export default function MagicInteractionLayer({
         x,
         y,
         clamp(
-          velocity * 0.65,
+          velocity *
+            0.65,
           0.35,
           1
         )
@@ -823,22 +924,18 @@ export default function MagicInteractionLayer({
       void playTone(
         "flick",
         clamp(
-          velocity * 0.5,
+          velocity *
+            0.5,
           0,
           1
         )
       );
 
-      lastEventRef.current =
-        "flick";
-
       return;
     }
 
     if (
-      orbiting &&
-      lastEventRef.current !==
-        "orbit"
+      orbiting
     ) {
       setInteractionState(
         "orbit"
@@ -863,9 +960,6 @@ export default function MagicInteractionLayer({
       accumulatedOrbitRef.current =
         0;
 
-      lastEventRef.current =
-        "orbit";
-
       return;
     }
 
@@ -876,26 +970,11 @@ export default function MagicInteractionLayer({
       setInteractionState(
         "impact"
       );
-      lastEventRef.current =
-        "impact";
     } else {
       setInteractionState(
         null
       );
-      lastEventRef.current =
-        null;
     }
-
-    emitInteraction(
-      "move",
-      x,
-      y,
-      velocity,
-      proximity,
-      proximity,
-      currentAngle,
-      chargeRef.current
-    );
   };
 
   const handlePointerDown = (
@@ -907,6 +986,7 @@ export default function MagicInteractionLayer({
 
     if (!rect) {
       updateGeometry();
+
       return;
     }
 
@@ -947,10 +1027,21 @@ export default function MagicInteractionLayer({
         1
       );
 
+    const angle =
+      Math.atan2(
+        y -
+          center.y,
+        x -
+          center.x
+      );
+
     pointerHeldRef.current =
       true;
 
     chargeRef.current =
+      0;
+
+    lastChargeSoundRef.current =
       0;
 
     setInteractionState(
@@ -964,12 +1055,7 @@ export default function MagicInteractionLayer({
       0,
       proximity,
       proximity,
-      Math.atan2(
-        y -
-          center.y,
-        x -
-          center.x
-      ),
+      angle,
       0
     );
 
@@ -984,7 +1070,8 @@ export default function MagicInteractionLayer({
     void playTone(
       "impact",
       0.45 +
-        proximity * 0.55
+        proximity *
+          0.55
     );
   };
 
@@ -992,19 +1079,7 @@ export default function MagicInteractionLayer({
     const root =
       rootRef.current;
 
-    const rect =
-      rectRef.current;
-
-    if (
-      !root ||
-      !rect
-    ) {
-      pointerHeldRef.current =
-        false;
-
-      chargeRef.current =
-        0;
-
+    if (!root) {
       return;
     }
 
@@ -1046,6 +1121,14 @@ export default function MagicInteractionLayer({
     const charge =
       chargeRef.current;
 
+    const angle =
+      Math.atan2(
+        y -
+          center.y,
+        x -
+          center.x
+      );
+
     pointerHeldRef.current =
       false;
 
@@ -1056,12 +1139,7 @@ export default function MagicInteractionLayer({
       0,
       proximity,
       charge,
-      Math.atan2(
-        y -
-          center.y,
-        x -
-          center.x
-      ),
+      angle,
       charge
     );
 
@@ -1073,7 +1151,8 @@ export default function MagicInteractionLayer({
         x,
         y,
         0.35 +
-          charge * 0.65
+          charge *
+            0.65
       );
     }
 
@@ -1119,6 +1198,16 @@ export default function MagicInteractionLayer({
     chargeRef.current =
       0;
 
+    const root =
+      rootRef.current;
+
+    if (root) {
+      root.style.setProperty(
+        "--magic-charge",
+        "0"
+      );
+    }
+
     window.setTimeout(
       () => {
         if (
@@ -1134,6 +1223,8 @@ export default function MagicInteractionLayer({
   };
 
   useEffect(() => {
+    updateGeometry();
+
     const query =
       window.matchMedia(
         "(prefers-reduced-motion: reduce)"
@@ -1150,8 +1241,6 @@ export default function MagicInteractionLayer({
         reducedMotionRef.current =
           event.matches;
       };
-
-    updateGeometry();
 
     query.addEventListener(
       "change",
@@ -1196,7 +1285,7 @@ export default function MagicInteractionLayer({
       if (
         context &&
         context.state !==
-        "closed"
+          "closed"
       ) {
         void context.close();
       }
@@ -1233,10 +1322,13 @@ export default function MagicInteractionLayer({
         <span className="magic-interaction-aura" />
 
         <span className="magic-interaction-orbit magic-interaction-orbit-one" />
+
         <span className="magic-interaction-orbit magic-interaction-orbit-two" />
+
         <span className="magic-interaction-orbit magic-interaction-orbit-three" />
 
         <span className="magic-interaction-axis magic-interaction-axis-x" />
+
         <span className="magic-interaction-axis magic-interaction-axis-y" />
 
         {Array.from(
