@@ -9,6 +9,11 @@ import {
   publishRedMagicPerformance
 } from "@/components/RedMagicTelemetry";
 
+import {
+  RED_MAGIC_INTERACTION_EVENT,
+  type RedMagicInteractionDetail
+} from "@/components/RedMagicInteraction";
+
 type Particle = {
   angle: number;
   radius: number;
@@ -17,6 +22,9 @@ type Particle = {
   phase: number;
   orbit: number;
   drift: number;
+
+  impulseX: number;
+  impulseY: number;
 };
 
 type Node = {
