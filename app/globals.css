@@ -4778,6 +4778,1065 @@ span {
 }
 
 /* -------------------------------------------------------------------------- */
+/* About                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.about-scene {
+  position: relative;
+
+  isolation: isolate;
+
+  overflow: clip;
+}
+
+.about-observer {
+  position: relative;
+
+  min-height:
+    calc(
+      100vh -
+      var(--shell-header)
+    );
+
+  overflow: clip;
+
+  border-bottom:
+    1px solid
+    rgba(
+      201,
+      111,
+      255,
+      0.08
+    );
+
+  isolation: isolate;
+
+  background:
+    radial-gradient(
+      circle at 72% 26%,
+      rgba(
+        201,
+        111,
+        255,
+        0.055
+      ),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 16% 78%,
+      rgba(
+        255,
+        32,
+        32,
+        0.018
+      ),
+      transparent 30%
+    );
+}
+
+.about-orbit-field {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 0;
+
+  pointer-events: none;
+
+  overflow: hidden;
+}
+
+.about-orbit {
+  position: absolute;
+
+  left: 72%;
+  top: 38%;
+
+  aspect-ratio: 1;
+
+  border:
+    1px solid
+    rgba(
+      201,
+      111,
+      255,
+      0.05
+    );
+
+  border-radius: 50%;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+}
+
+.about-orbit-one {
+  width:
+    430px;
+
+  animation:
+    about-orbit-one
+    34s
+    linear
+    infinite;
+}
+
+.about-orbit-two {
+  width:
+    640px;
+
+  opacity:
+    0.7;
+
+  animation:
+    about-orbit-two
+    46s
+    linear
+    infinite
+    reverse;
+}
+
+.about-orbit-three {
+  width:
+    860px;
+
+  opacity:
+    0.38;
+
+  animation:
+    about-orbit-three
+    62s
+    linear
+    infinite;
+}
+
+.about-orbit-axis {
+  position:
+    absolute;
+
+  pointer-events:
+    none;
+
+  opacity:
+    0.3;
+}
+
+.about-orbit-axis-x {
+  left:
+    38%;
+
+  top:
+    38%;
+
+  width:
+    56%;
+
+  height:
+    1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(
+        201,
+        111,
+        255,
+        0.09
+      ),
+      transparent
+    );
+}
+
+.about-orbit-axis-y {
+  left:
+    72%;
+
+  top:
+    8%;
+
+  width:
+    1px;
+
+  height:
+    62%;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(
+        201,
+        111,
+        255,
+        0.08
+      ),
+      transparent
+    );
+}
+
+.about-orbit-node {
+  position:
+    absolute;
+
+  width:
+    5px;
+
+  height:
+    5px;
+
+  border-radius:
+    50%;
+
+  background:
+    #c96fff;
+
+  box-shadow:
+    0 0 10px
+      rgba(
+        201,
+        111,
+        255,
+        0.55
+      );
+
+  opacity:
+    0.4;
+
+  animation:
+    about-node-pulse
+    3.8s
+    ease-in-out
+    infinite;
+}
+
+.about-orbit-node-one {
+  left:
+    66%;
+
+  top:
+    21%;
+}
+
+.about-orbit-node-two {
+  left:
+    82%;
+
+  top:
+    43%;
+
+  animation-delay:
+    0.9s;
+}
+
+.about-orbit-node-three {
+  left:
+    67%;
+
+  top:
+    69%;
+
+  animation-delay:
+    1.7s;
+}
+
+@keyframes about-orbit-one {
+  from {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(
+        0deg
+      );
+  }
+
+  to {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(
+        360deg
+      );
+  }
+}
+
+@keyframes about-orbit-two {
+  from {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(
+        0deg
+      );
+  }
+
+  to {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(
+        -360deg
+      );
+  }
+}
+
+@keyframes about-orbit-three {
+  from {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(
+        0deg
+      );
+  }
+
+  to {
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      rotate(
+        360deg
+      );
+  }
+}
+
+@keyframes about-node-pulse {
+  0%,
+  100% {
+    opacity:
+      0.18;
+
+    transform:
+      scale(
+        0.72
+      );
+  }
+
+  50% {
+    opacity:
+      0.9;
+
+    transform:
+      scale(
+        1.18
+      );
+  }
+}
+
+.about-observer > .page-container {
+  position:
+    relative;
+
+  z-index:
+    2;
+}
+
+/* -------------------------------------------------------------------------- */
+/* About header                                                               */
+/* -------------------------------------------------------------------------- */
+
+.about-header {
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  justify-content:
+    space-between;
+
+  gap:
+    42px;
+}
+
+.about-header-copy {
+  min-width:
+    0;
+}
+
+.about-title {
+  margin-top:
+    10px;
+}
+
+.about-lead {
+  max-width:
+    700px;
+
+  margin-top:
+    22px;
+
+  white-space:
+    normal;
+
+  word-spacing:
+    0.025em;
+
+  overflow-wrap:
+    break-word;
+}
+
+.about-signal {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    9px;
+
+  flex:
+    0 0 auto;
+
+  padding-bottom:
+    5px;
+
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    9px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.15em;
+
+  text-transform:
+    uppercase;
+}
+
+.about-signal-dot {
+  width:
+    7px;
+
+  height:
+    7px;
+
+  border-radius:
+    50%;
+
+  background:
+    #c96fff;
+
+  box-shadow:
+    0 0 10px
+      rgba(
+        201,
+        111,
+        255,
+        0.55
+      );
+
+  animation:
+    about-signal-pulse
+    2.6s
+    ease-in-out
+    infinite;
+}
+
+@keyframes about-signal-pulse {
+  0%,
+  100% {
+    opacity:
+      0.3;
+
+    transform:
+      scale(
+        0.8
+      );
+  }
+
+  50% {
+    opacity:
+      1;
+
+    transform:
+      scale(
+        1.1
+      );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* About identity                                                             */
+/* -------------------------------------------------------------------------- */
+
+.about-identity {
+  display:
+    grid;
+
+  grid-template-columns:
+    minmax(
+      0,
+      1.15fr
+    )
+    minmax(
+      300px,
+      0.85fr
+    );
+
+  align-items:
+    end;
+
+  gap:
+    72px;
+
+  margin-top:
+    92px;
+
+  padding:
+    34px 0;
+
+  border-top:
+    1px solid
+    var(--line);
+
+  border-bottom:
+    1px solid
+    var(--line);
+}
+
+.about-identity-main {
+  min-width:
+    0;
+}
+
+.about-identity-statement {
+  max-width:
+    760px;
+
+  margin:
+    20px 0 0;
+
+  color:
+    var(--text-soft);
+
+  font-size:
+    clamp(
+      1.35rem,
+      2.35vw,
+      2.05rem
+    );
+
+  font-weight:
+    500;
+
+  letter-spacing:
+    -0.025em;
+
+  line-height:
+    1.5;
+
+  text-wrap:
+    pretty;
+
+  white-space:
+    normal;
+
+  word-spacing:
+    0.02em;
+
+  overflow-wrap:
+    break-word;
+}
+
+.about-identity-side {
+  display:
+    grid;
+
+  gap:
+    8px;
+}
+
+.about-identity-card {
+  display:
+    grid;
+
+  grid-template-columns:
+    118px
+    minmax(
+      0,
+      1fr
+    );
+
+  align-items:
+    center;
+
+  gap:
+    16px;
+
+  min-height:
+    66px;
+
+  padding:
+    12px 14px;
+
+  border:
+    1px solid
+    var(--line-soft);
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.012
+    );
+}
+
+.about-identity-card-label {
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.14em;
+
+  line-height:
+    1.4;
+
+  text-transform:
+    uppercase;
+}
+
+.about-identity-card-value {
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    7px;
+
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    9px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.08em;
+
+  line-height:
+    1.5;
+}
+
+.about-identity-card-value span {
+  white-space:
+    nowrap;
+}
+
+.about-identity-card-value i {
+  color:
+    rgba(
+      201,
+      111,
+      255,
+      0.62
+    );
+
+  font-style:
+    normal;
+}
+
+/* -------------------------------------------------------------------------- */
+/* About method                                                               */
+/* -------------------------------------------------------------------------- */
+
+.about-method {
+  margin-top:
+    112px;
+}
+
+.about-method-header {
+  display:
+    grid;
+
+  grid-template-columns:
+    minmax(
+      0,
+      0.78fr
+    )
+    minmax(
+      0,
+      1.22fr
+    );
+
+  align-items:
+    end;
+
+  gap:
+    64px;
+}
+
+.about-method-copy {
+  max-width:
+    700px;
+
+  justify-self:
+    end;
+
+  white-space:
+    normal;
+
+  word-spacing:
+    0.025em;
+
+  overflow-wrap:
+    break-word;
+}
+
+.about-principles {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap:
+    12px;
+
+  margin-top:
+    52px;
+}
+
+.about-principle {
+  min-width:
+    0;
+
+  overflow:
+    hidden;
+}
+
+.about-principle .panel-content {
+  min-height:
+    220px;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  padding:
+    24px;
+}
+
+.about-principle-top {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+}
+
+.system-number {
+  color:
+    rgba(
+      201,
+      111,
+      255,
+      0.64
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    9px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.1em;
+}
+
+.system-type {
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    7px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.1em;
+
+  text-align:
+    right;
+
+  text-transform:
+    uppercase;
+}
+
+.system-title {
+  margin:
+    auto 0 0;
+
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    clamp(
+      16px,
+      1.65vw,
+      22px
+    );
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.04em;
+
+  line-height:
+    1.1;
+}
+
+.system-copy {
+  margin:
+    10px 0 0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    12px;
+
+  line-height:
+    1.7;
+
+  white-space:
+    normal;
+
+  overflow-wrap:
+    break-word;
+}
+
+/* -------------------------------------------------------------------------- */
+/* About responsive                                                           */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .about-identity {
+    grid-template-columns:
+      1fr;
+  }
+
+  .about-identity-side {
+    max-width:
+      760px;
+  }
+
+  .about-method-header {
+    grid-template-columns:
+      1fr;
+  }
+
+  .about-method-copy {
+    justify-self:
+      start;
+
+    max-width:
+      760px;
+  }
+
+  .about-principles {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(
+          0,
+          1fr
+        )
+      );
+  }
+
+  .about-principle:nth-child(3),
+  .about-principle:nth-child(4) {
+    margin-top:
+      0;
+  }
+}
+
+@media (max-width: 760px) {
+  .about-header {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+
+    gap:
+      20px;
+  }
+
+  .about-signal {
+    padding-bottom:
+      0;
+  }
+
+  .about-identity {
+    margin-top:
+      72px;
+
+    gap:
+      34px;
+
+    padding:
+      28px 0;
+  }
+
+  .about-identity-statement {
+    font-size:
+      clamp(
+        1.2rem,
+        5vw,
+        1.55rem
+      );
+  }
+
+  .about-identity-card {
+    grid-template-columns:
+      1fr;
+
+    align-items:
+      flex-start;
+
+    gap:
+      7px;
+
+    padding:
+      13px;
+  }
+
+  .about-method {
+    margin-top:
+      82px;
+  }
+
+  .about-principles {
+    grid-template-columns:
+      1fr;
+
+    margin-top:
+      38px;
+  }
+
+  .about-principle .panel-content {
+    min-height:
+      180px;
+  }
+
+  .about-orbit-one {
+    width:
+      300px;
+  }
+
+  .about-orbit-two {
+    width:
+      450px;
+  }
+
+  .about-orbit-three {
+    width:
+      600px;
+  }
+}
+
+@media (max-width: 560px) {
+  .about-identity {
+    margin-top:
+      58px;
+  }
+
+  .about-identity-card-value {
+    font-size:
+      8px;
+
+    gap:
+      5px;
+  }
+
+  .about-principle .panel-content {
+    padding:
+      20px;
+  }
+
+  .system-title {
+    font-size:
+      17px;
+  }
+
+  .system-copy {
+    font-size:
+      11px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* RED Magic                                                                  */
 /* -------------------------------------------------------------------------- */
 
