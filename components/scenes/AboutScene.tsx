@@ -47,7 +47,7 @@ export default function AboutScene() {
 
         <div className="page-container">
           <header className="about-header">
-            <div>
+            <div className="about-header-copy">
               <p className="kicker">
                 01 / ABOUT
               </p>
@@ -57,14 +57,20 @@ export default function AboutScene() {
               </h1>
 
               <p className="body-large about-lead">
-                Independent researcher and creator
-                working across intelligence,
+                Independent researcher and creator{" "}
+                working across intelligence,{" "}
                 technology, systems, and art.
               </p>
             </div>
 
-            <div className="about-signal">
-              <span className="about-signal-dot" />
+            <div
+              className="about-signal"
+              aria-label="Observe"
+            >
+              <span
+                className="about-signal-dot"
+                aria-hidden="true"
+              />
 
               <span>
                 OBSERVE
@@ -73,50 +79,50 @@ export default function AboutScene() {
           </header>
 
           <div className="about-identity">
-  <div className="about-identity-main">
-    <p className="kicker">
-      IN PRACTICE
-    </p>
+            <div className="about-identity-main">
+              <p className="kicker">
+                IN PRACTICE
+              </p>
 
-    <p className="about-identity-statement">
-      I research ideas about intelligence,
-      build systems to test them,
-      write about what I learn,
-      and create visual work around
-      the same questions.
-    </p>
-  </div>
+              <p className="about-identity-statement">
+                I research ideas about intelligence,{" "}
+                build systems to test them,{" "}
+                write about what I learn,{" "}
+                and create visual work around{" "}
+                the same questions.
+              </p>
+            </div>
 
-  <div className="about-identity-side">
-    <div className="about-identity-card">
-      <span className="about-identity-card-label">
-        BASED AROUND
-      </span>
+            <div className="about-identity-side">
+              <div className="about-identity-card">
+                <span className="about-identity-card-label">
+                  BASED AROUND
+                </span>
 
-      <strong className="about-identity-card-value">
-        AI
-        <span>·</span>
-        REASONING
-        <span>·</span>
-        SYSTEMS
-      </strong>
-    </div>
+                <strong className="about-identity-card-value">
+                  <span>AI</span>
+                  <i>·</i>
+                  <span>REASONING</span>
+                  <i>·</i>
+                  <span>SYSTEMS</span>
+                </strong>
+              </div>
 
-    <div className="about-identity-card">
-      <span className="about-identity-card-label">
-        OUTPUT
-      </span>
+              <div className="about-identity-card">
+                <span className="about-identity-card-label">
+                  OUTPUT
+                </span>
 
-      <strong className="about-identity-card-value">
-        SOFTWARE
-        <span>·</span>
-        WRITING
-        <span>·</span>
-        ART
-      </strong>
-    </div>
-  </div>
-</div>
+                <strong className="about-identity-card-value">
+                  <span>SOFTWARE</span>
+                  <i>·</i>
+                  <span>WRITING</span>
+                  <i>·</i>
+                  <span>ART</span>
+                </strong>
+              </div>
+            </div>
+          </div>
 
           <div className="about-method">
             <div className="about-method-header">
@@ -137,8 +143,8 @@ export default function AboutScene() {
               </div>
 
               <p className="body-large about-method-copy">
-                The process matters as much as the result.
-                Ideas become useful when they survive contact
+                The process matters as much as the result.{" "}
+                Ideas become useful when they survive contact{" "}
                 with reality.
               </p>
             </div>
@@ -148,25 +154,35 @@ export default function AboutScene() {
                 (principle) => (
                   <article
                     className="panel about-principle"
-                    key={principle.number}
+                    key={
+                      principle.number
+                    }
                   >
                     <div className="panel-content">
                       <div className="about-principle-top">
                         <span className="system-number">
-                          {principle.number}
+                          {
+                            principle.number
+                          }
                         </span>
 
                         <span className="system-type">
-                          {principle.label}
+                          {
+                            principle.label
+                          }
                         </span>
                       </div>
 
                       <h3 className="system-title">
-                        {principle.title}
+                        {
+                          principle.title
+                        }
                       </h3>
 
                       <p className="system-copy">
-                        {principle.copy}
+                        {
+                          principle.copy
+                        }
                       </p>
                     </div>
                   </article>
