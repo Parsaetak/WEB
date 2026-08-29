@@ -13022,6 +13022,510 @@ html.red-cursor-enabled * {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Library PDF reader                                                         */
+/* -------------------------------------------------------------------------- */
+
+.library-pdf-reader {
+  position:
+    relative;
+
+  width:
+    100%;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid
+    var(--line);
+
+  background:
+    #050608;
+}
+
+.library-pdf-reader-toolbar {
+  min-height:
+    62px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    18px;
+
+  padding:
+    10px 14px;
+
+  border-bottom:
+    1px solid
+    var(--line-soft);
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.012
+    );
+}
+
+.library-pdf-reader-identity {
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    10px;
+}
+
+.library-pdf-reader-identity > div {
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    5px;
+}
+
+.library-pdf-reader-dot {
+  width:
+    6px;
+
+  height:
+    6px;
+
+  flex:
+    0 0 6px;
+
+  border-radius:
+    50%;
+
+  background:
+    var(--red);
+
+  box-shadow:
+    0 0 10px
+      rgba(
+        255,
+        32,
+        32,
+        0.52
+      );
+}
+
+.library-pdf-reader-kicker {
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    7px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+
+  text-transform:
+    uppercase;
+}
+
+.library-pdf-reader-identity strong {
+  max-width:
+    min(
+      58vw,
+      680px
+    );
+
+  color:
+    var(--text);
+
+  font-size:
+    11px;
+
+  font-weight:
+    700;
+
+  line-height:
+    1.35;
+
+  overflow:
+    hidden;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+.library-pdf-reader-open {
+  flex:
+    0 0 auto;
+
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.1em;
+
+  white-space:
+    nowrap;
+
+  transition:
+    color
+      160ms ease;
+}
+
+.library-pdf-reader-open:hover {
+  color:
+    var(--red);
+}
+
+.library-pdf-reader-stage {
+  position:
+    relative;
+
+  width:
+    100%;
+
+  height:
+    min(
+      72vh,
+      820px
+    );
+
+  min-height:
+    560px;
+
+  overflow:
+    hidden;
+
+  background:
+    #17181c;
+}
+
+.library-pdf-frame {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  display:
+    block;
+
+  border:
+    0;
+
+  background:
+    #ffffff;
+
+  opacity:
+    0;
+
+  transition:
+    opacity
+      160ms ease;
+}
+
+.library-pdf-frame.is-loaded {
+  opacity:
+    1;
+}
+
+.library-pdf-reader-loading {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  z-index:
+    2;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    9px;
+
+  color:
+    var(--text-muted);
+
+  background:
+    rgba(
+      5,
+      6,
+      8,
+      0.96
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+
+  pointer-events:
+    none;
+}
+
+.library-pdf-reader-fallback {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  z-index:
+    3;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  padding:
+    30px;
+
+  text-align:
+    center;
+
+  background:
+    #08090c;
+}
+
+.library-pdf-reader-fallback-label {
+  color:
+    rgba(
+      255,
+      32,
+      32,
+      0.68
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+}
+
+.library-pdf-reader-fallback h3 {
+  margin:
+    15px 0 0;
+
+  color:
+    var(--text);
+
+  font-size:
+    24px;
+
+  line-height:
+    1.1;
+}
+
+.library-pdf-reader-fallback p {
+  max-width:
+    440px;
+
+  margin:
+    10px 0 22px;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    12px;
+
+  line-height:
+    1.7;
+
+  overflow-wrap:
+    break-word;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Library text spacing                                                       */
+/* -------------------------------------------------------------------------- */
+
+.library-scene
+p {
+  white-space:
+    normal;
+
+  word-break:
+    normal;
+
+  overflow-wrap:
+    break-word;
+
+  word-spacing:
+    0.025em;
+}
+
+.library-scene
+h1,
+.library-scene
+h2,
+.library-scene
+h3,
+.library-scene
+strong,
+.library-scene
+span {
+  overflow-wrap:
+    break-word;
+}
+
+.library-header-lead,
+.library-preview-content > p,
+.library-preview-empty p,
+.library-error p,
+.library-item-main,
+.library-featured-card-content {
+  text-wrap:
+    pretty;
+}
+
+.library-preview-content h2,
+.library-preview-content p,
+.library-preview-subtitle {
+  max-width:
+    100%;
+}
+
+.library-preview-meta {
+  align-items:
+    center;
+}
+
+.library-preview-meta span {
+  white-space:
+    normal;
+
+  overflow-wrap:
+    break-word;
+}
+
+.library-featured-card-content strong {
+  white-space:
+    normal;
+
+  overflow-wrap:
+    break-word;
+}
+
+@media (max-width: 760px) {
+  .library-pdf-reader-stage {
+    height:
+      68vh;
+
+    min-height:
+      480px;
+  }
+
+  .library-pdf-reader-toolbar {
+    padding:
+      10px 12px;
+  }
+
+  .library-pdf-reader-open {
+    font-size:
+      7px;
+  }
+}
+
+@media (max-width: 560px) {
+  .library-pdf-reader-toolbar {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+
+    gap:
+      9px;
+  }
+
+  .library-pdf-reader-identity strong {
+    max-width:
+      100%;
+
+    white-space:
+      normal;
+  }
+
+  .library-pdf-reader-stage {
+    height:
+      70vh;
+
+    min-height:
+      420px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* Library responsive                                                         */
 /* -------------------------------------------------------------------------- */
 
