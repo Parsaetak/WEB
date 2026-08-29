@@ -14,37 +14,44 @@ const systems = [
   {
     number: "01",
     title: "AI INSTRUCTIONS",
-    copy: "A framework for governing intelligent systems."
+    copy:
+      "A framework for governing intelligent systems."
   },
   {
     number: "02",
     title: "REP",
-    copy: "A framework for stronger reasoning and verification."
+    copy:
+      "A framework for stronger reasoning and verification."
   },
   {
     number: "03",
     title: "USEF",
-    copy: "A framework for improving systems over time."
+    copy:
+      "A framework for improving systems over time."
   }
 ];
 
 const directionStages = [
   {
     label: "RESEARCH",
-    copy: "Explore intelligence, reasoning, and systems."
+    copy:
+      "Explore intelligence, reasoning, and systems."
   },
   {
     label: "EXPERIMENT",
-    copy: "Turn research into software, frameworks, simulations, and art."
+    copy:
+      "Turn research into software, frameworks, simulations, and art."
   },
   {
     label: "BETTER INTELLIGENCE",
-    copy: "Build systems that are measurable, testable, and improvable."
+    copy:
+      "Build systems that are measurable, testable, and improvable."
   }
 ];
 
 export default function HomeScene() {
-  const github = GITHUB_LINK;
+  const github =
+    GITHUB_LINK;
 
   return (
     <div className="home-scene">
@@ -56,18 +63,33 @@ export default function HomeScene() {
           <span className="home-origin-ring home-origin-ring-one" />
           <span className="home-origin-ring home-origin-ring-two" />
           <span className="home-origin-ring home-origin-ring-three" />
+
           <span className="home-origin-axis home-origin-axis-x" />
           <span className="home-origin-axis home-origin-axis-y" />
+
+          <span className="home-origin-cross home-origin-cross-one" />
+          <span className="home-origin-cross home-origin-cross-two" />
+          <span className="home-origin-cross home-origin-cross-three" />
         </div>
 
-        <div className="home-origin-magic-background">
-          <RedMagic />
+        <div
+          className="home-origin-magic-background"
+          aria-hidden="true"
+        >
+          <div className="home-origin-magic-vignette" />
+
+          <div className="home-origin-magic-organism">
+            <RedMagic />
+          </div>
         </div>
 
         <div className="page-container hero-grid home-origin-content">
           <div className="hero-copy home-origin-copy">
             <div className="hero-status">
-              <span className="status-dot" />
+              <span
+                className="status-dot"
+                aria-hidden="true"
+              />
 
               <span>
                 ACTIVE
@@ -89,10 +111,8 @@ export default function HomeScene() {
             </h1>
 
             <p className="body-large hero-description home-identity-lead">
-              Exploring intelligence through
-              <br />
-              AI, reasoning, systems,
-              <br />
+              Exploring intelligence through{" "}
+              AI, reasoning, systems,{" "}
               simulation, and creative technology.
             </p>
 
@@ -107,7 +127,9 @@ export default function HomeScene() {
               {github && (
                 <a
                   className="button button-secondary"
-                  href={github.href}
+                  href={
+                    github.href
+                  }
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -124,6 +146,16 @@ export default function HomeScene() {
               <span />
             </div>
 
+            <div className="home-origin-core-mark">
+              <span className="home-origin-core-mark-orbit" />
+
+              <span className="home-origin-core-mark-dot" />
+
+              <span className="home-origin-core-mark-label">
+                LIVE
+              </span>
+            </div>
+
             <div className="home-origin-core-label">
               <span>
                 LIVING SYSTEM
@@ -134,6 +166,17 @@ export default function HomeScene() {
               </strong>
             </div>
           </div>
+        </div>
+
+        <div className="home-origin-foot">
+          <span>
+            SCROLL TO EXPLORE
+          </span>
+
+          <span
+            className="home-origin-foot-line"
+            aria-hidden="true"
+          />
         </div>
       </section>
 
@@ -153,19 +196,24 @@ export default function HomeScene() {
             </div>
 
             <p className="body-large home-intro-copy">
-              I study ideas about intelligence,
-              build systems around them,
-              and turn the results into
-              software, writing, experiments,
+              I study ideas about intelligence,{" "}
+              build systems around them,{" "}
+              and turn the results into{" "}
+              software, writing, experiments,{" "}
               and art.
             </p>
           </div>
 
-          <div className="home-exploration-field">
+          <div
+            className="home-exploration-field"
+            aria-label="Areas of exploration"
+          >
             {fields.map(
               (field) => (
                 <span
-                  key={field}
+                  key={
+                    field
+                  }
                   className="home-exploration-item"
                 >
                   {field}
@@ -192,21 +240,35 @@ export default function HomeScene() {
             </div>
 
             <p className="body home-systems-copy">
-              I turn research into frameworks,
-              software, experiments, simulations,
+              I turn research into frameworks,{" "}
+              software, experiments, simulations,{" "}
               and other working systems.
             </p>
           </div>
 
           <div className="home-systems-overview">
             <div className="home-systems-overview-link">
-              <span>
-                SYSTEMS
-              </span>
+              <div className="home-systems-overview-label">
+                <span>
+                  SYSTEMS
+                </span>
+
+                <span>
+                  03
+                </span>
+              </div>
 
               <strong>
-                AI · REASONING · SYSTEMS
+                AI
+                <i>·</i>
+                REASONING
+                <i>·</i>
+                SYSTEMS
               </strong>
+
+              <span className="home-systems-overview-arrow">
+                →
+              </span>
             </div>
           </div>
         </div>
@@ -215,7 +277,7 @@ export default function HomeScene() {
       <section className="section home-direction">
         <div className="page-container">
           <div className="home-direction-grid">
-            <div>
+            <div className="home-direction-heading">
               <p className="kicker">
                 DIRECTION
               </p>
@@ -231,9 +293,9 @@ export default function HomeScene() {
 
             <div className="home-direction-copy">
               <p className="body-large">
-                The work is an ongoing attempt to
-                understand intelligence, strengthen
-                reasoning, and turn ideas into systems
+                The work is an ongoing attempt to{" "}
+                understand intelligence, strengthen{" "}
+                reasoning, and turn ideas into systems{" "}
                 that can be tested and improved.
               </p>
 
@@ -245,16 +307,33 @@ export default function HomeScene() {
                   ) => (
                     <div
                       className="home-direction-stage"
-                      key={stage.label}
+                      key={
+                        stage.label
+                      }
                     >
                       <div className="home-direction-stage-main">
-                        <strong>
-                          {stage.label}
-                        </strong>
+                        <div className="home-direction-stage-index">
+                          {String(
+                            index + 1
+                          ).padStart(
+                            2,
+                            "0"
+                          )}
+                        </div>
 
-                        <p>
-                          {stage.copy}
-                        </p>
+                        <div>
+                          <strong>
+                            {
+                              stage.label
+                            }
+                          </strong>
+
+                          <p>
+                            {
+                              stage.copy
+                            }
+                          </p>
+                        </div>
                       </div>
 
                       {index <
@@ -272,6 +351,32 @@ export default function HomeScene() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section home-final">
+        <div className="page-container">
+          <div className="home-final-frame">
+            <div>
+              <p className="kicker">
+                KEEP EXPLORING
+              </p>
+
+              <h2 className="section-title">
+                Research.
+                <br />
+                Build.
+                <br />
+                Repeat.
+              </h2>
+            </div>
+
+            <p className="body-large">
+              The website is a living index of the{" "}
+              systems, experiments, writing, and art{" "}
+              that come out of that process.
+            </p>
           </div>
         </div>
       </section>
