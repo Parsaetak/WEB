@@ -5,35 +5,343 @@ import {
   useState
 } from "react";
 
+type PdfResourceInfo = {
+  contentLength: number | null;
+  acceptsRanges: boolean;
+  rangeVerified: boolean;
+  contentType: string | null;
+};
+
 type LibraryPdfReaderProps = {
   src: string;
   title: string;
 };
+
+const RANGE_PROBE_SIZE = 1;
+
+function formatBytes(
+  bytes: number | null
+) {
+  if (
+    bytes === null ||
+    !Number.isFinite(bytes)
+  ) {
+    return null;
+  }
+
+  if (
+    bytes <
+    1024
+  ) {
+    return `${bytes} B`;
+  }
+
+  if (
+    bytes <
+    1024 * 1024
+  ) {
+    return `${Math.round(
+      bytes / 1024
+    )} KB`;
+  }
+
+  if (
+    bytes <
+    1024 * 1024 * 1024
+  ) {
+    return `${(
+      bytes /
+      (1024 * 1024)
+    ).toFixed(1)} MB`;
+  }
+
+  return `${(
+    bytes /
+    (1024 * 1024 * 1024)
+  ).toFixed(2)} GB`;
+}
+
+async function inspectPdfResource(
+  src: string,
+  signal: AbortSignal
+): Promise<PdfResourceInfo> {
+  let contentLength:
+    | number
+    | null = null;
+
+  let acceptsRanges =
+    false;
+
+  let rangeVerified =
+    false;
+
+  let contentType:
+    | string
+    | null = null;
+
+  /*
+   * First try HEAD. This is cheap and avoids downloading the document.
+   */
+  try {
+    const headResponse =
+      await fetch(
+        src,
+        {
+          method:
+            "HEAD",
+
+          cache:
+            "no-store",
+
+          signal
+        }
+      );
+
+    if (
+      headResponse.ok ||
+      headResponse.status ===
+        206
+    ) {
+      const length =
+        headResponse.headers.get(
+          "content-length"
+        );
+
+      const ranges =
+        headResponse.headers.get(
+          "accept-ranges"
+        );
+
+      contentType =
+        headResponse.headers.get(
+          "content-type"
+        );
+
+      if (
+        length
+      ) {
+        const parsed =
+          Number(
+            length
+          );
+
+        if (
+          Number.isFinite(
+            parsed
+          ) &&
+          parsed >= 0
+        ) {
+          contentLength =
+            parsed;
+        }
+      }
+
+      acceptsRanges =
+        ranges?.toLowerCase() ===
+        "bytes";
+    }
+  } catch {
+    /*
+     * HEAD can fail because of CORS or a hosting restriction.
+     * The native viewer should still be allowed to load.
+     */
+  }
+
+  /*
+   * Verify actual byte-range support with the smallest possible request.
+   *
+   * We request one byte only. This is intentionally not used to render
+   * the PDF. Chrome's native viewer remains responsible for the document.
+   */
+  try {
+    const rangeResponse =
+      await fetch(
+        src,
+        {
+          method:
+            "GET",
+
+          headers: {
+            Range:
+              `bytes=0-${RANGE_PROBE_SIZE - 1}`
+          },
+
+          cache:
+            "no-store",
+
+          signal
+        }
+      );
+
+    rangeVerified =
+      rangeResponse.status ===
+      206;
+
+    if (
+      rangeResponse.status ===
+      206
+    ) {
+      acceptsRanges =
+        true;
+
+      const contentRange =
+        rangeResponse.headers.get(
+          "content-range"
+        );
+
+      if (
+        contentRange
+      ) {
+        const match =
+          contentRange.match(
+            /\/(\d+)$/
+          );
+
+        if (
+          match
+        ) {
+          const parsed =
+            Number(
+              match[1]
+            );
+
+          if (
+            Number.isFinite(
+              parsed
+            )
+          ) {
+            contentLength =
+              parsed;
+          }
+        }
+      }
+
+      if (
+        !contentType
+      ) {
+        contentType =
+          rangeResponse.headers.get(
+            "content-type"
+          );
+      }
+    }
+  } catch {
+    /*
+     * Range verification is best-effort.
+     */
+  }
+
+  return {
+    contentLength,
+    acceptsRanges,
+    rangeVerified,
+    contentType
+  };
+}
 
 export default function LibraryPdfReader({
   src,
   title
 }: LibraryPdfReaderProps) {
   const [
+    loaded,
+    setLoaded
+  ] = useState(false);
+
+  const [
     failed,
     setFailed
   ] = useState(false);
 
   const [
-    loaded,
-    setLoaded
-  ] = useState(false);
+    inspecting,
+    setInspecting
+  ] = useState(true);
+
+  const [
+    resourceInfo,
+    setResourceInfo
+  ] = useState<PdfResourceInfo | null>(
+    null
+  );
 
   useEffect(() => {
-    setFailed(false);
-    setLoaded(false);
+    const controller =
+      new AbortController();
+
+    setLoaded(
+      false
+    );
+
+    setFailed(
+      false
+    );
+
+    setInspecting(
+      true
+    );
+
+    setResourceInfo(
+      null
+    );
+
+    void inspectPdfResource(
+      src,
+      controller.signal
+    )
+      .then(
+        (
+          info
+        ) => {
+          if (
+            controller.signal
+              .aborted
+          ) {
+            return;
+          }
+
+          setResourceInfo(
+            info
+          );
+        }
+      )
+      .finally(() => {
+        if (
+          !controller.signal
+            .aborted
+        ) {
+          setInspecting(
+            false
+          );
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
   }, [src]);
+
+  const fileSize =
+    formatBytes(
+      resourceInfo?.contentLength ??
+        null
+    );
+
+  const rangeState =
+    resourceInfo?.rangeVerified
+      ? "RANGE ENABLED"
+      : resourceInfo?.acceptsRanges
+        ? "RANGE SUPPORTED"
+        : "NATIVE STREAM";
 
   return (
     <div className="library-pdf-reader">
       <div className="library-pdf-reader-toolbar">
         <div className="library-pdf-reader-identity">
-          <span className="library-pdf-reader-dot" />
+          <span
+            className="library-pdf-reader-dot"
+            aria-hidden="true"
+          />
 
           <div>
             <span className="library-pdf-reader-kicker">
@@ -44,6 +352,32 @@ export default function LibraryPdfReader({
               {title}
             </strong>
           </div>
+        </div>
+
+        <div className="library-pdf-reader-stats">
+          {fileSize && (
+            <span>
+              {fileSize}
+            </span>
+          )}
+
+          <span
+            data-range={
+              resourceInfo?.rangeVerified
+                ? "verified"
+                : resourceInfo?.acceptsRanges
+                  ? "supported"
+                  : "native"
+            }
+          >
+            {rangeState}
+          </span>
+
+          {inspecting && (
+            <span>
+              CHECKING
+            </span>
+          )}
         </div>
 
         <a
@@ -62,14 +396,23 @@ export default function LibraryPdfReader({
             <div className="library-pdf-reader-loading">
               <span className="status-dot" />
 
-              <span>
-                LOADING DOCUMENT
-              </span>
+              <div>
+                <strong>
+                  OPENING DOCUMENT
+                </strong>
+
+                <span>
+                  Native browser PDF viewer
+                </span>
+              </div>
             </div>
           )}
 
         {failed && (
-          <div className="library-pdf-reader-fallback">
+          <div
+            className="library-pdf-reader-fallback"
+            role="alert"
+          >
             <span className="library-pdf-reader-fallback-label">
               PDF PREVIEW UNAVAILABLE
             </span>
@@ -79,7 +422,7 @@ export default function LibraryPdfReader({
             </h3>
 
             <p>
-              Your browser could not render this PDF inside the embedded viewer.
+              Your browser could not embed this PDF in the reader.
             </p>
 
             <a
@@ -92,7 +435,9 @@ export default function LibraryPdfReader({
                 OPEN PDF
               </span>
 
-              <span aria-hidden="true">
+              <span
+                aria-hidden="true"
+              >
                 ↗
               </span>
             </a>
@@ -109,11 +454,16 @@ export default function LibraryPdfReader({
           src={src}
           title={title}
           loading="eager"
+          referrerPolicy="no-referrer"
           onLoad={() =>
-            setLoaded(true)
+            setLoaded(
+              true
+            )
           }
           onError={() =>
-            setFailed(true)
+            setFailed(
+              true
+            )
           }
           allow="fullscreen"
         />
