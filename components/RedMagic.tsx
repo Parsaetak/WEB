@@ -1174,50 +1174,47 @@ export default function RedMagic({
             break;
 
           case "charge":
-            pointerActive =
-              true;
+  charge =
+    detail.charge;
 
-            charge =
-              detail.charge;
+  interactionEnergy =
+    Math.max(
+      interactionEnergy,
+      detail.charge
+    );
 
-            interactionEnergy =
-              Math.max(
-                interactionEnergy,
-                detail.charge
-              );
+  break;
 
-            break;
+case "release":
+  charge =
+    detail.charge;
 
-          case "release":
-            charge =
-              detail.charge;
+  interactionEnergy =
+    Math.max(
+      interactionEnergy,
+      detail.charge
+    );
 
-            interactionEnergy =
-              Math.max(
-                interactionEnergy,
-                detail.charge
-              );
+  if (
+    detail.charge >
+    0.08
+  ) {
+    spawnShockwave(
+      detail,
+      0.42 +
+        detail.charge *
+          0.58
+    );
 
-            if (
-              detail.charge >
-              0.08
-            ) {
-              spawnShockwave(
-                detail,
-                0.42 +
-                  detail.charge *
-                    0.58
-              );
+    applyParticleImpulse(
+      detail,
+      0.55 +
+        detail.charge *
+          0.9
+    );
+  }
 
-              applyParticleImpulse(
-                detail,
-                0.55 +
-                  detail.charge *
-                    0.9
-              );
-            }
-
-            break;
+  break;
 
           case "orbit":
             pointerActive =
