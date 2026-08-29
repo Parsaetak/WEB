@@ -5,8 +5,7 @@ import {
   useState
 } from "react";
 
-import RedMagic,
-{
+import RedMagic, {
   type RedMagicMode
 } from "@/components/RedMagic";
 
@@ -17,6 +16,9 @@ import {
   type RedMagicPerformanceSample
 } from "@/components/RedMagicTelemetry";
 
+const SOUND_STORAGE_KEY =
+  "red-magic-sound-enabled";
+
 type BehaviourOption = {
   id: RedMagicMode;
   label: string;
@@ -24,20 +26,21 @@ type BehaviourOption = {
 };
 
 const BEHAVIOURS:
-  BehaviourOption[] =
-  [
+  BehaviourOption[] = [
     {
       id: "drift",
       label: "DRIFT",
       note:
         "Slow orbit. The organism rests inside itself and barely reacts."
     },
+
     {
       id: "listen",
       label: "LISTEN",
       note:
         "Balanced state. It follows your pointer and answers its motion."
     },
+
     {
       id: "surge",
       label: "SURGE",
@@ -45,6 +48,48 @@ const BEHAVIOURS:
         "Excited state. The core runs hot and the membrane reaches toward you."
     }
   ];
+
+function readSoundPreference() {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return false;
+  }
+
+  try {
+    return (
+      window.localStorage.getItem(
+        SOUND_STORAGE_KEY
+      ) === "true"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function writeSoundPreference(
+  enabled: boolean
+) {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      SOUND_STORAGE_KEY,
+      String(enabled)
+    );
+  } catch {
+    /*
+     * Sound still works when localStorage
+     * is unavailable.
+     */
+  }
+}
 
 function vitalityLabel(
   fps: number
@@ -84,7 +129,9 @@ function signalLabel(
 
 function formLabel(
   quality:
-    RedMagicPerformanceSample["quality"]
+    RedMagicPerformanceSample[
+      "quality"
+    ]
 ) {
   if (
     quality ===
@@ -119,6 +166,12 @@ export default function MagicConsole() {
     useState(false);
 
   const [
+    soundHydrated,
+    setSoundHydrated
+  ] =
+    useState(false);
+
+  const [
     sample,
     setSample
   ] =
@@ -127,10 +180,32 @@ export default function MagicConsole() {
     );
 
   useEffect(() => {
+    setSoundEnabled(
+      readSoundPreference()
+    );
+
+    setSoundHydrated(
+      true
+    );
+
     return subscribeRedMagicPerformance(
       setSample
     );
   }, []);
+
+  const toggleSound =
+    () => {
+      const next =
+        !soundEnabled;
+
+      setSoundEnabled(
+        next
+      );
+
+      writeSoundPreference(
+        next
+      );
+    };
 
   const activeBehaviour =
     BEHAVIOURS.find(
@@ -207,13 +282,11 @@ export default function MagicConsole() {
             aria-pressed={
               soundEnabled
             }
-            onClick={() =>
-              setSoundEnabled(
-                (
-                  current
-                ) =>
-                  !current
-              )
+            disabled={
+              !soundHydrated
+            }
+            onClick={
+              toggleSound
             }
           >
             SOUND{" "}
@@ -239,6 +312,7 @@ export default function MagicConsole() {
             soundEnabled={
               soundEnabled
             }
+            mode={mode}
           >
             <RedMagic
               mode={mode}
