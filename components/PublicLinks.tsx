@@ -219,7 +219,7 @@ const LINK_ICONS: Record<
   )
 };
 
-function LinkIcon({
+export function LinkIcon({
   icon
 }: {
   icon: PublicLinkIcon;
