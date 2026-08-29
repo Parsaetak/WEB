@@ -6,10 +6,14 @@ const projects = [
   {
     number: "01",
     code: "UHIT",
-    title: "Universal Human Intelligence Test",
-    type: "RESEARCH",
-    status: "EVOLVING",
-    copy: "An adaptive framework for measuring intelligence, reasoning, transfer, and human-AI performance.",
+    title:
+      "Universal Human Intelligence Test",
+    type:
+      "RESEARCH",
+    status:
+      "EVOLVING",
+    copy:
+      "An adaptive framework for measuring intelligence, reasoning, transfer, and human-AI performance.",
     tags: [
       "INTELLIGENCE",
       "ASSESSMENT"
@@ -18,10 +22,14 @@ const projects = [
   {
     number: "02",
     code: "RED THEORY",
-    title: "Living-System Experiment",
-    type: "SIMULATION",
-    status: "ACTIVE",
-    copy: "An experimental model for emergence, adaptation, competition, dissolution, and replacement.",
+    title:
+      "Living-System Experiment",
+    type:
+      "SIMULATION",
+    status:
+      "ACTIVE",
+    copy:
+      "An experimental model for emergence, adaptation, competition, dissolution, and replacement.",
     tags: [
       "SIMULATION",
       "EVOLUTION"
@@ -30,10 +38,14 @@ const projects = [
   {
     number: "03",
     code: "RED MAGIC",
-    title: "Computational Organism",
-    type: "EXPERIMENT",
-    status: "ACTIVE",
-    copy: "A responsive visual organism that turns the website itself into a computational experiment.",
+    title:
+      "Computational Organism",
+    type:
+      "EXPERIMENT",
+    status:
+      "ACTIVE",
+    copy:
+      "A responsive visual organism that turns the website itself into a computational experiment.",
     tags: [
       "CANVAS",
       "ADAPTATION"
@@ -42,10 +54,14 @@ const projects = [
   {
     number: "04",
     code: "AI SYSTEMS",
-    title: "Reasoning Architecture",
-    type: "SYSTEMS",
-    status: "RESEARCH",
-    copy: "Local AI tools, reasoning frameworks, context engineering, and autonomous system experiments.",
+    title:
+      "Reasoning Architecture",
+    type:
+      "SYSTEMS",
+    status:
+      "RESEARCH",
+    copy:
+      "Local AI tools, reasoning frameworks, context engineering, and autonomous system experiments.",
     tags: [
       "AI",
       "SYSTEMS"
@@ -53,10 +69,9 @@ const projects = [
   }
 ];
 
-
-
 export default function WorkScene() {
-  const github = GITHUB_LINK;
+  const github =
+    GITHUB_LINK;
 
   return (
     <div className="work-scene">
@@ -66,18 +81,35 @@ export default function WorkScene() {
           aria-hidden="true"
         >
           <span className="work-grid-plane" />
-          <span className="work-grid-axis work-grid-axis-x" />
-          <span className="work-grid-axis work-grid-axis-y" />
 
-          <span className="work-marker work-marker-one" />
-          <span className="work-marker work-marker-two" />
-          <span className="work-marker work-marker-three" />
-          <span className="work-marker work-marker-four" />
+          <span
+            className="work-grid-axis work-grid-axis-x"
+          />
+
+          <span
+            className="work-grid-axis work-grid-axis-y"
+          />
+
+          <span
+            className="work-marker work-marker-one"
+          />
+
+          <span
+            className="work-marker work-marker-two"
+          />
+
+          <span
+            className="work-marker work-marker-three"
+          />
+
+          <span
+            className="work-marker work-marker-four"
+          />
         </div>
 
         <div className="page-container">
           <div className="work-header">
-            <div>
+            <div className="work-header-copy">
               <p className="kicker">
                 04 / WORK
               </p>
@@ -91,8 +123,14 @@ export default function WorkScene() {
               </p>
             </div>
 
-            <div className="work-status">
-              <span className="work-status-dot" />
+            <div
+              className="work-status"
+              aria-label="Work status"
+            >
+              <span
+                className="work-status-dot"
+                aria-hidden="true"
+              />
 
               <span>
                 OPEN
@@ -102,8 +140,8 @@ export default function WorkScene() {
 
           <div className="work-intro">
             <p className="work-intro-statement">
-              I build experiments around intelligence:
-              systems that can be measured, challenged,
+              I build experiments around intelligence:{" "}
+              systems that can be measured, challenged,{" "}
               visualised, and improved.
             </p>
           </div>
@@ -132,44 +170,64 @@ export default function WorkScene() {
 
             <div className="work-project-list">
               {projects.map(
-                (project) => (
+                (
+                  project
+                ) => (
                   <article
                     className="work-project"
-                    key={project.number}
+                    key={
+                      project.number
+                    }
                     data-status={
                       project.status.toLowerCase()
                     }
                   >
                     <div className="work-project-number">
-                      {project.number}
+                      {
+                        project.number
+                      }
                     </div>
 
                     <div className="work-project-main">
                       <div className="work-project-meta">
                         <span className="work-project-code">
-                          {project.code}
+                          {
+                            project.code
+                          }
                         </span>
 
                         <span className="work-project-type">
-                          {project.type}
+                          {
+                            project.type
+                          }
                         </span>
                       </div>
 
                       <h2>
-                        {project.title}
+                        {
+                          project.title
+                        }
                       </h2>
 
                       <p className="work-project-copy">
-                        {project.copy}
+                        {
+                          project.copy
+                        }
                       </p>
 
                       <div className="work-project-tags">
                         {project.tags.map(
-                          (tag) => (
+                          (
+                            tag
+                          ) => (
                             <span
-                              key={tag}
+                              key={
+                                tag
+                              }
                             >
-                              {tag}
+                              {
+                                tag
+                              }
                             </span>
                           )
                         )}
@@ -178,7 +236,9 @@ export default function WorkScene() {
 
                     <div className="work-project-state">
                       <span>
-                        {project.status}
+                        {
+                          project.status
+                        }
                       </span>
 
                       <i
@@ -191,24 +251,26 @@ export default function WorkScene() {
             </div>
           </div>
 
-          <div className="work-laboratory-footer">
-  {github && (
-    <a
-      className="work-archive-link"
-      href={github.href}
-      target="_blank"
-      rel="noreferrer"
-    >
-      <span>
-        FULL ARCHIVE
-      </span>
+          {github && (
+            <div className="work-laboratory-footer">
+              <a
+                className="work-archive-link"
+                href={
+                  github.href
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>
+                  FULL ARCHIVE
+                </span>
 
-      <strong>
-        GitHub ↗
-      </strong>
-    </a>
-  )}
-</div>
+                <strong>
+                  GitHub ↗
+                </strong>
+              </a>
+            </div>
+          )}
         </div>
       </section>
     </div>
