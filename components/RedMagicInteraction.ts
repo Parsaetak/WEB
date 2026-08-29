@@ -20,7 +20,7 @@ export type RedMagicInteractionDetail = {
   angle: number;
 
   /**
-   * 0..1 while the pointer is held.
+   * 0..1 while the pointer is being held.
    */
   charge: number;
 };
