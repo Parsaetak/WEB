@@ -86,7 +86,8 @@ function getMediaFilter(
 function getCatalogLabel(
   item: ContentItem
 ) {
-  return item.kind === "pdf"
+  return item.kind ===
+    "pdf"
     ? "BOOK"
     : getContentKindLabel(
         item.kind
@@ -199,7 +200,8 @@ export default function LibraryScene() {
   >(null);
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled =
+      false;
 
     void listContent()
       .then(
@@ -308,7 +310,8 @@ export default function LibraryScene() {
     useMemo(
       () => {
         if (
-          filter === "all"
+          filter ===
+          "all"
         ) {
           return items;
         }
@@ -359,10 +362,11 @@ export default function LibraryScene() {
   const filterCounts =
     useMemo(
       () => {
-        const counts = new Map<
-          MediaFilter,
-          number
-        >();
+        const counts =
+          new Map<
+            MediaFilter,
+            number
+          >();
 
         for (
           const item of items
@@ -899,7 +903,7 @@ export default function LibraryScene() {
 
                         <p>
                           Choose a work to{" "}
-                          see its preview,
+                          see its preview,{" "}
                           story, and{" "}
                           publication{" "}
                           details.
@@ -1094,7 +1098,9 @@ export default function LibraryScene() {
                               }{" "}
                               WORK
 
-                              <span aria-hidden="true">
+                              <span
+                                aria-hidden="true"
+                              >
                                 →
                               </span>
                             </button>
