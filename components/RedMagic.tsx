@@ -601,7 +601,8 @@ export default function RedMagic({
       0;
 
     let charge = 0;
-
+    let pointerHeld = false;
+    
     let qualityName:
       QualityName = "high";
 
@@ -1116,6 +1117,8 @@ export default function RedMagic({
           case "impact":
             pointerActive =
               true;
+
+            break;
 
             interactionEnergy =
               Math.max(
@@ -2714,17 +2717,17 @@ case "release":
         );
 
       if (
-        pointerHeldRefIsActive()
-      ) {
-        charge =
-          clamp(
-            charge +
-              delta *
-                0.00082,
-            0,
-            1
-          );
-      }
+  pointerHeld
+) {
+  charge =
+    clamp(
+      charge +
+        delta *
+          0.00082,
+      0,
+      1
+    );
+}
 
       updatePointerGeometry();
 
@@ -2776,14 +2779,6 @@ case "release":
         );
     };
 
-    function pointerHeldRefIsActive() {
-      return charge > 0 ||
-        (
-          pointerActive &&
-          interactionEnergy >
-            0.05
-        );
-    }
 
     const start = () => {
       if (
