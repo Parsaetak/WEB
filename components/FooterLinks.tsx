@@ -6,6 +6,19 @@ import {
   type PublicLink
 } from "@/lib/links";
 
+const FOOTER_LINK_ROWS: readonly (
+  readonly PublicLink[]
+)[] = [
+  ALL_PUBLIC_LINKS.slice(
+    0,
+    8
+  ),
+  ALL_PUBLIC_LINKS.slice(
+    8,
+    15
+  )
+];
+
 function FooterLink({
   link
 }: {
@@ -69,16 +82,30 @@ export default function FooterLinks() {
       className="living-shell-footer-links"
       aria-label="Public network"
     >
-      {ALL_PUBLIC_LINKS.map(
-        (link) => (
-          <FooterLink
+      {FOOTER_LINK_ROWS.map(
+        (
+          row,
+          rowIndex
+        ) => (
+          <div
+            className="living-shell-footer-link-row"
             key={
-              link.id
+              `footer-row-${rowIndex}`
             }
-            link={
-              link
-            }
-          />
+          >
+            {row.map(
+              (link) => (
+                <FooterLink
+                  key={
+                    link.id
+                  }
+                  link={
+                    link
+                  }
+                />
+              )
+            )}
+          </div>
         )
       )}
     </nav>
