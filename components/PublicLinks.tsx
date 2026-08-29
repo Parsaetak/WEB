@@ -40,14 +40,14 @@ const LINK_GROUPS: readonly LinkGroup[] = [
   }
 ];
 
-const COMPACT_SOCIAL_IDS = new Set([
+const COMPACT_LINK_IDS = [
   "x",
-  "whatsapp",
+  "telegram-channel",
   "instagram",
-  "github",
   "linkedin",
-  "discord"
-]);
+  "youtube",
+  "support"
+] as const;
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -377,17 +377,34 @@ export default function PublicLinks({
         {LINK_GROUPS.map(
           (group) => {
             const links =
-              compact
-                ? group.label ===
-                  "SOCIAL"
-                  ? group.links.filter(
-                      (link) =>
-                        COMPACT_SOCIAL_IDS.has(
-                          link.id
-                        )
-                    )
-                  : []
-                : group.links;
+  compact
+    ? COMPACT_LINK_IDS.reduce<
+        PublicLink[]
+      >(
+        (
+          ordered,
+          id
+        ) => {
+          const link =
+            [...PUBLIC_LINKS.social, ...PUBLIC_LINKS.resources]
+              .find(
+                (item) =>
+                  item.id === id
+              );
+
+          if (
+            link
+          ) {
+            ordered.push(
+              link
+            );
+          }
+
+          return ordered;
+        },
+        []
+      )
+    : group.links;
 
             if (
               links.length ===
