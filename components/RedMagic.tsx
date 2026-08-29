@@ -1115,32 +1115,31 @@ export default function RedMagic({
             break;
 
           case "impact":
-            pointerActive =
-              true;
+  pointerActive =
+    true;
 
-            break;
+  interactionEnergy =
+    Math.max(
+      interactionEnergy,
+      detail.proximity
+    );
 
-            interactionEnergy =
-              Math.max(
-                interactionEnergy,
-                detail.proximity
-              );
+  spawnShockwave(
+    detail,
+    0.62 +
+      detail.proximity *
+        0.28
+  );
 
-            spawnShockwave(
-              detail,
-              0.62 +
-                detail.proximity *
-                  0.28
-            );
+  applyParticleImpulse(
+    detail,
+    0.48 +
+      detail.proximity *
+        0.38
+  );
 
-            applyParticleImpulse(
-              detail,
-              0.48 +
-                detail.proximity *
-                  0.38
-            );
+  break;
 
-            break;
 
           case "flick":
             pointerActive =
@@ -2660,23 +2659,33 @@ case "release":
         ];
 
       if (
-        !reducedMotion
-      ) {
-        elapsed +=
-          delta *
-          profile.timeScale;
-      }
+  !reducedMotion
+) {
+  elapsed +=
+    delta *
+    profile.timeScale *
+    interactionScale;
+}
 
       const time =
         reducedMotion
           ? 0
           : elapsed;
 
-      const stepDelta =
-        reducedMotion
-          ? 0
-          : delta *
-            profile.timeScale;
+      const IDLE_SIMULATION_SCALE =
+  0.32;
+
+const interactionScale =
+  pointerActive
+    ? 1
+    : IDLE_SIMULATION_SCALE;
+
+const stepDelta =
+  reducedMotion
+    ? 0
+    : delta *
+      profile.timeScale *
+      interactionScale;
 
       pointer.x +=
         (
