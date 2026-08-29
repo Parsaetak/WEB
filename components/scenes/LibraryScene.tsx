@@ -68,124 +68,95 @@ const MEDIA_FILTERS:
 function getMediaFilter(
   kind: ContentKind
 ): MediaFilter {
-  if (
-    kind ===
-    "pdf"
-  ) {
-    return "book";
-  }
+  switch (kind) {
+    case "pdf":
+      return "book";
 
-  if (
-    kind ===
-    "mp3"
-  ) {
-    return "audio";
-  }
+    case "mp3":
+      return "audio";
 
-  if (
-    kind ===
-    "mp4"
-  ) {
-    return "video";
-  }
+    case "mp4":
+      return "video";
 
-  return "art";
+    default:
+      return "art";
+  }
 }
 
 function getCatalogLabel(
   item: ContentItem
 ) {
-  if (
-    item.kind ===
-    "pdf"
-  ) {
-    return "BOOK";
-  }
-
-  return getContentKindLabel(
-    item.kind
-  );
+  return item.kind === "pdf"
+    ? "BOOK"
+    : getContentKindLabel(
+        item.kind
+      );
 }
 
 function getActionLabel(
   kind: ContentKind
 ) {
-  if (
-    kind ===
-    "pdf"
-  ) {
-    return "READ";
-  }
+  switch (kind) {
+    case "pdf":
+      return "READ";
 
-  if (
-    kind ===
-    "mp3"
-  ) {
-    return "LISTEN";
-  }
+    case "mp3":
+      return "LISTEN";
 
-  if (
-    kind ===
-    "mp4"
-  ) {
-    return "WATCH";
-  }
+    case "mp4":
+      return "WATCH";
 
-  return "VIEW";
+    default:
+      return "VIEW";
+  }
 }
 
 function getDownloadLabel(
   kind: ContentKind
 ) {
-  if (
-    kind ===
-    "pdf"
-  ) {
-    return "DOWNLOAD PDF";
-  }
+  switch (kind) {
+    case "pdf":
+      return "DOWNLOAD PDF";
 
-  if (
-    kind ===
-    "mp3"
-  ) {
-    return "DOWNLOAD AUDIO";
-  }
+    case "mp3":
+      return "DOWNLOAD AUDIO";
 
-  if (
-    kind ===
-    "mp4"
-  ) {
-    return "DOWNLOAD VIDEO";
-  }
+    case "mp4":
+      return "DOWNLOAD VIDEO";
 
-  return "DOWNLOAD IMAGE";
+    default:
+      return "DOWNLOAD IMAGE";
+  }
 }
 
 function getPreviewGlyph(
   kind: ContentKind
 ) {
-  if (
-    kind ===
-    "pdf"
-  ) {
-    return "BOOK";
-  }
+  switch (kind) {
+    case "pdf":
+      return "BOOK";
 
-  if (
-    kind ===
-    "mp3"
-  ) {
-    return "AUDIO";
-  }
+    case "mp3":
+      return "AUDIO";
 
-  if (
-    kind ===
-    "mp4"
-  ) {
-    return "VIDEO";
-  }
+    case "mp4":
+      return "VIDEO";
 
-  return "IMAGE";
+    default:
+      return "IMAGE";
+  }
+}
+
+function isImageKind(
+  kind: ContentKind
+) {
+  return (
+    kind === "png" ||
+    kind === "jpg" ||
+    kind === "jpeg" ||
+    kind === "webp" ||
+    kind === "gif"
+  );
 }
 
 export default function LibraryScene() {
@@ -228,8 +199,7 @@ export default function LibraryScene() {
   >(null);
 
   useEffect(() => {
-    let cancelled =
-      false;
+    let cancelled = false;
 
     void listContent()
       .then(
@@ -284,8 +254,7 @@ export default function LibraryScene() {
       });
 
     return () => {
-      cancelled =
-        true;
+      cancelled = true;
     };
   }, []);
 
@@ -339,8 +308,7 @@ export default function LibraryScene() {
     useMemo(
       () => {
         if (
-          filter ===
-          "all"
+          filter === "all"
         ) {
           return items;
         }
@@ -351,8 +319,7 @@ export default function LibraryScene() {
           ) =>
             getMediaFilter(
               item.kind
-            ) ===
-            filter
+            ) === filter
         );
       },
       [
@@ -389,11 +356,6 @@ export default function LibraryScene() {
       ]
     );
 
-  /*
-   * Per-filter counts are derived in one pass over the items instead
-   * of re-filtering the whole catalog once per filter button on every
-   * render.
-   */
   const filterCounts =
     useMemo(
       () => {
@@ -403,19 +365,20 @@ export default function LibraryScene() {
         >();
 
         for (
-          let index = 0;
-          index < items.length;
-          index += 1
+          const item of items
         ) {
           const mediaFilter =
             getMediaFilter(
-              items[index].kind
+              item.kind
             );
 
           counts.set(
             mediaFilter,
-            (counts.get(mediaFilter) ?? 0) +
-              1
+            (
+              counts.get(
+                mediaFilter
+              ) ?? 0
+            ) + 1
           );
         }
 
@@ -481,8 +444,8 @@ export default function LibraryScene() {
           >
             <div className="library-modal-shell">
               <header className="library-modal-header">
-                <div>
-                  <span>
+                <div className="library-modal-heading">
+                  <span className="library-modal-type">
                     {
                       getCatalogLabel(
                         selected
@@ -560,17 +523,8 @@ export default function LibraryScene() {
                   />
                 )}
 
-                {(
-                  selected.kind ===
-                    "png" ||
-                  selected.kind ===
-                    "jpg" ||
-                  selected.kind ===
-                    "jpeg" ||
-                  selected.kind ===
-                    "webp" ||
-                  selected.kind ===
-                    "gif"
+                {isImageKind(
+                  selected.kind
                 ) && (
                   <div className="library-modal-image-wrap">
                     <img
@@ -602,7 +556,9 @@ export default function LibraryScene() {
                       }
                     </span>
 
-                    <span aria-hidden="true">
+                    <span
+                      aria-hidden="true"
+                    >
                       ↓
                     </span>
                   </a>
@@ -623,17 +579,14 @@ export default function LibraryScene() {
             aria-hidden="true"
           >
             <span className="library-atmosphere-orbit library-atmosphere-orbit-one" />
-
             <span className="library-atmosphere-orbit library-atmosphere-orbit-two" />
-
             <span className="library-atmosphere-axis library-atmosphere-axis-x" />
-
             <span className="library-atmosphere-axis library-atmosphere-axis-y" />
           </div>
 
           <div className="page-container">
             <header className="library-header">
-              <div>
+              <div className="library-header-copy">
                 <p className="kicker">
                   06 / LIBRARY
                 </p>
@@ -646,16 +599,20 @@ export default function LibraryScene() {
                   listen.
                 </h1>
 
-                <p className="body-large library-lead">
-                  A living archive of
+                <p className="body-large library-header-lead">
+                  A living archive of{" "}
                   books, experiments,
-                  media, and other
+                  media, and other{" "}
                   original work.
                 </p>
               </div>
             </header>
 
-            <div className="library-filters">
+            <div
+              className="library-filters"
+              role="tablist"
+              aria-label="Library filters"
+            >
               {MEDIA_FILTERS.map(
                 (
                   mediaFilter
@@ -668,13 +625,20 @@ export default function LibraryScene() {
                             mediaFilter.id
                           ) ?? 0;
 
+                  const active =
+                    filter ===
+                    mediaFilter.id;
+
                   return (
                     <button
                       type="button"
+                      role="tab"
+                      aria-selected={
+                        active
+                      }
                       className="library-filter"
                       data-active={
-                        filter ===
-                        mediaFilter.id
+                        active
                           ? "true"
                           : "false"
                       }
@@ -735,7 +699,10 @@ export default function LibraryScene() {
             {!loading &&
               !error && (
                 <div className="library-layout">
-                  <section className="library-gallery">
+                  <section
+                    className="library-gallery"
+                    aria-label="Library collection"
+                  >
                     <div className="library-catalog-header">
                       <div>
                         <p className="kicker">
@@ -752,7 +719,8 @@ export default function LibraryScene() {
                                 ) =>
                                   mediaFilter.id ===
                                   filter
-                              )?.label}
+                              )?.label ??
+                              "Collection"}
                         </h2>
                       </div>
 
@@ -885,8 +853,10 @@ export default function LibraryScene() {
                                 </strong>
 
                                 <small>
-                                  {item.year ??
-                                    "ORIGINAL WORK"}
+                                  {
+                                    item.year ??
+                                    "ORIGINAL WORK"
+                                  }
                                 </small>
                               </span>
 
@@ -904,15 +874,18 @@ export default function LibraryScene() {
                       {filteredItems.length ===
                         0 && (
                         <div className="library-empty">
-                          No published media
-                          exists in this
+                          No published media{" "}
+                          exists in this{" "}
                           category yet.
                         </div>
                       )}
                     </div>
                   </section>
 
-                  <section className="library-preview">
+                  <section
+                    className="library-preview"
+                    aria-label="Selected work preview"
+                  >
                     {!selected && (
                       <div className="library-preview-empty">
                         <span className="library-preview-empty-glyph">
@@ -920,15 +893,15 @@ export default function LibraryScene() {
                         </span>
 
                         <strong>
-                          Discover the
+                          Discover the{" "}
                           collection
                         </strong>
 
                         <p>
-                          Choose a work to
+                          Choose a work to{" "}
                           see its preview,
-                          story, and
-                          publication
+                          story, and{" "}
+                          publication{" "}
                           details.
                         </p>
                       </div>
@@ -1121,7 +1094,7 @@ export default function LibraryScene() {
                               }{" "}
                               WORK
 
-                              <span>
+                              <span aria-hidden="true">
                                 →
                               </span>
                             </button>
