@@ -55,10 +55,6 @@ export default function HomeScene() {
 
   return (
     <div className="home-scene">
-      {/* ------------------------------------------------------------------ */}
-      {/* Hero                                                               */}
-      {/* ------------------------------------------------------------------ */}
-
       <section className="hero home-origin">
         <div
           className="home-origin-grid"
@@ -142,34 +138,6 @@ export default function HomeScene() {
               )}
             </div>
           </div>
-
-          <div className="home-origin-core">
-            <div className="home-origin-core-atmosphere">
-              <span />
-              <span />
-              <span />
-            </div>
-
-            <div className="home-origin-core-mark">
-              <span className="home-origin-core-mark-orbit" />
-
-              <span className="home-origin-core-mark-dot" />
-
-              <span className="home-origin-core-mark-label">
-                LIVE
-              </span>
-            </div>
-
-            <div className="home-origin-core-label">
-              <span>
-                LIVING SYSTEM
-              </span>
-
-              <strong>
-                RED MAGIC
-              </strong>
-            </div>
-          </div>
         </div>
 
         <div className="home-origin-foot">
@@ -183,10 +151,6 @@ export default function HomeScene() {
           />
         </div>
       </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Exploration                                                         */}
-      {/* ------------------------------------------------------------------ */}
 
       <section className="section home-capabilities">
         <div className="page-container">
@@ -229,105 +193,6 @@ export default function HomeScene() {
           </div>
         </div>
       </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* RED Magic featured system                                           */}
-      {/* ------------------------------------------------------------------ */}
-
-      <section className="section home-red-magic">
-        <div className="page-container">
-          <div className="home-red-magic-header">
-            <div>
-              <p className="kicker">
-                00 / LIVE SYSTEM
-              </p>
-
-              <h2 className="section-title">
-                RED Magic
-                <br />
-                is alive.
-              </h2>
-            </div>
-
-            <div className="home-red-magic-copy">
-              <p className="body-large">
-                A small computational organism built{" "}
-                directly into this website. It responds{" "}
-                to movement, changes its behaviour, and{" "}
-                turns interaction into visible energy.
-              </p>
-
-              <a
-                className="home-red-magic-link"
-                href="#magic"
-              >
-                <span>
-                  OPEN RED MAGIC
-                </span>
-
-                <strong>
-                  →
-                </strong>
-              </a>
-            </div>
-          </div>
-
-          <div className="home-red-magic-console">
-            <div className="home-red-magic-console-header">
-              <div>
-                <span>
-                  ORGANISM
-                </span>
-
-                <strong>
-                  RED MAGIC
-                </strong>
-              </div>
-
-              <div className="home-red-magic-console-status">
-                <span
-                  className="home-red-magic-console-dot"
-                  aria-hidden="true"
-                />
-
-                <span>
-                  LIVE
-                </span>
-              </div>
-            </div>
-
-            <div className="home-red-magic-stage">
-              <RedMagic />
-            </div>
-
-            <div className="home-red-magic-console-footer">
-              <span>
-                CORE
-              </span>
-
-              <span>
-                MEMBRANE
-              </span>
-
-              <span>
-                FLOWS
-              </span>
-
-              <span>
-                PARTICLES
-              </span>
-
-              <span>
-                SIGNAL
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Systems                                                             */}
-      {/* ------------------------------------------------------------------ */}
 
       <section className="section home-systems">
         <div className="page-container">
@@ -429,10 +294,6 @@ export default function HomeScene() {
         </div>
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Direction                                                           */}
-      {/* ------------------------------------------------------------------ */}
-
       <section className="section home-direction">
         <div className="page-container">
           <div className="home-direction-grid">
@@ -513,10 +374,6 @@ export default function HomeScene() {
           </div>
         </div>
       </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Closing statement                                                   */}
-      {/* ------------------------------------------------------------------ */}
 
       <section className="section home-final">
         <div className="page-container">
