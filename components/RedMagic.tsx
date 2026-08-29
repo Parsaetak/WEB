@@ -1138,7 +1138,7 @@ export default function RedMagic({
         0.38
   );
 
-  break;
+            break;
 
 
           case "flick":
@@ -1176,6 +1176,9 @@ export default function RedMagic({
             break;
 
           case "charge":
+  pointerHeld =
+    true;
+
   charge =
     detail.charge;
 
@@ -1185,13 +1188,21 @@ export default function RedMagic({
       detail.charge
     );
 
-  break;
+            break;
 
-case "release":
-  charge =
-    detail.charge;
+          case "release":
 
-  interactionEnergy =
+            pointerHeld =
+  
+              false;
+
+
+            charge =
+  
+              detail.charge;
+
+
+            interactionEnergy =
     Math.max(
       interactionEnergy,
       detail.charge
@@ -1216,7 +1227,7 @@ case "release":
     );
   }
 
-  break;
+            break;
 
           case "orbit":
             pointerActive =
@@ -1232,14 +1243,20 @@ case "release":
             break;
 
           case "leave":
-            pointerActive =
-              false;
+  pointerActive =
+    false;
 
-            interactionEnergy =
-              Math.min(
-                interactionEnergy,
-                0.35
-              );
+  pointerHeld =
+    false;
+
+  interactionEnergy =
+    Math.min(
+      interactionEnergy,
+      0.35
+    );
+
+  charge =
+    0;
 
             break;
         }
@@ -2658,7 +2675,26 @@ case "release":
           modeRef.current
         ];
 
-      if (
+      /*
+ * RED MAGIC idles slowly when nobody is interacting with it.
+ *
+ * 0.32x = calm autonomous motion.
+ * 1.00x = full simulation speed while interacting.
+ *
+ * The mode's own timeScale is still applied on top:
+ *   DRIFT  ≈ 0.55x active
+ *   LISTEN = 1.00x active
+ *   SURGE  ≈ 1.45x active
+ */
+const IDLE_SIMULATION_SCALE =
+  0.32;
+
+const interactionScale =
+  pointerActive
+    ? 1
+    : IDLE_SIMULATION_SCALE;
+
+if (
   !reducedMotion
 ) {
   elapsed +=
@@ -2667,19 +2703,15 @@ case "release":
     interactionScale;
 }
 
-      const time =
-        reducedMotion
-          ? 0
-          : elapsed;
+const time =
+  reducedMotion
+    ? 0
+    : elapsed;
 
-      const IDLE_SIMULATION_SCALE =
-  0.32;
-
-const interactionScale =
-  pointerActive
-    ? 1
-    : IDLE_SIMULATION_SCALE;
-
+/*
+ * Particles, nodes and the rest of the physical animation
+ * use the same idle/active multiplier as the main clock.
+ */
 const stepDelta =
   reducedMotion
     ? 0
