@@ -10,6 +10,8 @@ import RedMagic,
   type RedMagicMode
 } from "@/components/RedMagic";
 
+import MagicInteractionLayer from "@/components/MagicInteractionLayer";
+
 import {
   subscribeRedMagicPerformance,
   type RedMagicPerformanceSample
@@ -21,7 +23,8 @@ type BehaviourOption = {
   note: string;
 };
 
-const BEHAVIOURS: BehaviourOption[] =
+const BEHAVIOURS:
+  BehaviourOption[] =
   [
     {
       id: "drift",
@@ -43,20 +46,18 @@ const BEHAVIOURS: BehaviourOption[] =
     }
   ];
 
-/*
- * Vital-sign mapping: engine telemetry is translated into qualitative
- * organism states. No raw numbers, no engineering jargon — the readout
- * describes the creature, not the computer (site rule: infrastructure
- * stays invisible).
- */
 function vitalityLabel(
   fps: number
 ) {
-  if (fps >= 55) {
+  if (
+    fps >= 55
+  ) {
     return "FLOWING";
   }
 
-  if (fps >= 34) {
+  if (
+    fps >= 34
+  ) {
     return "STEADY";
   }
 
@@ -66,11 +67,15 @@ function vitalityLabel(
 function signalLabel(
   energy: number
 ) {
-  if (energy < 0.18) {
+  if (
+    energy < 0.18
+  ) {
     return "RESTING";
   }
 
-  if (energy < 0.7) {
+  if (
+    energy < 0.7
+  ) {
     return "AWAKE";
   }
 
@@ -78,13 +83,20 @@ function signalLabel(
 }
 
 function formLabel(
-  quality: RedMagicPerformanceSample["quality"]
+  quality:
+    RedMagicPerformanceSample["quality"]
 ) {
-  if (quality === "high") {
+  if (
+    quality ===
+    "high"
+  ) {
     return "DENSE";
   }
 
-  if (quality === "medium") {
+  if (
+    quality ===
+    "medium"
+  ) {
     return "BALANCED";
   }
 
@@ -100,7 +112,16 @@ export default function MagicConsole() {
       "listen"
     );
 
-  const [sample, setSample] =
+  const [
+    soundEnabled,
+    setSoundEnabled
+  ] =
+    useState(false);
+
+  const [
+    sample,
+    setSample
+  ] =
     useState<RedMagicPerformanceSample | null>(
       null
     );
@@ -113,23 +134,35 @@ export default function MagicConsole() {
 
   const activeBehaviour =
     BEHAVIOURS.find(
-      (behaviour) =>
-        behaviour.id === mode
-    ) ?? BEHAVIOURS[1];
+      (
+        behaviour
+      ) =>
+        behaviour.id ===
+        mode
+    ) ??
+    BEHAVIOURS[1];
 
-  const signal = sample
-    ? signalLabel(
-        sample.pointerEnergy ?? 0
-      )
-    : "—";
+  const signal =
+    sample
+      ? signalLabel(
+          sample.pointerEnergy ??
+            0
+        )
+      : "—";
 
-  const vitality = sample
-    ? vitalityLabel(sample.fps)
-    : "—";
+  const vitality =
+    sample
+      ? vitalityLabel(
+          sample.fps
+        )
+      : "—";
 
-  const form = sample
-    ? formLabel(sample.quality)
-    : "—";
+  const form =
+    sample
+      ? formLabel(
+          sample.quality
+        )
+      : "—";
 
   return (
     <div className="magic-lab">
@@ -140,7 +173,9 @@ export default function MagicConsole() {
           aria-label="Organism behaviour"
         >
           {BEHAVIOURS.map(
-            (behaviour) => (
+            (
+              behaviour
+            ) => (
               <button
                 key={
                   behaviour.id
@@ -165,21 +200,50 @@ export default function MagicConsole() {
           )}
         </div>
 
-        <p
-          className="magic-lab-note"
-          aria-live="polite"
-        >
-          {
-            activeBehaviour.note
-          }
-        </p>
+        <div className="magic-lab-actions">
+          <button
+            type="button"
+            className="magic-sound-control"
+            aria-pressed={
+              soundEnabled
+            }
+            onClick={() =>
+              setSoundEnabled(
+                (
+                  current
+                ) =>
+                  !current
+              )
+            }
+          >
+            SOUND{" "}
+            {soundEnabled
+              ? "ON"
+              : "OFF"}
+          </button>
+
+          <p
+            className="magic-lab-note"
+            aria-live="polite"
+          >
+            {
+              activeBehaviour.note
+            }
+          </p>
+        </div>
       </div>
 
       <div className="magic-lab-frame">
         <div className="magic-lab-shell">
-          <RedMagic
-            mode={mode}
-          />
+          <MagicInteractionLayer
+            soundEnabled={
+              soundEnabled
+            }
+          >
+            <RedMagic
+              mode={mode}
+            />
+          </MagicInteractionLayer>
         </div>
       </div>
 
