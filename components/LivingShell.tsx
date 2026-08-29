@@ -18,6 +18,7 @@ import SceneRegistry from "@/components/SceneRegistry";
 import SceneUrlSync from "@/components/SceneUrlSync";
 import WorldBackground from "@/components/WorldBackground";
 import { GITHUB_LINK } from "@/lib/links";
+import RedCursor from "@/components/RedCursor";
 
 export type SceneId =
   | "home"
@@ -230,19 +231,21 @@ export default function LivingShell({
 
   return (
     <div
-      className="living-shell"
-      data-active-scene={
-        activeScene
-      }
-    >
-      <WorldBackground />
+  className="living-shell"
+  data-active-scene={
+    activeScene
+  }
+>
+  <WorldBackground />
 
-      <SceneUrlSync
-        scene={activeScene}
-        onSceneChange={
-          changeSceneFromHistory
-        }
-      />
+  <RedCursor />
+
+  <SceneUrlSync
+    scene={activeScene}
+    onSceneChange={
+      changeSceneFromHistory
+    }
+  />
 
       {urlReady && (
         <ScenePreloader
