@@ -21,7 +21,6 @@ export type RedMagicInteractionDetail = {
 
   /**
    * 0..1 while the pointer is held.
-   * 0 for all other events.
    */
   charge: number;
 };
