@@ -21261,3 +21261,825 @@ html.red-cursor-enabled * {
       minmax(0, 1fr);
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* MAGIC interaction layer — pointer intelligence + sound feedback           */
+/* -------------------------------------------------------------------------- */
+
+.magic-interaction {
+  --magic-pointer-x:
+    50%;
+
+  --magic-pointer-y:
+    50%;
+
+  --magic-proximity:
+    0;
+
+  --magic-velocity:
+    0;
+
+  --magic-angle:
+    0rad;
+
+  position:
+    relative;
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  overflow:
+    hidden;
+
+  isolation:
+    isolate;
+
+  touch-action:
+    pan-y;
+}
+
+.magic-interaction-content {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  z-index:
+    1;
+}
+
+.magic-interaction-visual {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  z-index:
+    3;
+
+  pointer-events:
+    none;
+
+  overflow:
+    hidden;
+}
+
+.magic-interaction-aura {
+  position:
+    absolute;
+
+  left:
+    0;
+
+  top:
+    0;
+
+  width:
+    clamp(
+      80px,
+      10vw,
+      150px
+    );
+
+  aspect-ratio:
+    1;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      70,
+      52,
+      0.1
+    );
+
+  border-radius:
+    50%;
+
+  opacity:
+    calc(
+      0.08 +
+      var(--magic-proximity) *
+      0.34
+    );
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(
+        255,
+        70,
+        50,
+        0.1
+      ),
+      transparent
+      68%
+    );
+
+  transform:
+    translate3d(
+      calc(
+        var(--magic-pointer-x) -
+        50%
+      ),
+      calc(
+        var(--magic-pointer-y) -
+        50%
+      ),
+      0
+    )
+    translate(-50%, -50%)
+    scale(
+      calc(
+        0.7 +
+        var(--magic-proximity) *
+        0.55
+      )
+    );
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.magic-interaction-orbit {
+  position:
+    absolute;
+
+  left:
+    50%;
+
+  top:
+    50%;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      42,
+      30,
+      0.09
+    );
+
+  border-radius:
+    50%;
+
+  opacity:
+    calc(
+      0.18 +
+      var(--magic-proximity) *
+      0.28
+    );
+
+  transform:
+    translate(-50%, -50%)
+    rotate(
+      var(--magic-angle)
+    );
+
+  transition:
+    opacity
+    180ms ease;
+}
+
+.magic-interaction-orbit-one {
+  width:
+    min(
+      44%,
+      280px
+    );
+
+  aspect-ratio:
+    1;
+}
+
+.magic-interaction-orbit-two {
+  width:
+    min(
+      59%,
+      390px
+    );
+
+  aspect-ratio:
+    1;
+
+  border-style:
+    dashed;
+}
+
+.magic-interaction-orbit-three {
+  width:
+    min(
+      74%,
+      500px
+    );
+
+  aspect-ratio:
+    1;
+
+  opacity:
+    calc(
+      0.07 +
+      var(--magic-proximity) *
+      0.16
+    );
+}
+
+.magic-interaction-axis {
+  position:
+    absolute;
+
+  left:
+    50%;
+
+  top:
+    50%;
+
+  background:
+    rgba(
+      255,
+      55,
+      42,
+      0.1
+    );
+
+  opacity:
+    calc(
+      0.08 +
+      var(--magic-proximity) *
+      0.22
+    );
+
+  transform-origin:
+    center;
+}
+
+.magic-interaction-axis-x {
+  width:
+    70%;
+
+  height:
+    1px;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(
+      var(--magic-angle)
+    );
+}
+
+.magic-interaction-axis-y {
+  width:
+    1px;
+
+  height:
+    58%;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(
+      calc(
+        var(--magic-angle) +
+        90deg
+      )
+    );
+}
+
+.magic-interaction-reticle {
+  position:
+    absolute;
+
+  left:
+    50%;
+
+  top:
+    50%;
+
+  width:
+    7px;
+
+  height:
+    7px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      110,
+      92,
+      0.58
+    );
+
+  border-radius:
+    50%;
+
+  opacity:
+    calc(
+      0.22 +
+      var(--magic-proximity) *
+      0.5
+    );
+
+  transform:
+    translate(-50%, -50%)
+    scale(
+      calc(
+        0.8 +
+        var(--magic-proximity) *
+        1.25 +
+        var(--magic-velocity) *
+        0.4
+      )
+    );
+
+  transition:
+    opacity
+    120ms ease;
+}
+
+.magic-interaction-ripple {
+  position:
+    absolute;
+
+  left:
+    var(--ripple-x);
+
+  top:
+    var(--ripple-y);
+
+  width:
+    var(--ripple-size);
+
+  height:
+    var(--ripple-size);
+
+  border:
+    1px solid
+    rgba(
+      255,
+      72,
+      54,
+      var(--ripple-strength)
+    );
+
+  border-radius:
+    50%;
+
+  opacity:
+    0;
+
+  transform:
+    translate(-50%, -50%)
+    scale(
+      0.18
+    );
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.magic-interaction-ripple.is-active {
+  animation:
+    magic-ripple
+    760ms
+    cubic-bezier(
+      0.16,
+      1,
+      0.3,
+      1
+    );
+}
+
+.magic-interaction[data-interaction="impact"]
+  .magic-interaction-aura {
+  animation:
+    magic-impact-pulse
+    320ms
+    ease-out;
+}
+
+.magic-interaction[data-interaction="flick"]
+  .magic-interaction-axis {
+  opacity:
+    0.55;
+
+  animation:
+    magic-flick-axis
+    240ms
+    cubic-bezier(
+      0.2,
+      0.8,
+      0.2,
+      1
+    );
+}
+
+.magic-interaction[data-interaction="orbit"]
+  .magic-interaction-orbit {
+  opacity:
+    0.7;
+
+  animation:
+    magic-orbit-response
+    720ms
+    cubic-bezier(
+      0.16,
+      1,
+      0.3,
+      1
+    );
+}
+
+.magic-interaction[data-interaction="enter"]
+  .magic-interaction-orbit-one {
+  animation:
+    magic-enter-response
+    560ms
+    cubic-bezier(
+      0.16,
+      1,
+      0.3,
+      1
+    );
+}
+
+.magic-interaction[data-interaction="leave"]
+  .magic-interaction-aura {
+  animation:
+    magic-leave-response
+    260ms
+    ease-out;
+}
+
+.magic-lab-actions {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    flex-end;
+
+  gap:
+    12px;
+
+  min-width:
+    0;
+}
+
+.magic-sound-control {
+  appearance:
+    none;
+
+  flex:
+    0 0 auto;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.16
+    );
+
+  border-radius:
+    999px;
+
+  padding:
+    9px 14px;
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.025
+    );
+
+  color:
+    #646d7b;
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    9px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.16em;
+
+  line-height:
+    1;
+
+  text-transform:
+    uppercase;
+
+  transition:
+    color
+    140ms ease,
+    border-color
+    140ms ease,
+    background
+    140ms ease;
+}
+
+.magic-sound-control:hover {
+  color:
+    #f0f2f6;
+
+  border-color:
+    rgba(
+      255,
+      58,
+      44,
+      0.42
+    );
+}
+
+.magic-sound-control[aria-pressed="true"] {
+  color:
+    #ffd9d0;
+
+  border-color:
+    rgba(
+      255,
+      58,
+      44,
+      0.6
+    );
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.1
+    );
+}
+
+.magic-sound-control:focus-visible {
+  outline:
+    2px solid
+    rgba(
+      255,
+      90,
+      72,
+      0.8
+    );
+
+  outline-offset:
+    2px;
+}
+
+@keyframes magic-ripple {
+  0% {
+    opacity:
+      0.82;
+
+    transform:
+      translate(-50%, -50%)
+      scale(
+        0.16
+      );
+  }
+
+  100% {
+    opacity:
+      0;
+
+    transform:
+      translate(-50%, -50%)
+      scale(
+        1.18
+      );
+  }
+}
+
+@keyframes magic-impact-pulse {
+  0% {
+    transform:
+      translate(
+        calc(
+          var(--magic-pointer-x) -
+          50%
+        ),
+        calc(
+          var(--magic-pointer-y) -
+          50%
+        )
+      )
+      translate(-50%, -50%)
+      scale(
+        0.9
+      );
+  }
+
+  100% {
+    transform:
+      translate(
+        calc(
+          var(--magic-pointer-x) -
+          50%
+        ),
+        calc(
+          var(--magic-pointer-y) -
+          50%
+        )
+      )
+      translate(-50%, -50%)
+      scale(
+        1.18
+      );
+  }
+}
+
+@keyframes magic-flick-axis {
+  0% {
+    transform:
+      translate(-50%, -50%)
+      rotate(
+        var(--magic-angle)
+      )
+      scaleX(
+        0.7
+      );
+  }
+
+  100% {
+    transform:
+      translate(-50%, -50%)
+      rotate(
+        var(--magic-angle)
+      )
+      scaleX(
+        1.6
+      );
+  }
+}
+
+@keyframes magic-orbit-response {
+  0% {
+    transform:
+      translate(-50%, -50%)
+      rotate(
+        var(--magic-angle)
+      )
+      scale(
+        1
+      );
+  }
+
+  55% {
+    transform:
+      translate(-50%, -50%)
+      rotate(
+        calc(
+          var(--magic-angle) +
+          18deg
+        )
+      )
+      scale(
+        1.045
+      );
+  }
+
+  100% {
+    transform:
+      translate(-50%, -50%)
+      rotate(
+        var(--magic-angle)
+      )
+      scale(
+        1
+      );
+  }
+}
+
+@keyframes magic-enter-response {
+  0% {
+    transform:
+      translate(-50%, -50%)
+      scale(
+        0.8
+      );
+  }
+
+  55% {
+    transform:
+      translate(-50%, -50%)
+      scale(
+        1.05
+      );
+  }
+
+  100% {
+    transform:
+      translate(-50%, -50%)
+      scale(
+        1
+      );
+  }
+}
+
+@keyframes magic-leave-response {
+  0% {
+    opacity:
+      0.42;
+
+    transform:
+      translate(
+        calc(
+          var(--magic-pointer-x) -
+          50%
+        ),
+        calc(
+          var(--magic-pointer-y) -
+          50%
+        )
+      )
+      translate(-50%, -50%)
+      scale(
+        1
+      );
+  }
+
+  100% {
+    opacity:
+      0;
+
+    transform:
+      translate(
+        calc(
+          var(--magic-pointer-x) -
+          50%
+        ),
+        calc(
+          var(--magic-pointer-y) -
+          50%
+        )
+      )
+      translate(-50%, -50%)
+      scale(
+        0.72
+      );
+  }
+}
+
+@media (max-width: 900px) {
+  .magic-lab-actions {
+    align-items:
+      flex-end;
+
+    flex-direction:
+      column;
+
+    gap:
+      8px;
+  }
+}
+
+@media (max-width: 560px) {
+  .magic-lab-actions {
+    align-items:
+      stretch;
+  }
+
+  .magic-sound-control {
+    width:
+      100%;
+  }
+
+  .magic-interaction-orbit-three {
+    display:
+      none;
+  }
+
+  .magic-interaction-axis {
+    opacity:
+      0.06;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magic-interaction-visual {
+    display:
+      none;
+  }
+
+  .magic-sound-control {
+    transition:
+      none;
+  }
+}
+
