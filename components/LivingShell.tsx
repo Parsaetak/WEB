@@ -333,7 +333,7 @@ export default function LivingShell({
 
       <footer className="living-shell-legal">
         <div className="living-shell-legal-inner">
-          <div className="living-shell-legal-top">
+          <div className="living-shell-footer-main">
             <div className="living-shell-legal-primary">
               <strong>
                 © 2026 Parsa Tak. All rights reserved.
@@ -347,32 +347,34 @@ export default function LivingShell({
             <FooterLinks />
           </div>
 
-          <p>
-            Original website design, visual identity,
-            writing, artwork, and other original creative
-            materials presented on this website are the
-            work of Parsa Tak and may not be reproduced,
-            redistributed, modified, or commercially
-            exploited without prior written permission,
-            except where a specific material states otherwise.
-          </p>
+          <div className="living-shell-legal-bottom">
+            <p>
+              Original website design, visual identity,
+              writing, artwork, and other original creative
+              materials presented on this website are the
+              work of Parsa Tak and may not be reproduced,
+              redistributed, modified, or commercially
+              exploited without prior written permission,
+              except where a specific material states otherwise.
+            </p>
 
-          <div className="living-shell-legal-links">
-            <a
-              href="https://github.com/Parsaetak/WEB/blob/main/LICENSE.md"
-              target="_blank"
-              rel="noreferrer"
-            >
-              LICENSE
-            </a>
+            <div className="living-shell-legal-links">
+              <a
+                href="https://github.com/Parsaetak/WEB/blob/main/LICENSE.md"
+                target="_blank"
+                rel="noreferrer"
+              >
+                LICENSE
+              </a>
 
-            <a
-              href="https://github.com/Parsaetak/WEB/blob/main/TRADEMARKS.md"
-              target="_blank"
-              rel="noreferrer"
-            >
-              TRADEMARKS
-            </a>
+              <a
+                href="https://github.com/Parsaetak/WEB/blob/main/TRADEMARKS.md"
+                target="_blank"
+                rel="noreferrer"
+              >
+                TRADEMARKS
+              </a>
+            </div>
           </div>
         </div>
       </footer>
