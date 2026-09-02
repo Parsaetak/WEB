@@ -19,6 +19,8 @@ import {
   type ContentKind
 } from "@/lib/contentRepository";
 
+import styles from "./LibraryScene.module.css";
+
 const LibraryPdfReader =
   dynamic(
     () =>
@@ -429,7 +431,9 @@ export default function LibraryScene() {
       "undefined"
       ? createPortal(
           <div
-            className="library-modal"
+            className={
+              styles.libraryModal
+            }
             role="dialog"
             aria-modal="true"
             aria-label={
@@ -446,10 +450,26 @@ export default function LibraryScene() {
               }
             }}
           >
-            <div className="library-modal-shell">
-              <header className="library-modal-header">
-                <div className="library-modal-heading">
-                  <span className="library-modal-type">
+            <div
+              className={
+                styles.libraryModalShell
+              }
+            >
+              <header
+                className={
+                  styles.libraryModalHeader
+                }
+              >
+                <div
+                  className={
+                    styles.libraryModalHeading
+                  }
+                >
+                  <span
+                    className={
+                      styles.libraryModalType
+                    }
+                  >
                     {
                       getCatalogLabel(
                         selected
@@ -466,7 +486,9 @@ export default function LibraryScene() {
 
                 <button
                   type="button"
-                  className="library-modal-close"
+                  className={
+                    styles.libraryModalClose
+                  }
                   onClick={
                     closeViewer
                   }
@@ -476,7 +498,11 @@ export default function LibraryScene() {
                 </button>
               </header>
 
-              <div className="library-modal-content">
+              <div
+                className={
+                  styles.libraryModalContent
+                }
+              >
                 {selected.kind ===
                   "pdf" && (
                   <LibraryPdfReader
@@ -491,8 +517,16 @@ export default function LibraryScene() {
 
                 {selected.kind ===
                   "mp3" && (
-                  <div className="library-modal-media">
-                    <div className="library-media-symbol">
+                  <div
+                    className={
+                      styles.libraryModalMedia
+                    }
+                  >
+                    <div
+                      className={
+                        styles.libraryMediaSymbol
+                      }
+                    >
                       AUDIO
                     </div>
 
@@ -509,7 +543,9 @@ export default function LibraryScene() {
                       src={
                         selected.rawUrl
                       }
-                      className="library-audio-player"
+                      className={
+                        styles.libraryAudioPlayer
+                      }
                     />
                   </div>
                 )}
@@ -523,14 +559,20 @@ export default function LibraryScene() {
                     src={
                       selected.rawUrl
                     }
-                    className="library-video-player"
+                    className={
+                      styles.libraryVideoPlayer
+                    }
                   />
                 )}
 
                 {isImageKind(
                   selected.kind
                 ) && (
-                  <div className="library-modal-image-wrap">
+                  <div
+                    className={
+                      styles.libraryModalImageWrap
+                    }
+                  >
                     <img
                       src={
                         selected.rawUrl
@@ -538,14 +580,22 @@ export default function LibraryScene() {
                       alt={
                         selected.title
                       }
-                      className="library-image"
+                      className={
+                        styles.libraryImage
+                      }
                     />
                   </div>
                 )}
 
-                <div className="library-modal-download">
+                <div
+                  className={
+                    styles.libraryModalDownload
+                  }
+                >
                   <a
-                    className="library-download-button"
+                    className={
+                      styles.libraryDownloadButton
+                    }
                     href={
                       selected.rawUrl
                     }
@@ -576,26 +626,55 @@ export default function LibraryScene() {
 
   return (
     <>
-      <div className="library-scene">
-        <section className="section library-section">
+      <div
+        className={
+          styles.libraryScene
+        }
+      >
+        <section
+          className={`section ${styles.librarySection}`}
+        >
           <div
-            className="library-atmosphere"
+            className={
+              styles.libraryAtmosphere
+            }
             aria-hidden="true"
           >
-            <span className="library-atmosphere-orbit library-atmosphere-orbit-one" />
-            <span className="library-atmosphere-orbit library-atmosphere-orbit-two" />
-            <span className="library-atmosphere-axis library-atmosphere-axis-x" />
-            <span className="library-atmosphere-axis library-atmosphere-axis-y" />
+            <span
+              className={`${styles.libraryAtmosphereOrbit} ${styles.libraryAtmosphereOrbitOne}`}
+            />
+
+            <span
+              className={`${styles.libraryAtmosphereOrbit} ${styles.libraryAtmosphereOrbitTwo}`}
+            />
+
+            <span
+              className={`${styles.libraryAtmosphereAxis} ${styles.libraryAtmosphereAxisX}`}
+            />
+
+            <span
+              className={`${styles.libraryAtmosphereAxis} ${styles.libraryAtmosphereAxisY}`}
+            />
           </div>
 
           <div className="page-container">
-            <header className="library-header">
-              <div className="library-header-copy">
+            <header
+              className={
+                styles.libraryHeader
+              }
+            >
+              <div
+                className={
+                  styles.libraryHeaderCopy
+                }
+              >
                 <p className="kicker">
                   06 / LIBRARY
                 </p>
 
-                <h1 className="section-title library-title">
+                <h1
+                  className={`section-title ${styles.libraryTitle}`}
+                >
                   The works.
                   <br />
                   Read, watch,
@@ -603,7 +682,9 @@ export default function LibraryScene() {
                   listen.
                 </h1>
 
-                <p className="body-large library-header-lead">
+                <p
+                  className={`body-large ${styles.libraryHeaderLead}`}
+                >
                   A living archive of{" "}
                   books, experiments,
                   media, and other{" "}
@@ -613,7 +694,9 @@ export default function LibraryScene() {
             </header>
 
             <div
-              className="library-filters"
+              className={
+                styles.libraryFilters
+              }
               role="tablist"
               aria-label="Library filters"
             >
@@ -640,7 +723,9 @@ export default function LibraryScene() {
                       aria-selected={
                         active
                       }
-                      className="library-filter"
+                      className={
+                        styles.libraryFilter
+                      }
                       data-active={
                         active
                           ? "true"
@@ -676,7 +761,11 @@ export default function LibraryScene() {
             </div>
 
             {loading && (
-              <div className="library-loading">
+              <div
+                className={
+                  styles.libraryLoading
+                }
+              >
                 <span className="status-dot" />
 
                 <span>
@@ -687,7 +776,9 @@ export default function LibraryScene() {
 
             {error && (
               <div
-                className="library-error"
+                className={
+                  styles.libraryError
+                }
                 role="alert"
               >
                 <strong>
@@ -702,12 +793,22 @@ export default function LibraryScene() {
 
             {!loading &&
               !error && (
-                <div className="library-layout">
+                <div
+                  className={
+                    styles.libraryLayout
+                  }
+                >
                   <section
-                    className="library-gallery"
+                    className={
+                      styles.libraryGallery
+                    }
                     aria-label="Library collection"
                   >
-                    <div className="library-catalog-header">
+                    <div
+                      className={
+                        styles.libraryCatalogHeader
+                      }
+                    >
                       <div>
                         <p className="kicker">
                           COLLECTION
@@ -740,7 +841,11 @@ export default function LibraryScene() {
 
                     {featuredItems.length >
                       0 && (
-                      <div className="library-featured-strip">
+                      <div
+                        className={
+                          styles.libraryFeaturedStrip
+                        }
+                      >
                         {featuredItems.map(
                           (
                             item
@@ -752,7 +857,9 @@ export default function LibraryScene() {
                             return (
                               <button
                                 type="button"
-                                className="library-featured-card"
+                                className={
+                                  styles.libraryFeaturedCard
+                                }
                                 data-active={
                                   active
                                     ? "true"
@@ -767,7 +874,11 @@ export default function LibraryScene() {
                                   )
                                 }
                               >
-                                <div className="library-featured-card-visual">
+                                <div
+                                  className={
+                                    styles.libraryFeaturedCardVisual
+                                  }
+                                >
                                   {item.coverUrl ? (
                                     <img
                                       src={
@@ -788,7 +899,11 @@ export default function LibraryScene() {
                                   )}
                                 </div>
 
-                                <div className="library-featured-card-content">
+                                <div
+                                  className={
+                                    styles.libraryFeaturedCardContent
+                                  }
+                                >
                                   <span>
                                     FEATURED
                                   </span>
@@ -814,7 +929,11 @@ export default function LibraryScene() {
                       </div>
                     )}
 
-                    <div className="library-list">
+                    <div
+                      className={
+                        styles.libraryList
+                      }
+                    >
                       {regularItems.map(
                         (
                           item
@@ -826,7 +945,9 @@ export default function LibraryScene() {
                           return (
                             <button
                               type="button"
-                              className="library-item"
+                              className={
+                                styles.libraryItem
+                              }
                               data-active={
                                 active
                                   ? "true"
@@ -841,7 +962,11 @@ export default function LibraryScene() {
                                 )
                               }
                             >
-                              <span className="library-item-type">
+                              <span
+                                className={
+                                  styles.libraryItemType
+                                }
+                              >
                                 {
                                   getCatalogLabel(
                                     item
@@ -849,7 +974,11 @@ export default function LibraryScene() {
                                 }
                               </span>
 
-                              <span className="library-item-main">
+                              <span
+                                className={
+                                  styles.libraryItemMain
+                                }
+                              >
                                 <strong>
                                   {
                                     item.title
@@ -865,7 +994,9 @@ export default function LibraryScene() {
                               </span>
 
                               <span
-                                className="library-item-arrow"
+                                className={
+                                  styles.libraryItemArrow
+                                }
                                 aria-hidden="true"
                               >
                                 →
@@ -877,7 +1008,11 @@ export default function LibraryScene() {
 
                       {filteredItems.length ===
                         0 && (
-                        <div className="library-empty">
+                        <div
+                          className={
+                            styles.libraryEmpty
+                          }
+                        >
                           No published media{" "}
                           exists in this{" "}
                           category yet.
@@ -887,12 +1022,22 @@ export default function LibraryScene() {
                   </section>
 
                   <section
-                    className="library-preview"
+                    className={
+                      styles.libraryPreview
+                    }
                     aria-label="Selected work preview"
                   >
                     {!selected && (
-                      <div className="library-preview-empty">
-                        <span className="library-preview-empty-glyph">
+                      <div
+                        className={
+                          styles.libraryPreviewEmpty
+                        }
+                      >
+                        <span
+                          className={
+                            styles.libraryPreviewEmptyGlyph
+                          }
+                        >
                           EXPLORE
                         </span>
 
@@ -912,9 +1057,15 @@ export default function LibraryScene() {
                     )}
 
                     {selected && (
-                      <article className="library-preview-card">
+                      <article
+                        className={
+                          styles.libraryPreviewCard
+                        }
+                      >
                         <div
-                          className="library-preview-art"
+                          className={
+                            styles.libraryPreviewArt
+                          }
                           data-kind={
                             selected.kind
                           }
@@ -924,9 +1075,17 @@ export default function LibraryScene() {
                               : "false"
                           }
                         >
-                          <div className="library-preview-art-grid" />
+                          <div
+                            className={
+                              styles.libraryPreviewArtGrid
+                            }
+                          />
 
-                          <div className="library-preview-art-orbit" />
+                          <div
+                            className={
+                              styles.libraryPreviewArtOrbit
+                            }
+                          />
 
                           {selected.coverUrl ? (
                             <img
@@ -936,11 +1095,17 @@ export default function LibraryScene() {
                               alt=""
                               loading="lazy"
                               decoding="async"
-                              className="library-preview-cover"
+                              className={
+                                styles.libraryPreviewCover
+                              }
                             />
                           ) : (
                             <>
-                              <span className="library-preview-art-type">
+                              <span
+                                className={
+                                  styles.libraryPreviewArtType
+                                }
+                              >
                                 {
                                   getPreviewGlyph(
                                     selected.kind
@@ -966,7 +1131,11 @@ export default function LibraryScene() {
 
                           {selected.coverUrl &&
                             selected.author && (
-                              <small className="library-preview-cover-author">
+                              <small
+                                className={
+                                  styles.libraryPreviewCoverAuthor
+                                }
+                              >
                                 {
                                   selected.author
                                 }
@@ -974,14 +1143,26 @@ export default function LibraryScene() {
                             )}
 
                           {selected.featured && (
-                            <span className="library-featured-mark">
+                            <span
+                              className={
+                                styles.libraryFeaturedMark
+                              }
+                            >
                               FEATURED
                             </span>
                           )}
                         </div>
 
-                        <div className="library-preview-content">
-                          <div className="library-preview-kicker">
+                        <div
+                          className={
+                            styles.libraryPreviewContent
+                          }
+                        >
+                          <div
+                            className={
+                              styles.libraryPreviewKicker
+                            }
+                          >
                             {
                               getCatalogLabel(
                                 selected
@@ -996,7 +1177,11 @@ export default function LibraryScene() {
                           </h2>
 
                           {selected.subtitle && (
-                            <p className="library-preview-subtitle">
+                            <p
+                              className={
+                                styles.libraryPreviewSubtitle
+                              }
+                            >
                               {
                                 selected.subtitle
                               }
@@ -1013,7 +1198,11 @@ export default function LibraryScene() {
                           {selected.tags &&
                             selected.tags.length >
                               0 && (
-                              <div className="library-preview-tags">
+                              <div
+                                className={
+                                  styles.libraryPreviewTags
+                                }
+                              >
                                 {selected.tags.map(
                                   (
                                     tag
@@ -1032,7 +1221,11 @@ export default function LibraryScene() {
                               </div>
                             )}
 
-                          <div className="library-preview-meta">
+                          <div
+                            className={
+                              styles.libraryPreviewMeta
+                            }
+                          >
                             {selected.author && (
                               <span>
                                 {
@@ -1083,10 +1276,16 @@ export default function LibraryScene() {
                             )}
                           </div>
 
-                          <div className="library-preview-actions">
+                          <div
+                            className={
+                              styles.libraryPreviewActions
+                            }
+                          >
                             <button
                               type="button"
-                              className="library-open-button"
+                              className={
+                                styles.libraryOpenButton
+                              }
                               onClick={
                                 openItem
                               }
