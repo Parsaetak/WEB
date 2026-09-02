@@ -1,0 +1,1433 @@
+.worldBackground {
+  position: fixed;
+  inset: 0;
+
+  z-index: -4;
+
+  overflow: hidden;
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle at 50% 18%,
+      rgba(255, 18, 18, 0.035),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      #050505 0%,
+      #060608 48%,
+      #040405 100%
+    );
+
+  contain: strict;
+
+  isolation: isolate;
+}
+
+.worldBackgroundVignette {
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at center,
+      transparent 30%,
+      rgba(0, 0, 0, 0.22) 72%,
+      rgba(0, 0, 0, 0.52) 100%
+    );
+}
+
+.redMagicCloud {
+  position: absolute;
+  inset: -18vh -12vw;
+
+  overflow: hidden;
+
+  pointer-events: none;
+
+  contain: paint;
+
+  isolation: isolate;
+}
+
+.redMagicCloudAura {
+  position: absolute;
+
+  left: 50%;
+  top: 48%;
+
+  width: 115vw;
+  height: 105vh;
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    );
+
+  background:
+    radial-gradient(
+      ellipse at 48% 46%,
+      rgba(255, 30, 20, 0.09) 0%,
+      rgba(210, 0, 0, 0.065) 24%,
+      rgba(110, 0, 0, 0.035) 46%,
+      transparent 74%
+    );
+
+  animation:
+    red-magic-cloud-breathe
+    28s
+    ease-in-out
+    infinite
+    alternate;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.redMagicCloudMass {
+  position: absolute;
+
+  border-radius: 50%;
+
+  transform-origin: center;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.redMagicCloudMassOne {
+  left: 18%;
+  top: 9%;
+
+  width: 62vw;
+  height: 63vh;
+
+  background:
+    radial-gradient(
+      ellipse at 44% 52%,
+      rgba(255, 55, 38, 0.12) 0%,
+      rgba(232, 25, 20, 0.075) 24%,
+      rgba(150, 0, 0, 0.035) 50%,
+      transparent 72%
+    );
+
+  transform:
+    rotate(-11deg)
+    translate3d(
+      0,
+      0,
+      0
+    );
+
+  animation:
+    red-magic-cloud-drift-one
+    42s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.redMagicCloudMassTwo {
+  right: 5%;
+  top: 24%;
+
+  width: 58vw;
+  height: 58vh;
+
+  background:
+    radial-gradient(
+      ellipse at 48% 48%,
+      rgba(255, 42, 30, 0.105) 0%,
+      rgba(190, 0, 0, 0.068) 28%,
+      rgba(92, 0, 0, 0.025) 52%,
+      transparent 74%
+    );
+
+  transform:
+    rotate(19deg)
+    translate3d(
+      0,
+      0,
+      0
+    );
+
+  animation:
+    red-magic-cloud-drift-two
+    51s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.redMagicCloudMassThree {
+  left: 31%;
+  bottom: -4%;
+
+  width: 64vw;
+  height: 52vh;
+
+  background:
+    radial-gradient(
+      ellipse at 48% 42%,
+      rgba(175, 0, 0, 0.08) 0%,
+      rgba(115, 0, 0, 0.048) 31%,
+      transparent 72%
+    );
+
+  transform:
+    rotate(-8deg)
+    translate3d(
+      0,
+      0,
+      0
+    );
+
+  animation:
+    red-magic-cloud-drift-three
+    57s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.redMagicCloudCore {
+  position: absolute;
+
+  left: 50%;
+  top: 47%;
+
+  width: min(
+    53vw,
+    900px
+  );
+
+  height: min(
+    53vw,
+    900px
+  );
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    );
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 72, 50, 0.08) 0%,
+      rgba(238, 25, 18, 0.065) 18%,
+      rgba(167, 0, 0, 0.035) 43%,
+      transparent 69%
+    );
+
+  animation:
+    red-magic-cloud-core
+    19s
+    ease-in-out
+    infinite;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.redMagicCloudNucleus {
+  position: absolute;
+
+  left: 50%;
+  top: 47%;
+
+  width: min(
+    13vw,
+    220px
+  );
+
+  height: min(
+    13vw,
+    220px
+  );
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    );
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 120, 95, 0.14) 0%,
+      rgba(255, 40, 25, 0.085) 22%,
+      rgba(185, 0, 0, 0.03) 56%,
+      transparent 76%
+    );
+
+  animation:
+    red-magic-cloud-nucleus
+    8.5s
+    ease-in-out
+    infinite;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.redMagicCloudRings {
+  position: absolute;
+
+  left: 50%;
+  top: 47%;
+
+  width: min(
+    72vw,
+    1200px
+  );
+
+  height: min(
+    72vw,
+    1200px
+  );
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    );
+
+  pointer-events: none;
+}
+
+.redMagicCloudRing {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      48,
+      38,
+      0.08
+    );
+
+  border-radius: 50%;
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    )
+    rotate(0deg);
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.redMagicCloudRing1 {
+  width: 34%;
+  height: 21%;
+
+  animation:
+    red-magic-cloud-ring-one
+    34s
+    linear
+    infinite;
+}
+
+.redMagicCloudRing2 {
+  width: 49%;
+  height: 30%;
+
+  animation:
+    red-magic-cloud-ring-two
+    41s
+    linear
+    infinite
+    reverse;
+}
+
+.redMagicCloudRing3 {
+  width: 66%;
+  height: 40%;
+
+  animation:
+    red-magic-cloud-ring-three
+    53s
+    linear
+    infinite;
+}
+
+.redMagicCloudRing4 {
+  width: 83%;
+  height: 51%;
+
+  border-color:
+    rgba(
+      255,
+      38,
+      28,
+      0.045
+    );
+
+  animation:
+    red-magic-cloud-ring-four
+    67s
+    linear
+    infinite
+    reverse;
+}
+
+.redMagicCloudRing5 {
+  width: 100%;
+  height: 62%;
+
+  border-color:
+    rgba(
+      255,
+      38,
+      28,
+      0.03
+    );
+
+  animation:
+    red-magic-cloud-ring-five
+    82s
+    linear
+    infinite;
+}
+
+.redMagicCloudWisps {
+  position: absolute;
+  inset: 0;
+}
+
+.redMagicCloudWisp {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 46vw;
+  height: 12vh;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      54,
+      42,
+      0.065
+    );
+
+  border-radius: 50%;
+
+  transform-origin: center;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.redMagicCloudWisp1 {
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    )
+    rotate(-12deg)
+    scaleY(0.58);
+
+  animation:
+    red-magic-cloud-wisp-one
+    31s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.redMagicCloudWisp2 {
+  width: 53vw;
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    )
+    rotate(21deg)
+    scaleY(0.62);
+
+  animation:
+    red-magic-cloud-wisp-two
+    37s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.redMagicCloudWisp3 {
+  width: 37vw;
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    )
+    rotate(54deg)
+    scaleY(0.48);
+
+  animation:
+    red-magic-cloud-wisp-three
+    43s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.redMagicCloudWisp4 {
+  width: 60vw;
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    )
+    rotate(-41deg)
+    scaleY(0.38);
+
+  animation:
+    red-magic-cloud-wisp-four
+    49s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.redMagicCloudWisp5 {
+  width: 41vw;
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    )
+    rotate(73deg)
+    scaleY(0.34);
+
+  animation:
+    red-magic-cloud-wisp-five
+    56s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.redMagicCloudWisp6 {
+  width: 68vw;
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    )
+    rotate(7deg)
+    scaleY(0.22);
+
+  animation:
+    red-magic-cloud-wisp-six
+    61s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.redMagicCloudWisp7 {
+  width: 31vw;
+  height: 8vh;
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    )
+    rotate(-68deg)
+    scaleY(0.28);
+
+  animation:
+    red-magic-cloud-wisp-seven
+    47s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.redMagicCloudParticles {
+  position: absolute;
+  inset: 0;
+}
+
+.redMagicCloudParticle {
+  position: absolute;
+
+  width: 2px;
+  height: 2px;
+
+  margin:
+    -1px
+    0
+    0
+    -1px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(
+      255,
+      94,
+      72,
+      0.78
+    );
+
+  transform:
+    translate3d(
+      0,
+      0,
+      0
+    );
+
+  animation:
+    red-magic-cloud-particle
+    var(--duration)
+    ease-in-out
+    infinite
+    var(--delay);
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.redMagicCloudParticle3 {
+  width: 3px;
+  height: 3px;
+
+  margin:
+    -1.5px
+    0
+    0
+    -1.5px;
+
+  background:
+    rgba(
+      255,
+      55,
+      42,
+      0.56
+    );
+}
+
+.redMagicCloudParticle4 {
+  width: 1px;
+  height: 1px;
+
+  margin:
+    -0.5px
+    0
+    0
+    -0.5px;
+
+  opacity: 0.64;
+}
+
+.redMagicCloudSparks {
+  position: absolute;
+  inset: 0;
+}
+
+.redMagicCloudSpark {
+  position: absolute;
+
+  width: 2px;
+  height: 22px;
+
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      transparent,
+      rgba(
+        255,
+        80,
+        58,
+        0.72
+      ),
+      transparent
+    );
+
+  transform-origin: center;
+
+  animation:
+    red-magic-cloud-spark
+    6.8s
+    ease-in-out
+    infinite;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.redMagicCloudSparkOne {
+  left: 22%;
+  top: 31%;
+
+  transform:
+    rotate(41deg);
+
+  animation-delay:
+    -1.4s;
+}
+
+.redMagicCloudSparkTwo {
+  left: 31%;
+  top: 69%;
+
+  transform:
+    rotate(-28deg);
+
+  animation-delay:
+    -4.1s;
+}
+
+.redMagicCloudSparkThree {
+  left: 47%;
+  top: 16%;
+
+  transform:
+    rotate(17deg);
+
+  animation-delay:
+    -2.2s;
+}
+
+.redMagicCloudSparkFour {
+  left: 64%;
+  top: 76%;
+
+  transform:
+    rotate(63deg);
+
+  animation-delay:
+    -5.3s;
+}
+
+.redMagicCloudSparkFive {
+  left: 77%;
+  top: 35%;
+
+  transform:
+    rotate(-54deg);
+
+  animation-delay:
+    -3.4s;
+}
+
+.redMagicCloudSparkSix {
+  left: 84%;
+  top: 63%;
+
+  transform:
+    rotate(24deg);
+
+  animation-delay:
+    -6s;
+}
+
+@keyframes red-magic-cloud-breathe {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      scale(0.985);
+
+    opacity: 0.72;
+  }
+
+  50% {
+    transform:
+      translate3d(
+        -49.5%,
+        -50.8%,
+        0
+      )
+      scale(1.015);
+
+    opacity: 0.92;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50.8%,
+        -49.4%,
+        0
+      )
+      scale(0.998);
+
+    opacity: 0.78;
+  }
+}
+
+@keyframes red-magic-cloud-drift-one {
+  0% {
+    transform:
+      rotate(-11deg)
+      translate3d(
+        -2.5vw,
+        1vh,
+        0
+      )
+      scale(0.98);
+
+    opacity: 0.72;
+  }
+
+  100% {
+    transform:
+      rotate(-6deg)
+      translate3d(
+        3vw,
+        -2vh,
+        0
+      )
+      scale(1.04);
+
+    opacity: 0.98;
+  }
+}
+
+@keyframes red-magic-cloud-drift-two {
+  0% {
+    transform:
+      rotate(19deg)
+      translate3d(
+        2vw,
+        -1vh,
+        0
+      )
+      scale(0.98);
+
+    opacity: 0.62;
+  }
+
+  100% {
+    transform:
+      rotate(12deg)
+      translate3d(
+        -3vw,
+        3vh,
+        0
+      )
+      scale(1.05);
+
+    opacity: 0.9;
+  }
+}
+
+@keyframes red-magic-cloud-drift-three {
+  0% {
+    transform:
+      rotate(-8deg)
+      translate3d(
+        2vw,
+        2vh,
+        0
+      )
+      scale(1);
+
+    opacity: 0.45;
+  }
+
+  100% {
+    transform:
+      rotate(-3deg)
+      translate3d(
+        -2vw,
+        -2vh,
+        0
+      )
+      scale(1.06);
+
+    opacity: 0.78;
+  }
+}
+
+@keyframes red-magic-cloud-core {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      scale(0.97);
+
+    opacity: 0.6;
+  }
+
+  50% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      scale(1.04);
+
+    opacity: 0.94;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      scale(0.98);
+
+    opacity: 0.7;
+  }
+}
+
+@keyframes red-magic-cloud-nucleus {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      scale(0.9);
+
+    opacity: 0.46;
+  }
+
+  50% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      scale(1.12);
+
+    opacity: 0.92;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      scale(0.95);
+
+    opacity: 0.58;
+  }
+}
+
+@keyframes red-magic-cloud-ring-one {
+  from {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(0deg)
+      scaleX(1);
+  }
+
+  to {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(360deg)
+      scaleX(1.08);
+  }
+}
+
+@keyframes red-magic-cloud-ring-two {
+  from {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(360deg)
+      scaleY(1);
+  }
+
+  to {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(0deg)
+      scaleY(1.06);
+  }
+}
+
+@keyframes red-magic-cloud-ring-three {
+  from {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(0deg)
+      scale(1);
+  }
+
+  to {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(360deg)
+      scale(0.95);
+  }
+}
+
+@keyframes red-magic-cloud-ring-four {
+  from {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(360deg)
+      scaleX(1);
+  }
+
+  to {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(0deg)
+      scaleX(1.05);
+  }
+}
+
+@keyframes red-magic-cloud-ring-five {
+  from {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(0deg)
+      scaleY(1);
+  }
+
+  to {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(360deg)
+      scaleY(0.96);
+  }
+}
+
+@keyframes red-magic-cloud-wisp-one {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(-12deg)
+      scaleY(0.58)
+      translateX(-3vw);
+
+    opacity: 0.25;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(-7deg)
+      scaleY(0.72)
+      translateX(3vw);
+
+    opacity: 0.72;
+  }
+}
+
+@keyframes red-magic-cloud-wisp-two {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(21deg)
+      scaleY(0.62)
+      translateY(2vh);
+
+    opacity: 0.16;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(27deg)
+      scaleY(0.74)
+      translateY(-2vh);
+
+    opacity: 0.55;
+  }
+}
+
+@keyframes red-magic-cloud-wisp-three {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(54deg)
+      scaleY(0.48)
+      translateX(2vw);
+
+    opacity: 0.18;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(47deg)
+      scaleY(0.66)
+      translateX(-2vw);
+
+    opacity: 0.48;
+  }
+}
+
+@keyframes red-magic-cloud-wisp-four {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(-41deg)
+      scaleY(0.38)
+      translateX(-2vw);
+
+    opacity: 0.14;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(-35deg)
+      scaleY(0.52)
+      translateX(2vw);
+
+    opacity: 0.4;
+  }
+}
+
+@keyframes red-magic-cloud-wisp-five {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(73deg)
+      scaleY(0.34)
+      translateY(-2vh);
+
+    opacity: 0.12;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(67deg)
+      scaleY(0.46)
+      translateY(2vh);
+
+    opacity: 0.34;
+  }
+}
+
+@keyframes red-magic-cloud-wisp-six {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(7deg)
+      scaleY(0.22)
+      translateX(2vw);
+
+    opacity: 0.12;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(12deg)
+      scaleY(0.36)
+      translateX(-2vw);
+
+    opacity: 0.3;
+  }
+}
+
+@keyframes red-magic-cloud-wisp-seven {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(-68deg)
+      scaleY(0.28)
+      translateY(1vh);
+
+    opacity: 0.1;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      rotate(-61deg)
+      scaleY(0.4)
+      translateY(-1vh);
+
+    opacity: 0.28;
+  }
+}
+
+@keyframes red-magic-cloud-particle {
+  0% {
+    transform:
+      translate3d(
+        0,
+        0,
+        0
+      )
+      scale(0.65);
+
+    opacity: 0.12;
+  }
+
+  35% {
+    transform:
+      translate3d(
+        calc(
+          var(--dx) * 0.35
+        ),
+        calc(
+          var(--dy) * 0.35
+        ),
+        0
+      )
+      scale(1);
+
+    opacity: 0.72;
+  }
+
+  70% {
+    transform:
+      translate3d(
+        calc(
+          var(--dx) * 0.75
+        ),
+        calc(
+          var(--dy) * 0.75
+        ),
+        0
+      )
+      scale(0.82);
+
+    opacity: 0.38;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        var(--dx),
+        var(--dy),
+        0
+      )
+      scale(0.56);
+
+    opacity: 0.08;
+  }
+}
+
+@keyframes red-magic-cloud-spark {
+  0%,
+  100% {
+    opacity: 0;
+
+    transform:
+      translate3d(
+        0,
+        10px,
+        0
+      )
+      scaleY(0.3);
+  }
+
+  45% {
+    opacity: 0.66;
+
+    transform:
+      translate3d(
+        0,
+        0,
+        0
+      )
+      scaleY(1);
+  }
+
+  70% {
+    opacity: 0.12;
+
+    transform:
+      translate3d(
+        0,
+        -8px,
+        0
+      )
+      scaleY(0.55);
+  }
+}
+
+@media (max-width: 800px) {
+  .redMagicCloud {
+    inset:
+      -10vh
+      -30vw;
+  }
+
+  .redMagicCloudRing4,
+  .redMagicCloudRing5,
+  .redMagicCloudWisp5,
+  .redMagicCloudWisp6,
+  .redMagicCloudWisp7 {
+    display: none;
+  }
+
+  .redMagicCloudParticle:nth-child(n + 13) {
+    display: none;
+  }
+
+  .redMagicCloudCore {
+    width: 82vw;
+    height: 82vw;
+  }
+
+  .redMagicCloudNucleus {
+    width: 24vw;
+    height: 24vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .redMagicCloud *,
+  .redMagicCloud {
+    animation:
+      none !important;
+  }
+}
