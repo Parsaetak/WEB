@@ -41,6 +41,153 @@
     );
 }
 
+.sceneViewportContent {
+  position: relative;
+
+  min-height: inherit;
+
+  isolation: isolate;
+}
+
+.sceneViewportFrame {
+  position: absolute;
+
+  inset:
+    18px;
+
+  z-index: 20;
+
+  pointer-events: none;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.055
+    );
+
+  opacity: 0.72;
+}
+
+.sceneViewportCorner {
+  position: absolute;
+
+  width: 22px;
+  height: 22px;
+
+  z-index: 21;
+
+  pointer-events: none;
+
+  opacity: 0.72;
+}
+
+.sceneViewportCorner::before,
+.sceneViewportCorner::after {
+  content: "";
+
+  position: absolute;
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.18
+    );
+}
+
+.sceneViewportCorner::before {
+  width: 1px;
+  height: 100%;
+}
+
+.sceneViewportCorner::after {
+  width: 100%;
+  height: 1px;
+}
+
+.sceneViewportCornerTl {
+  top: 12px;
+  left: 12px;
+}
+
+.sceneViewportCornerTl::before,
+.sceneViewportCornerTl::after {
+  left: 0;
+  top: 0;
+}
+
+.sceneViewportCornerTr {
+  top: 12px;
+  right: 12px;
+}
+
+.sceneViewportCornerTr::before {
+  right: 0;
+  top: 0;
+}
+
+.sceneViewportCornerTr::after {
+  right: 0;
+  top: 0;
+}
+
+.sceneViewportCornerBl {
+  left: 12px;
+  bottom: 12px;
+}
+
+.sceneViewportCornerBl::before {
+  left: 0;
+  bottom: 0;
+}
+
+.sceneViewportCornerBl::after {
+  left: 0;
+  bottom: 0;
+}
+
+.sceneViewportCornerBr {
+  right: 12px;
+  bottom: 12px;
+}
+
+.sceneViewportCornerBr::before {
+  right: 0;
+  bottom: 0;
+}
+
+.sceneViewportCornerBr::after {
+  right: 0;
+  bottom: 0;
+}
+
+.sceneError {
+  position: relative;
+
+  min-height:
+    calc(
+      100vh -
+      var(--shell-header)
+    );
+
+  display: grid;
+
+  align-content: center;
+
+  justify-items: center;
+
+  gap: 10px;
+
+  padding:
+    48px 24px;
+
+  text-align: center;
+}
+
 @media (max-width: 760px) {
   .sceneViewport {
     min-height:
@@ -48,5 +195,35 @@
         100vh -
         68px
       );
+  }
+
+  .sceneViewportFrame {
+    inset:
+      10px;
+  }
+
+  .sceneViewportCorner {
+    width: 16px;
+    height: 16px;
+  }
+
+  .sceneViewportCornerTl {
+    top: 8px;
+    left: 8px;
+  }
+
+  .sceneViewportCornerTr {
+    top: 8px;
+    right: 8px;
+  }
+
+  .sceneViewportCornerBl {
+    left: 8px;
+    bottom: 8px;
+  }
+
+  .sceneViewportCornerBr {
+    right: 8px;
+    bottom: 8px;
   }
 }
