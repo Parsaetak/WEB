@@ -1,3 +1,5 @@
+import styles from "./AboutScene.module.css";
+
 const principles = [
   {
     number: "01",
@@ -27,36 +29,52 @@ const principles = [
 
 export default function AboutScene() {
   return (
-    <div className="about-scene">
-      <section className="section about-observer">
+    <div className={styles.aboutScene}>
+      <section className={`section ${styles.aboutObserver}`}>
         <div
-          className="about-orbit-field"
+          className={styles.aboutOrbitField}
           aria-hidden="true"
         >
-          <span className="about-orbit about-orbit-one" />
-          <span className="about-orbit about-orbit-two" />
-          <span className="about-orbit about-orbit-three" />
+          <span
+            className={`${styles.aboutOrbit} ${styles.aboutOrbitOne}`}
+          />
+          <span
+            className={`${styles.aboutOrbit} ${styles.aboutOrbitTwo}`}
+          />
+          <span
+            className={`${styles.aboutOrbit} ${styles.aboutOrbitThree}`}
+          />
 
-          <span className="about-orbit-axis about-orbit-axis-x" />
-          <span className="about-orbit-axis about-orbit-axis-y" />
+          <span
+            className={`${styles.aboutOrbitAxis} ${styles.aboutOrbitAxisX}`}
+          />
+          <span
+            className={`${styles.aboutOrbitAxis} ${styles.aboutOrbitAxisY}`}
+          />
 
-          <span className="about-orbit-node about-orbit-node-one" />
-          <span className="about-orbit-node about-orbit-node-two" />
-          <span className="about-orbit-node about-orbit-node-three" />
+          <span
+            className={`${styles.aboutOrbitNode} ${styles.aboutOrbitNodeOne}`}
+          />
+          <span
+            className={`${styles.aboutOrbitNode} ${styles.aboutOrbitNodeTwo}`}
+          />
+          <span
+            className={`${styles.aboutOrbitNode} ${styles.aboutOrbitNodeThree}`}
+          />
         </div>
 
         <div className="page-container">
-          <header className="about-header">
-            <div className="about-header-copy">
+          <header className={styles.aboutHeader}>
+            <div className={styles.aboutHeaderCopy}>
               <p className="kicker">
                 01 / ABOUT
               </p>
 
-              <h1 className="section-title about-title">
+              <h1 className={`section-title ${styles.aboutTitle}`}>
                 Parsa Tak
               </h1>
 
-              <p className="body-large about-lead">
+              <p className={`body-large ${styles.aboutLead}`}>
                 Independent researcher and creator{" "}
                 working across intelligence,{" "}
                 technology, systems, and art.
@@ -64,11 +82,11 @@ export default function AboutScene() {
             </div>
 
             <div
-              className="about-signal"
+              className={styles.aboutSignal}
               aria-label="Observe"
             >
               <span
-                className="about-signal-dot"
+                className={styles.aboutSignalDot}
                 aria-hidden="true"
               />
 
@@ -78,13 +96,13 @@ export default function AboutScene() {
             </div>
           </header>
 
-          <div className="about-identity">
-            <div className="about-identity-main">
+          <div className={styles.aboutIdentity}>
+            <div className={styles.aboutIdentityMain}>
               <p className="kicker">
                 IN PRACTICE
               </p>
 
-              <p className="about-identity-statement">
+              <p className={styles.aboutIdentityStatement}>
                 I research ideas about intelligence,{" "}
                 build systems to test them,{" "}
                 write about what I learn,{" "}
@@ -93,13 +111,13 @@ export default function AboutScene() {
               </p>
             </div>
 
-            <div className="about-identity-side">
-              <div className="about-identity-card">
-                <span className="about-identity-card-label">
+            <div className={styles.aboutIdentitySide}>
+              <div className={styles.aboutIdentityCard}>
+                <span className={styles.aboutIdentityCardLabel}>
                   BASED AROUND
                 </span>
 
-                <strong className="about-identity-card-value">
+                <strong className={styles.aboutIdentityCardValue}>
                   <span>AI</span>
                   <i>·</i>
                   <span>REASONING</span>
@@ -108,12 +126,12 @@ export default function AboutScene() {
                 </strong>
               </div>
 
-              <div className="about-identity-card">
-                <span className="about-identity-card-label">
+              <div className={styles.aboutIdentityCard}>
+                <span className={styles.aboutIdentityCardLabel}>
                   OUTPUT
                 </span>
 
-                <strong className="about-identity-card-value">
+                <strong className={styles.aboutIdentityCardValue}>
                   <span>SOFTWARE</span>
                   <i>·</i>
                   <span>WRITING</span>
@@ -124,8 +142,8 @@ export default function AboutScene() {
             </div>
           </div>
 
-          <div className="about-method">
-            <div className="about-method-header">
+          <div className={styles.aboutMethod}>
+            <div className={styles.aboutMethodHeader}>
               <div>
                 <p className="kicker">
                   METHOD
@@ -142,52 +160,40 @@ export default function AboutScene() {
                 </h2>
               </div>
 
-              <p className="body-large about-method-copy">
+              <p className={`body-large ${styles.aboutMethodCopy}`}>
                 The process matters as much as the result.{" "}
                 Ideas become useful when they survive contact{" "}
                 with reality.
               </p>
             </div>
 
-            <div className="about-principles">
-              {principles.map(
-                (principle) => (
-                  <article
-                    className="panel about-principle"
-                    key={
-                      principle.number
-                    }
-                  >
-                    <div className="panel-content">
-                      <div className="about-principle-top">
-                        <span className="system-number">
-                          {
-                            principle.number
-                          }
-                        </span>
+            <div className={styles.aboutPrinciples}>
+              {principles.map((principle) => (
+                <article
+                  className={`panel ${styles.aboutPrinciple}`}
+                  key={principle.number}
+                >
+                  <div className="panel-content">
+                    <div className={styles.aboutPrincipleTop}>
+                      <span className="system-number">
+                        {principle.number}
+                      </span>
 
-                        <span className="system-type">
-                          {
-                            principle.label
-                          }
-                        </span>
-                      </div>
-
-                      <h3 className="system-title">
-                        {
-                          principle.title
-                        }
-                      </h3>
-
-                      <p className="system-copy">
-                        {
-                          principle.copy
-                        }
-                      </p>
+                      <span className="system-type">
+                        {principle.label}
+                      </span>
                     </div>
-                  </article>
-                )
-              )}
+
+                    <h3 className="system-title">
+                      {principle.title}
+                    </h3>
+
+                    <p className="system-copy">
+                      {principle.copy}
+                    </p>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
         </div>
