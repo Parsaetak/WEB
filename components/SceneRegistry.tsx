@@ -18,6 +18,8 @@ import {
 
 import SceneViewport from "@/components/SceneViewport";
 
+import styles from "@/components/SceneRegistry.module.css";
+
 type SceneComponent =
   ComponentType;
 
@@ -126,7 +128,9 @@ export default function SceneRegistry({
 
     let cancelled = false;
 
-    setTransitioning(true);
+    setTransitioning(
+      true
+    );
 
     const loadScene =
       preloadScene(
@@ -174,11 +178,17 @@ export default function SceneRegistry({
 
   return (
     <SceneViewport
-      scene={renderedScene}
-      loading={transitioning}
+      scene={
+        renderedScene
+      }
+      loading={
+        transitioning
+      }
     >
       <div
-        className="scene-transition-layer"
+        className={
+          styles.sceneTransitionLayer
+        }
         data-transitioning={
           transitioning
             ? "true"
