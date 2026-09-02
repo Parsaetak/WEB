@@ -82,24 +82,52 @@ export default function RedCursor() {
     let hoverTarget = false;
 
     /*
-     * These coordinates come directly from the browser PointerEvent.
-     * No artificial smoothing, acceleration, or speed multiplier is
-     * applied, so the custom cursor follows the user's actual pointer
-     * position 1:1.
+     * Latest browser pointer coordinates only.
+     *
+     * There is no interpolation, acceleration, smoothing, or speed
+     * multiplier. The custom cursor follows the browser pointer position
+     * directly.
      */
     const pointer = {
       x: -100,
       y: -100
     };
 
-    const applyState = () => {
-      cursor.dataset.visible =
-        String(pointerInside);
+    /*
+     * Only write a data attribute when its value actually changes.
+     * This keeps hover/visibility state changes out of the animation
+     * hot path.
+     */
+    const setVisible = (
+      visible: boolean
+    ) => {
+      const nextValue =
+        String(visible);
 
-      cursor.dataset.hover =
-        hoverTarget
+      if (
+        cursor.dataset.visible !==
+        nextValue
+      ) {
+        cursor.dataset.visible =
+          nextValue;
+      }
+    };
+
+    const setHover = (
+      hover: boolean
+    ) => {
+      const nextValue =
+        hover
           ? "true"
           : "false";
+
+      if (
+        cursor.dataset.hover !==
+        nextValue
+      ) {
+        cursor.dataset.hover =
+          nextValue;
+      }
     };
 
     const stopFrame = () => {
@@ -116,14 +144,14 @@ export default function RedCursor() {
       }
 
       /*
-       * Follow the browser's actual pointer position directly.
-       * This removes the previous fixed smoothing factor that caused
-       * the red cursor to feel slower than the user's system pointer.
+       * Exactly one per-frame DOM write.
+       *
+       * requestAnimationFrame coalesces high-polling-rate mouse events
+       * to the browser's render cadence without introducing visual lag
+       * through interpolation.
        */
       cursor.style.transform =
         `translate3d(${pointer.x}px, ${pointer.y}px, 0)`;
-
-      applyState();
 
       frameRef.current = 0;
     };
@@ -156,14 +184,24 @@ export default function RedCursor() {
         return;
       }
 
-      hoverTarget =
+      const nextHoverTarget =
         Boolean(
           target.closest(
             HOVER_TARGET_SELECTOR
           )
         );
 
-      requestFrame();
+      if (
+        nextHoverTarget !==
+        hoverTarget
+      ) {
+        hoverTarget =
+          nextHoverTarget;
+
+        setHover(
+          hoverTarget
+        );
+      }
     };
 
     const updatePointer = (
@@ -175,16 +213,24 @@ export default function RedCursor() {
       pointer.y =
         event.clientY;
 
-      pointerInside = true;
+      if (!pointerInside) {
+        pointerInside = true;
+        setVisible(true);
+      }
 
       requestFrame();
     };
 
     const hidePointer = () => {
+      if (!pointerInside) {
+        return;
+      }
+
       pointerInside = false;
       hoverTarget = false;
 
-      applyState();
+      setVisible(false);
+      setHover(false);
     };
 
     const handleVisibility =
@@ -214,7 +260,8 @@ export default function RedCursor() {
         pointerInside = false;
         hoverTarget = false;
 
-        applyState();
+        setVisible(false);
+        setHover(false);
       };
 
     window.addEventListener(
@@ -255,7 +302,8 @@ export default function RedCursor() {
       "red-cursor-enabled"
     );
 
-    applyState();
+    setVisible(false);
+    setHover(false);
 
     return () => {
       running = false;
