@@ -1,4 +1,5 @@
 import MagicConsole from "@/components/MagicConsole";
+import styles from "./RedMagicScene.module.css";
 
 const layers = [
   {
@@ -53,43 +54,65 @@ const principles = [
 
 export default function RedMagicScene() {
   return (
-    <div className="red-magic-scene">
-      <section className="section magic-organism">
+    <div className={styles.redMagicScene}>
+      <section className={`section ${styles.magicOrganism}`}>
         <div
-          className="magic-organism-field"
+          className={styles.magicOrganismField}
           aria-hidden="true"
         >
-          <span className="magic-organism-ring magic-organism-ring-one" />
-          <span className="magic-organism-ring magic-organism-ring-two" />
-          <span className="magic-organism-ring magic-organism-ring-three" />
+          <span
+            className={`${styles.magicOrganismRing} ${styles.magicOrganismRingOne}`}
+          />
+          <span
+            className={`${styles.magicOrganismRing} ${styles.magicOrganismRingTwo}`}
+          />
+          <span
+            className={`${styles.magicOrganismRing} ${styles.magicOrganismRingThree}`}
+          />
 
-          <span className="magic-organism-axis magic-organism-axis-x" />
-          <span className="magic-organism-axis magic-organism-axis-y" />
+          <span
+            className={`${styles.magicOrganismAxis} ${styles.magicOrganismAxisX}`}
+          />
+          <span
+            className={`${styles.magicOrganismAxis} ${styles.magicOrganismAxisY}`}
+          />
 
-          <span className="magic-organism-node magic-organism-node-one" />
-          <span className="magic-organism-node magic-organism-node-two" />
-          <span className="magic-organism-node magic-organism-node-three" />
-          <span className="magic-organism-node magic-organism-node-four" />
+          <span
+            className={`${styles.magicOrganismNode} ${styles.magicOrganismNodeOne}`}
+          />
+          <span
+            className={`${styles.magicOrganismNode} ${styles.magicOrganismNodeTwo}`}
+          />
+          <span
+            className={`${styles.magicOrganismNode} ${styles.magicOrganismNodeThree}`}
+          />
+          <span
+            className={`${styles.magicOrganismNode} ${styles.magicOrganismNodeFour}`}
+          />
         </div>
 
         <div className="page-container">
-          <header className="magic-organism-header">
-            <div className="magic-organism-heading">
+          <header className={styles.magicOrganismHeader}>
+            <div className={styles.magicOrganismHeading}>
               <p className="kicker">
                 03 / MAGIC
               </p>
 
-              <h1 className="section-title magic-organism-title">
+              <h1
+                className={`section-title ${styles.magicOrganismTitle}`}
+              >
                 RED MAGIC
               </h1>
 
-              <p className="body-large magic-organism-lead">
+              <p
+                className={`body-large ${styles.magicOrganismLead}`}
+              >
                 A living interface for exploring{" "}
                 responsive systems.
               </p>
             </div>
 
-            <div className="magic-organism-status">
+            <div className={styles.magicOrganismStatus}>
               <span
                 className="status-dot"
                 aria-hidden="true"
@@ -101,7 +124,7 @@ export default function RedMagicScene() {
             </div>
           </header>
 
-          <div className="magic-lab-intro">
+          <div className={styles.magicLabIntro}>
             <div>
               <p className="kicker">
                 LIVE ORGANISM
@@ -114,7 +137,9 @@ export default function RedMagicScene() {
               </h2>
             </div>
 
-            <p className="body-large magic-lab-intro-copy">
+            <p
+              className={`body-large ${styles.magicLabIntroCopy}`}
+            >
               This is the organism itself, running{" "}
               in front of you. Choose a behaviour{" "}
               and move through its field: every{" "}
@@ -126,7 +151,7 @@ export default function RedMagicScene() {
 
           <MagicConsole />
 
-          <section className="magic-organism-purpose">
+          <section className={styles.magicOrganismPurpose}>
             <div>
               <p className="kicker">
                 PURPOSE
@@ -139,7 +164,9 @@ export default function RedMagicScene() {
               </h2>
             </div>
 
-            <p className="body-large magic-organism-purpose-copy">
+            <p
+              className={`body-large ${styles.magicOrganismPurposeCopy}`}
+            >
               RED MAGIC explores what happens when{" "}
               a digital interface behaves less like{" "}
               a static page and more like a living system:{" "}
@@ -147,8 +174,8 @@ export default function RedMagicScene() {
             </p>
           </section>
 
-          <section className="magic-model">
-            <div className="magic-model-header">
+          <section className={styles.magicModel}>
+            <div className={styles.magicModelHeader}>
               <div>
                 <p className="kicker">
                   SIMULATION MODEL
@@ -161,7 +188,9 @@ export default function RedMagicScene() {
                 </h2>
               </div>
 
-              <p className="body magic-model-intro">
+              <p
+                className={`body ${styles.magicModelIntro}`}
+              >
                 Everything you saw in the console is{" "}
                 produced by five simple layers working{" "}
                 together. Nothing is prerecorded, and{" "}
@@ -169,40 +198,36 @@ export default function RedMagicScene() {
               </p>
             </div>
 
-            <div className="magic-model-grid">
-              {layers.map(
-                (layer) => (
-                  <article
-                    className="magic-model-layer"
-                    key={
-                      layer.number
-                    }
-                  >
-                    <span>
-                      {
-                        layer.number
-                      }
-                    </span>
+            <div className={styles.magicModelGrid}>
+              {layers.map((layer) => (
+                <article
+                  className={styles.magicModelLayer}
+                  key={layer.number}
+                >
+                  <span>
+                    {layer.number}
+                  </span>
 
-                    <h3>
-                      {
-                        layer.title
-                      }
-                    </h3>
+                  <h3>
+                    {layer.title}
+                  </h3>
 
-                    <p>
-                      {
-                        layer.copy
-                      }
-                    </p>
-                  </article>
-                )
-              )}
+                  <p>
+                    {layer.copy}
+                  </p>
+                </article>
+              ))}
             </div>
           </section>
 
-          <section className="magic-organism-principles">
-            <div className="magic-organism-principles-header">
+          <section
+            className={styles.magicOrganismPrinciples}
+          >
+            <div
+              className={
+                styles.magicOrganismPrinciplesHeader
+              }
+            >
               <div>
                 <p className="kicker">
                   PRINCIPLES
@@ -213,45 +238,43 @@ export default function RedMagicScene() {
                 </h2>
               </div>
 
-              <p className="body magic-principles-intro">
+              <p
+                className={`body ${styles.magicPrinciplesIntro}`}
+              >
                 The organism is designed around{" "}
                 response, adaptation, and persistence.
               </p>
             </div>
 
-            <div className="magic-organism-principles-grid">
-              {principles.map(
-                (principle) => (
-                  <article
-                    className="magic-organism-principle"
-                    key={
-                      principle.number
-                    }
-                  >
-                    <span>
-                      {
-                        principle.number
-                      }
-                    </span>
+            <div
+              className={
+                styles.magicOrganismPrinciplesGrid
+              }
+            >
+              {principles.map((principle) => (
+                <article
+                  className={
+                    styles.magicOrganismPrinciple
+                  }
+                  key={principle.number}
+                >
+                  <span>
+                    {principle.number}
+                  </span>
 
-                    <h3>
-                      {
-                        principle.title
-                      }
-                    </h3>
+                  <h3>
+                    {principle.title}
+                  </h3>
 
-                    <p>
-                      {
-                        principle.copy
-                      }
-                    </p>
-                  </article>
-                )
-              )}
+                  <p>
+                    {principle.copy}
+                  </p>
+                </article>
+              ))}
             </div>
           </section>
 
-          <section className="magic-organism-future">
+          <section className={styles.magicOrganismFuture}>
             <div>
               <p className="kicker">
                 LONG TERM
@@ -264,7 +287,9 @@ export default function RedMagicScene() {
               </h2>
             </div>
 
-            <p className="body-large magic-organism-future-copy">
+            <p
+              className={`body-large ${styles.magicOrganismFutureCopy}`}
+            >
               RED MAGIC is one small experiment inside{" "}
               a larger question: how far can software{" "}
               move from being a passive tool toward{" "}
