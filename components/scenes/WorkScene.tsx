@@ -2,6 +2,8 @@ import {
   GITHUB_LINK
 } from "@/lib/links";
 
+import styles from "./WorkScene.module.css";
+
 const projects = [
   {
     number: "01",
@@ -74,61 +76,69 @@ export default function WorkScene() {
     GITHUB_LINK;
 
   return (
-    <div className="work-scene">
-      <section className="section work-laboratory">
+    <div className={styles.workScene}>
+      <section
+        className={`section ${styles.workLaboratory}`}
+      >
         <div
-          className="work-laboratory-field"
+          className={styles.workLaboratoryField}
           aria-hidden="true"
         >
-          <span className="work-grid-plane" />
-
           <span
-            className="work-grid-axis work-grid-axis-x"
+            className={styles.workGridPlane}
           />
 
           <span
-            className="work-grid-axis work-grid-axis-y"
+            className={`${styles.workGridAxis} ${styles.workGridAxisX}`}
           />
 
           <span
-            className="work-marker work-marker-one"
+            className={`${styles.workGridAxis} ${styles.workGridAxisY}`}
           />
 
           <span
-            className="work-marker work-marker-two"
+            className={`${styles.workMarker} ${styles.workMarkerOne}`}
           />
 
           <span
-            className="work-marker work-marker-three"
+            className={`${styles.workMarker} ${styles.workMarkerTwo}`}
           />
 
           <span
-            className="work-marker work-marker-four"
+            className={`${styles.workMarker} ${styles.workMarkerThree}`}
+          />
+
+          <span
+            className={`${styles.workMarker} ${styles.workMarkerFour}`}
           />
         </div>
 
         <div className="page-container">
-          <div className="work-header">
-            <div className="work-header-copy">
+          <div className={styles.workHeader}>
+            <div className={styles.workHeaderCopy}>
               <p className="kicker">
                 04 / WORK
               </p>
 
-              <h1 className="section-title work-title">
+              <h1
+                className={`section-title ${styles.workTitle}`}
+              >
                 What I am building.
               </h1>
 
-              <p className="body-large work-lead">
+              <p
+                className={`body-large ${styles.workLead}`}
+              >
                 Research becomes projects.
               </p>
             </div>
 
             <div
-              className="work-status"
+              className={styles.workStatus}
               aria-label="Work status"
             >
               <span
-                className="work-status-dot"
+                className={styles.workStatusDot}
                 aria-hidden="true"
               />
 
@@ -138,16 +148,20 @@ export default function WorkScene() {
             </div>
           </div>
 
-          <div className="work-intro">
-            <p className="work-intro-statement">
+          <div className={styles.workIntro}>
+            <p
+              className={styles.workIntroStatement}
+            >
               I build experiments around intelligence:{" "}
               systems that can be measured, challenged,{" "}
               visualised, and improved.
             </p>
           </div>
 
-          <div className="work-instrument">
-            <div className="work-instrument-header">
+          <div className={styles.workInstrument}>
+            <div
+              className={styles.workInstrumentHeader}
+            >
               <div>
                 <p className="kicker">
                   PROJECTS
@@ -168,13 +182,13 @@ export default function WorkScene() {
               </span>
             </div>
 
-            <div className="work-project-list">
+            <div
+              className={styles.workProjectList}
+            >
               {projects.map(
-                (
-                  project
-                ) => (
+                (project) => (
                   <article
-                    className="work-project"
+                    className={styles.workProject}
                     key={
                       project.number
                     }
@@ -182,21 +196,41 @@ export default function WorkScene() {
                       project.status.toLowerCase()
                     }
                   >
-                    <div className="work-project-number">
+                    <div
+                      className={
+                        styles.workProjectNumber
+                      }
+                    >
                       {
                         project.number
                       }
                     </div>
 
-                    <div className="work-project-main">
-                      <div className="work-project-meta">
-                        <span className="work-project-code">
+                    <div
+                      className={
+                        styles.workProjectMain
+                      }
+                    >
+                      <div
+                        className={
+                          styles.workProjectMeta
+                        }
+                      >
+                        <span
+                          className={
+                            styles.workProjectCode
+                          }
+                        >
                           {
                             project.code
                           }
                         </span>
 
-                        <span className="work-project-type">
+                        <span
+                          className={
+                            styles.workProjectType
+                          }
+                        >
                           {
                             project.type
                           }
@@ -209,32 +243,38 @@ export default function WorkScene() {
                         }
                       </h2>
 
-                      <p className="work-project-copy">
+                      <p
+                        className={
+                          styles.workProjectCopy
+                        }
+                      >
                         {
                           project.copy
                         }
                       </p>
 
-                      <div className="work-project-tags">
+                      <div
+                        className={
+                          styles.workProjectTags
+                        }
+                      >
                         {project.tags.map(
-                          (
-                            tag
-                          ) => (
+                          (tag) => (
                             <span
-                              key={
-                                tag
-                              }
+                              key={tag}
                             >
-                              {
-                                tag
-                              }
+                              {tag}
                             </span>
                           )
                         )}
                       </div>
                     </div>
 
-                    <div className="work-project-state">
+                    <div
+                      className={
+                        styles.workProjectState
+                      }
+                    >
                       <span>
                         {
                           project.status
@@ -252,9 +292,15 @@ export default function WorkScene() {
           </div>
 
           {github && (
-            <div className="work-laboratory-footer">
+            <div
+              className={
+                styles.workLaboratoryFooter
+              }
+            >
               <a
-                className="work-archive-link"
+                className={
+                  styles.workArchiveLink
+                }
                 href={
                   github.href
                 }
