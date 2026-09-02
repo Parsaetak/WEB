@@ -2,13 +2,15 @@ import PublicLinks from "@/components/PublicLinks";
 import RedMagic from "@/components/RedMagic";
 import { GITHUB_LINK } from "@/lib/links";
 
+import styles from "./HomeScene.module.css";
+
 const fields = [
   "AI",
   "REASONING",
   "SYSTEMS",
   "SIMULATION",
   "CREATIVE TECHNOLOGY"
-];
+] as const;
 
 const systems = [
   {
@@ -29,7 +31,7 @@ const systems = [
     copy:
       "A framework for improving systems over time."
   }
-];
+] as const;
 
 const directionStages = [
   {
@@ -47,44 +49,74 @@ const directionStages = [
     copy:
       "Build systems that are measurable, testable, and improvable."
   }
-];
+] as const;
 
 export default function HomeScene() {
-  const github =
-    GITHUB_LINK;
+  const github = GITHUB_LINK;
 
   return (
-    <div className="home-scene">
-      <section className="hero home-origin">
+    <div className={styles.homeScene}>
+      <section
+        className={`hero ${styles.homeOrigin}`}
+      >
         <div
-          className="home-origin-grid"
+          className={styles.homeOriginGrid}
           aria-hidden="true"
         >
-          <span className="home-origin-ring home-origin-ring-one" />
-          <span className="home-origin-ring home-origin-ring-two" />
-          <span className="home-origin-ring home-origin-ring-three" />
+          <span
+            className={`${styles.homeOriginRing} ${styles.homeOriginRingOne}`}
+          />
 
-          <span className="home-origin-axis home-origin-axis-x" />
-          <span className="home-origin-axis home-origin-axis-y" />
+          <span
+            className={`${styles.homeOriginRing} ${styles.homeOriginRingTwo}`}
+          />
 
-          <span className="home-origin-cross home-origin-cross-one" />
-          <span className="home-origin-cross home-origin-cross-two" />
-          <span className="home-origin-cross home-origin-cross-three" />
+          <span
+            className={`${styles.homeOriginRing} ${styles.homeOriginRingThree}`}
+          />
+
+          <span
+            className={`${styles.homeOriginAxis} ${styles.homeOriginAxisX}`}
+          />
+
+          <span
+            className={`${styles.homeOriginAxis} ${styles.homeOriginAxisY}`}
+          />
+
+          <span
+            className={`${styles.homeOriginCross} ${styles.homeOriginCrossOne}`}
+          />
+
+          <span
+            className={`${styles.homeOriginCross} ${styles.homeOriginCrossTwo}`}
+          />
+
+          <span
+            className={`${styles.homeOriginCross} ${styles.homeOriginCrossThree}`}
+          />
         </div>
 
         <div
-          className="home-origin-magic-background"
+          className={styles.homeOriginMagicBackground}
           aria-hidden="true"
         >
-          <div className="home-origin-magic-vignette" />
+          <div
+            className={styles.homeOriginMagicVignette}
+          />
 
-          <div className="home-origin-magic-organism">
+          <div
+            className={styles.homeOriginMagicOrganism}
+          >
             <RedMagic />
           </div>
         </div>
 
-        <div className="page-container hero-grid home-origin-content">
-          <div className="hero-copy home-origin-copy">
+        <div
+          className={`page-container hero-grid ${styles.homeOriginContent}`}
+        >
+          <div
+            className={`hero-copy ${styles.homeOriginCopy}`}
+          >
             <div className="hero-status">
               <span
                 className="status-dot"
@@ -100,7 +132,9 @@ export default function HomeScene() {
               PARSA TAK
             </p>
 
-            <h1 className="hero-title home-identity-title">
+            <h1
+              className={`hero-title ${styles.homeIdentityTitle}`}
+            >
               Researcher
               <br />
               Writer
@@ -110,13 +144,17 @@ export default function HomeScene() {
               Programmer
             </h1>
 
-            <p className="body-large hero-description home-identity-lead">
+            <p
+              className={`body-large hero-description ${styles.homeIdentityLead}`}
+            >
               Exploring intelligence through{" "}
               AI, reasoning, systems,{" "}
               simulation, and creative technology.
             </p>
 
-            <div className="hero-actions home-origin-actions">
+            <div
+              className={`hero-actions ${styles.homeOriginActions}`}
+            >
               <a
                 className="button button-primary"
                 href="#work"
@@ -127,9 +165,7 @@ export default function HomeScene() {
               {github && (
                 <a
                   className="button button-secondary"
-                  href={
-                    github.href
-                  }
+                  href={github.href}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -140,21 +176,25 @@ export default function HomeScene() {
           </div>
         </div>
 
-        <div className="home-origin-foot">
+        <div
+          className={styles.homeOriginFoot}
+        >
           <span>
             SCROLL TO EXPLORE
           </span>
 
           <span
-            className="home-origin-foot-line"
+            className={styles.homeOriginFootLine}
             aria-hidden="true"
           />
         </div>
       </section>
 
-      <section className="section home-capabilities">
+      <section
+        className={`section ${styles.homeCapabilities}`}
+      >
         <div className="page-container">
-          <div className="home-intro-block">
+          <div className={styles.homeIntroBlock}>
             <div>
               <p className="kicker">
                 WHAT I EXPLORE
@@ -167,7 +207,9 @@ export default function HomeScene() {
               </h2>
             </div>
 
-            <p className="body-large home-intro-copy">
+            <p
+              className={`body-large ${styles.homeIntroCopy}`}
+            >
               I study ideas about intelligence,{" "}
               build systems around them,{" "}
               and turn the results into{" "}
@@ -177,20 +219,16 @@ export default function HomeScene() {
           </div>
 
           <div
-            className="home-exploration-field"
+            className={styles.homeExplorationField}
             aria-label="Areas of exploration"
           >
             {fields.map(
               (field) => (
                 <span
-                  key={
-                    field
-                  }
-                  className="home-exploration-item"
+                  key={field}
+                  className={styles.homeExplorationItem}
                 >
-                  {
-                    field
-                  }
+                  {field}
                 </span>
               )
             )}
@@ -198,9 +236,11 @@ export default function HomeScene() {
         </div>
       </section>
 
-      <section className="section home-systems">
+      <section
+        className={`section ${styles.homeSystems}`}
+      >
         <div className="page-container">
-          <div className="home-systems-intro">
+          <div className={styles.homeSystemsIntro}>
             <div>
               <p className="kicker">
                 WHAT I BUILD
@@ -213,16 +253,26 @@ export default function HomeScene() {
               </h2>
             </div>
 
-            <p className="body home-systems-copy">
+            <p
+              className={`body ${styles.homeSystemsCopy}`}
+            >
               I turn research into frameworks,{" "}
               software, experiments, simulations,{" "}
               and other working systems.
             </p>
           </div>
 
-          <div className="home-systems-overview">
-            <div className="home-systems-overview-link">
-              <div className="home-systems-overview-label">
+          <div className={styles.homeSystemsOverview}>
+            <div
+              className={
+                styles.homeSystemsOverviewLink
+              }
+            >
+              <div
+                className={
+                  styles.homeSystemsOverviewLabel
+                }
+              >
                 <span>
                   SYSTEMS
                 </span>
@@ -254,43 +304,45 @@ export default function HomeScene() {
                 </span>
               </strong>
 
-              <span className="home-systems-overview-arrow">
+              <span
+                className={
+                  styles.homeSystemsOverviewArrow
+                }
+              >
                 →
               </span>
             </div>
           </div>
 
-          <div className="home-system-list">
+          <div className={styles.homeSystemList}>
             {systems.map(
               (system) => (
                 <article
-                  className="home-system-item"
-                  key={
-                    system.number
-                  }
+                  className={styles.homeSystemItem}
+                  key={system.number}
                 >
-                  <span className="home-system-item-number">
-                    {
-                      system.number
+                  <span
+                    className={
+                      styles.homeSystemItemNumber
                     }
+                  >
+                    {system.number}
                   </span>
 
                   <div>
                     <h3>
-                      {
-                        system.title
-                      }
+                      {system.title}
                     </h3>
 
                     <p>
-                      {
-                        system.copy
-                      }
+                      {system.copy}
                     </p>
                   </div>
 
                   <span
-                    className="home-system-item-arrow"
+                    className={
+                      styles.homeSystemItemArrow
+                    }
                     aria-hidden="true"
                   >
                     →
@@ -302,10 +354,16 @@ export default function HomeScene() {
         </div>
       </section>
 
-      <section className="section home-direction">
+      <section
+        className={`section ${styles.homeDirection}`}
+      >
         <div className="page-container">
-          <div className="home-direction-grid">
-            <div className="home-direction-heading">
+          <div className={styles.homeDirectionGrid}>
+            <div
+              className={
+                styles.homeDirectionHeading
+              }
+            >
               <p className="kicker">
                 DIRECTION
               </p>
@@ -319,7 +377,9 @@ export default function HomeScene() {
               </h2>
             </div>
 
-            <div className="home-direction-copy">
+            <div
+              className={styles.homeDirectionCopy}
+            >
               <p className="body-large">
                 The work is an ongoing attempt to{" "}
                 understand intelligence, strengthen{" "}
@@ -327,20 +387,32 @@ export default function HomeScene() {
                 that can be tested and improved.
               </p>
 
-              <div className="home-direction-stages">
+              <div
+                className={
+                  styles.homeDirectionStages
+                }
+              >
                 {directionStages.map(
                   (
                     stage,
                     index
                   ) => (
                     <div
-                      className="home-direction-stage"
-                      key={
-                        stage.label
+                      className={
+                        styles.homeDirectionStage
                       }
+                      key={stage.label}
                     >
-                      <div className="home-direction-stage-main">
-                        <div className="home-direction-stage-index">
+                      <div
+                        className={
+                          styles.homeDirectionStageMain
+                        }
+                      >
+                        <div
+                          className={
+                            styles.homeDirectionStageIndex
+                          }
+                        >
                           {String(
                             index + 1
                           ).padStart(
@@ -351,15 +423,11 @@ export default function HomeScene() {
 
                         <div>
                           <strong>
-                            {
-                              stage.label
-                            }
+                            {stage.label}
                           </strong>
 
                           <p>
-                            {
-                              stage.copy
-                            }
+                            {stage.copy}
                           </p>
                         </div>
                       </div>
@@ -368,7 +436,9 @@ export default function HomeScene() {
                         directionStages.length -
                           1 && (
                         <span
-                          className="home-direction-stage-arrow"
+                          className={
+                            styles.homeDirectionStageArrow
+                          }
                           aria-hidden="true"
                         >
                           →
@@ -383,9 +453,11 @@ export default function HomeScene() {
         </div>
       </section>
 
-      <section className="section home-final">
+      <section
+        className={`section ${styles.homeFinal}`}
+      >
         <div className="page-container">
-          <div className="home-final-frame">
+          <div className={styles.homeFinalFrame}>
             <div>
               <p className="kicker">
                 KEEP EXPLORING
@@ -416,4 +488,3 @@ export default function HomeScene() {
     </div>
   );
 }
-
