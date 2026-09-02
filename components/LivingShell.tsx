@@ -7,6 +7,8 @@ import {
   useState
 } from "react";
 
+import styles from "@/components/LivingShell.module.css";
+
 import FooterLinks from "@/components/FooterLinks";
 import RedEye from "@/components/RedEye";
 import SceneLoadingScreen from "@/components/SceneLoadingScreen";
@@ -17,8 +19,8 @@ import ScenePreloader from "@/components/ScenePreloader";
 import SceneRegistry from "@/components/SceneRegistry";
 import SceneUrlSync from "@/components/SceneUrlSync";
 import WorldBackground from "@/components/WorldBackground";
-import { GITHUB_LINK } from "@/lib/links";
 import RedCursor from "@/components/RedCursor";
+import { GITHUB_LINK } from "@/lib/links";
 
 export type SceneId =
   | "home"
@@ -231,21 +233,21 @@ export default function LivingShell({
 
   return (
     <div
-  className="living-shell"
-  data-active-scene={
-    activeScene
-  }
->
-  <WorldBackground />
+      className={styles.livingShell}
+      data-active-scene={
+        activeScene
+      }
+    >
+      <WorldBackground />
 
-  <RedCursor />
+      <RedCursor />
 
-  <SceneUrlSync
-    scene={activeScene}
-    onSceneChange={
-      changeSceneFromHistory
-    }
-  />
+      <SceneUrlSync
+        scene={activeScene}
+        onSceneChange={
+          changeSceneFromHistory
+        }
+      />
 
       {urlReady && (
         <ScenePreloader
@@ -253,10 +255,20 @@ export default function LivingShell({
         />
       )}
 
-      <header className="living-shell-hud">
-        <div className="living-shell-hud-inner">
+      <header
+        className={
+          styles.livingShellHud
+        }
+      >
+        <div
+          className={
+            styles.livingShellHudInner
+          }
+        >
           <a
-            className="living-shell-brand"
+            className={
+              styles.livingShellBrand
+            }
             href="#top"
             aria-label="Parsa Tak home"
             onClick={(
@@ -269,21 +281,35 @@ export default function LivingShell({
               );
             }}
           >
-            <span className="living-shell-brand-eye">
-              <RedEye size={36} />
+            <span
+              className={
+                styles.livingShellBrandEye
+              }
+            >
+              <RedEye
+                size={36}
+              />
             </span>
 
-            <span className="living-shell-brand-name">
+            <span
+              className={
+                styles.livingShellBrandName
+              }
+            >
               Parsa Tak
             </span>
           </a>
 
           <div
-            className="living-shell-status"
+            className={
+              styles.livingShellStatus
+            }
             aria-live="polite"
           >
             <span
-              className="living-shell-status-dot"
+              className={
+                styles.livingShellStatusDot
+              }
               aria-hidden="true"
             />
 
@@ -307,7 +333,9 @@ export default function LivingShell({
 
           {github && (
             <a
-              className="living-shell-github"
+              className={
+                "living-shell-github"
+              }
               href={
                 github.href
               }
@@ -322,7 +350,9 @@ export default function LivingShell({
 
       <main
         id="top"
-        className="living-shell-viewport"
+        className={
+          styles.livingShellViewport
+        }
         data-active-scene={
           activeScene
         }
