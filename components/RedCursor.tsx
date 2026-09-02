@@ -81,12 +81,13 @@ export default function RedCursor() {
     let pointerInside = false;
     let hoverTarget = false;
 
+    /*
+     * These coordinates come directly from the browser PointerEvent.
+     * No artificial smoothing, acceleration, or speed multiplier is
+     * applied, so the custom cursor follows the user's actual pointer
+     * position 1:1.
+     */
     const pointer = {
-      x: -100,
-      y: -100
-    };
-
-    const cursorPosition = {
       x: -100,
       y: -100
     };
@@ -114,47 +115,17 @@ export default function RedCursor() {
         return;
       }
 
-      const cursorSmoothing =
-        0.82;
-
-      cursorPosition.x +=
-        (pointer.x -
-          cursorPosition.x) *
-        cursorSmoothing;
-
-      cursorPosition.y +=
-        (pointer.y -
-          cursorPosition.y) *
-        cursorSmoothing;
-
+      /*
+       * Follow the browser's actual pointer position directly.
+       * This removes the previous fixed smoothing factor that caused
+       * the red cursor to feel slower than the user's system pointer.
+       */
       cursor.style.transform =
-        `translate3d(${cursorPosition.x}px, ${cursorPosition.y}px, 0)`;
+        `translate3d(${pointer.x}px, ${pointer.y}px, 0)`;
 
       applyState();
 
-      const cursorDelta =
-        Math.abs(
-          pointer.x -
-            cursorPosition.x
-        ) +
-        Math.abs(
-          pointer.y -
-            cursorPosition.y
-        );
-
-      if (
-        pointerInside &&
-        cursorDelta > 0.05
-      ) {
-        frameRef.current =
-          window.requestAnimationFrame(
-            animate
-          );
-
-        frameRequested = true;
-      } else {
-        frameRef.current = 0;
-      }
+      frameRef.current = 0;
     };
 
     const requestFrame = () => {
@@ -205,17 +176,6 @@ export default function RedCursor() {
         event.clientY;
 
       pointerInside = true;
-
-      if (
-        cursorPosition.x <
-        -50
-      ) {
-        cursorPosition.x =
-          event.clientX;
-
-        cursorPosition.y =
-          event.clientY;
-      }
 
       requestFrame();
     };
