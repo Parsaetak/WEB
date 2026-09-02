@@ -30,7 +30,7 @@ function SceneFallback() {
 function SceneErrorState() {
   return (
     <div
-      className="scene-error"
+      className={styles.sceneError}
       role="status"
     >
       <p className="kicker">
@@ -66,7 +66,11 @@ export default function SceneViewport({
           <SceneFallback />
         }
       >
-        <div className="scene-viewport-content">
+        <div
+          className={
+            styles.sceneViewportContent
+          }
+        >
           {children}
         </div>
       </Suspense>
@@ -78,39 +82,29 @@ export default function SceneViewport({
       />
 
       <div
-        className="scene-viewport-frame"
+        className={
+          styles.sceneViewportFrame
+        }
         aria-hidden="true"
       />
 
       <div
-        className="
-          scene-viewport-corner
-          scene-viewport-corner-tl
-        "
+        className={`${styles.sceneViewportCorner} ${styles.sceneViewportCornerTl}`}
         aria-hidden="true"
       />
 
       <div
-        className="
-          scene-viewport-corner
-          scene-viewport-corner-tr
-        "
+        className={`${styles.sceneViewportCorner} ${styles.sceneViewportCornerTr}`}
         aria-hidden="true"
       />
 
       <div
-        className="
-          scene-viewport-corner
-          scene-viewport-corner-bl
-        "
+        className={`${styles.sceneViewportCorner} ${styles.sceneViewportCornerBl}`}
         aria-hidden="true"
       />
 
       <div
-        className="
-          scene-viewport-corner
-          scene-viewport-corner-br
-        "
+        className={`${styles.sceneViewportCorner} ${styles.sceneViewportCornerBr}`}
         aria-hidden="true"
       />
     </section>
