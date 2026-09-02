@@ -5,6 +5,8 @@ import {
   useState
 } from "react";
 
+import styles from "@/components/LibraryPdfReader.module.css";
+
 type PdfResourceInfo = {
   contentLength: number | null;
   acceptsRanges: boolean;
@@ -333,16 +335,38 @@ export default function LibraryPdfReader({
         : "NATIVE STREAM";
 
   return (
-    <div className="library-pdf-reader">
-      <div className="library-pdf-reader-toolbar">
-        <div className="library-pdf-reader-identity">
+    <div
+      className={
+        styles.reader
+      }
+    >
+      <div
+        className={
+          styles.toolbar
+        }
+      >
+        <div
+          className={
+            styles.identity
+          }
+        >
           <span
-            className="library-pdf-reader-dot"
+            className={
+              styles.dot
+            }
             aria-hidden="true"
           />
 
-          <div>
-            <span className="library-pdf-reader-kicker">
+          <div
+            className={
+              styles.identityCopy
+            }
+          >
+            <span
+              className={
+                styles.kicker
+              }
+            >
               PDF READER
             </span>
 
@@ -352,7 +376,11 @@ export default function LibraryPdfReader({
           </div>
         </div>
 
-        <div className="library-pdf-reader-stats">
+        <div
+          className={
+            styles.stats
+          }
+        >
           {fileSize && (
             <span>
               {fileSize}
@@ -379,7 +407,9 @@ export default function LibraryPdfReader({
         </div>
 
         <a
-          className="library-pdf-reader-open"
+          className={
+            styles.open
+          }
           href={src}
           target="_blank"
           rel="noopener noreferrer"
@@ -388,13 +418,29 @@ export default function LibraryPdfReader({
         </a>
       </div>
 
-      <div className="library-pdf-reader-stage">
+      <div
+        className={
+          styles.stage
+        }
+      >
         {!loaded &&
           !failed && (
-            <div className="library-pdf-reader-loading">
-              <span className="status-dot" />
+            <div
+              className={
+                styles.loading
+              }
+            >
+              <span
+                className={
+                  styles.loadingDot
+                }
+              />
 
-              <div>
+              <div
+                className={
+                  styles.loadingCopy
+                }
+              >
                 <strong>
                   OPENING DOCUMENT
                 </strong>
@@ -408,10 +454,16 @@ export default function LibraryPdfReader({
 
         {failed && (
           <div
-            className="library-pdf-reader-fallback"
+            className={
+              styles.fallback
+            }
             role="alert"
           >
-            <span className="library-pdf-reader-fallback-label">
+            <span
+              className={
+                styles.fallbackLabel
+              }
+            >
               PDF PREVIEW UNAVAILABLE
             </span>
 
@@ -424,7 +476,9 @@ export default function LibraryPdfReader({
             </p>
 
             <a
-              className="library-download-button"
+              className={
+                styles.downloadButton
+              }
               href={src}
               target="_blank"
               rel="noopener noreferrer"
@@ -446,8 +500,8 @@ export default function LibraryPdfReader({
           key={src}
           className={
             loaded
-              ? "library-pdf-frame is-loaded"
-              : "library-pdf-frame"
+              ? `${styles.frame} ${styles.frameLoaded}`
+              : styles.frame
           }
           src={src}
           title={title}
