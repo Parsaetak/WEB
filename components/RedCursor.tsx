@@ -1,41 +1,101 @@
+"use client";
+
 /*
- * Native cursor implementation.
+ * RED CURSOR — PERFORMANCE EDITION
  *
- * Performance constitution:
- * - No pointer listeners.
- * - No requestAnimationFrame loop.
- * - No React state.
- * - No moving DOM element.
- * - No SVG filters.
- * - No box-shadow animation.
- * - No per-frame style writes.
+ * The visual design remains a custom red pointer with:
+ * - red dimensional pointer body
+ * - bright contour
+ * - inner highlight
+ * - eye/core detail
+ * - subtle cursor ring
  *
- * Cursor movement is handled directly by the browser/OS, so the cursor
- * remains synchronized with the user's actual system pointer speed and
- * does not consume the page's animation/rendering budget.
+ * Performance architecture:
+ * - zero pointer event listeners
+ * - zero requestAnimationFrame loops
+ * - zero React state
+ * - zero moving DOM nodes
+ * - zero per-frame style writes
+ * - zero SVG filters
+ * - zero animated shadows
+ *
+ * The browser/OS owns cursor movement directly.
+ *
+ * This is deliberately implemented as a native CSS cursor so pointer
+ * movement is completely independent from the page's React/Canvas
+ * rendering workload.
  */
 
-const NATIVE_CURSOR_DATA_URL =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='24' viewBox='0 0 20 24'%3E%3Cpath d='M1.5 1.5V19l5.1-4.95 4.65 7.2 3.35-2.15-4.6-7.12H18.5z' fill='%23d81212' stroke='%23ff5959' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M3.6 4.2v10.8l3.55-3.45' fill='none' stroke='%23ff8a8a' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='6.6' cy='9' r='1.3' fill='%23ffffff'/%3E%3C/svg%3E";
+const RED_CURSOR_DATA_URL =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='40' viewBox='0 0 48 58'%3E%3Cdefs%3E%3ClinearGradient id='f' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23ff5848'/%3E%3Cstop offset='42%25' stop-color='%23d20f0f'/%3E%3Cstop offset='100%25' stop-color='%23460000'/%3E%3C/linearGradient%3E%3ClinearGradient id='s' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23ff3028'/%3E%3Cstop offset='100%25' stop-color='%23680000'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='17' cy='22' r='13' fill='none' stroke='%23ff2020' stroke-width='1' stroke-opacity='.20'/%3E%3Ccircle cx='17' cy='22' r='9' fill='none' stroke='%23ff2020' stroke-width='.7' stroke-opacity='.10'/%3E%3Cpath d='M1.5 1.5L1.5 49L14.5 36.5L26.5 53.5L34 48.5L22.5 32.5L41.5 32.5Z' fill='url(%23f)'/%3E%3Cpath d='M1.5 1.5L22.5 32.5L41.5 32.5Z' fill='url(%23s)'/%3E%3Cpath d='M1.5 1.5L1.5 49L14.5 36.5L26.5 53.5L34 48.5L22.5 32.5L41.5 32.5Z' fill='none' stroke='%23ff7065' stroke-width='.9' stroke-linejoin='round' stroke-opacity='.88'/%3E%3Cpath d='M3.5 5L3.5 43L13.5 33.5' fill='none' stroke='%23ff9a91' stroke-width='1' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='.78'/%3E%3Ccircle cx='14.5' cy='23' r='4' fill='%23ff2d20' fill-opacity='.92'/%3E%3Ccircle cx='14.5' cy='23' r='1.5' fill='%23ffffff' fill-opacity='.96'/%3E%3C/svg%3E";
+
+const RED_CURSOR_CSS = `
+  /*
+   * The cursor graphic itself is the browser-native cursor.
+   *
+   * Keep this selector explicit instead of globally using "*" so
+   * the browser can retain native cursor behavior for unsupported
+   * elements and controls.
+   */
+  html.red-cursor-enabled,
+  html.red-cursor-enabled body,
+  html.red-cursor-enabled a,
+  html.red-cursor-enabled button,
+  html.red-cursor-enabled [role="button"],
+  html.red-cursor-enabled input,
+  html.red-cursor-enabled textarea,
+  html.red-cursor-enabled select,
+  html.red-cursor-enabled summary,
+  html.red-cursor-enabled [tabindex] {
+    cursor: url("${RED_CURSOR_DATA_URL}") 2 2, auto;
+  }
+
+  /*
+   * Hide the platform cursor only where the custom cursor is active.
+   * The native SVG cursor above replaces it directly, so there is
+   * no additional DOM cursor to animate.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    html.red-cursor-enabled,
+    html.red-cursor-enabled body,
+    html.red-cursor-enabled a,
+    html.red-cursor-enabled button,
+    html.red-cursor-enabled [role="button"],
+    html.red-cursor-enabled input,
+    html.red-cursor-enabled textarea,
+    html.red-cursor-enabled select,
+    html.red-cursor-enabled summary,
+    html.red-cursor-enabled [tabindex] {
+      cursor: url("${RED_CURSOR_DATA_URL}") 2 2, auto;
+    }
+  }
+
+  /*
+   * Touch, coarse pointers and reduced-motion users keep the normal
+   * platform cursor/input behavior. No JavaScript runtime is involved.
+   */
+  @media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+    html.red-cursor-enabled,
+    html.red-cursor-enabled body,
+    html.red-cursor-enabled a,
+    html.red-cursor-enabled button,
+    html.red-cursor-enabled [role="button"],
+    html.red-cursor-enabled input,
+    html.red-cursor-enabled textarea,
+    html.red-cursor-enabled select,
+    html.red-cursor-enabled summary,
+    html.red-cursor-enabled [tabindex] {
+      cursor: auto;
+    }
+  }
+`;
 
 export default function RedCursor() {
   return (
     <style
       id="red-cursor-native"
       dangerouslySetInnerHTML={{
-        __html: `
-          html,
-          body,
-          a,
-          button,
-          [role="button"],
-          input,
-          textarea,
-          select,
-          summary {
-            cursor: url("${NATIVE_CURSOR_DATA_URL}") 2 2, auto;
-          }
-        `,
+        __html: RED_CURSOR_CSS,
       }}
     />
   );
