@@ -233,7 +233,9 @@ export default function LivingShell({
 
   return (
     <div
-      className={styles.livingShell}
+      className={
+        styles.livingShell
+      }
       data-active-scene={
         activeScene
       }
@@ -243,7 +245,9 @@ export default function LivingShell({
       <RedCursor />
 
       <SceneUrlSync
-        scene={activeScene}
+        scene={
+          activeScene
+        }
         onSceneChange={
           changeSceneFromHistory
         }
@@ -251,7 +255,9 @@ export default function LivingShell({
 
       {urlReady && (
         <ScenePreloader
-          scene={activeScene}
+          scene={
+            activeScene
+          }
         />
       )}
 
@@ -322,7 +328,9 @@ export default function LivingShell({
           </div>
 
           <SceneNavigator
-            scenes={SCENES}
+            scenes={
+              SCENES
+            }
             activeScene={
               activeScene
             }
@@ -334,7 +342,7 @@ export default function LivingShell({
           {github && (
             <a
               className={
-                "living-shell-github"
+                styles.livingShellGithub
               }
               href={
                 github.href
@@ -359,15 +367,33 @@ export default function LivingShell({
       >
         {urlReady && (
           <SceneRegistry
-            scene={activeScene}
+            scene={
+              activeScene
+            }
           />
         )}
       </main>
 
-      <footer className="living-shell-legal">
-        <div className="living-shell-legal-inner">
-          <div className="living-shell-footer-main">
-            <div className="living-shell-legal-primary">
+      <footer
+        className={
+          styles.livingShellLegal
+        }
+      >
+        <div
+          className={
+            styles.livingShellLegalInner
+          }
+        >
+          <div
+            className={
+              styles.livingShellFooterMain
+            }
+          >
+            <div
+              className={
+                styles.livingShellLegalPrimary
+              }
+            >
               <strong>
                 © 2026 Parsa Tak. All rights reserved.
               </strong>
@@ -380,7 +406,11 @@ export default function LivingShell({
             <FooterLinks />
           </div>
 
-          <div className="living-shell-legal-bottom">
+          <div
+            className={
+              styles.livingShellLegalBottom
+            }
+          >
             <p>
               Original website design, visual identity,
               writing, artwork, and other original creative
@@ -391,7 +421,11 @@ export default function LivingShell({
               except where a specific material states otherwise.
             </p>
 
-            <div className="living-shell-legal-links">
+            <div
+              className={
+                styles.livingShellLegalLinks
+              }
+            >
               <a
                 href="https://github.com/Parsaetak/WEB/blob/main/LICENSE.md"
                 target="_blank"
@@ -413,7 +447,9 @@ export default function LivingShell({
       </footer>
 
       <SceneLoadingScreen
-        visible={!urlReady}
+        visible={
+          !urlReady
+        }
       />
     </div>
   );
