@@ -16,6 +16,8 @@ import {
   type RedMagicPerformanceSample
 } from "@/components/RedMagicTelemetry";
 
+import styles from "@/components/MagicConsole.module.css";
+
 const SOUND_STORAGE_KEY =
   "red-magic-sound-enabled";
 
@@ -27,27 +29,27 @@ type BehaviourOption = {
 
 const BEHAVIOURS:
   BehaviourOption[] = [
-    {
-      id: "drift",
-      label: "DRIFT",
-      note:
-        "Slow orbit. The organism rests inside itself and barely reacts."
-    },
+  {
+    id: "drift",
+    label: "DRIFT",
+    note:
+      "Slow orbit. The organism rests inside itself and barely reacts."
+  },
 
-    {
-      id: "listen",
-      label: "LISTEN",
-      note:
-        "Balanced state. It follows your pointer and answers its motion."
-    },
+  {
+    id: "listen",
+    label: "LISTEN",
+    note:
+      "Balanced state. It follows your pointer and answers its motion."
+  },
 
-    {
-      id: "surge",
-      label: "SURGE",
-      note:
-        "Excited state. The core runs hot and the membrane reaches toward you."
-    }
-  ];
+  {
+    id: "surge",
+    label: "SURGE",
+    note:
+      "Excited state. The core runs hot and the membrane reaches toward you."
+  }
+];
 
 function readSoundPreference() {
   if (
@@ -240,10 +242,20 @@ export default function MagicConsole() {
       : "—";
 
   return (
-    <div className="magic-lab">
-      <div className="magic-lab-bar">
+    <div
+      className={
+        styles.magicLab
+      }
+    >
+      <div
+        className={
+          styles.magicLabBar
+        }
+      >
         <div
-          className="magic-controls"
+          className={
+            styles.magicControls
+          }
           role="group"
           aria-label="Organism behaviour"
         >
@@ -256,7 +268,9 @@ export default function MagicConsole() {
                   behaviour.id
                 }
                 type="button"
-                className="magic-control"
+                className={
+                  styles.magicControl
+                }
                 aria-pressed={
                   behaviour.id ===
                   mode
@@ -275,10 +289,16 @@ export default function MagicConsole() {
           )}
         </div>
 
-        <div className="magic-lab-actions">
+        <div
+          className={
+            styles.magicLabActions
+          }
+        >
           <button
             type="button"
-            className="magic-sound-control"
+            className={
+              styles.magicSoundControl
+            }
             aria-pressed={
               soundEnabled
             }
@@ -296,7 +316,9 @@ export default function MagicConsole() {
           </button>
 
           <p
-            className="magic-lab-note"
+            className={
+              styles.magicLabNote
+            }
             aria-live="polite"
           >
             {
@@ -306,22 +328,38 @@ export default function MagicConsole() {
         </div>
       </div>
 
-      <div className="magic-lab-frame">
-        <div className="magic-lab-shell">
+      <div
+        className={
+          styles.magicLabFrame
+        }
+      >
+        <div
+          className={
+            styles.magicLabShell
+          }
+        >
           <MagicInteractionLayer
             soundEnabled={
               soundEnabled
             }
-            mode={mode}
+            mode={
+              mode
+            }
           >
             <RedMagic
-              mode={mode}
+              mode={
+                mode
+              }
             />
           </MagicInteractionLayer>
         </div>
       </div>
 
-      <div className="magic-vitals">
+      <div
+        className={
+          styles.magicVitals
+        }
+      >
         <div>
           <span>
             SIGNAL
