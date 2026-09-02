@@ -1,0 +1,261 @@
+.livingShell {
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+.livingShellHud {
+  position: fixed;
+
+  inset:
+    0
+    0
+    auto;
+
+  z-index: 1000;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(4, 4, 5, 0.94),
+      rgba(4, 4, 5, 0.76) 68%,
+      rgba(4, 4, 5, 0)
+    );
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.livingShellHudInner {
+  width:
+    min(
+      calc(100% - 32px),
+      var(--shell-width)
+    );
+
+  min-height: var(--shell-header);
+
+  margin: 0 auto;
+
+  display: grid;
+
+  grid-template-columns:
+    auto
+    auto
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+
+  gap: 22px;
+
+  border-bottom:
+    1px solid
+    rgba(255, 32, 32, 0.07);
+
+  pointer-events: auto;
+}
+
+.livingShellBrand {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  min-width: max-content;
+}
+
+.livingShellBrandEye {
+  width: 39px;
+  height: 30px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  overflow: visible;
+}
+
+.livingShellBrandName {
+  position: relative;
+
+  color: #f5f7fb;
+
+  font-size: 15px;
+
+  font-weight: 800;
+
+  letter-spacing: -0.02em;
+
+  transition:
+    color 180ms ease,
+    text-shadow 180ms ease;
+}
+
+.livingShellBrandName::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: -5px;
+
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 32, 32, 0.72),
+      transparent
+    );
+
+  opacity: 0.3;
+
+  transform: scaleX(0.45);
+
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.livingShellBrand:hover .livingShellBrandName {
+  color: #ffffff;
+
+  text-shadow:
+    0 0 16px
+    rgba(255, 32, 32, 0.18);
+}
+
+.livingShellBrand:hover .livingShellBrandName::after {
+  opacity: 0.9;
+
+  transform: scaleX(1);
+}
+
+.livingShellStatus {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  min-width: max-content;
+
+  color: #8a919d;
+
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  letter-spacing: 0.16em;
+
+  text-transform: uppercase;
+}
+
+.livingShellStatusDot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: var(--red);
+
+  box-shadow:
+    0 0 8px
+    rgba(255, 32, 32, 0.72);
+
+  animation:
+    shellStatusPulse
+    2.4s
+    ease-in-out
+    infinite;
+}
+
+@keyframes shellStatusPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+
+    transform: scale(1.12);
+  }
+}
+
+.livingShellViewport {
+  position: relative;
+
+  min-height: 100vh;
+
+  padding-top: var(--shell-header);
+}
+
+@media (max-width: 1100px) {
+  .livingShellHudInner {
+    grid-template-columns:
+      auto
+      minmax(0, 1fr)
+      auto;
+  }
+
+  .livingShellStatus {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .livingShellHudInner {
+    width:
+      calc(
+        100% - 20px
+      );
+
+    min-height:
+      68px;
+
+    grid-template-columns:
+      auto
+      minmax(
+        0,
+        1fr
+      )
+      auto;
+  }
+
+  .livingShellBrandName {
+    font-size:
+      14px;
+  }
+
+  .livingShellBrandEye {
+    width:
+      34px;
+  }
+
+  .livingShellViewport {
+    padding-top:
+      68px;
+  }
+}
+
+@media (max-width: 560px) {
+  .livingShellBrandName {
+    display:
+      none;
+  }
+
+  .livingShellBrandEye {
+    width:
+      32px;
+  }
+}
