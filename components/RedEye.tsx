@@ -1,3 +1,11 @@
+"use client";
+
+import {
+  useId
+} from "react";
+
+import styles from "./RedEye.module.css";
+
 type RedEyeProps = {
   size?: number;
   className?: string;
@@ -7,9 +15,25 @@ export default function RedEye({
   size = 34,
   className = ""
 }: RedEyeProps) {
+  const id = useId();
+
+  const irisId =
+    `${id}-iris`;
+
+  const glowId =
+    `${id}-glow`;
+
+  const filterId =
+    `${id}-soft-glow`;
+
+  const svgClassName =
+    className
+      ? `${styles.redEye} ${className}`
+      : styles.redEye;
+
   return (
     <svg
-      className={`red-eye ${className}`}
+      className={svgClassName}
       width={size}
       height={size * 0.68}
       viewBox="0 0 100 68"
@@ -18,7 +42,7 @@ export default function RedEye({
     >
       <defs>
         <radialGradient
-          id="red-eye-iris"
+          id={irisId}
           cx="50%"
           cy="50%"
           r="50%"
@@ -27,18 +51,22 @@ export default function RedEye({
             offset="0%"
             stopColor="#fff4ef"
           />
+
           <stop
             offset="12%"
             stopColor="#ff6652"
           />
+
           <stop
             offset="42%"
             stopColor="#ff2020"
           />
+
           <stop
             offset="78%"
             stopColor="#a90000"
           />
+
           <stop
             offset="100%"
             stopColor="#420000"
@@ -46,7 +74,7 @@ export default function RedEye({
         </radialGradient>
 
         <radialGradient
-          id="red-eye-glow"
+          id={glowId}
           cx="50%"
           cy="50%"
           r="50%"
@@ -55,10 +83,12 @@ export default function RedEye({
             offset="0%"
             stopColor="rgba(255, 45, 35, 0.52)"
           />
+
           <stop
             offset="55%"
             stopColor="rgba(255, 20, 20, 0.14)"
           />
+
           <stop
             offset="100%"
             stopColor="rgba(255, 0, 0, 0)"
@@ -66,7 +96,7 @@ export default function RedEye({
         </radialGradient>
 
         <filter
-          id="red-eye-soft-glow"
+          id={filterId}
           x="-100%"
           y="-100%"
           width="300%"
@@ -85,12 +115,12 @@ export default function RedEye({
       </defs>
 
       <ellipse
-        className="red-eye-glow"
+        className={styles.glow}
         cx="50"
         cy="34"
         rx="41"
         ry="26"
-        fill="url(#red-eye-glow)"
+        fill={`url(#${glowId})`}
       />
 
       <path
@@ -119,13 +149,13 @@ export default function RedEye({
         strokeWidth="1"
       />
 
-      <g className="red-eye-iris-wrap">
+      <g className={styles.irisWrap}>
         <circle
           cx="50"
           cy="34"
           r="17"
-          fill="url(#red-eye-iris)"
-          filter="url(#red-eye-soft-glow)"
+          fill={`url(#${irisId})`}
+          filter={`url(#${filterId})`}
         />
 
         <circle
@@ -154,7 +184,7 @@ export default function RedEye({
       </g>
 
       <path
-        className="red-eye-crown"
+        className={styles.crown}
         d="
           M10 29
           C22 9 38 2 50 2
