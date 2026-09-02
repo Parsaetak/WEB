@@ -13,6 +13,8 @@ import {
   RedMagicAudio
 } from "@/components/RedMagicAudio";
 
+import styles from "@/components/MagicInteractionLayer.module.css";
+
 type Point = {
   x: number;
   y: number;
@@ -231,7 +233,7 @@ export default function MagicInteractionLayer({
 
       const ripples =
         root.querySelectorAll<HTMLSpanElement>(
-          ".magic-interaction-ripple"
+          `.${styles.magicInteractionRipple}`
         );
 
       if (
@@ -275,13 +277,13 @@ export default function MagicInteractionLayer({
       );
 
       ripple.classList.remove(
-        "is-active"
+        styles.isActive
       );
 
       void ripple.offsetWidth;
 
       ripple.classList.add(
-        "is-active"
+        styles.isActive
       );
     };
 
@@ -963,7 +965,9 @@ export default function MagicInteractionLayer({
   return (
     <div
       ref={rootRef}
-      className="magic-interaction"
+      className={
+        styles.magicInteraction
+      }
       onPointerEnter={
         handlePointerEnter
       }
@@ -984,20 +988,51 @@ export default function MagicInteractionLayer({
       }
     >
       <div
-        className="magic-interaction-visual"
+        className={
+          styles.magicInteractionVisual
+        }
         aria-hidden="true"
       >
-        <span className="magic-interaction-aura" />
+        <span
+          className={
+            styles.magicInteractionAura
+          }
+        />
 
-        <span className="magic-interaction-orbit magic-interaction-orbit-one" />
+        <span
+          className={[
+            styles.magicInteractionOrbit,
+            styles.magicInteractionOrbitOne
+          ].join(" ")}
+        />
 
-        <span className="magic-interaction-orbit magic-interaction-orbit-two" />
+        <span
+          className={[
+            styles.magicInteractionOrbit,
+            styles.magicInteractionOrbitTwo
+          ].join(" ")}
+        />
 
-        <span className="magic-interaction-orbit magic-interaction-orbit-three" />
+        <span
+          className={[
+            styles.magicInteractionOrbit,
+            styles.magicInteractionOrbitThree
+          ].join(" ")}
+        />
 
-        <span className="magic-interaction-axis magic-interaction-axis-x" />
+        <span
+          className={[
+            styles.magicInteractionAxis,
+            styles.magicInteractionAxisX
+          ].join(" ")}
+        />
 
-        <span className="magic-interaction-axis magic-interaction-axis-y" />
+        <span
+          className={[
+            styles.magicInteractionAxis,
+            styles.magicInteractionAxisY
+          ].join(" ")}
+        />
 
         {Array.from(
           {
@@ -1006,16 +1041,26 @@ export default function MagicInteractionLayer({
           },
           (_, index) => (
             <span
-              className="magic-interaction-ripple"
+              className={
+                styles.magicInteractionRipple
+              }
               key={index}
             />
           )
         )}
 
-        <span className="magic-interaction-reticle" />
+        <span
+          className={
+            styles.magicInteractionReticle
+          }
+        />
       </div>
 
-      <div className="magic-interaction-content">
+      <div
+        className={
+          styles.magicInteractionContent
+        }
+      >
         {children}
       </div>
     </div>
