@@ -1,351 +1,812 @@
-# Parsa Tak WEB — Agent Handoff
+# PARSA TAK WEB — TECHNICAL CONSTITUTION
 
-This is the single handoff document for any AI (or human) continuing this project.
-It was rebuilt from scratch on **2026-08-27**. Completed history lives in git — this file
-contains only what an agent needs to work correctly: rules, map, and open tasks.
+This document is the operational source of truth for future development agents.
 
-The repository is the source of truth. This file is the map. Never trust either one
-over the actual current files.
+The repository is authoritative.
+This document defines constraints, architecture, invariants, verification protocol, and extension rules.
+
+Do not infer current implementation from this document alone.
+Always inspect the current repository before modifying code.
 
 ---
 
-## 0. Working Protocol
+# I. PROJECT IDENTITY
+
+Site:
+https://parsaetak.github.io/WEB/
+
+Repository:
+https://github.com/Parsaetak/WEB
+
+Content repository:
+https://github.com/Parsaetak/Contents
+
+Content branch:
+Projects
+
+Primary stack:
+Next.js 16
+React 19
+TypeScript
+
+Deployment:
+GitHub Pages
+
+Rendering model:
+Static export only
+
+Current scene set:
+home
+about
+systems
+magic
+work
+library
+
+Routing:
+Hash-based scene routing.
+
+---
+
+# II. FUNDAMENTAL LAW
+
+## 1. Repository Authority
+
+The current repository state is always more authoritative than:
+
+- this document
+- previous conversations
+- old commits
+- cached assumptions
+- previous agent conclusions
+
+Never modify a file based only on remembered structure.
+
+Inspect the actual current file first.
+
+---
+
+## 2. Development Cycle
+
+Every meaningful change follows:
 
 ```text
-inspect repository + newest commit + newest Actions run
+inspect repository
         ↓
-read the files relevant to the requested change
+inspect newest commit
         ↓
-identify root cause / next coherent step
+inspect newest Actions run
         ↓
-one verified change (small milestones, no stacked unverified work)
+inspect relevant files
         ↓
-owner applies and pushes (or agent provides complete replacement file)
+identify root cause
         ↓
-verify build + newest Actions run + live site
+make one coherent change
+        ↓
+owner applies and pushes
+        ↓
+verify exact resulting commit
+        ↓
+verify newest Actions run
+        ↓
+verify production behavior when applicable
         ↓
 continue
-```
 
-Editing rules:
+Never declare a deployment healthy from an old Actions run.
 
-* For multiple related edits in one file, provide the **complete replacement file** in one code block (`.tsx`, `.ts`, `.css`, `.yml`). The owner applies files manually and prefers this.
-* Small isolated edits may use find → replace.
-* Update this worklog only at real milestones. Not after every CSS tweak.
+Never declare a change successful merely because a file was edited.
 
----
+3. Change Discipline
 
-## 1. Hard Rules (MUST / NEVER)
+Prefer small coherent milestones.
 
-1. **Static export only.** GitHub Pages, `output: "export"`, `basePath: "/WEB"` (set automatically when `GITHUB_ACTIONS=true`). No backend, no server-only code, no new services.
-2. **Never install `pdfjs-dist`** into `package.json`. It broke builds before. PDF.js loads in the browser from jsDelivr (`components/LibraryPdfReader.tsx`).
-3. **Library manifest** comes from `Parsaetak/Contents` branch **`Projects`** → synced at build time into `data/library.json`. Never point it at `main`. Never maintain a second hand-edited production manifest.
-4. **Heavy media loads only after explicit user action** (READ / LISTEN / WATCH). Never auto-open, auto-download a full PDF, or prefetch whole media files.
-5. **RED MAGIC stays on Home** (atmospheric, cheap). The dedicated MAGIC scene owns depth. Never remove it from Home to "avoid duplication".
-6. **No repeated concepts across scenes.** Ownership: ABOUT = identity, SYSTEMS = AI Instructions/REP/USEF, MAGIC = RED MAGIC, WORK = projects, LIBRARY = media, HOME = introduction/atmosphere. A Home preview + deeper own-scene treatment is allowed; verbatim duplication is not.
-7. **Navigation has six items** in a six-column grid. When adding a scene, check: `SceneRegistry.tsx`, `SceneUrlSync.tsx` valid-scenes list, nav CSS grid columns, `LivingShell.tsx`.
-8. **`.library-modal` must cover the full viewport** (`inset: 0`, `z-index: 1100`, portaled to `document.body`). It was once positioned under the header (`top: var(--shell-header)`) and the reader appeared trapped underneath. Do not reintroduce header offsets.
-9. **Respect `prefers-reduced-motion`** (cursor, RED MAGIC, Library motion, PDF opening animation).
-10. **Mobile must not overflow.** Reader controls collapse gracefully; avoid fixed widths.
-11. **Never assume a selector/component exists.** Inspect the actual CSS/TSX first (past failure: `.about-identity` did not exist).
-12. **Only one cursor runtime** (`components/RedCursor.tsx`). One RAF loop, no duplicates.
-13. **Verify the newest GitHub Actions run** before declaring deployment healthy. Never debug from an old run.
-14. Do not expose technical internals in the UI (branches, commits, loading jargon). Infrastructure stays invisible.
+Do not stack unrelated changes before verification.
 
----
+For substantial changes to .tsx, .ts, .css, or .yml:
 
-## 2. Snapshot
+provide the complete replacement file
+preserve unrelated behavior
+avoid speculative refactors
 
-```text
-Site:            https://parsaetak.github.io/WEB/
-Repo:            github.com/Parsaetak/WEB        (this repository)
-Content repo:    github.com/Parsaetak/Contents   (media + library.json, branch Projects)
-Stack:           Next.js 16 / React 19 / TypeScript — verify exact versions in package.json before editing
-Deploy:          .github/workflows/deploy.yml → checkout → cache → npm ci → sync manifest → validate → build → Pages
-Scenes:          home | about | systems | magic | work | library   (hash routing; library = #library)
-```
+For isolated changes:
 
-Key files:
+use precise find/replace guidance
 
-```text
-components/LivingShell.tsx          shell: fixed header (z 1000, isolation: isolate), nav, footer
-components/SceneRegistry.tsx        scene id → component map
-components/SceneUrlSync.tsx         hash ↔ scene (valid scenes list lives here)
-components/ScenePreloader.tsx       idle-time scene preload (current → next → previous)
-components/RedCursor.tsx            custom cursor (single RAF loop, zero filters)
-components/MagicConsole.tsx         MAGIC-scene client console (mode controls + vitals)
-components/RedMagic.tsx             canvas visual system (Home = atmospheric, MAGIC = full;
-                                    optional `mode` prop, default keeps Home unchanged)
-components/scenes/LibraryScene.tsx  catalog, filters, editorial preview, modal viewer (portal)
-components/LibraryPdfReader.tsx     PDF.js reader (dynamically imported, ssr: false)
-lib/contentRepository.ts            manifest → ContentItem; builds media URLs
-data/library.json                   build-time synced snapshot (generated, do not hand-edit)
-app/globals.css                     all styling (~20k lines, vertical formatting style)
-```
+Do not rewrite architecture unless the current architecture has been inspected and a measurable benefit is established.
 
-Media URL construction (`contentRepository.ts`):
+III. DEPLOYMENT CONSTITUTION
+4. Static Export
 
-```text
-https://cdn.jsdelivr.net/gh/Parsaetak/Contents@<branch>/<path>
-```
+The site must remain compatible with GitHub Pages.
 
-Note: media is served from **jsDelivr CDN, not raw.githubusercontent.com**. Range
-requests verified working (2026-08-27): `accept-ranges: bytes`, CORS `*`, real
-`206 Partial Content` + `Content-Range` in production reader sessions, PDF.js
-chunking at the configured 256 KiB.
+Required properties:
 
----
+output: "export"
+basePath: "/WEB"
 
-## 3. Library / Reader Essentials
+basePath may be conditioned by the deployment environment as implemented by the current configuration.
 
-UX contract:
+No backend is permitted.
 
-```text
-ENTER LIBRARY → instant static catalog → select work → editorial preview
-→ explicit READ/LISTEN/WATCH → heavy media loads → close (Escape / × / backdrop)
-```
+No required server runtime is permitted.
 
-PDF reader invariants:
+No new external service may become a runtime dependency without explicit architectural approval.
 
-```text
-range loading ON, streaming OFF, autoFetch OFF, rangeChunkSize 256 KiB
-3-page look-ahead, single active canvas, DPR capped at 2
-render cancelable, document destroyed on close
-loading states: OPENING → RENDERING → READY / LOADING NEXT (never fake percentages)
-nav strip = sliding window: 10 slots anchored current−2, shows range in header;
-canvas thumbnails render ONLY for current page .. +3 look-ahead — numbered
-placeholders elsewhere are INTENTIONAL (byte budget), not a bug. Do not
-"fix" them by rendering all slots.
-```
+5. Deployment Pipeline
 
-Persistent reading position (added 2026-08-27):
+The deployment workflow is:
 
-```text
-storage:    localStorage key "library-reading-position:<rawUrl>"
-payload:    { page, total, updatedAt }   per book (keyed by src URL)
-save:       debounced 400 ms on page change + instant flush on unmount
-resume:     on open, if saved page > 1 → jump there; "RESUMED AT PAGE N" chip ~4 s
-            opening screen shows "RESUME AT PAGE N" while loading
-page 1 is never resumed; storage failures are silently ignored (private mode safe)
-```
+checkout
+→ Node setup
+→ npm ci
+→ Pages setup
+→ Contents manifest sync
+→ manifest validation
+→ source artifact
+→ Next.js build
+→ Pages artifact
+→ GitHub Pages deployment
 
-Reader modernization (added 2026-08-27):
+The workflow is defined in:
 
-```text
-footer scrubber:  range input, debounced seek 140 ms, red fill via --scrub-progress
-fullscreen:       ⛶ button on reader root; Escape inside fullscreen is swallowed by
-                  the reader (stopPropagation) so the parent window handler does
-                  NOT close the viewer — browser exits fullscreen only
-double-click stage: toggle FIT ↔ 1.6× reading zoom
-keyboard:         ← → pages, PageUp/PageDown pages, Home/End first/last, Escape closes
-                  (only when NOT fullscreen)
-aria-pressed on FIT + fullscreen buttons; reduced-motion kills all reader animation
-```
+.github/workflows/deploy.yml
 
-Site-wide code audit (2026-08-27, every source file reviewed):
+Do not bypass this pipeline for production assumptions.
 
-```text
-RedMagic.tsx        FIXED: file did not compile (createGlowSprite + GLOW_SPRITE_SIZE
-                    each declared twice — TS2393/TS2451). Then wired the previously
-                    dead glow sprite into drawGlow (drawImage + globalAlpha instead of
-                    2 radial-gradient allocations/frame; gradient path kept as
-                    fallback). resize() now derives quality from the rect it already
-                    measured and rebuilds the particle world only when the quality
-                    band changes — window drags no longer re-allocate everything per
-                    ResizeObserver tick. Visual output verified identical (canvas
-                    pixel probes: red core + falloff intact).
-LivingShell.tsx     github link now uses lib GITHUB_LINK (was a .find() every render);
-                    changeScene is referentially stable via activeSceneRef, so
-                    SceneUrlSync stops resubscribing URL listeners on every
-                    navigation. Behaviour identical incl. back/forward.
-Home/WorkScene.tsx  same GITHUB_LINK migration (per-render .find() removed).
-RedCursor.tsx       hover-target selector string hoisted to module const (was
-                    rebuilt on every pointerover/out).
-PublicLinks.tsx     link groups + compact-id Set hoisted to module level.
-LibraryScene.tsx    filter counts derived in one useMemo pass (was one .filter()
-                    per filter button per render).
-app/layout.tsx      <link rel="preconnect" href="https://cdn.jsdelivr.net"> so the
-                    first heavy media/PDF.js request skips DNS+TCP+TLS.
-globals.css         MOBILE FIX: .library-preview-tags spans render with no
-                    whitespace between them → zero break opportunities → 513px
-                    unbreakable run forced the 1fr preview grid track wide and
-                    clipped on phones. Now flex + wrap with meta-pill styling
-                    (consistent look, verified 390px: content 316px, no clipping;
-                    desktop unchanged visually apart from intentional pill chips).
-```
+IV. ARCHITECTURE
+6. Global Shell
 
-Audit invariants: never declare the same `const`/function twice in one module
-(broke the build); adjacent inline spans need a wrapping container (flex/grid)
-because JSX renders no whitespace between them; RedMagic glow = sprite stamps,
-do not revert to per-frame gradients.
+Primary shell:
 
-MAGIC scene console + cursor refinement (2026-08-28):
+components/LivingShell.tsx
 
-```text
-RedCursor.tsx        REBUILT: single crisp vector cursor. REMOVED entirely:
-                     SVG glow filter (feGaussianBlur), eye-glow circle,
-                     pointer drop-shadow path, both CSS drop-shadow halos,
-                     ring box-shadow, and the 3-dot glowing trail element
-                     (and its RAF work). ADDED: crisp contour stroke,
-                     shape-rendering=geometricPrecision, hover feedback =
-                     precise 1.07 scale step (no bloom). Rationale: owner
-                     asked for higher quality with no red lights around the
-                     cursor; blur filters on a per-frame translated element
-                     were also the most expensive paint on the page.
-RedMagic.tsx         Behaviour modes: optional prop `mode` ("drift" |
-                     "listen" | "surge", default "listen" = byte-for-byte
-                     original values, so Home <RedMagic /> is UNCHANGED).
-                     MODE_PROFILES scale the sim clock, pointer-energy
-                     targets, pointer gain and core gain. Mode is delivered
-                     via ref (no remount, no world rebuild on switch).
-                     Telemetry sample now includes pointerEnergy (0..1).
-MagicConsole.tsx     NEW client component (MAGIC scene only): behaviour
-                     buttons (role=group, aria-pressed, keyboard native) +
-                     live vitals strip (SIGNAL/VITALITY/FORM) subscribing to
-                     engine telemetry, mapped to qualitative organism states
-                     — no fps numbers, no jargon (hard rule 14).
-RedMagicScene.tsx    Restructured: hero → LIVE ORGANISM lab (MagicConsole,
-                     the one and only canvas) → SIMULATION MODEL (5 layer
-                     cards) → principles → future. Old magic-system section
-                     (2nd organism + static metrics) absorbed into the lab.
-globals.css          Cursor section replaced in place; new layer appended
-                     at end: .magic-lab*, .magic-controls, .magic-vitals,
-                     .magic-model*, and REAL grid/card styles for
-                     .magic-organism-principles(-grid)/.magic-organism-
-                     principle which previously had NO CSS (only h3/p font
-                     sizes) — cards were rendering as unstyled stacks.
-```
+Responsibilities:
 
-Verification (2026-08-28): tsc + build green. Browser: LISTEN default pressed;
-SURGE click → aria-pressed moves, note swaps, vitals go live (SIGNAL AWAKE
-from surge energy floor with NO pointer — proves mode→energy chain);
-DRIFT → SIGNAL RESTING. Canvas centre probes: SURGE 195 > LISTEN 188 >
-DRIFT 185 (red channel). Cursor DOM: trail/eye-glow/shadow absent, computed
-svg filter = none, ring box-shadow = none (headless reports pointer:coarse so
-the cursor runtime itself does not mount there — CSS verified via injected
-nodes). Scenes cycle, Home atmosphere pixel-identical intent, keyboard Enter
-activates controls, 390px: no overflow, controls 366px, vitals 1-col.
-Reduced motion: verified at code+CSS level (global RM block intact; engine
-freezes elapsed/stepDelta) — not live-emulated (CLI lacks the toggle).
+scene state
+hash navigation
+scene switching
+global background
+custom cursor
+scene preloading
+navigation shell
+footer
+loading shell
 
-New invariants:
+Global background is mounted once from LivingShell.
 
-```text
-15. The cursor ships ZERO filters/shadows/blur: definition = contour stroke
-    + geometricPrecision. Do not reintroduce drop-shadow/box-shadow/feGlow.
-16. RedMagic `mode` default ("listen") must equal the original engine
-    constants — Home depends on it. Mode changes are ref-delivered, never
-    remount the effect.
-17. Exactly ONE RedMagic canvas per page (MAGIC scene lab). Do not add a
-    second organism instance to any scene.
-```
+Custom cursor is mounted once from LivingShell.
 
----
+Do not duplicate either runtime inside individual scenes.
 
-## 4. Completed Baseline (context — do not redo)
+7. Scene Registry
 
-Six-scene shell, hash routing, scene code-splitting + idle preload, manifest build
-sync + validation, catalog + filters + featured + editorial preview, deferred heavy
-media, PDF reader (CDN PDF.js, progressive range loading verified end-to-end),
-persistent reading position, sliding thumbnail window with byte budget, reader
-modernization (scrubber, fullscreen, double-click zoom, keyboard pages, motion
-polish), full-viewport modal fix, reduced-motion support, LICENSE.md /
-TRADEMARKS.md, Actions workflow on current action versions, Next.js build cache,
-full-repo performance/quality audit (2026-08-27 — see section 3 notes; compile
-errors fixed, sprite render path, stable callbacks, preconnect, mobile preview
-overflow fix), RED MAGIC dedicated scene: live behaviour console + vitals +
-simulation-model section (2026-08-28), cursor rebuilt crisp with zero
-glow/shadow/lights (2026-08-28). Production deploys green.
+Primary mapping:
 
----
+components/SceneRegistry.tsx
 
-## 5. OPEN ITEMS (priority order)
+Scene synchronization:
 
-### 1. Large-book open efficiency — agent side DONE, content side OPEN
+components/SceneUrlSync.tsx
 
-Reader-side fix shipped 2026-08-27 (see invariants above): thumbnails render in a
-strict byte budget (current page + 3 look-ahead only), the nav strip slides with
-the reading position. Verified: resume-open of RED MAGIC.pdf at page 150 now
-transfers 1.3 MB (10.8% of file) instead of walking the head of the book;
-sliding to a nearby page costs 0 extra bytes; fresh opens unaffected.
+Scene preloading:
 
-The remaining cold-open cost is **file content, not code**. Structural analysis
-of RED MAGIC.pdf (11.5 MB, Skia/PDF m145 = Google Docs export):
+components/ScenePreloader.tsx
 
-```text
-page 2 of 270 → object 7: ONE FlateDecode image, 10.24 MB = 84.7% of the file
-stored at file offset 942 (front). Any viewer rendering pages 1→2 must fetch it.
-No client-side change can beat this; do not try.
-```
+Current scenes:
 
-Owner action (Contents repo, Books branch):
+home
+about
+systems
+magic
+work
+library
 
-* Recompress / re-export that page-2 artwork losslessly-compressed → JPEG
-  (or run the whole book through a recompression pass, e.g. ghostscript
-  `/ebook`). This alone can cut ~85% of book size and fixes cold open.
-* Then optionally `qpdf --linearize` the exports for fast-web-view ordering.
+When a new scene is eventually introduced, update all relevant systems consistently:
 
-Acceptance: cold-open of the recompressed RED MAGIC.pdf transfers a small
-fraction of the file for the first pages. (Resume-open already meets the bar.)
+SceneRegistry.tsx
+SceneUrlSync.tsx
+LivingShell.tsx
+navigation definition
+navigation layout
+preloader
+scene-specific styling
 
-### 2. Cover system
+The project will eventually require a more scalable scene registry/navigation architecture.
 
-`cover` field already flows end-to-end (manifest → `coverUrl`). Add lightweight,
-cacheable cover assets to `Contents` and reference them in `library.json`.
-Keep catalog/preview usage lightweight; full media still loads only on READ.
+Do not implement that larger system yet unless the number of scenes or complexity requires it.
 
-### 3. Publication presentation
+V. SCENE OWNERSHIP
+8. Concept Ownership
 
-Expose existing metadata with strong visual hierarchy — subtitle, series, volume,
-language, status, reading time. Do not dump every field on screen; editorial
-selection over data listing.
+Each scene has a defined conceptual domain.
 
-### 4. Optional: catalog-level resume hint
+HOME
+Introduction, atmosphere, broad orientation.
 
-Reader-level resume is done. Optional polish: show "continue at page N / x% read"
-on the catalog card or editorial preview (read the same localStorage keys).
+ABOUT
+Identity and personal context.
 
-### 5. Reader focus management (minor)
+SYSTEMS
+AI Instructions, REP, USEF, reasoning/system frameworks.
 
-Arrow-key navigation requires the reader div to have focus (click inside first).
-Pre-existing. Consider moving focus into the reader on modal open; keep Escape
-handled by the parent viewer.
+MAGIC
+RED MAGIC as the primary interactive visual system.
 
-### 6. RED MAGIC dedicated scene — DONE (2026-08-28)
+WORK
+Projects and created work.
 
-Implemented on the existing engine (the version the owner confirmed as the
-reference): MAGIC scene now hosts a live lab (DRIFT / LISTEN / SURGE
-behaviour console + SIGNAL / VITALITY / FORM vitals) and a structured
-simulation-model section. Home stays atmospheric and untouched. Follow-up
-polish ideas (non-blocking): pointer-hold gesture, more behaviour modes,
-mobile touch responsiveness tuning.
+LIBRARY
+Media catalogue and reading/listening/viewing experience.
 
----
+Do not duplicate complete concepts across scenes.
 
-## 6. Verification Protocol
+A Home preview may point toward a deeper scene.
 
-After any substantial change:
+Verbatim duplication is forbidden.
 
-```text
-1. npm run build            (local build has no /WEB basePath — that is correct)
-2. serve out/ statically and browser-test the changed behaviour
-3. push → verify the NEWEST Actions run (build + deploy green)
-4. verify on https://parsaetak.github.io/WEB/
-5. for library/reader changes: open a book, page through, zoom, close,
-   reopen (resume), check mobile width, check reduced motion if relevant
-```
+VI. RED MAGIC CONSTITUTION
+9. Global Red Magic Background
 
-Actions failure triage: newest run → failed job → failed step → first real
-compiler/runtime error → source file → root cause.
+Primary component:
 
----
+components/WorldBackground.tsx
 
-## 7. Quality Bar
+Purpose:
 
-A milestone is complete only when: it works (function), feels right (UX), looks
-intentional (visual), heavy work stayed deferred (performance), responsibility
-sits in the correct component (architecture), the next agent can understand it
-(maintainability), it builds and deploys cleanly (deployment), and user-facing
-text stays readable and non-repetitive (content).
+A fixed ambient Red Magic field spanning the entire site.
 
-TypeScript compiling is not "done".
+It is atmospheric.
+It is autonomous.
+It must not require a JavaScript animation loop.
+
+The current implementation uses CSS-driven animation with:
+
+large atmospheric red masses
+central core
+nucleus
+rotating elliptical rings
+energy wisps
+particles
+intermittent sparks
+fixed global positioning
+
+The global background must remain visually significant but subordinate to foreground content.
+
+Never allow the background to reduce text readability or interaction clarity.
+
+10. Global Background Performance
+
+The global Red Magic background must prefer:
+
+CSS transform
+CSS opacity
+GPU-compositor-friendly animation
+containment
+static DOM structure
+
+Avoid:
+
+per-frame React state
+requestAnimationFrame for decorative background motion
+layout-triggering properties
+continuous getBoundingClientRect calls
+per-frame style recalculation
+large filter chains
+unbounded DOM particle counts
+
+Do not introduce a second canvas solely for the global background.
+
+The dedicated RedMagic.tsx engine already owns the interactive simulation.
+
+VII. INTERACTIVE RED MAGIC
+11. Dedicated Engine
+
+Primary component:
+
+components/RedMagic.tsx
+
+The dedicated engine is the primary interactive RED MAGIC simulation.
+
+It currently uses:
+
+Canvas 2D
+single animation loop
+quality adaptation
+particle system
+energy flows
+membrane deformation
+nodes
+shockwaves
+pointer interaction
+mode profiles
+telemetry
+12. RedMagic Modes
+
+Supported modes:
+
+drift
+listen
+surge
+
+Default:
+
+listen
+
+The default listen profile must preserve Home compatibility.
+
+Mode changes must not remount the entire engine.
+
+Mode is delivered through stable runtime state/ref mechanisms as implemented by the current engine.
+
+13. RedMagic Quality
+
+Current quality bands:
+
+high
+medium
+low
+
+Quality adaptation exists to protect frame rate.
+
+Do not remove adaptive quality merely to increase visual density.
+
+Visual additions should preferably increase perceived complexity rather than brute-force particle counts.
+
+14. RedMagic Canvas Invariant
+
+There must be exactly one dedicated RED MAGIC canvas instance for the active MAGIC laboratory.
+
+Do not introduce duplicate organism canvases.
+
+The global WorldBackground is not a replacement for this engine.
+
+VIII. CURSOR CONSTITUTION
+15. Custom Cursor
+
+Primary component:
+
+components/RedCursor.tsx
+
+There is exactly one cursor runtime.
+
+The cursor must:
+
+follow browser pointer coordinates directly
+use no artificial speed multiplier
+use no artificial acceleration
+use no interpolation
+use no trailing simulation
+use a single RAF scheduler
+
+The current cursor intentionally follows the browser pointer position 1:1.
+
+Do not reintroduce smoothing merely for visual effect.
+
+16. Cursor Visual Law
+
+The cursor is intentionally crisp.
+
+Forbidden:
+
+drop-shadow
+box-shadow halos
+feGaussianBlur
+glow trails
+multi-dot trails
+per-frame bloom
+
+The current visual language is:
+
+vector geometry
+crisp contour
+geometric precision
+controlled hover scale
+
+Any future cursor redesign must preserve low paint cost.
+
+IX. PERFORMANCE CONSTITUTION
+17. Primary Objective
+
+The site's two highest-level engineering priorities are:
+
+1. Visual quality
+2. Runtime performance
+
+They are equal architectural concerns.
+
+Do not improve style by blindly increasing rendering cost.
+
+Do not improve performance by flattening the site's visual identity.
+
+Prefer techniques that improve both simultaneously.
+
+18. Animation
+
+Preferred:
+
+transform
+opacity
+CSS animations
+requestAnimationFrame only where actual simulation is required
+
+Avoid unnecessary animation loops.
+
+A visual system that can be expressed through CSS should generally remain CSS-driven.
+
+A simulation that requires physics/state may use Canvas + RAF.
+
+19. DOM Work
+
+Avoid in hot paths:
+
+React state updates
+DOM queries
+querySelector loops
+getBoundingClientRect
+layout reads followed by writes
+allocation-heavy object creation
+rebuilding selector strings
+recreating static arrays
+
+Hoist static values to module scope where useful.
+
+Do not optimize readability into unreasonable fragmentation.
+
+20. High-Hz Pointer Input
+
+Pointer handlers must be lightweight.
+
+For high-polling-rate mice:
+
+store latest input
+coalesce rendering through RAF
+render once per frame
+
+Do not process expensive visual work on every raw pointer event.
+
+Passive listeners should be used where appropriate.
+
+21. Visibility
+
+Animations that are not visible should stop when practical.
+
+Use:
+
+document.visibilityState
+IntersectionObserver
+
+where the component architecture benefits from them.
+
+Do not keep expensive simulations running in hidden tabs or off-screen sections unnecessarily.
+
+22. Reduced Motion
+
+Always respect:
+
+prefers-reduced-motion
+
+This requirement applies to:
+
+cursor
+Red Magic
+scene transitions
+Library motion
+PDF opening animation
+background animation
+
+Reduced-motion behavior must be intentional, not merely partially disabled.
+
+X. LIBRARY CONSTITUTION
+23. Library Manifest
+
+Production manifest source:
+
+Parsaetak/Contents
+branch: Projects
+
+The website's build process synchronizes:
+
+data/library.json
+
+Do not point production synchronization at main.
+
+Do not maintain a second manually edited production manifest.
+
+24. Heavy Media
+
+Heavy media must load only after explicit user intent.
+
+Allowed triggers:
+
+READ
+LISTEN
+WATCH
+
+Forbidden:
+
+automatic full-media loading
+automatic PDF opening
+automatic full-media prefetch
+
+Static catalog browsing must remain lightweight.
+
+25. Media Delivery
+
+Media is served through the project's current jsDelivr-based content URL system.
+
+Do not revert to raw GitHub delivery unless there is a measured architectural reason.
+
+The existing reader relies on ranged media access.
+
+Preserve byte-efficient progressive loading.
+
+XI. PDF READER CONSTITUTION
+26. PDF Engine
+
+Primary component:
+
+components/LibraryPdfReader.tsx
+
+PDF.js must not be added as a local package dependency if the current CDN architecture remains in place.
+
+Specifically:
+
+DO NOT install pdfjs-dist
+
+The current design loads PDF.js in the browser from the configured CDN path.
+
+27. Reader Loading Policy
+
+Current reader invariants:
+
+range loading ON
+streaming OFF
+autoFetch OFF
+rangeChunkSize = 256 KiB
+
+Rendering policy:
+
+single active canvas
+cancelable rendering
+document destroyed on close
+DPR capped at 2
+
+Navigation keeps a limited look-ahead window.
+
+Do not render all thumbnails merely to make the navigation strip appear complete.
+
+The byte budget is intentional.
+
+28. Reader UX
+
+The current reader includes:
+
+persistent reading position
+resume state
+scrubber
+fullscreen
+double-click zoom
+keyboard navigation
+reduced-motion behavior
+
+Persistent position key:
+
+library-reading-position:<rawUrl>
+
+Storage failures must remain non-fatal.
+
+XII. MOBILE CONSTITUTION
+29. Mobile Safety
+
+The entire site must remain usable on narrow screens.
+
+Never introduce:
+
+fixed-width overflow
+unbreakable content runs
+desktop-only navigation assumptions
+reader controls wider than viewport
+background effects that obscure content
+
+Use responsive reduction rather than simply hiding essential functionality.
+
+Visual density may be reduced on smaller screens.
+
+XIII. CSS CONSTITUTION
+30. Global Styling
+
+Primary file:
+
+app/globals.css
+
+Keep the existing visual language:
+
+dark field
+red primary accent
+high contrast typography
+technical/magical atmosphere
+precise geometry
+restrained effects
+
+Prefer compositor-friendly effects.
+
+Do not add expensive blur/shadow effects merely because they look impressive in isolation.
+
+31. Selector Discipline
+
+Never assume a selector exists.
+
+Before modifying CSS:
+
+inspect the actual TSX
+inspect the actual CSS
+confirm the class exists
+confirm the component using it
+
+Never invent selectors based on remembered versions.
+
+XIV. COMPONENT DISCIPLINE
+32. Static Data
+
+Static arrays, configuration, constant selectors, and stable definitions should be module-level when appropriate.
+
+Do not recreate them on every render without reason.
+
+33. React Boundaries
+
+Keep client components intentional.
+
+Avoid moving server-safe work into client components unnecessarily.
+
+Maintain serializable boundaries.
+
+Do not add client state for purely presentational constants.
+
+34. Dynamic Imports
+
+Heavy scene/client systems should remain compatible with the existing scene code-splitting strategy.
+
+Use dynamic imports where the current architecture calls for them.
+
+Do not make the entire site a single client bundle.
+
+XV. FORBIDDEN REGRESSIONS
+
+The following are architectural regressions:
+
+duplicate cursor runtime
+duplicate dedicated RedMagic canvas
+reintroduced cursor glow/shadow filters
+per-frame radial-gradient allocation in RedMagic
+manual duplicate library manifest
+production manifest sourced from Contents/main
+automatic heavy media loading
+pdfjs-dist dependency
+server/backend requirement
+broken static export
+mobile horizontal overflow
+ignoring prefers-reduced-motion
+fake loading percentages for media operations
+technical infrastructure details exposed in public UI
+XVI. VERIFICATION CONSTITUTION
+35. Minimum Verification
+
+After every pushed milestone verify:
+
+1. exact newest commit
+2. changed files
+3. exact newest Actions run
+4. prepare/validation result
+5. build result
+6. deployment result
+
+When UI behavior is materially changed, also verify the live production site.
+
+36. Do Not Trust Old Runs
+
+Always identify the Actions run by:
+
+head_sha
+
+and verify that it matches the commit being evaluated.
+
+Never use a successful older run to declare a newer commit healthy.
+
+XVII. CURRENT BASELINE
+
+Current verified progression:
+
+Cursor direct-follow:
+711f4ec5de3bbb00e28daf38bda60a40839cd85a
+
+Cursor state optimization:
+68711fa7fbf99f8d3bf91cf27dc1d1dc47b75438
+
+Global Red Magic background:
+a7c850b66c110c33f22338ea18caa528359f3b94
+
+Latest verified background deployment:
+
+workflow:
+Deploy Next.js site to GitHub Pages
+
+run:
+313
+
+head:
+a7c850b66c110c33f22338ea18caa528359f3b94
+
+result:
+success
+
+Latest Pages deployment associated with that commit:
+
+run:
+329
+
+result:
+success
+XVIII. FUTURE EXTENSION LAW
+
+The site will eventually contain more scenes/tabs.
+
+The current six-scene model is acceptable for the present stage.
+
+Do not prematurely replace it with a large navigation framework.
+
+When scene count begins making the current architecture difficult to reason about, introduce a centralized declarative system for:
+
+scene identity
+navigation metadata
+routing validity
+preloading priority
+scene ownership
+accessibility metadata
+
+That system should become the single source of truth.
+
+Until that threshold is reached:
+
+do not add architectural complexity merely because future growth is possible.
+XIX. DOCUMENT MAINTENANCE
+
+This document is constitutional, not a diary.
+
+Do not record:
+
+every small CSS tweak
+every temporary bug
+every conversation
+old implementation details that no longer constrain the system
+repeated explanations
+subjective commentary
+
+Update this document only when a change creates or modifies a durable engineering invariant, architectural rule, or future-development constraint.
+
+Completed history belongs in git.
+
+The repository contains implementation.
+This document contains law.
+
+XX. FINAL AGENT RULE
+
+Before changing anything:
+
+READ THE CURRENT CODE.
+READ THE CURRENT ARCHITECTURE.
+VERIFY THE CURRENT DEPLOYMENT STATE.
+THEN CHANGE ONE THING.
+THEN VERIFY IT.
+
+Never optimize an imagined version of the site.
+
+Never preserve a historical implementation merely because it appears in this document.
+
+Prefer the smallest architecture that can support the current experience.
+
+Preserve the site's identity.
+
+Preserve its performance.
+
+Preserve its ability to evolve.
