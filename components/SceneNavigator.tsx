@@ -8,6 +8,8 @@ import {
   preloadScene
 } from "@/components/ScenePreloader";
 
+import styles from "@/components/SceneNavigator.module.css";
+
 export type SceneNavigationItem = {
   id: SceneId;
   label: string;
@@ -29,10 +31,16 @@ export default function SceneNavigator({
 }: SceneNavigatorProps) {
   return (
     <nav
-      className="scene-navigator"
+      className={
+        styles.sceneNavigator
+      }
       aria-label="Site scenes"
     >
-      <div className="scene-navigator-track">
+      <div
+        className={
+          styles.track
+        }
+      >
         {scenes.map(
           (
             scene,
@@ -53,9 +61,13 @@ export default function SceneNavigator({
 
             return (
               <button
-                key={scene.id}
+                key={
+                  scene.id
+                }
                 type="button"
-                className="scene-navigator-item"
+                className={
+                  styles.item
+                }
                 data-active={
                   active
                     ? "true"
@@ -83,7 +95,9 @@ export default function SceneNavigator({
                 }
               >
                 <span
-                  className="scene-navigator-index"
+                  className={
+                    styles.index
+                  }
                   aria-hidden="true"
                 >
                   {String(
@@ -94,14 +108,26 @@ export default function SceneNavigator({
                   )}
                 </span>
 
-                <span className="scene-navigator-copy">
-                  <span className="scene-navigator-label">
-                    {scene.shortLabel}
+                <span
+                  className={
+                    styles.copy
+                  }
+                >
+                  <span
+                    className={
+                      styles.label
+                    }
+                  >
+                    {
+                      scene.shortLabel
+                    }
                   </span>
                 </span>
 
                 <span
-                  className="scene-navigator-indicator"
+                  className={
+                    styles.indicator
+                  }
                   aria-hidden="true"
                 />
               </button>
