@@ -1,3 +1,5 @@
+import styles from "./SystemsScene.module.css";
+
 const systems = [
   {
     number: "01",
@@ -30,39 +32,41 @@ const systems = [
 
 export default function SystemsScene() {
   return (
-    <div className="systems-scene">
-      <section className="section systems-architecture">
+    <div className={styles.systemsScene}>
+      <section className={`section ${styles.systemsArchitecture}`}>
         <div
-          className="systems-blueprint"
+          className={styles.systemsBlueprint}
           aria-hidden="true"
         >
-          <span className="systems-blueprint-grid" />
+          <span className={styles.systemsBlueprintGrid} />
 
           <span
-            className="systems-blueprint-cross systems-blueprint-cross-one"
+            className={`${styles.systemsBlueprintCross} ${styles.systemsBlueprintCrossOne}`}
           />
 
           <span
-            className="systems-blueprint-cross systems-blueprint-cross-two"
+            className={`${styles.systemsBlueprintCross} ${styles.systemsBlueprintCrossTwo}`}
           />
 
           <span
-            className="systems-blueprint-axis systems-blueprint-axis-x"
+            className={`${styles.systemsBlueprintAxis} ${styles.systemsBlueprintAxisX}`}
           />
 
           <span
-            className="systems-blueprint-axis systems-blueprint-axis-y"
+            className={`${styles.systemsBlueprintAxis} ${styles.systemsBlueprintAxisY}`}
           />
         </div>
 
         <div className="page-container">
-          <header className="systems-header">
-            <div className="systems-header-copy">
+          <header className={styles.systemsHeader}>
+            <div className={styles.systemsHeaderCopy}>
               <p className="kicker">
                 02 / SYSTEMS
               </p>
 
-              <h1 className="section-title systems-title">
+              <h1
+                className={`section-title ${styles.systemsTitle}`}
+              >
                 How the
                 <br />
                 thinking becomes
@@ -70,7 +74,9 @@ export default function SystemsScene() {
                 a system
               </h1>
 
-              <p className="body-large systems-lead">
+              <p
+                className={`body-large ${styles.systemsLead}`}
+              >
                 Three connected frameworks:{" "}
                 govern the environment,{" "}
                 strengthen reasoning,{" "}
@@ -79,11 +85,11 @@ export default function SystemsScene() {
             </div>
 
             <div
-              className="systems-status"
+              className={styles.systemsStatus}
               aria-label="Systems architecture status"
             >
               <span
-                className="systems-status-dot"
+                className={styles.systemsStatusDot}
                 aria-hidden="true"
               />
 
@@ -93,73 +99,63 @@ export default function SystemsScene() {
             </div>
           </header>
 
-          <div className="systems-modules">
-            {systems.map(
-              (system) => (
-                <article
-                  className="systems-module"
-                  key={
-                    system.number
-                  }
-                  data-module={
-                    system.number
-                  }
-                >
-                  <div className="systems-module-frame">
-                    <div className="systems-module-corner systems-module-corner-tl" />
-                    <div className="systems-module-corner systems-module-corner-tr" />
-                    <div className="systems-module-corner systems-module-corner-bl" />
-                    <div className="systems-module-corner systems-module-corner-br" />
+          <div className={styles.systemsModules}>
+            {systems.map((system) => (
+              <article
+                className={styles.systemsModule}
+                key={system.number}
+                data-module={system.number}
+              >
+                <div className={styles.systemsModuleFrame}>
+                  <div
+                    className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerTl}`}
+                  />
+                  <div
+                    className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerTr}`}
+                  />
+                  <div
+                    className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerBl}`}
+                  />
+                  <div
+                    className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerBr}`}
+                  />
 
-                    <div className="systems-module-index">
-                      {
-                        system.number
-                      }
-                    </div>
-
-                    <div className="systems-module-role">
-                      {
-                        system.role
-                      }
-                    </div>
-
-                    <div className="systems-module-core">
-                      <span className="systems-module-code">
-                        {
-                          system.code
-                        }
-                      </span>
-
-                      <span className="systems-module-layer">
-                        {
-                          system.layer
-                        }
-                      </span>
-
-                      <h2>
-                        {
-                          system.title
-                        }
-                      </h2>
-                    </div>
-
-                    <p className="systems-module-copy">
-                      {
-                        system.copy
-                      }
-                    </p>
-
-                    <div className="systems-module-line">
-                      <span />
-                    </div>
+                  <div className={styles.systemsModuleIndex}>
+                    {system.number}
                   </div>
-                </article>
-              )
-            )}
+
+                  <div className={styles.systemsModuleRole}>
+                    {system.role}
+                  </div>
+
+                  <div className={styles.systemsModuleCore}>
+                    <span className={styles.systemsModuleCode}>
+                      {system.code}
+                    </span>
+
+                    <span className={styles.systemsModuleLayer}>
+                      {system.layer}
+                    </span>
+
+                    <h2>
+                      {system.title}
+                    </h2>
+                  </div>
+
+                  <p className={styles.systemsModuleCopy}>
+                    {system.copy}
+                  </p>
+
+                  <div className={styles.systemsModuleLine}>
+                    <span />
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
 
-          <section className="systems-principle">
-            <div className="systems-principle-heading">
+          <section className={styles.systemsPrinciple}>
+            <div className={styles.systemsPrincipleHeading}>
               <p className="kicker">
                 CORE IDEA
               </p>
@@ -171,7 +167,9 @@ export default function SystemsScene() {
               </h2>
             </div>
 
-            <p className="body-large systems-principle-copy">
+            <p
+              className={`body-large ${styles.systemsPrincipleCopy}`}
+            >
               The surrounding system matters:{" "}
               how instructions are defined,{" "}
               how reasoning is checked,{" "}
