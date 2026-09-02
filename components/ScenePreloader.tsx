@@ -145,7 +145,8 @@ function getAdjacentScenes(
   const next =
     SCENE_ORDER[
       (
-        index + 1
+        index +
+        1
       ) %
         SCENE_ORDER.length
     ];
@@ -195,9 +196,8 @@ export function preloadScene(
 }
 
 /*
- * The idle scheduler is shared (lib/idleScheduler.ts).
- * Scene preloading uses a slightly longer idle timeout than the reader,
- * because background scene chunks are the lowest priority work on the page.
+ * Scene preloading deliberately uses a longer idle timeout than
+ * other background work because these chunks are low priority.
  */
 function waitForIdle(): Promise<void> {
   return new Promise(
@@ -213,8 +213,15 @@ function waitForIdle(): Promise<void> {
 }
 
 export async function preloadAdjacentScenes(
-  scene: SceneId
+  scene: SceneId,
+  isCancelled: () => boolean = () => false
 ): Promise<void> {
+  if (
+    isCancelled()
+  ) {
+    return;
+  }
+
   if (
     !shouldPreloadInBackground()
   ) {
@@ -229,11 +236,31 @@ export async function preloadAdjacentScenes(
       scene
     );
 
+  /*
+   * The next scene is the highest-value prediction, so load it
+   * immediately once background preloading is allowed.
+   */
   await preloadScene(
     nextScene
   );
 
+  if (
+    isCancelled()
+  ) {
+    return;
+  }
+
+  /*
+   * Give the browser another idle opportunity before loading the
+   * lower-priority previous scene.
+   */
   await waitForIdle();
+
+  if (
+    isCancelled()
+  ) {
+    return;
+  }
 
   if (
     nextScene ===
@@ -275,7 +302,8 @@ export default function ScenePreloader({
           }
 
           void preloadAdjacentScenes(
-            scene
+            scene,
+            () => cancelled
           );
         }
       );
