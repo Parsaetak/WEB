@@ -1,6 +1,9 @@
+import styles from "@/components/FooterLinks.module.css";
+
 import {
   LinkIcon
 } from "@/components/PublicLinks";
+
 import {
   ALL_PUBLIC_LINKS,
   type PublicLink
@@ -31,8 +34,12 @@ function FooterLink({
 
   return (
     <a
-      className="living-shell-footer-link"
-      href={link.href}
+      className={
+        styles.link
+      }
+      href={
+        link.href
+      }
       target={
         isMail
           ? undefined
@@ -48,7 +55,9 @@ function FooterLink({
       }
     >
       <span
-        className="living-shell-footer-link-icon"
+        className={
+          styles.linkIcon
+        }
         aria-hidden="true"
       >
         <LinkIcon
@@ -58,7 +67,11 @@ function FooterLink({
         />
       </span>
 
-      <span className="living-shell-footer-link-label">
+      <span
+        className={
+          styles.linkLabel
+        }
+      >
         {
           link.label
         }
@@ -66,7 +79,9 @@ function FooterLink({
 
       {!isMail && (
         <span
-          className="living-shell-footer-link-arrow"
+          className={
+            styles.linkArrow
+          }
           aria-hidden="true"
         >
           ↗
@@ -79,7 +94,9 @@ function FooterLink({
 export default function FooterLinks() {
   return (
     <nav
-      className="living-shell-footer-links"
+      className={
+        styles.footerLinks
+      }
       aria-label="Public network"
     >
       {FOOTER_LINK_ROWS.map(
@@ -88,7 +105,9 @@ export default function FooterLinks() {
           rowIndex
         ) => (
           <div
-            className="living-shell-footer-link-row"
+            className={
+              styles.linkRow
+            }
             key={
               `footer-row-${rowIndex}`
             }
