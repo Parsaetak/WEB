@@ -11,6 +11,8 @@ import type {
 
 import SceneLoadingScreen from "@/components/SceneLoadingScreen";
 
+import styles from "@/components/SceneViewport.module.css";
+
 type SceneLoaderProps = {
   scene: SceneId;
   loading?: boolean;
@@ -51,18 +53,28 @@ export default function SceneViewport({
 }: SceneLoaderProps) {
   return (
     <section
-      className="scene-viewport"
-      data-scene={scene}
+      className={
+        styles.sceneViewport
+      }
+      data-scene={
+        scene
+      }
       aria-label={`${scene} scene`}
     >
-      <Suspense fallback={<SceneFallback />}>
+      <Suspense
+        fallback={
+          <SceneFallback />
+        }
+      >
         <div className="scene-viewport-content">
           {children}
         </div>
       </Suspense>
 
       <SceneLoadingScreen
-        visible={loading}
+        visible={
+          loading
+        }
       />
 
       <div
@@ -71,22 +83,34 @@ export default function SceneViewport({
       />
 
       <div
-        className="scene-viewport-corner scene-viewport-corner-tl"
+        className="
+          scene-viewport-corner
+          scene-viewport-corner-tl
+        "
         aria-hidden="true"
       />
 
       <div
-        className="scene-viewport-corner scene-viewport-corner-tr"
+        className="
+          scene-viewport-corner
+          scene-viewport-corner-tr
+        "
         aria-hidden="true"
       />
 
       <div
-        className="scene-viewport-corner scene-viewport-corner-bl"
+        className="
+          scene-viewport-corner
+          scene-viewport-corner-bl
+        "
         aria-hidden="true"
       />
 
       <div
-        className="scene-viewport-corner scene-viewport-corner-br"
+        className="
+          scene-viewport-corner
+          scene-viewport-corner-br
+        "
         aria-hidden="true"
       />
     </section>
