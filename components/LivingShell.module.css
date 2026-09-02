@@ -1,6 +1,8 @@
 .livingShell {
   position: relative;
+
   min-height: 100vh;
+
   isolation: isolate;
 }
 
@@ -200,6 +202,192 @@
   padding-top: var(--shell-header);
 }
 
+.livingShellGithub {
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+
+  text-transform: uppercase;
+
+  white-space: nowrap;
+
+  transition:
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.livingShellGithub:hover {
+  color: var(--text);
+
+  opacity: 1;
+}
+
+.livingShellGithub:focus-visible {
+  color: var(--text);
+}
+
+.livingShellLegal {
+  width: 100%;
+
+  border-top:
+    1px solid
+    rgba(255, 32, 32, 0.08);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(5, 5, 6, 0.72),
+      rgba(4, 4, 5, 0.94)
+    );
+}
+
+.livingShellLegalInner {
+  width:
+    min(
+      calc(100% - 32px),
+      var(--shell-width)
+    );
+
+  margin: 0 auto;
+}
+
+.livingShellFooterMain {
+  display: grid;
+
+  grid-template-columns:
+    minmax(260px, 0.34fr)
+    minmax(0, 1.66fr);
+
+  align-items: start;
+
+  column-gap: 36px;
+
+  padding:
+    22px 0
+    20px;
+
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.06);
+}
+
+.livingShellLegalPrimary {
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  gap: 7px;
+
+  min-height: 66px;
+}
+
+.livingShellLegalPrimary strong {
+  color: var(--text-soft);
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  line-height: 1.45;
+}
+
+.livingShellLegalPrimary span {
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  letter-spacing: 0.08em;
+}
+
+.livingShellLegalBottom {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+
+  align-items: end;
+
+  gap: 32px;
+
+  padding:
+    18px 0
+    20px;
+}
+
+.livingShellLegalBottom > p {
+  max-width: 920px;
+
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-size: 11px;
+
+  line-height: 1.7;
+}
+
+.livingShellLegalLinks {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: flex-end;
+
+  gap: 18px;
+
+  padding:
+    0 0
+    2px;
+}
+
+.livingShellLegalLinks a {
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.12em;
+
+  text-transform: uppercase;
+
+  transition:
+    color 160ms ease;
+}
+
+.livingShellLegalLinks a:hover {
+  color: var(--red);
+}
+
+@media (max-width: 1180px) {
+  .livingShellFooterMain {
+    grid-template-columns:
+      minmax(220px, 0.28fr)
+      minmax(0, 1.72fr);
+
+    column-gap: 22px;
+  }
+
+  .livingShellGithub {
+    font-size: 9px;
+  }
+}
+
 @media (max-width: 1100px) {
   .livingShellHudInner {
     grid-template-columns:
@@ -210,6 +398,18 @@
 
   .livingShellStatus {
     display: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .livingShellFooterMain {
+    grid-template-columns: 1fr;
+
+    gap: 16px;
+  }
+
+  .livingShellLegalPrimary {
+    min-height: auto;
   }
 }
 
@@ -233,29 +433,69 @@
   }
 
   .livingShellBrandName {
-    font-size:
-      14px;
+    font-size: 14px;
   }
 
   .livingShellBrandEye {
-    width:
-      34px;
+    width: 34px;
   }
 
   .livingShellViewport {
-    padding-top:
-      68px;
+    padding-top: 68px;
+  }
+
+  .livingShellLegalInner {
+    width:
+      calc(
+        100% - 24px
+      );
+  }
+
+  .livingShellLegalBottom {
+    grid-template-columns: 1fr;
+
+    gap: 16px;
+  }
+
+  .livingShellLegalLinks {
+    justify-content: flex-start;
   }
 }
 
 @media (max-width: 560px) {
   .livingShellBrandName {
-    display:
-      none;
+    display: none;
   }
 
   .livingShellBrandEye {
+    width: 32px;
+  }
+
+  .livingShellLegalInner {
     width:
-      32px;
+      calc(
+        100% - 20px
+      );
+  }
+
+  .livingShellFooterMain {
+    padding:
+      18px 0;
+  }
+
+  .livingShellLegalPrimary strong {
+    font-size: 11px;
+  }
+
+  .livingShellLegalBottom > p {
+    margin: 0;
+
+    font-size: 10px;
+
+    line-height: 1.65;
+  }
+
+  .livingShellLegalLinks {
+    gap: 14px;
   }
 }
