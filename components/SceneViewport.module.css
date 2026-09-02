@@ -1,0 +1,52 @@
+.sceneViewport {
+  position: relative;
+
+  min-height:
+    calc(
+      100vh -
+      var(--shell-header)
+    );
+
+  isolation: isolate;
+
+  transition:
+    background 220ms ease;
+}
+
+.sceneViewport[data-scene="magic"] {
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      rgba(
+        130,
+        0,
+        0,
+        0.065
+      ),
+      transparent 48%
+    );
+}
+
+.sceneViewport[data-scene="systems"] {
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(
+        255,
+        32,
+        32,
+        0.025
+      ),
+      transparent 52%
+    );
+}
+
+@media (max-width: 760px) {
+  .sceneViewport {
+    min-height:
+      calc(
+        100vh -
+        68px
+      );
+  }
+}
