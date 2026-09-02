@@ -1,6 +1,7 @@
 "use client";
 
 import RedEye from "@/components/RedEye";
+import styles from "@/components/SceneLoadingScreen.module.css";
 
 type SceneLoadingScreenProps = {
   visible?: boolean;
@@ -11,7 +12,9 @@ export default function SceneLoadingScreen({
 }: SceneLoadingScreenProps) {
   return (
     <div
-      className="scene-loading-screen"
+      className={
+        styles.sceneLoadingScreen
+      }
       data-visible={
         visible
           ? "true"
@@ -27,36 +30,64 @@ export default function SceneLoadingScreen({
       }
     >
       <div
-        className="scene-loading-screen-backdrop"
+        className={
+          styles.backdrop
+        }
         aria-hidden="true"
       />
 
-      <div className="scene-loading-screen-inner">
+      <div
+        className={
+          styles.inner
+        }
+      >
         <div
-          className="scene-loading-screen-eye"
+          className={
+            styles.eye
+          }
           aria-hidden="true"
         >
-          <RedEye size={56} />
+          <RedEye
+            size={56}
+          />
         </div>
 
-        <div className="scene-loading-screen-label">
-          <span className="scene-loading-screen-kicker">
+        <div
+          className={
+            styles.label
+          }
+        >
+          <span
+            className={
+              styles.kicker
+            }
+          >
             RED SYSTEM
           </span>
 
-          <span className="scene-loading-screen-title">
+          <span
+            className={
+              styles.title
+            }
+          >
             INITIALIZING
           </span>
         </div>
 
         <div
-          className="scene-loading-screen-progress"
+          className={
+            styles.progress
+          }
           aria-hidden="true"
         >
           <span />
         </div>
 
-        <div className="scene-loading-screen-meta">
+        <div
+          className={
+            styles.meta
+          }
+        >
           <span>
             LIVE WORLD
           </span>
