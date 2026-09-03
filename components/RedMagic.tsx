@@ -249,10 +249,10 @@ const CORE_SPRITE_SIZE =
   256;
 
 const HIGH_FPS_TARGET =
-  88;
+  120;
 
 const HIGH_FPS_FLOOR =
-  76;
+  105;
 
 const MAX_SHOCKWAVES =
   5;
