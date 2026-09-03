@@ -608,8 +608,7 @@ function createBoundary(
         (
           index /
           count
-        ) *
-        TAU;
+        ) * TAU;
 
       return {
         sin:
@@ -2262,13 +2261,6 @@ export default function RedMagic({
           0.12;
       }
 
-      /*
-       * Lowest-effort routing.
-       *
-       * Each node directly references the
-       * edge belonging to every neighbor.
-       * There is no full grid-edge scan here.
-       */
       for (
         let index = 0;
         index <
@@ -2877,28 +2869,35 @@ export default function RedMagic({
             1
           );
 
+        /*
+         * The network is intentionally subtle.
+         *
+         * These lines provide structure,
+         * but the core, particles and active
+         * energy events remain visually dominant.
+         */
         if (
           active <
           0.01
         ) {
           context.globalAlpha =
-            0.035;
+            0.012;
 
           context.lineWidth =
-            0.45;
+            0.4;
 
           context.strokeStyle =
             "rgba(115, 18, 18, 1)";
         } else {
           context.globalAlpha =
-            0.045 +
+            0.018 +
             active *
-              0.24;
+              0.12;
 
           context.lineWidth =
-            0.6 +
+            0.5 +
             active *
-              1.15;
+              0.75;
 
           context.strokeStyle =
             "rgba(255, 70, 52, 1)";
@@ -3564,22 +3563,6 @@ export default function RedMagic({
           particle.impulseY *
             impulseScale;
 
-        /*
-         * Radial visibility:
-         *
-         * 0..START
-         *   Fully visible.
-         *
-         * START..END
-         *   Smoothly fading.
-         *
-         * END+
-         *   Effectively invisible.
-         *
-         * Power > 1 keeps the inner region
-         * bright while producing a softer
-         * outer disappearance.
-         */
         const normalizedDistance =
           orbitalRadius /
           Math.max(
