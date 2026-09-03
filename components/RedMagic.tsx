@@ -72,12 +72,6 @@ type Shockwave = {
   strength: number;
 };
 
-type ShockwaveFrameState = {
-  progress: number;
-  radialInfluence: number;
-  angularCoefficient: number;
-};
-
 type FlowGeometry = {
   baseAngles: Float32Array;
   directions: Int8Array;
@@ -1701,9 +1695,25 @@ export default function RedMagic({
     let shockwaves:
       Shockwave[] = [];
 
-    let shockwaveFrameStates:
-      ShockwaveFrameState[] =
-      [];
+    const shockwaveRadialInfluence =
+      new Float32Array(
+        MAX_SHOCKWAVES
+      );
+
+    const shockwaveAngularCoefficient =
+      new Float32Array(
+        MAX_SHOCKWAVES
+      );
+
+    const shockwaveAngleSin =
+      new Float32Array(
+        MAX_SHOCKWAVES
+      );
+
+    const shockwaveAngleCos =
+      new Float32Array(
+        MAX_SHOCKWAVES
+      );
 
     let canvasRectLeft = 0;
 
@@ -1878,9 +1888,6 @@ export default function RedMagic({
       buildBoundaryNetworkWeights();
 
       shockwaves =
-        [];
-
-      shockwaveFrameStates =
         [];
 
       lastQualityChange =
@@ -3073,9 +3080,6 @@ export default function RedMagic({
         const shockwaveCount =
           shockwaves.length;
 
-        shockwaveFrameStates.length =
-          shockwaveCount;
-
         if (
           shockwaveCount ===
           0
@@ -3127,7 +3131,9 @@ export default function RedMagic({
             pointRadius -
             currentRadius;
 
-          const radialInfluence =
+          shockwaveRadialInfluence[
+            index
+          ] =
             Math.exp(
               -(
                 waveOffset *
@@ -3136,21 +3142,29 @@ export default function RedMagic({
                 widthSquared
             );
 
-          shockwaveFrameStates[
+          shockwaveAngularCoefficient[
             index
-          ] = {
-            progress,
+          ] =
+            (
+              1 -
+              progress
+            ) *
+            shockwave.strength *
+            0.1352;
 
-            radialInfluence,
+          shockwaveAngleSin[
+            index
+          ] =
+            Math.sin(
+              shockwave.angle
+            );
 
-            angularCoefficient:
-              (
-                1 -
-                progress
-              ) *
-              shockwave.strength *
-              0.1352
-          };
+          shockwaveAngleCos[
+            index
+          ] =
+            Math.cos(
+              shockwave.angle
+            );
         }
       };
 
@@ -3295,33 +3309,27 @@ export default function RedMagic({
           shockwaveCount;
         index += 1
       ) {
-        const shockwave =
-          shockwaves[index];
+        const angleSin =
+          shockwaveAngleSin[
+            index
+          ];
 
-        const frameState =
-          shockwaveFrameStates[
+        const angleCos =
+          shockwaveAngleCos[
             index
           ];
 
         const deltaSin =
           boundarySin *
-            Math.cos(
-              shockwave.angle
-            ) -
+            angleCos -
           boundaryCos *
-            Math.sin(
-              shockwave.angle
-            );
+            angleSin;
 
         const deltaCos =
           boundaryCos *
-            Math.cos(
-              shockwave.angle
-            ) +
+            angleCos +
           boundarySin *
-            Math.sin(
-              shockwave.angle
-            );
+            angleSin;
 
         const delta =
           Math.atan2(
@@ -3339,9 +3347,13 @@ export default function RedMagic({
           );
 
         shockwaveDeformation +=
-          frameState.radialInfluence *
+          shockwaveRadialInfluence[
+            index
+          ] *
           angularInfluence *
-          frameState.angularCoefficient;
+          shockwaveAngularCoefficient[
+            index
+          ];
       }
 
       return (
