@@ -5,6 +5,8 @@ import {
   useRef
 } from "react";
 
+import styles from "@/components/RedMagic.module.css";
+
 import {
   publishRedMagicPerformance
 } from "@/components/RedMagicTelemetry";
@@ -3036,7 +3038,7 @@ const stepDelta =
 
   return (
     <div
-      className="red-magic"
+      className={styles.root}
       role="img"
       aria-label="Interactive RED MAGIC living organism"
     >
