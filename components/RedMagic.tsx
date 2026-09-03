@@ -639,20 +639,6 @@ function createCoreSprite():
     CORE_SPRITE_SIZE *
     0.5;
 
-  /*
-   * Core palette:
-   *
-   * hot orange
-   *    ↓
-   * luminous red
-   *    ↓
-   * crimson
-   *    ↓
-   * deep red
-   *
-   * There are intentionally no white or cream
-   * highlights anywhere in this sprite.
-   */
   const gradient =
     context.createRadialGradient(
       center -
@@ -1024,34 +1010,6 @@ function createCoreDetailSprite():
   return sprite;
 }
 
-/*
- * Keep the complete simulation implementation below unchanged
- * from the current Phase 4 version:
- *
- * - createBoundary()
- * - buildFlowGeometry()
- * - createGrid()
- * - buildGlobalPotentialWeights()
- * - RedMagic component
- * - sparse boundary/network deformation
- * - cached shockwave angular influence
- * - persistent edge segment buffers
- * - adaptive quality
- * - drawNetwork()
- * - drawInteraction()
- * - drawMembrane()
- * - drawEnergyFlows()
- * - drawParticles()
- * - drawCore()
- * - updatePhysicalState()
- * - maybeAdaptQuality()
- * - render()
- *
- * The only intentional visual changes in this update are the
- * RedMagic core/glow palette defined above and the nucleus palette
- * defined below.
- */
-
 function createBoundary(
   count: number
 ): BoundaryPoint[] {
@@ -1284,6 +1242,32 @@ function buildFlowGeometry(
 
     pointCount
   };
+}
+
+/*
+ * Restored in this fix.
+ *
+ * The previous pushed version accidentally removed this function
+ * while leaving all of its call sites intact.
+ */
+function qualityFromArea(
+  area: number
+): QualityName {
+  if (
+    area <
+    120_000
+  ) {
+    return "low";
+  }
+
+  if (
+    area <
+    260_000
+  ) {
+    return "medium";
+  }
+
+  return "high";
 }
 
 function createGrid(
@@ -5277,10 +5261,6 @@ export default function RedMagic({
         1 +
         movementEnergy;
 
-      /*
-       * Outer atmospheric light.
-       * Deliberately red/orange only.
-       */
       drawGlow(
         centerX,
         centerY,
@@ -5304,9 +5284,6 @@ export default function RedMagic({
             0.075
       );
 
-      /*
-       * Charged secondary corona.
-       */
       if (
         charge >
         0.01
@@ -5430,11 +5407,6 @@ export default function RedMagic({
             0.35
         );
 
-      /*
-       * High-energy orange-red nucleus.
-       *
-       * No white.
-       */
       const nucleusGradient =
         context.createRadialGradient(
           centerX -
@@ -5499,11 +5471,6 @@ export default function RedMagic({
 
       context.fill();
 
-      /*
-       * Tiny saturated orange hot-spot.
-       * This provides the "shining" impression without
-       * introducing white into the palette.
-       */
       const hotSpotRadius =
         nucleusRadius *
         (
