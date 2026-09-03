@@ -34,12 +34,30 @@ type Particle = {
   impulseY: number;
 };
 
-type Node = {
-  angle: number;
-  radius: number;
-  speed: number;
-  size: number;
+type GridNode = {
+  homeX: number;
+  homeY: number;
+
+  x: number;
+  y: number;
+
+  energy: number;
+  velocity: number;
+
   phase: number;
+  seed: number;
+
+  neighbors: number[];
+};
+
+type GridEdge = {
+  a: number;
+  b: number;
+
+  restLength: number;
+  resistance: number;
+
+  flow: number;
 };
 
 type BoundaryPoint = {
@@ -51,7 +69,9 @@ type BoundaryPoint = {
 type Shockwave = {
   x: number;
   y: number;
+
   angle: number;
+
   age: number;
   strength: number;
 };
@@ -84,6 +104,9 @@ type ModeProfile = {
   shockwaveGain: number;
 
   recovery: number;
+
+  gridConductance: number;
+  globalPotentialGain: number;
 };
 
 const MODE_PROFILES:
@@ -93,49 +116,86 @@ const MODE_PROFILES:
   > = {
   drift: {
     timeScale: 0.55,
+
     energyCeiling: 0.55,
     energyFloor: 0.06,
+
     pointerGain: 0.7,
     coreGain: 0.85,
+
     responseLag: 0.008,
+
     particleImpulse: 0.42,
+
     turbulenceGain: 0.55,
+
     shockwaveGain: 0.72,
-    recovery: 0.78
+
+    recovery: 0.78,
+
+    gridConductance: 0.11,
+
+    globalPotentialGain: 0.025
   },
 
   listen: {
     timeScale: 1,
+
     energyCeiling: 1,
     energyFloor: 0,
+
     pointerGain: 1,
     coreGain: 1,
+
     responseLag: 0.018,
+
     particleImpulse: 0.7,
+
     turbulenceGain: 1,
+
     shockwaveGain: 1,
-    recovery: 1
+
+    recovery: 1,
+
+    gridConductance: 0.18,
+
+    globalPotentialGain: 0.045
   },
 
   surge: {
     timeScale: 1.45,
+
     energyCeiling: 1,
     energyFloor: 0.42,
+
     pointerGain: 1.45,
     coreGain: 1.3,
+
     responseLag: 0.028,
+
     particleImpulse: 1.15,
+
     turbulenceGain: 1.45,
+
     shockwaveGain: 1.35,
-    recovery: 1.22
+
+    recovery: 1.22,
+
+    gridConductance: 0.27,
+
+    globalPotentialGain: 0.075
   }
 };
 
 type Quality = {
+  gridSize: number;
+
   particles: number;
-  nodes: number;
+
   membraneSteps: number;
+
   flowCount: number;
+
   flowSegments: number;
 };
 
@@ -145,26 +205,38 @@ const QUALITY:
     Quality
   > = {
   high: {
+    gridSize: 8,
+
     particles: 112,
-    nodes: 12,
+
     membraneSteps: 180,
+
     flowCount: 7,
+
     flowSegments: 28
   },
 
   medium: {
+    gridSize: 7,
+
     particles: 76,
-    nodes: 9,
+
     membraneSteps: 132,
+
     flowCount: 5,
+
     flowSegments: 22
   },
 
   low: {
+    gridSize: 6,
+
     particles: 42,
-    nodes: 7,
+
     membraneSteps: 90,
+
     flowCount: 4,
+
     flowSegments: 17
   }
 };
@@ -198,6 +270,24 @@ const PARTICLE_INFLUENCE_FACTOR =
 const IDLE_SIMULATION_SCALE =
   0.32;
 
+const GRID_ENERGY_DECAY =
+  0.94;
+
+const GRID_IDLE_ENERGY =
+  0.008;
+
+const GRID_MAX_NODE_ENERGY =
+  1.4;
+
+const GRID_GLOBAL_RADIUS =
+  1.25;
+
+const GRID_ROUTE_BONUS =
+  0.018;
+
+const GRID_FLOW_LIMIT =
+  0.16;
+
 function clamp(
   value: number,
   min: number,
@@ -223,6 +313,24 @@ function smoothstep(
     x *
     x *
     (3 - 2 * x)
+  );
+}
+
+function distanceSquared(
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number
+) {
+  const dx =
+    ax - bx;
+
+  const dy =
+    ay - by;
+
+  return (
+    dx * dx +
+    dy * dy
   );
 }
 
@@ -335,13 +443,18 @@ function createCoreSprite():
       center -
         CORE_SPRITE_SIZE *
           0.09,
+
       center -
         CORE_SPRITE_SIZE *
-          0.10,
+          0.1,
+
       CORE_SPRITE_SIZE *
         0.04,
+
       center,
+
       center,
+
       center
     );
 
@@ -396,8 +509,13 @@ function createParticles(
       index
     ) => ({
       angle:
-        (index /
-          count) *
+        (
+          index /
+          Math.max(
+            1,
+            count
+          )
+        ) *
           TAU +
         Math.random() *
           0.35,
@@ -448,55 +566,6 @@ function createParticles(
   );
 }
 
-function createNodes(
-  count: number
-): Node[] {
-  return Array.from(
-    {
-      length:
-        count
-    },
-    (
-      _,
-      index
-    ) => ({
-      angle:
-        (index /
-          count) *
-          TAU +
-        Math.random() *
-          0.25,
-
-      radius:
-        0.32 +
-        Math.random() *
-          0.52,
-
-      speed:
-        (
-          0.03 +
-          Math.random() *
-            0.08
-        ) *
-        (
-          Math.random() >
-          0.5
-            ? 1
-            : -1
-        ),
-
-      size:
-        1.7 +
-        Math.random() *
-          2.6,
-
-      phase:
-        Math.random() *
-        TAU
-    })
-  );
-}
-
 function createBoundary(
   count: number
 ): BoundaryPoint[] {
@@ -510,8 +579,10 @@ function createBoundary(
       index
     ) => {
       const angle =
-        (index /
-          count) *
+        (
+          index /
+          count
+        ) *
         TAU;
 
       return {
@@ -551,22 +622,325 @@ function qualityFromArea(
   return "high";
 }
 
-function distanceSquared(
-  ax: number,
-  ay: number,
-  bx: number,
-  by: number
+function createGrid(
+  gridSize: number
 ) {
-  const dx =
-    ax - bx;
+  const nodes: GridNode[] = [];
 
-  const dy =
-    ay - by;
+  const nodeByCell =
+    new Map<
+      string,
+      number
+    >();
 
-  return (
-    dx * dx +
-    dy * dy
-  );
+  const spacing =
+    2 /
+    Math.max(
+      1,
+      gridSize - 1
+    );
+
+  for (
+    let row = 0;
+    row < gridSize;
+    row += 1
+  ) {
+    for (
+      let column = 0;
+      column < gridSize;
+      column += 1
+    ) {
+      const x =
+        -1 +
+        column *
+          spacing;
+
+      const y =
+        -1 +
+        row *
+          spacing;
+
+      const radialDistance =
+        Math.hypot(
+          x,
+          y
+        );
+
+      if (
+        radialDistance >
+        1
+      ) {
+        continue;
+      }
+
+      const index =
+        nodes.length;
+
+      nodeByCell.set(
+        `${row}:${column}`,
+        index
+      );
+
+      nodes.push({
+        homeX:
+          x,
+
+        homeY:
+          y,
+
+        x,
+
+        y,
+
+        energy:
+          0,
+
+        velocity:
+          0,
+
+        phase:
+          Math.random() *
+          TAU,
+
+        seed:
+          Math.random(),
+
+        neighbors:
+          []
+      });
+    }
+  }
+
+  const edges: GridEdge[] = [];
+
+  const connect =
+    (
+      a: number,
+      b: number
+    ) => {
+      if (
+        a === b
+      ) {
+        return;
+      }
+
+      if (
+        nodes[a].neighbors.includes(
+          b
+        )
+      ) {
+        return;
+      }
+
+      const dx =
+        nodes[a].homeX -
+        nodes[b].homeX;
+
+      const dy =
+        nodes[a].homeY -
+        nodes[b].homeY;
+
+      const restLength =
+        Math.hypot(
+          dx,
+          dy
+        );
+
+      if (
+        restLength <=
+        0.0001
+      ) {
+        return;
+      }
+
+      const resistance =
+        0.72 +
+        restLength *
+          0.85;
+
+      const edgeIndex =
+        edges.length;
+
+      edges.push({
+        a,
+        b,
+
+        restLength,
+
+        resistance,
+
+        flow:
+          0
+      });
+
+      nodes[a].neighbors.push(
+        b
+      );
+
+      nodes[b].neighbors.push(
+        a
+      );
+
+      void edgeIndex;
+    };
+
+  for (
+    let row = 0;
+    row < gridSize;
+    row += 1
+  ) {
+    for (
+      let column = 0;
+      column < gridSize;
+      column += 1
+    ) {
+      const current =
+        nodeByCell.get(
+          `${row}:${column}`
+        );
+
+      if (
+        current ===
+        undefined
+      ) {
+        continue;
+      }
+
+      const right =
+        nodeByCell.get(
+          `${row}:${column + 1}`
+        );
+
+      const down =
+        nodeByCell.get(
+          `${row + 1}:${column}`
+        );
+
+      const diagonal =
+        nodeByCell.get(
+          `${row + 1}:${column + 1}`
+        );
+
+      const antiDiagonal =
+        nodeByCell.get(
+          `${row + 1}:${column - 1}`
+        );
+
+      if (
+        right !==
+        undefined
+      ) {
+        connect(
+          current,
+          right
+        );
+      }
+
+      if (
+        down !==
+        undefined
+      ) {
+        connect(
+          current,
+          down
+        );
+      }
+
+      if (
+        diagonal !==
+        undefined
+      ) {
+        connect(
+          current,
+          diagonal
+        );
+      }
+
+      if (
+        antiDiagonal !==
+        undefined
+      ) {
+        connect(
+          current,
+          antiDiagonal
+        );
+      }
+    }
+  }
+
+  for (
+    let index = 0;
+    index <
+      nodes.length;
+    index += 1
+  ) {
+    const node =
+      nodes[index];
+
+    if (
+      node.neighbors.length >=
+      4
+    ) {
+      continue;
+    }
+
+    let bestIndex =
+      -1;
+
+    let bestDistance =
+      Number.POSITIVE_INFINITY;
+
+    for (
+      let other = 0;
+      other <
+        nodes.length;
+      other += 1
+    ) {
+      if (
+        other ===
+        index ||
+        node.neighbors.includes(
+          other
+        )
+      ) {
+        continue;
+      }
+
+      const distance =
+        distanceSquared(
+          node.homeX,
+          node.homeY,
+          nodes[other].homeX,
+          nodes[other].homeY
+        );
+
+      if (
+        distance <
+        bestDistance
+      ) {
+        bestDistance =
+          distance;
+
+        bestIndex =
+          other;
+      }
+    }
+
+    if (
+      bestIndex >=
+      0
+    ) {
+      connect(
+        index,
+        bestIndex
+      );
+    }
+  }
+
+  return {
+    nodes,
+    edges
+  };
 }
 
 export default function RedMagic({
@@ -707,10 +1081,23 @@ export default function RedMagic({
     let particles:
       Particle[] = [];
 
-    let nodes:
-      Node[] = [];
+    let gridNodes:
+      GridNode[] = [];
 
-    let boundary:
+    let gridEdges:
+      GridEdge[] = [];
+
+    let nodePotential =
+      new Float32Array(
+        0
+      );
+
+    let nextNodeEnergy =
+      new Float32Array(
+        0
+      );
+
+    let membraneBoundary:
       BoundaryPoint[] = [];
 
     let shockwaves:
@@ -755,12 +1142,28 @@ export default function RedMagic({
           quality.particles
         );
 
-      nodes =
-        createNodes(
-          quality.nodes
+      const grid =
+        createGrid(
+          quality.gridSize
         );
 
-      boundary =
+      gridNodes =
+        grid.nodes;
+
+      gridEdges =
+        grid.edges;
+
+      nodePotential =
+        new Float32Array(
+          gridNodes.length
+        );
+
+      nextNodeEnergy =
+        new Float32Array(
+          gridNodes.length
+        );
+
+      membraneBoundary =
         createBoundary(
           quality.membraneSteps
         );
@@ -881,7 +1284,7 @@ export default function RedMagic({
         );
 
       if (
-        particles.length ===
+        gridNodes.length ===
           0 ||
         desiredQuality !==
           qualityName
@@ -889,6 +1292,26 @@ export default function RedMagic({
         buildWorld(
           desiredQuality
         );
+      }
+
+      for (
+        let index = 0;
+        index <
+          gridNodes.length;
+        index += 1
+      ) {
+        const node =
+          gridNodes[index];
+
+        node.x =
+          centerX +
+          node.homeX *
+            radius;
+
+        node.y =
+          centerY +
+          node.homeY *
+            radius;
       }
     };
 
@@ -939,12 +1362,63 @@ export default function RedMagic({
             : 0;
       };
 
+    const nearestGridNode =
+      (
+        x: number,
+        y: number
+      ) => {
+        let closest =
+          -1;
+
+        let closestDistance =
+          Number.POSITIVE_INFINITY;
+
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[index];
+
+          const distance =
+            distanceSquared(
+              x,
+              y,
+              node.x,
+              node.y
+            );
+
+          if (
+            distance <
+            closestDistance
+          ) {
+            closestDistance =
+              distance;
+
+            closest =
+              index;
+          }
+        }
+
+        return closest;
+      };
+
     const spawnShockwave =
       (
         detail:
           RedMagicInteractionDetail,
         strength: number
       ) => {
+        const shockwaveAngle =
+          Math.atan2(
+            detail.y -
+              centerY,
+            detail.x -
+              centerX
+          );
+
         shockwaves.push({
           x:
             detail.x,
@@ -953,12 +1427,7 @@ export default function RedMagic({
             detail.y,
 
           angle:
-            Math.atan2(
-              detail.y -
-                centerY,
-              detail.x -
-                centerX
-            ),
+            shockwaveAngle,
 
           age:
             0,
@@ -977,6 +1446,68 @@ export default function RedMagic({
           MAX_SHOCKWAVES
         ) {
           shockwaves.shift();
+        }
+
+        const closest =
+          nearestGridNode(
+            detail.x,
+            detail.y
+          );
+
+        if (
+          closest <
+          0
+        ) {
+          return;
+        }
+
+        const injection =
+          clamp(
+            strength *
+              profile.shockwaveGain,
+            0,
+            1.2
+          );
+
+        gridNodes[
+          closest
+        ].energy =
+          clamp(
+            gridNodes[
+              closest
+            ].energy +
+              injection,
+            0,
+            GRID_MAX_NODE_ENERGY
+          );
+
+        const neighbors =
+          gridNodes[
+            closest
+          ].neighbors;
+
+        for (
+          let index = 0;
+          index <
+            neighbors.length;
+          index += 1
+        ) {
+          const neighborIndex =
+            neighbors[index];
+
+          const neighbor =
+            gridNodes[
+              neighborIndex
+            ];
+
+          neighbor.energy =
+            clamp(
+              neighbor.energy +
+                injection *
+                  0.09,
+              0,
+              GRID_MAX_NODE_ENERGY
+            );
         }
       };
 
@@ -1089,21 +1620,20 @@ export default function RedMagic({
             modeRef.current ===
             "surge"
           ) {
-            particle.impulseX +=
-              -normalizedY *
+            const rotational =
               Math.min(
                 detail.velocity *
                   0.006,
                 0.18
               );
 
+            particle.impulseX +=
+              -normalizedY *
+              rotational;
+
             particle.impulseY +=
               normalizedX *
-              Math.min(
-                detail.velocity *
-                  0.006,
-                0.18
-              );
+              rotational;
           }
         }
       };
@@ -1327,6 +1857,628 @@ export default function RedMagic({
         }
       };
 
+    const updateGrid =
+      (
+        delta: number,
+        time: number
+      ) => {
+        if (
+          gridNodes.length ===
+          0
+        ) {
+          return;
+        }
+
+        const deltaScale =
+          clamp(
+            delta /
+              16,
+            0,
+            2
+          );
+
+        const mode =
+          modeRef.current;
+
+        const activeProfile =
+          MODE_PROFILES[
+            mode
+          ];
+
+        const decay =
+          Math.pow(
+            GRID_ENERGY_DECAY,
+            deltaScale *
+              activeProfile.recovery
+          );
+
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[index];
+
+          node.x =
+            centerX +
+            node.homeX *
+              radius;
+
+          node.y =
+            centerY +
+            node.homeY *
+              radius;
+
+          node.energy *=
+            decay;
+
+          node.velocity *=
+            Math.pow(
+              0.8,
+              deltaScale
+            );
+
+          const breathing =
+            Math.sin(
+              time *
+                0.001 +
+                node.phase
+            );
+
+          const breathingScale =
+            1 +
+            breathing *
+              0.012;
+
+          node.x =
+            centerX +
+            node.homeX *
+              radius *
+              breathingScale;
+
+          node.y =
+            centerY +
+            node.homeY *
+              radius *
+              breathingScale;
+        }
+
+        /*
+         * Every node evaluates the potential
+         * of the complete network.
+         *
+         * This is intentionally global:
+         * no node is isolated from the state
+         * of the other nodes.
+         */
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[index];
+
+          let weightedEnergy =
+            0;
+
+          let totalWeight =
+            0;
+
+          for (
+            let otherIndex = 0;
+            otherIndex <
+              gridNodes.length;
+            otherIndex += 1
+          ) {
+            const other =
+              gridNodes[
+                otherIndex
+              ];
+
+            const dx =
+              node.homeX -
+              other.homeX;
+
+            const dy =
+              node.homeY -
+              other.homeY;
+
+            const distance =
+              Math.hypot(
+                dx,
+                dy
+              );
+
+            const weight =
+              1 /
+              (
+                1 +
+                distance *
+                  GRID_GLOBAL_RADIUS
+              );
+
+            weightedEnergy +=
+              other.energy *
+              weight;
+
+            totalWeight +=
+              weight;
+          }
+
+          const potential =
+            totalWeight >
+            0
+              ? weightedEnergy /
+                totalWeight
+              : 0;
+
+          nodePotential[
+            index
+          ] =
+            clamp(
+              potential,
+              0,
+              GRID_MAX_NODE_ENERGY
+            );
+        }
+
+        nextNodeEnergy.fill(
+          0
+        );
+
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          nextNodeEnergy[
+            index
+          ] =
+            gridNodes[
+              index
+            ].energy;
+        }
+
+        for (
+          let index = 0;
+          index <
+            gridEdges.length;
+          index += 1
+        ) {
+          const edge =
+            gridEdges[index];
+
+          const a =
+            gridNodes[
+              edge.a
+            ];
+
+          const b =
+            gridNodes[
+              edge.b
+            ];
+
+          const energyDifference =
+            a.energy -
+            b.energy;
+
+          if (
+            Math.abs(
+              energyDifference
+            ) <
+            GRID_ENERGY_DECAY *
+              0.004
+          ) {
+            edge.flow *=
+              0.86;
+
+            continue;
+          }
+
+          const aPotential =
+            nodePotential[
+              edge.a
+            ];
+
+          const bPotential =
+            nodePotential[
+              edge.b
+            ];
+
+          const potentialDifference =
+            aPotential -
+            bPotential;
+
+          const directionalDifference =
+            (
+              energyDifference +
+              potentialDifference *
+                0.42
+            );
+
+          const sign =
+            directionalDifference >=
+            0
+              ? 1
+              : -1;
+
+          const magnitude =
+            Math.abs(
+              directionalDifference
+            );
+
+          const resistance =
+            edge.resistance *
+            (
+              1 +
+              edge.flow *
+                0.65
+            );
+
+          const conductance =
+            activeProfile.gridConductance /
+            Math.max(
+              0.5,
+              resistance
+            );
+
+          const flow =
+            clamp(
+              magnitude *
+                conductance *
+                deltaScale,
+              0,
+              GRID_FLOW_LIMIT
+            );
+
+          if (
+            sign > 0
+          ) {
+            nextNodeEnergy[
+              edge.a
+            ] -=
+              flow;
+
+            nextNodeEnergy[
+              edge.b
+            ] +=
+              flow;
+          } else {
+            nextNodeEnergy[
+              edge.a
+            ] +=
+              flow;
+
+            nextNodeEnergy[
+              edge.b
+            ] -=
+              flow;
+          }
+
+          edge.flow =
+            clamp(
+              edge.flow *
+                0.74 +
+                flow *
+                  1.8,
+              0,
+              1
+            );
+
+          const nodeVelocity =
+            flow /
+            Math.max(
+              0.02,
+              edge.restLength
+            );
+
+          a.velocity +=
+            nodeVelocity *
+            sign *
+            0.12;
+
+          b.velocity -=
+            nodeVelocity *
+            sign *
+            0.12;
+        }
+
+        /*
+         * Lowest-effort route selection.
+         *
+         * Each energized node evaluates its
+         * available neighbors and chooses the
+         * connection with the smallest
+         * effective resistance.
+         */
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[index];
+
+          const energy =
+            node.energy;
+
+          if (
+            energy <
+            GRID_IDLE_ENERGY
+          ) {
+            continue;
+          }
+
+          const neighbors =
+            node.neighbors;
+
+          if (
+            neighbors.length ===
+            0
+          ) {
+            continue;
+          }
+
+          let bestNeighbor =
+            -1;
+
+          let bestEffort =
+            Number.POSITIVE_INFINITY;
+
+          const currentPotential =
+            nodePotential[
+              index
+            ];
+
+          for (
+            let neighborIndex = 0;
+            neighborIndex <
+              neighbors.length;
+            neighborIndex += 1
+          ) {
+            const neighbor =
+              neighbors[
+                neighborIndex
+              ];
+
+            const neighborNode =
+              gridNodes[
+                neighbor
+              ];
+
+            const dx =
+              node.homeX -
+              neighborNode.homeX;
+
+            const dy =
+              node.homeY -
+              neighborNode.homeY;
+
+            const geometricDistance =
+              Math.hypot(
+                dx,
+                dy
+              );
+
+            const potentialDifference =
+              Math.max(
+                0,
+                currentPotential -
+                  nodePotential[
+                    neighbor
+                  ]
+              );
+
+            let edgeResistance =
+              1 +
+              geometricDistance *
+                0.7;
+
+            for (
+              let edgeIndex = 0;
+              edgeIndex <
+                gridEdges.length;
+              edgeIndex += 1
+            ) {
+              const edge =
+                gridEdges[
+                  edgeIndex
+                ];
+
+              if (
+                (
+                  edge.a ===
+                    index &&
+                  edge.b ===
+                    neighbor
+                ) ||
+                (
+                  edge.a ===
+                    neighbor &&
+                  edge.b ===
+                    index
+                )
+              ) {
+                edgeResistance =
+                  edge.resistance *
+                  (
+                    1 +
+                    edge.flow *
+                      0.55
+                  );
+
+                break;
+              }
+            }
+
+            /*
+             * Lower effort means:
+             * - shorter route
+             * - less loaded connection
+             * - lower destination potential
+             */
+            const effort =
+              edgeResistance +
+              potentialDifference *
+                0.7 -
+              nodePotential[
+                neighbor
+              ] *
+                GRID_ROUTE_BONUS;
+
+            if (
+              effort <
+              bestEffort
+            ) {
+              bestEffort =
+                effort;
+
+              bestNeighbor =
+                neighbor;
+            }
+          }
+
+          if (
+            bestNeighbor <
+            0
+          ) {
+            continue;
+          }
+
+          const availableEnergy =
+            Math.max(
+              0,
+              nextNodeEnergy[
+                index
+              ]
+            );
+
+          const routeFlow =
+            clamp(
+              availableEnergy *
+                activeProfile.gridConductance *
+                0.09 *
+                deltaScale,
+              0,
+              0.035
+            );
+
+          nextNodeEnergy[
+            index
+          ] -=
+            routeFlow;
+
+          nextNodeEnergy[
+            bestNeighbor
+          ] +=
+            routeFlow;
+        }
+
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[index];
+
+          const globalTarget =
+            nodePotential[
+              index
+            ] *
+            activeProfile.globalPotentialGain;
+
+          const pointerDistanceSquared =
+            distanceSquared(
+              pointer.x,
+              pointer.y,
+              node.x,
+              node.y
+            );
+
+          const pointerInfluenceRadius =
+            radius *
+            0.72;
+
+          const pointerInfluenceRadiusSquared =
+            pointerInfluenceRadius *
+            pointerInfluenceRadius;
+
+          let pointerInfluence =
+            0;
+
+          if (
+            pointerActive &&
+            pointerDistanceSquared <
+            pointerInfluenceRadiusSquared
+          ) {
+            pointerInfluence =
+              smoothstep(
+                1 -
+                  Math.sqrt(
+                    pointerDistanceSquared
+                  ) /
+                    pointerInfluenceRadius
+              ) *
+              activeProfile.pointerGain;
+          }
+
+          const pointerContribution =
+            pointerInfluence *
+            0.025;
+
+          const organicPulse =
+            (
+              Math.sin(
+                time *
+                  0.0015 +
+                  node.phase
+              ) +
+              1
+            ) *
+            0.5 *
+            0.003;
+
+          nextNodeEnergy[
+            index
+          ] +=
+            globalTarget *
+              deltaScale +
+            pointerContribution *
+              deltaScale +
+            organicPulse *
+              deltaScale;
+
+          node.energy =
+            clamp(
+              nextNodeEnergy[
+                index
+              ],
+              0,
+              GRID_MAX_NODE_ENERGY
+            );
+
+          node.velocity *=
+            0.96;
+
+          if (
+            node.energy >
+            0.03
+          ) {
+            node.velocity +=
+              node.energy *
+              0.01;
+          }
+        }
+      };
+
     const getBoundaryRadius =
       (
         point:
@@ -1430,6 +2582,48 @@ export default function RedMagic({
               0.008
           );
 
+        let networkDeformation =
+          0;
+
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[index];
+
+          const dx =
+            point.cos *
+              0.9 -
+            node.homeX;
+
+          const dy =
+            point.sin *
+              0.9 -
+            node.homeY;
+
+          const distance =
+            Math.hypot(
+              dx,
+              dy
+            );
+
+          const field =
+            1 /
+            (
+              1 +
+              distance *
+                3.5
+            );
+
+          networkDeformation +=
+            node.energy *
+            field *
+            0.004;
+        }
+
         let shockwaveDeformation =
           0;
 
@@ -1525,6 +2719,7 @@ export default function RedMagic({
           tertiaryWave +
           interaction +
           turbulence +
+          networkDeformation +
           shockwaveDeformation
         );
       };
@@ -1603,6 +2798,194 @@ export default function RedMagic({
         );
 
         context.fill();
+      };
+
+    const drawNetwork =
+      (
+        time: number
+      ) => {
+        if (
+          gridNodes.length ===
+          0
+        ) {
+          return;
+        }
+
+        context.lineCap =
+          "round";
+
+        context.lineJoin =
+          "round";
+
+        for (
+          let index = 0;
+          index <
+            gridEdges.length;
+          index += 1
+        ) {
+          const edge =
+            gridEdges[index];
+
+          const a =
+            gridNodes[
+              edge.a
+            ];
+
+          const b =
+            gridNodes[
+              edge.b
+            ];
+
+          const energy =
+            (
+              a.energy +
+              b.energy
+            ) *
+            0.5;
+
+          const active =
+            clamp(
+              energy *
+                1.8 +
+                edge.flow *
+                  1.4,
+              0,
+              1
+            );
+
+          if (
+            active <
+            0.01
+          ) {
+            context.globalAlpha =
+              0.035;
+
+            context.lineWidth =
+              0.45;
+
+            context.strokeStyle =
+              "rgba(115, 18, 18, 1)";
+          } else {
+            context.globalAlpha =
+              0.045 +
+              active *
+                0.24;
+
+            context.lineWidth =
+              0.6 +
+              active *
+                1.15;
+
+            context.strokeStyle =
+              "rgba(255, 70, 52, 1)";
+          }
+
+          context.beginPath();
+
+          context.moveTo(
+            a.x,
+            a.y
+          );
+
+          context.lineTo(
+            b.x,
+            b.y
+          );
+
+          context.stroke();
+        }
+
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[index];
+
+          const potential =
+            nodePotential[
+              index
+            ];
+
+          const energy =
+            node.energy;
+
+          const localPulse =
+            1 +
+            Math.sin(
+              time *
+                0.003 +
+                node.phase
+            ) *
+              0.12;
+
+          const nodeRadius =
+            (
+              1.5 +
+              energy *
+                4.2 +
+              potential *
+                1.5
+            ) *
+            localPulse;
+
+          const nodeAlpha =
+            clamp(
+              0.24 +
+                energy *
+                  0.72 +
+                potential *
+                  0.16,
+              0,
+              1
+            );
+
+          context.globalAlpha =
+            nodeAlpha;
+
+          context.fillStyle =
+            "rgba(255, 92, 70, 1)";
+
+          context.beginPath();
+
+          context.arc(
+            node.x,
+            node.y,
+            Math.max(
+              1.2,
+              nodeRadius
+            ),
+            0,
+            TAU
+          );
+
+          context.fill();
+
+          if (
+            energy >
+            0.018
+          ) {
+            drawGlow(
+              node.x,
+              node.y,
+              0,
+              nodeRadius *
+                (
+                  3.2 +
+                  energy *
+                    2
+                ),
+              0.028 +
+                energy *
+                  0.07
+            );
+          }
+        }
+
+        context.globalAlpha =
+          1;
       };
 
     const drawInteraction =
@@ -1718,204 +3101,32 @@ export default function RedMagic({
           );
 
           context.stroke();
-        }
 
-        context.globalAlpha =
-          1;
-      };
+          const innerRadius =
+            waveRadius *
+            0.92;
 
-    const drawCore =
-      (
-        time: number
-      ) => {
-        const pulse =
-          1 +
-          Math.sin(
-            time *
-              0.0022
-          ) *
-            0.035 +
-          Math.sin(
-            time *
-              0.0049
-          ) *
-            0.012;
+          context.globalAlpha *=
+            0.25;
 
-        const activePulse =
-          pointerEnergy *
-            0.11 *
-            profile.coreGain +
-          charge *
-            0.18 *
-            profile.coreGain +
-          interactionTurbulence *
-            0.035 +
-          pointerVelocity *
-            0.003 *
-            profile.coreGain;
-
-        const coreRadius =
-          radius *
-          0.49 *
-          (
-            pulse +
-            activePulse
-          );
-
-        drawGlow(
-          centerX,
-          centerY,
-          coreRadius *
-            0.08,
-          coreRadius *
-            1.75,
-          0.11 +
-            pointerEnergy *
-              0.04 *
-              profile.coreGain +
-            charge *
-              0.035
-        );
-
-        if (
-          charge >
-          0.01
-        ) {
-          drawGlow(
-            centerX,
-            centerY,
-            coreRadius *
-              0.2,
-            coreRadius *
-              (
-                1.9 +
-                charge *
-                  1.2
-              ),
-            0.055 +
-              charge *
-                0.09
-          );
-        }
-
-        if (
-          coreSprite
-        ) {
-          context.globalAlpha =
-            1;
-
-          context.drawImage(
-            coreSprite,
-            centerX -
-              coreRadius,
-            centerY -
-              coreRadius,
-            coreRadius *
-              2,
-            coreRadius *
-              2
-          );
-        } else {
-          const coreGradient =
-            context.createRadialGradient(
-              centerX -
-                coreRadius *
-                  0.18,
-              centerY -
-                coreRadius *
-                  0.2,
-              coreRadius *
-                0.08,
-              centerX,
-              centerY,
-              coreRadius
-            );
-
-          coreGradient.addColorStop(
-            0,
-            "rgba(255, 115, 95, 0.96)"
-          );
-
-          coreGradient.addColorStop(
-            0.16,
-            "rgba(255, 48, 35, 0.95)"
-          );
-
-          coreGradient.addColorStop(
-            0.48,
-            "rgba(185, 10, 10, 0.78)"
-          );
-
-          coreGradient.addColorStop(
-            0.78,
-            "rgba(85, 0, 0, 0.28)"
-          );
-
-          coreGradient.addColorStop(
-            1,
-            "rgba(20, 0, 0, 0)"
-          );
-
-          context.fillStyle =
-            coreGradient;
+          context.lineWidth *=
+            0.55;
 
           context.beginPath();
 
           context.arc(
-            centerX,
-            centerY,
-            coreRadius,
+            shockwave.x,
+            shockwave.y,
+            innerRadius,
             0,
             TAU
           );
 
-          context.fill();
+          context.stroke();
         }
 
-        const nucleusRadius =
-          radius *
-          0.17 *
-          (
-            1 +
-            Math.sin(
-              time *
-                0.0036
-            ) *
-              0.08 +
-            charge *
-              0.25
-          );
-
-        drawGlow(
-          centerX,
-          centerY,
-          nucleusRadius *
-            0.1,
-          nucleusRadius *
-            2.2,
-          0.09 +
-            pointerEnergy *
-              0.05
-        );
-
-        context.fillStyle =
-          "rgba(255, 205, 190, 0.9)";
-
-        context.beginPath();
-
-        context.arc(
-          centerX -
-            nucleusRadius *
-              0.15,
-          centerY -
-            nucleusRadius *
-              0.17,
-          nucleusRadius,
-          0,
-          TAU
-        );
-
-        context.fill();
+        context.globalAlpha =
+          1;
       };
 
     const drawMembrane =
@@ -1927,11 +3138,13 @@ export default function RedMagic({
         for (
           let index = 0;
           index <
-            boundary.length;
+            membraneBoundary.length;
           index += 1
         ) {
           const point =
-            boundary[index];
+            membraneBoundary[
+              index
+            ];
 
           const normalizedRadius =
             getBoundaryRadius(
@@ -2496,118 +3709,187 @@ export default function RedMagic({
           1;
       };
 
-    const drawNodes =
+    const drawCore =
       (
-        time: number,
-        delta: number
+        time: number
       ) => {
-        const step =
-          delta *
-          0.0009 *
-          16;
+        const pulse =
+          1 +
+          Math.sin(
+            time *
+              0.0022
+          ) *
+            0.035 +
+          Math.sin(
+            time *
+              0.0049
+          ) *
+            0.012;
 
-        context.fillStyle =
-          "rgb(255, 96, 72)";
+        let totalGridEnergy =
+          0;
+
+        let highestGridEnergy =
+          0;
 
         for (
           let index = 0;
           index <
-            nodes.length;
+            gridNodes.length;
           index += 1
         ) {
-          const node =
-            nodes[index];
+          const energy =
+            gridNodes[
+              index
+            ].energy;
 
-          node.angle +=
-            node.speed *
-            step;
+          totalGridEnergy +=
+            energy;
 
-          const breathing =
-            1 +
-            Math.sin(
-              time *
-                0.0014 +
-                node.phase
-            ) *
-              0.07;
-
-          const distance =
-            radius *
-            node.radius *
-            breathing;
-
-          const x =
-            centerX +
-            Math.cos(
-              node.angle
-            ) *
-              distance;
-
-          const y =
-            centerY +
-            Math.sin(
-              node.angle
-            ) *
-              distance;
-
-          const pulse =
-            1 +
-            Math.sin(
-              time *
-                0.0035 +
-                node.phase
-            ) *
-              0.25;
-
-          const nodeSize =
-            node.size *
-            pulse *
-            (
-              1 +
-              pointerEnergy *
-                0.4 +
-              charge *
-                0.12
+          highestGridEnergy =
+            Math.max(
+              highestGridEnergy,
+              energy
             );
-
-          context.globalAlpha =
-            0.08 +
-            pointerEnergy *
-              0.04;
-
-          context.beginPath();
-
-          context.arc(
-            x,
-            y,
-            nodeSize *
-              3.2,
-            0,
-            TAU
-          );
-
-          context.fill();
-
-          context.globalAlpha =
-            0.78 +
-            pointerEnergy *
-              0.08;
-
-          context.beginPath();
-
-          context.arc(
-            x,
-            y,
-            nodeSize,
-            0,
-            TAU
-          );
-
-          context.fill();
         }
 
-        context.globalAlpha =
-          1;
+        const averageGridEnergy =
+          gridNodes.length >
+          0
+            ? totalGridEnergy /
+              gridNodes.length
+            : 0;
+
+        const activePulse =
+          pointerEnergy *
+            0.11 *
+            profile.coreGain +
+          charge *
+            0.18 *
+            profile.coreGain +
+          interactionTurbulence *
+            0.035 +
+          pointerVelocity *
+            0.003 *
+            profile.coreGain +
+          averageGridEnergy *
+            0.09 +
+          highestGridEnergy *
+            0.035;
+
+        const coreRadius =
+          radius *
+          0.49 *
+          (
+            pulse +
+            activePulse
+          );
+
+        drawGlow(
+          centerX,
+          centerY,
+          coreRadius *
+            0.08,
+          coreRadius *
+            1.75,
+          0.11 +
+            pointerEnergy *
+              0.04 *
+              profile.coreGain +
+            charge *
+              0.035 +
+            averageGridEnergy *
+              0.04
+        );
+
+        if (
+          charge >
+          0.01
+        ) {
+          drawGlow(
+            centerX,
+            centerY,
+            coreRadius *
+              0.2,
+            coreRadius *
+              (
+                1.9 +
+                charge *
+                  1.2
+              ),
+            0.055 +
+              charge *
+                0.09
+          );
+        }
+
+        if (
+          coreSprite
+        ) {
+          context.globalAlpha =
+            1;
+
+          context.drawImage(
+            coreSprite,
+            centerX -
+              coreRadius,
+            centerY -
+              coreRadius,
+            coreRadius *
+              2,
+            coreRadius *
+              2
+          );
+        }
+
+        const nucleusRadius =
+          radius *
+          0.17 *
+          (
+            1 +
+            Math.sin(
+              time *
+                0.0036
+            ) *
+              0.08 +
+            charge *
+              0.25 +
+            averageGridEnergy *
+              0.12
+          );
+
+        drawGlow(
+          centerX,
+          centerY,
+          nucleusRadius *
+            0.1,
+          nucleusRadius *
+            2.2,
+          0.09 +
+            pointerEnergy *
+              0.05 +
+            averageGridEnergy *
+              0.04
+        );
+
+        context.fillStyle =
+          "rgba(255, 205, 190, 0.9)";
+
+        context.beginPath();
+
+        context.arc(
+          centerX -
+            nucleusRadius *
+              0.15,
+          centerY -
+            nucleusRadius *
+              0.17,
+          nucleusRadius,
+          0,
+          TAU
+        );
+
+        context.fill();
       };
 
     const updatePhysicalState =
@@ -2652,6 +3934,12 @@ export default function RedMagic({
                 16
             );
         }
+
+        updateGrid(
+          delta *
+            interactionRecovery,
+          elapsed
+        );
 
         for (
           let index =
@@ -2741,11 +4029,16 @@ export default function RedMagic({
           {
             fps,
             frameTime,
+
             quality:
               qualityName,
+
             dpr,
+
             width,
+
             height,
+
             pointerEnergy:
               Math.round(
                 pointerEnergy *
@@ -2953,6 +4246,10 @@ export default function RedMagic({
         time
       );
 
+      drawNetwork(
+        time
+      );
+
       drawEnergyFlows(
         time
       );
@@ -2962,11 +4259,6 @@ export default function RedMagic({
       );
 
       drawParticles(
-        time,
-        stepDelta
-      );
-
-      drawNodes(
         time,
         stepDelta
       );
@@ -3059,6 +4351,10 @@ export default function RedMagic({
             )
           );
         }
+
+        resize();
+
+        start();
       };
 
     const handleIntersection =
@@ -3148,6 +4444,13 @@ export default function RedMagic({
       canvas
     );
 
+    buildWorld(
+      qualityFromArea(
+        canvas.clientWidth *
+          canvas.clientHeight
+      )
+    );
+
     resize();
 
     if (
@@ -3156,6 +4459,8 @@ export default function RedMagic({
       buildWorld(
         "low"
       );
+
+      resize();
     }
 
     start();
@@ -3198,7 +4503,7 @@ export default function RedMagic({
     <div
       className={styles.root}
       role="img"
-      aria-label="Interactive RED MAGIC living organism"
+      aria-label="Interactive RED MAGIC interconnected living energy grid"
     >
       <canvas
         ref={canvasRef}
