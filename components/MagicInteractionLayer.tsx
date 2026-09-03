@@ -79,6 +79,11 @@ export default function MagicInteractionLayer({
       null
     );
 
+  const interactionTargetRef =
+    useRef<HTMLElement | null>(
+      null
+    );
+
   const pointerRef =
     useRef<Point>({
       x: 0,
@@ -128,6 +133,16 @@ export default function MagicInteractionLayer({
   const reducedMotionRef =
     useRef(false);
 
+  const pendingPointerRef =
+    useRef<Point | null>(
+      null
+    );
+
+  const pointerFrameRef =
+    useRef<number | null>(
+      null
+    );
+
   const updateGeometry =
     () => {
       const root =
@@ -156,6 +171,13 @@ export default function MagicInteractionLayer({
 
   const getCanvasTarget =
     () => {
+      const cachedTarget =
+        interactionTargetRef.current;
+
+      if (cachedTarget) {
+        return cachedTarget;
+      }
+
       const root =
         rootRef.current;
 
@@ -163,11 +185,15 @@ export default function MagicInteractionLayer({
         return null;
       }
 
-      return (
+      const target =
         root.querySelector(
           "canvas"
-        ) ?? root
-      );
+        ) ?? root;
+
+      interactionTargetRef.current =
+        target;
+
+      return target;
     };
 
   const emitInteraction =
@@ -287,80 +313,11 @@ export default function MagicInteractionLayer({
       );
     };
 
-  const handlePointerEnter =
+  const processPointerPosition =
     (
-      event:
-        React.PointerEvent<HTMLDivElement>
-    ) => {
-      updateGeometry();
-
-      const rect =
-        rectRef.current;
-
-      if (!rect) {
-        return;
-      }
-
-      const x =
-        event.clientX -
-        rect.left;
-
-      const y =
-        event.clientY -
-        rect.top;
-
-      const center =
-        centerRef.current;
-
-      const angle =
-        Math.atan2(
-          y -
-            center.y,
-          x -
-            center.x
-        );
-
-      pointerRef.current = {
-        x,
-        y
-      };
-
-      previousPointerRef.current = {
-        x,
-        y
-      };
-
-      previousTimeRef.current =
-        performance.now();
-
-      angleRef.current =
-        angle;
-
-      orbitAccumulatorRef.current =
-        0;
-
-      emitInteraction(
-        "enter",
-        x,
-        y,
-        0,
-        0,
-        0,
-        angle,
-        chargeRef.current
-      );
-
-      triggerRipple(
-        x,
-        y,
-        0.55
-      );
-    };
-
-  const handlePointerMove =
-    (
-      event:
-        React.PointerEvent<HTMLDivElement>
+      x: number,
+      y: number,
+      now: number
     ) => {
       const rect =
         rectRef.current;
@@ -371,25 +328,15 @@ export default function MagicInteractionLayer({
         return;
       }
 
-      const x =
-        event.clientX -
-        rect.left;
-
-      const y =
-        event.clientY -
-        rect.top;
-
-      const now =
-        performance.now();
-
       const previous =
         previousPointerRef.current;
 
       const deltaTime =
-        Math.max(
-          8,
+        clamp(
           now -
-            previousTimeRef.current
+            previousTimeRef.current,
+          1,
+          50
         );
 
       const dx =
@@ -624,6 +571,161 @@ export default function MagicInteractionLayer({
       }
     };
 
+  const flushPointerMove =
+    () => {
+      const pending =
+        pendingPointerRef.current;
+
+      if (!pending) {
+        pointerFrameRef.current =
+          null;
+
+        return;
+      }
+
+      pendingPointerRef.current =
+        null;
+
+      pointerFrameRef.current =
+        null;
+
+      processPointerPosition(
+        pending.x,
+        pending.y,
+        performance.now()
+      );
+    };
+
+  const schedulePointerMove =
+    (
+      x: number,
+      y: number
+    ) => {
+      pendingPointerRef.current = {
+        x,
+        y
+      };
+
+      if (
+        pointerFrameRef.current !==
+        null
+      ) {
+        return;
+      }
+
+      pointerFrameRef.current =
+        window.requestAnimationFrame(
+          flushPointerMove
+        );
+    };
+
+  const handlePointerEnter =
+    (
+      event:
+        React.PointerEvent<HTMLDivElement>
+    ) => {
+      updateGeometry();
+
+      const rect =
+        rectRef.current;
+
+      if (!rect) {
+        return;
+      }
+
+      const x =
+        event.clientX -
+        rect.left;
+
+      const y =
+        event.clientY -
+        rect.top;
+
+      const center =
+        centerRef.current;
+
+      const angle =
+        Math.atan2(
+          y -
+            center.y,
+          x -
+            center.x
+        );
+
+      pendingPointerRef.current =
+        null;
+
+      if (
+        pointerFrameRef.current !==
+        null
+      ) {
+        window.cancelAnimationFrame(
+          pointerFrameRef.current
+        );
+
+        pointerFrameRef.current =
+          null;
+      }
+
+      pointerRef.current = {
+        x,
+        y
+      };
+
+      previousPointerRef.current = {
+        x,
+        y
+      };
+
+      previousTimeRef.current =
+        performance.now();
+
+      angleRef.current =
+        angle;
+
+      orbitAccumulatorRef.current =
+        0;
+
+      emitInteraction(
+        "enter",
+        x,
+        y,
+        0,
+        0,
+        0,
+        angle,
+        chargeRef.current
+      );
+
+      triggerRipple(
+        x,
+        y,
+        0.55
+      );
+    };
+
+  const handlePointerMove =
+    (
+      event:
+        React.PointerEvent<HTMLDivElement>
+    ) => {
+      const rect =
+        rectRef.current;
+
+      if (!rect) {
+        updateGeometry();
+
+        return;
+      }
+
+      schedulePointerMove(
+        event.clientX -
+          rect.left,
+        event.clientY -
+          rect.top
+      );
+    };
+
   const handlePointerDown =
     (
       event:
@@ -645,6 +747,27 @@ export default function MagicInteractionLayer({
       const y =
         event.clientY -
         rect.top;
+
+      pendingPointerRef.current =
+        null;
+
+      if (
+        pointerFrameRef.current !==
+        null
+      ) {
+        window.cancelAnimationFrame(
+          pointerFrameRef.current
+        );
+
+        pointerFrameRef.current =
+          null;
+      }
+
+      processPointerPosition(
+        x,
+        y,
+        performance.now()
+      );
 
       const center =
         centerRef.current;
@@ -714,12 +837,61 @@ export default function MagicInteractionLayer({
     };
 
   const handlePointerUp =
-    () => {
+    (
+      event?:
+        React.PointerEvent<HTMLDivElement>
+    ) => {
       const root =
         rootRef.current;
 
       if (!root) {
         return;
+      }
+
+      if (event) {
+        const rect =
+          rectRef.current;
+
+        if (rect) {
+          const x =
+            event.clientX -
+            rect.left;
+
+          const y =
+            event.clientY -
+            rect.top;
+
+          const hasPendingMove =
+            pendingPointerRef.current !==
+            null ||
+            pointerRef.current.x !==
+              x ||
+            pointerRef.current.y !==
+              y;
+
+          if (hasPendingMove) {
+            pendingPointerRef.current =
+              null;
+
+            if (
+              pointerFrameRef.current !==
+              null
+            ) {
+              window.cancelAnimationFrame(
+                pointerFrameRef.current
+              );
+
+              pointerFrameRef.current =
+                null;
+            }
+
+            processPointerPosition(
+              x,
+              y,
+              performance.now()
+            );
+          }
+        }
       }
 
       const x =
@@ -815,6 +987,21 @@ export default function MagicInteractionLayer({
 
       const root =
         rootRef.current;
+
+      pendingPointerRef.current =
+        null;
+
+      if (
+        pointerFrameRef.current !==
+        null
+      ) {
+        window.cancelAnimationFrame(
+          pointerFrameRef.current
+        );
+
+        pointerFrameRef.current =
+          null;
+      }
 
       pointerHeldRef.current =
         false;
@@ -914,6 +1101,24 @@ export default function MagicInteractionLayer({
     }
 
     return () => {
+      if (
+        pointerFrameRef.current !==
+        null
+      ) {
+        window.cancelAnimationFrame(
+          pointerFrameRef.current
+        );
+
+        pointerFrameRef.current =
+          null;
+      }
+
+      pendingPointerRef.current =
+        null;
+
+      interactionTargetRef.current =
+        null;
+
       reduceMotionQuery.removeEventListener(
         "change",
         handleMotionChange
