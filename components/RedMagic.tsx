@@ -278,6 +278,9 @@ const GLOW_SPRITE_SIZE =
 const CORE_SPRITE_SIZE =
   256;
 
+const NODE_SPRITE_SIZE =
+  64;
+
 const HIGH_FPS_TARGET =
   120;
 
@@ -448,6 +451,62 @@ function createGlowSprite():
     GLOW_SPRITE_SIZE,
     GLOW_SPRITE_SIZE
   );
+
+  return sprite;
+}
+
+function createNodeSprite():
+  HTMLCanvasElement | null {
+  if (
+    typeof document ===
+    "undefined"
+  ) {
+    return null;
+  }
+
+  const sprite =
+    document.createElement(
+      "canvas"
+    );
+
+  sprite.width =
+    NODE_SPRITE_SIZE;
+
+  sprite.height =
+    NODE_SPRITE_SIZE;
+
+  const context =
+    sprite.getContext(
+      "2d"
+    );
+
+  if (!context) {
+    return null;
+  }
+
+  const center =
+    NODE_SPRITE_SIZE *
+    0.5;
+
+  const radius =
+    NODE_SPRITE_SIZE *
+    0.5;
+
+  context.fillStyle =
+    "rgba(255, 92, 70, 1)";
+
+  context.beginPath();
+
+  context.arc(
+    center,
+    center,
+    radius *
+      0.9,
+    0,
+    TAU
+  );
+
+  context.fill();
 
   return sprite;
 }
@@ -1001,7 +1060,10 @@ function buildFlowGeometry(
 
   const pointCount =
     flowCount *
-    (segments + 1);
+    (
+      segments +
+      1
+    );
 
   const baseAngles =
     new Float32Array(
@@ -1040,7 +1102,8 @@ function buildFlowGeometry(
 
   for (
     let flowIndex = 0;
-    flowIndex < flowCount;
+    flowIndex <
+      flowCount;
     flowIndex += 1
   ) {
     baseAngles[
@@ -1618,6 +1681,9 @@ export default function RedMagic({
     const interactionSprite =
       createGlowSprite();
 
+    const nodeSprite =
+      createNodeSprite();
+
     const coreSprite =
       createCoreSprite();
 
@@ -1770,6 +1836,11 @@ export default function RedMagic({
     let gridEdges:
       GridEdge[] =
       [];
+
+    let edgeBuckets =
+      new Uint8Array(
+        0
+      );
 
     let nodePotential =
       new Float32Array(
@@ -2140,6 +2211,11 @@ export default function RedMagic({
 
       gridEdges =
         grid.edges;
+
+      edgeBuckets =
+        new Uint8Array(
+          gridEdges.length
+        );
 
       nodePotential =
         new Float32Array(
@@ -3803,6 +3879,65 @@ export default function RedMagic({
       context.fill();
     };
 
+    const drawNodeCore = (
+      x: number,
+      y: number,
+      radiusValue: number,
+      alpha: number
+    ) => {
+      if (
+        !nodeSprite
+      ) {
+        context.globalAlpha =
+          alpha;
+
+        context.fillStyle =
+          "rgba(255, 92, 70, 1)";
+
+        context.beginPath();
+
+        context.arc(
+          x,
+          y,
+          radiusValue,
+          0,
+          TAU
+        );
+
+        context.fill();
+
+        context.globalAlpha =
+          1;
+
+        return;
+      }
+
+      const diameter =
+        Math.max(
+          2.4,
+          radiusValue *
+            2
+        );
+
+      context.globalAlpha =
+        alpha;
+
+      context.drawImage(
+        nodeSprite,
+        x -
+          diameter *
+            0.5,
+        y -
+          diameter *
+            0.5,
+        diameter,
+        diameter
+      );
+
+      context.globalAlpha =
+        1;
+    };
+
     const drawNetwork = (
       time: number
     ) => {
@@ -3821,35 +3956,32 @@ export default function RedMagic({
 
       /*
        * Phase 3:
-       * Batch network edges into fixed visual
-       * intensity buckets so the expensive Canvas
-       * stroke submission happens only a handful of
-       * times per frame instead of once per edge.
        *
-       * The bucket thresholds preserve the existing
-       * visual hierarchy:
+       * Network edges are classified once into a
+       * preallocated Uint8Array.
        *
-       * 0 = inactive baseline
-       * 1 = faint
-       * 2 = low
-       * 3 = medium
-       * 4 = high
+       * No Path2D objects are allocated during the
+       * animation frame.
+       *
+       * The five buckets preserve the visual hierarchy
+       * while reducing stroke submissions from one per
+       * edge to at most five per frame.
        */
 
-      const baselinePath =
-        new Path2D();
+      let hasBaseline =
+        false;
 
-      const faintPath =
-        new Path2D();
+      let hasFaint =
+        false;
 
-      const lowPath =
-        new Path2D();
+      let hasLow =
+        false;
 
-      const mediumPath =
-        new Path2D();
+      let hasMedium =
+        false;
 
-      const highPath =
-        new Path2D();
+      let hasHigh =
+        false;
 
       for (
         let index = 0;
@@ -3887,149 +4019,360 @@ export default function RedMagic({
             1
           );
 
+        let bucket =
+          4;
+
         if (
           active <
           0.01
         ) {
-          baselinePath.moveTo(
-            a.x,
-            a.y
-          );
+          bucket =
+            0;
 
-          baselinePath.lineTo(
-            b.x,
-            b.y
-          );
-
-          continue;
-        }
-
-        if (
+          hasBaseline =
+            true;
+        } else if (
           active <
           0.12
         ) {
-          faintPath.moveTo(
-            a.x,
-            a.y
-          );
+          bucket =
+            1;
 
-          faintPath.lineTo(
-            b.x,
-            b.y
-          );
-
-          continue;
-        }
-
-        if (
+          hasFaint =
+            true;
+        } else if (
           active <
           0.3
         ) {
-          lowPath.moveTo(
-            a.x,
-            a.y
-          );
+          bucket =
+            2;
 
-          lowPath.lineTo(
-            b.x,
-            b.y
-          );
-
-          continue;
-        }
-
-        if (
+          hasLow =
+            true;
+        } else if (
           active <
           0.62
         ) {
-          mediumPath.moveTo(
+          bucket =
+            3;
+
+          hasMedium =
+            true;
+        } else {
+          bucket =
+            4;
+
+          hasHigh =
+            true;
+        }
+
+        edgeBuckets[
+          index
+        ] =
+          bucket;
+      }
+
+      if (
+        hasBaseline
+      ) {
+        context.beginPath();
+
+        for (
+          let index = 0;
+          index <
+            gridEdges.length;
+          index += 1
+        ) {
+          if (
+            edgeBuckets[
+              index
+            ] !==
+            0
+          ) {
+            continue;
+          }
+
+          const edge =
+            gridEdges[
+              index
+            ];
+
+          const a =
+            gridNodes[
+              edge.a
+            ];
+
+          const b =
+            gridNodes[
+              edge.b
+            ];
+
+          context.moveTo(
             a.x,
             a.y
           );
 
-          mediumPath.lineTo(
+          context.lineTo(
             b.x,
             b.y
           );
-
-          continue;
         }
 
-        highPath.moveTo(
-          a.x,
-          a.y
-        );
+        context.globalAlpha =
+          0.012;
 
-        highPath.lineTo(
-          b.x,
-          b.y
-        );
+        context.lineWidth =
+          0.4;
+
+        context.strokeStyle =
+          "rgba(115, 18, 18, 1)";
+
+        context.stroke();
       }
 
-      context.globalAlpha =
-        0.012;
+      if (
+        hasFaint
+      ) {
+        context.beginPath();
 
-      context.lineWidth =
-        0.4;
+        for (
+          let index = 0;
+          index <
+            gridEdges.length;
+          index += 1
+        ) {
+          if (
+            edgeBuckets[
+              index
+            ] !==
+            1
+          ) {
+            continue;
+          }
 
-      context.strokeStyle =
-        "rgba(115, 18, 18, 1)";
+          const edge =
+            gridEdges[
+              index
+            ];
 
-      context.stroke(
-        baselinePath
-      );
+          const a =
+            gridNodes[
+              edge.a
+            ];
 
-      context.globalAlpha =
-        0.028;
+          const b =
+            gridNodes[
+              edge.b
+            ];
 
-      context.lineWidth =
-        0.46;
+          context.moveTo(
+            a.x,
+            a.y
+          );
 
-      context.strokeStyle =
-        "rgba(255, 70, 52, 1)";
+          context.lineTo(
+            b.x,
+            b.y
+          );
+        }
 
-      context.stroke(
-        faintPath
-      );
+        context.globalAlpha =
+          0.028;
 
-      context.globalAlpha =
-        0.052;
+        context.lineWidth =
+          0.46;
 
-      context.lineWidth =
-        0.56;
+        context.strokeStyle =
+          "rgba(255, 70, 52, 1)";
 
-      context.strokeStyle =
-        "rgba(255, 70, 52, 1)";
+        context.stroke();
+      }
 
-      context.stroke(
-        lowPath
-      );
+      if (
+        hasLow
+      ) {
+        context.beginPath();
 
-      context.globalAlpha =
-        0.092;
+        for (
+          let index = 0;
+          index <
+            gridEdges.length;
+          index += 1
+        ) {
+          if (
+            edgeBuckets[
+              index
+            ] !==
+            2
+          ) {
+            continue;
+          }
 
-      context.lineWidth =
-        0.72;
+          const edge =
+            gridEdges[
+              index
+            ];
 
-      context.strokeStyle =
-        "rgba(255, 70, 52, 1)";
+          const a =
+            gridNodes[
+              edge.a
+            ];
 
-      context.stroke(
-        mediumPath
-      );
+          const b =
+            gridNodes[
+              edge.b
+            ];
 
-      context.globalAlpha =
-        0.13;
+          context.moveTo(
+            a.x,
+            a.y
+          );
 
-      context.lineWidth =
-        1.1;
+          context.lineTo(
+            b.x,
+            b.y
+          );
+        }
 
-      context.strokeStyle =
-        "rgba(255, 70, 52, 1)";
+        context.globalAlpha =
+          0.052;
 
-      context.stroke(
-        highPath
-      );
+        context.lineWidth =
+          0.56;
+
+        context.strokeStyle =
+          "rgba(255, 70, 52, 1)";
+
+        context.stroke();
+      }
+
+      if (
+        hasMedium
+      ) {
+        context.beginPath();
+
+        for (
+          let index = 0;
+          index <
+            gridEdges.length;
+          index += 1
+        ) {
+          if (
+            edgeBuckets[
+              index
+            ] !==
+            3
+          ) {
+            continue;
+          }
+
+          const edge =
+            gridEdges[
+              index
+            ];
+
+          const a =
+            gridNodes[
+              edge.a
+            ];
+
+          const b =
+            gridNodes[
+              edge.b
+            ];
+
+          context.moveTo(
+            a.x,
+            a.y
+          );
+
+          context.lineTo(
+            b.x,
+            b.y
+          );
+        }
+
+        context.globalAlpha =
+          0.092;
+
+        context.lineWidth =
+          0.72;
+
+        context.strokeStyle =
+          "rgba(255, 70, 52, 1)";
+
+        context.stroke();
+      }
+
+      if (
+        hasHigh
+      ) {
+        context.beginPath();
+
+        for (
+          let index = 0;
+          index <
+            gridEdges.length;
+          index += 1
+        ) {
+          if (
+            edgeBuckets[
+              index
+            ] !==
+            4
+          ) {
+            continue;
+          }
+
+          const edge =
+            gridEdges[
+              index
+            ];
+
+          const a =
+            gridNodes[
+              edge.a
+            ];
+
+          const b =
+            gridNodes[
+              edge.b
+            ];
+
+          context.moveTo(
+            a.x,
+            a.y
+          );
+
+          context.lineTo(
+            b.x,
+            b.y
+          );
+        }
+
+        context.globalAlpha =
+          0.13;
+
+        context.lineWidth =
+          1.1;
+
+        context.strokeStyle =
+          "rgba(255, 70, 52, 1)";
+
+        context.stroke();
+      }
+
+      /*
+       * Node rendering:
+       *
+       * The old implementation built a fresh Canvas
+       * arc path for every node every frame.
+       *
+       * The node body is now a cached sprite, scaled
+       * according to its current radius. This removes
+       * the repeated beginPath/arc/fill sequence from
+       * the primary animation hot path.
+       */
 
       for (
         let index = 0;
@@ -4078,27 +4421,22 @@ export default function RedMagic({
             1
           );
 
-        context.globalAlpha =
-          nodeAlpha;
-
-        context.fillStyle =
-          "rgba(255, 92, 70, 1)";
-
-        context.beginPath();
-
-        context.arc(
+        drawNodeCore(
           node.x,
           node.y,
           Math.max(
             1.2,
             nodeRadius
           ),
-          0,
-          TAU
+          nodeAlpha
         );
 
-        context.fill();
-
+        /*
+         * Keep the existing glow response, but only
+         * invoke it once a node has meaningful energy.
+         * The glow itself is already backed by a cached
+         * sprite.
+         */
         if (
           energy >
           0.018
