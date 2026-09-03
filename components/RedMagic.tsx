@@ -83,6 +83,8 @@ type Shockwave = {
 
   age: number;
   strength: number;
+
+  angularInfluence: Float32Array;
 };
 
 type FlowGeometry = {
@@ -374,8 +376,7 @@ function distanceSquared(
     ay - by;
 
   return (
-    dx * dx +
-    dy * dy
+    dx * dx + dy * dy
   );
 }
 
@@ -1826,16 +1827,6 @@ export default function RedMagic({
         MAX_SHOCKWAVES
       );
 
-    const shockwaveAngleSin =
-      new Float32Array(
-        MAX_SHOCKWAVES
-      );
-
-    const shockwaveAngleCos =
-      new Float32Array(
-        MAX_SHOCKWAVES
-      );
-
     let canvasRectLeft =
       0;
 
@@ -2002,8 +1993,7 @@ export default function RedMagic({
 
             for (
               let slot =
-                influenceCapacity -
-                1;
+                influenceCapacity - 1;
               slot >
                 insertionIndex;
               slot -= 1
@@ -2448,6 +2438,62 @@ export default function RedMagic({
             centerX
         );
 
+      const angleSin =
+        Math.sin(
+          shockwaveAngle
+        );
+
+      const angleCos =
+        Math.cos(
+          shockwaveAngle
+        );
+
+      const angularInfluence =
+        new Float32Array(
+          membraneBoundary.length
+        );
+
+      for (
+        let index = 0;
+        index <
+          membraneBoundary.length;
+        index += 1
+      ) {
+        const point =
+          membraneBoundary[
+            index
+          ];
+
+        const deltaSin =
+          point.sin *
+            angleCos -
+          point.cos *
+            angleSin;
+
+        const deltaCos =
+          point.cos *
+            angleCos +
+          point.sin *
+            angleSin;
+
+        const delta =
+          Math.atan2(
+            deltaSin,
+            deltaCos
+          );
+
+        angularInfluence[
+          index
+        ] =
+          Math.exp(
+            -(
+              delta *
+              delta
+            ) /
+              0.34
+          );
+      }
+
       shockwaves.push({
         x:
           detail.x,
@@ -2467,7 +2513,9 @@ export default function RedMagic({
               profile.shockwaveGain,
             0,
             1.4
-          )
+          ),
+
+        angularInfluence
       });
 
       if (
@@ -2522,7 +2570,9 @@ export default function RedMagic({
         index += 1
       ) {
         const neighborIndex =
-          neighbors[index];
+          neighbors[
+            index
+          ];
 
         const neighbor =
           gridNodes[
@@ -3430,7 +3480,9 @@ export default function RedMagic({
           index += 1
         ) {
           const shockwave =
-            shockwaves[index];
+            shockwaves[
+              index
+            ];
 
           const progress =
             clamp(
@@ -3472,20 +3524,6 @@ export default function RedMagic({
             ) *
             shockwave.strength *
             0.1352;
-
-          shockwaveAngleSin[
-            index
-          ] =
-            Math.sin(
-              shockwave.angle
-            );
-
-          shockwaveAngleCos[
-            index
-          ] =
-            Math.cos(
-              shockwave.angle
-            );
         }
       };
 
@@ -3649,12 +3687,6 @@ export default function RedMagic({
       let shockwaveDeformation =
         0;
 
-      const boundarySin =
-        point.sin;
-
-      const boundaryCos =
-        point.cos;
-
       const shockwaveCount =
         shockwaves.length;
 
@@ -3664,48 +3696,18 @@ export default function RedMagic({
           shockwaveCount;
         index += 1
       ) {
-        const angleSin =
-          shockwaveAngleSin[
+        const shockwave =
+          shockwaves[
             index
           ];
-
-        const angleCos =
-          shockwaveAngleCos[
-            index
-          ];
-
-        const deltaSin =
-          boundarySin *
-            angleCos -
-          boundaryCos *
-            angleSin;
-
-        const deltaCos =
-          boundaryCos *
-            angleCos +
-          boundarySin *
-            angleSin;
-
-        const delta =
-          Math.atan2(
-            deltaSin,
-            deltaCos
-          );
-
-        const angularInfluence =
-          Math.exp(
-            -(
-              delta *
-              delta
-            ) /
-              0.34
-          );
 
         shockwaveDeformation +=
           shockwaveRadialInfluence[
             index
           ] *
-          angularInfluence *
+          shockwave.angularInfluence[
+            point.fieldIndex
+          ] *
           shockwaveAngularCoefficient[
             index
           ];
