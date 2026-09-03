@@ -27,12 +27,7 @@ export type RedMagicParticle = {
   impulseX: number;
   impulseY: number;
 
-  /*
-   * Reveal particles remain completely
-   * dormant when the cursor is far away.
-   */
   revealable: boolean;
-
   revealRadius: number;
   revealStrength: number;
 };
@@ -44,7 +39,6 @@ type Point = {
 
 type ParticleRenderOptions = {
   context: CanvasRenderingContext2D;
-
   particles: RedMagicParticle[];
 
   width: number;
@@ -67,38 +61,32 @@ type ParticleRenderOptions = {
   reducedMotion: boolean;
 };
 
-const TAU =
-  Math.PI * 2;
+type ParticleLayout = {
+  width: number;
+  height: number;
+};
 
-const PARTICLE_WRAP_MARGIN =
-  80;
+const TAU = Math.PI * 2;
 
-const PARTICLE_EDGE_MIN_ALPHA =
-  0.12;
+const PARTICLE_WRAP_MARGIN = 80;
 
-const PARTICLE_MIN_VISIBLE_ALPHA =
-  0.008;
+const PARTICLE_EDGE_MIN_ALPHA = 0.12;
 
-const PARTICLE_REVEAL_MIN_ALPHA =
-  0.84;
+const PARTICLE_MIN_VISIBLE_ALPHA = 0.008;
 
-const PARTICLE_REVEAL_DISTANCE_SCALE =
-  0.32;
+const PARTICLE_REVEAL_MIN_ALPHA = 0.84;
 
-const PARTICLE_REVEAL_DISTANCE_POWER =
-  1.75;
+const PARTICLE_REVEAL_DISTANCE_SCALE = 0.32;
 
-const PARTICLE_REVEAL_SIZE_BOOST =
-  1.8;
+const PARTICLE_REVEAL_DISTANCE_POWER = 1.75;
 
-const PARTICLE_REVEAL_BRIGHTNESS =
-  24;
+const PARTICLE_REVEAL_SIZE_BOOST = 1.8;
 
-const PARTICLE_REVEAL_SATURATION =
-  12;
+const PARTICLE_REVEAL_BRIGHTNESS = 24;
 
-const PARTICLE_REVEALABLE_RATIO =
-  0.42;
+const PARTICLE_REVEAL_SATURATION = 12;
+
+const PARTICLE_REVEALABLE_RATIO = 0.42;
 
 const PARTICLE_HUES = [
   0,
@@ -112,6 +100,21 @@ const PARTICLE_HUES = [
   315,
   336
 ];
+
+/*
+ * RedMagic calls placeParticles() during both:
+ *
+ * 1. the initial world build
+ * 2. canvas resize
+ *
+ * The particle array itself remains the owner of its layout lifetime.
+ * WeakMap lets us preserve the live simulation without introducing
+ * additional React state or changing the main RedMagic component.
+ */
+const particleLayouts = new WeakMap<
+  RedMagicParticle[],
+  ParticleLayout
+>();
 
 function clamp(
   value: number,
@@ -130,12 +133,11 @@ function clamp(
 function smoothstep(
   value: number
 ) {
-  const x =
-    clamp(
-      value,
-      0,
-      1
-    );
+  const x = clamp(
+    value,
+    0,
+    1
+  );
 
   return (
     x *
@@ -150,11 +152,8 @@ function distanceSquared(
   bx: number,
   by: number
 ) {
-  const dx =
-    ax - bx;
-
-  const dy =
-    ay - by;
+  const dx = ax - bx;
+  const dy = ay - by;
 
   return (
     dx * dx +
@@ -171,8 +170,7 @@ function createRandomGenerator(
   return () => {
     state =
       (
-        state *
-          1664525 +
+        state * 1664525 +
         1013904223
       ) >>> 0;
 
@@ -190,7 +188,7 @@ export function createPageSeed() {
   const performanceSeed =
     Math.floor(
       performance.now() *
-        1000
+      1000
     );
 
   return (
@@ -219,20 +217,13 @@ export function createParticles(
         count
     },
     () => {
-      const hueIndex =
-        Math.floor(
-          random() *
-            PARTICLE_HUES.length
-        );
-
       const baseHue =
         PARTICLE_HUES[
-          hueIndex
+          Math.floor(
+            random() *
+            PARTICLE_HUES.length
+          )
         ];
-
-      const revealable =
-        random() <
-        PARTICLE_REVEALABLE_RATIO;
 
       return {
         x:
@@ -264,7 +255,7 @@ export function createParticles(
         size:
           0.38 +
           random() *
-            1.45,
+          1.45,
 
         phase:
           random() *
@@ -273,12 +264,12 @@ export function createParticles(
         drift:
           0.35 +
           random() *
-            1.15,
+          1.15,
 
         twinkle:
           0.6 +
           random() *
-            1.6,
+          1.6,
 
         hue:
           baseHue +
@@ -286,22 +277,22 @@ export function createParticles(
             random() -
             0.5
           ) *
-            12,
+          12,
 
         saturation:
           74 +
           random() *
-            20,
+          20,
 
         lightness:
           58 +
           random() *
-            22,
+          22,
 
         hueDrift:
           3 +
           random() *
-            12,
+          12,
 
         impulseX:
           0,
@@ -309,17 +300,19 @@ export function createParticles(
         impulseY:
           0,
 
-        revealable,
+        revealable:
+          random() <
+          PARTICLE_REVEALABLE_RATIO,
 
         revealRadius:
           0.65 +
           random() *
-            0.7,
+          0.7,
 
         revealStrength:
           0.55 +
           random() *
-            0.75
+          0.75
       };
     }
   );
@@ -330,23 +323,116 @@ export function placeParticles(
   width: number,
   height: number
 ) {
-  for (
-    let index = 0;
-    index <
-      particles.length;
-    index += 1
+  const safeWidth =
+    Math.max(
+      1,
+      width
+    );
+
+  const safeHeight =
+    Math.max(
+      1,
+      height
+    );
+
+  const previous =
+    particleLayouts.get(
+      particles
+    );
+
+  /*
+   * First placement:
+   * use the page-open seed positions.
+   */
+  if (
+    !previous ||
+    previous.width <= 0 ||
+    previous.height <= 0
   ) {
-    const particle =
-      particles[index];
+    for (
+      let index = 0;
+      index <
+      particles.length;
+      index += 1
+    ) {
+      const particle =
+        particles[index];
 
-    particle.x =
-      particle.spawnX *
-      width;
+      particle.x =
+        particle.spawnX *
+        safeWidth;
 
-    particle.y =
-      particle.spawnY *
-      height;
+      particle.y =
+        particle.spawnY *
+        safeHeight;
+    }
+  } else {
+    /*
+     * Subsequent placements:
+     * preserve the live simulation state.
+     *
+     * This means:
+     * - resize does not respawn particles
+     * - browser rotation does not reset particles
+     * - layout changes do not destroy motion
+     * - the particle field remains visually continuous
+     */
+    const scaleX =
+      safeWidth /
+      previous.width;
+
+    const scaleY =
+      safeHeight /
+      previous.height;
+
+    if (
+      Math.abs(
+        scaleX - 1
+      ) > 0.0001 ||
+      Math.abs(
+        scaleY - 1
+      ) > 0.0001
+    ) {
+      for (
+        let index = 0;
+        index <
+        particles.length;
+        index += 1
+      ) {
+        const particle =
+          particles[index];
+
+        particle.x *=
+          scaleX;
+
+        particle.y *=
+          scaleY;
+
+        particle.velocityX *=
+          scaleX;
+
+        particle.velocityY *=
+          scaleY;
+
+        particle.impulseX *=
+          scaleX;
+
+        particle.impulseY *=
+          scaleY;
+      }
+    }
   }
+
+  particleLayouts.set(
+    particles,
+    {
+      width:
+        safeWidth,
+
+      height:
+        safeHeight
+    }
+  );
 }
 
 export function updateAndDrawParticles(
@@ -361,12 +447,10 @@ export function updateAndDrawParticles(
 
     centerX,
     centerY,
-
     radius,
 
     pointer,
     pointerActive,
-
     pointerEnergy,
     charge,
 
@@ -379,9 +463,24 @@ export function updateAndDrawParticles(
   } =
     options;
 
+  /*
+   * Normalize around the same 60 Hz reference used by the existing
+   * simulation, while preventing a large hitch from producing a huge
+   * positional jump.
+   *
+   * At 120 Hz:
+   *
+   *     delta ~= 8.33 ms
+   *     deltaScale ~= 0.52
+   *
+   * so the simulation remains frame-rate independent.
+   */
   const deltaScale =
-    delta /
-    16;
+    clamp(
+      delta / 16,
+      0.25,
+      2
+    );
 
   const impulseDecay =
     Math.pow(
@@ -394,6 +493,11 @@ export function updateAndDrawParticles(
       0.985,
       deltaScale
     );
+
+  const driftTime =
+    reducedMotion
+      ? 0
+      : time;
 
   const revealBaseRadius =
     Math.min(
@@ -410,15 +514,15 @@ export function updateAndDrawParticles(
     influenceRadius *
     influenceRadius;
 
+  const pointerVisible =
+    pointerActive &&
+    !reducedMotion;
+
   const pointerX =
     pointer.x;
 
   const pointerY =
     pointer.y;
-
-  const pointerVisible =
-    pointerActive &&
-    !reducedMotion;
 
   context.globalAlpha =
     1;
@@ -426,7 +530,7 @@ export function updateAndDrawParticles(
   for (
     let index = 0;
     index <
-      particles.length;
+    particles.length;
     index += 1
   ) {
     const particle =
@@ -438,32 +542,31 @@ export function updateAndDrawParticles(
     particle.impulseY *=
       impulseDecay;
 
-    const driftTime =
+    const waveX =
       reducedMotion
         ? 0
-        : time;
-
-    const waveX =
-      Math.sin(
-        driftTime *
-          0.0009 *
-          particle.drift +
-          particle.phase
-      ) *
-      0.0028;
+        : Math.sin(
+            driftTime *
+              0.0009 *
+              particle.drift +
+              particle.phase
+          ) *
+          0.0028;
 
     const waveY =
-      Math.cos(
-        driftTime *
-          0.0009 *
-          (
-            particle.drift *
-            0.82
-          ) +
-          particle.phase *
-            1.37
-      ) *
-      0.0028;
+      reducedMotion
+        ? 0
+        : Math.cos(
+            driftTime *
+              0.0009 *
+              (
+                particle.drift *
+                0.82
+              ) +
+              particle.phase *
+                1.37
+          ) *
+          0.0028;
 
     particle.velocityX +=
       waveX *
@@ -497,6 +600,9 @@ export function updateAndDrawParticles(
       0.003 *
       deltaScale;
 
+    /*
+     * Continuous wrapping keeps particles alive indefinitely.
+     */
     if (
       particle.x <
       -PARTICLE_WRAP_MARGIN
@@ -507,7 +613,7 @@ export function updateAndDrawParticles(
     } else if (
       particle.x >
       width +
-        PARTICLE_WRAP_MARGIN
+      PARTICLE_WRAP_MARGIN
     ) {
       particle.x =
         -PARTICLE_WRAP_MARGIN;
@@ -523,7 +629,7 @@ export function updateAndDrawParticles(
     } else if (
       particle.y >
       height +
-        PARTICLE_WRAP_MARGIN
+      PARTICLE_WRAP_MARGIN
     ) {
       particle.y =
         -PARTICLE_WRAP_MARGIN;
@@ -563,12 +669,31 @@ export function updateAndDrawParticles(
         1
       );
 
+    /*
+     * Calculate cursor distance at most once per particle.
+     *
+     * The previous implementation could calculate the same distance
+     * twice: once for reveal and once again for local interaction.
+     * Keeping the result here reduces CPU work in the hottest path.
+     */
+    const pointerDistanceSquared =
+      pointerVisible
+        ? distanceSquared(
+            pointerX,
+            pointerY,
+            particle.x,
+            particle.y
+          )
+        : Number.POSITIVE_INFINITY;
+
+    let pointerDistance =
+      0;
+
     let mouseReveal =
       0;
 
     if (
-      pointerVisible &&
-      particle.revealable
+      pointerVisible
     ) {
       const revealRadius =
         revealBaseRadius *
@@ -578,26 +703,33 @@ export function updateAndDrawParticles(
         revealRadius *
         revealRadius;
 
-      const localDistanceSquared =
-        distanceSquared(
-          pointerX,
-          pointerY,
-          particle.x,
-          particle.y
-        );
+      const needsPointerDistance =
+        pointerDistanceSquared <
+          revealRadiusSquared ||
+        pointerDistanceSquared <
+          influenceRadiusSquared;
 
       if (
-        localDistanceSquared <
-        revealRadiusSquared
+        needsPointerDistance
       ) {
-        const distance =
+        pointerDistance =
           Math.sqrt(
-            localDistanceSquared
+            pointerDistanceSquared
           );
+      }
 
+      /*
+       * Revealable particles genuinely disappear when the cursor
+       * is far away. They are not merely made darker.
+       */
+      if (
+        particle.revealable &&
+        pointerDistanceSquared <
+          revealRadiusSquared
+      ) {
         const normalizedDistance =
           clamp(
-            distance /
+            pointerDistance /
               revealRadius,
             0,
             1
@@ -615,14 +747,6 @@ export function updateAndDrawParticles(
       }
     }
 
-    /*
-     * Reveal particles are not merely dimmed
-     * when far from the cursor.
-     *
-     * They genuinely disappear from the
-     * visible particle field until the
-     * cursor reveals them.
-     */
     if (
       particle.revealable &&
       mouseReveal <=
@@ -635,30 +759,17 @@ export function updateAndDrawParticles(
       0;
 
     if (
-      pointerVisible
-    ) {
-      const localDistanceSquared =
-        distanceSquared(
-          pointerX,
-          pointerY,
-          particle.x,
-          particle.y
-        );
-
-      if (
-        localDistanceSquared <
+      pointerVisible &&
+      pointerDistanceSquared <
         influenceRadiusSquared
-      ) {
-        interactionVisibility =
-          smoothstep(
-            1 -
-              Math.sqrt(
-                localDistanceSquared
-              ) /
-                influenceRadius
-          ) *
-          profile.pointerGain;
-      }
+    ) {
+      interactionVisibility =
+        smoothstep(
+          1 -
+            pointerDistance /
+              influenceRadius
+        ) *
+        profile.pointerGain;
     }
 
     const twinkle =
@@ -759,7 +870,7 @@ export function updateAndDrawParticles(
         Math.sin(
           driftTime *
             0.00055 +
-            particle.phase
+          particle.phase
         ) *
           particle.hueDrift
       ) %
@@ -792,7 +903,8 @@ export function updateAndDrawParticles(
 
     context.fillStyle =
       `hsl(${(
-        hue + 360
+        hue +
+        360
       ) % 360}, ${saturation}%, ${lightness}%)`;
 
     context.beginPath();
@@ -811,11 +923,7 @@ export function updateAndDrawParticles(
     context.fill();
 
     /*
-     * Revealed particles receive a second,
-     * tiny hot center. This creates the
-     * impression that the cursor is exposing
-     * latent light rather than simply fading
-     * an existing particle.
+     * Revealed particles receive a tiny hot center.
      */
     if (
       revealIntensity >
@@ -834,26 +942,18 @@ export function updateAndDrawParticles(
 
       context.globalAlpha =
         clamp(
-          alpha *
+          context.globalAlpha *
             (
-              0.35 +
+              0.65 +
               revealIntensity *
-                0.65
+                0.35
             ),
-          0,
+          PARTICLE_MIN_VISIBLE_ALPHA,
           1
         );
 
       context.fillStyle =
-        `hsl(${(
-          hue + 360
-        ) % 360}, ${Math.min(
-          100,
-          saturation + 4
-        )}%, ${Math.min(
-          98,
-          lightness + 10
-        )}%)`;
+        "rgba(255, 245, 238, 0.96)";
 
       context.beginPath();
 
