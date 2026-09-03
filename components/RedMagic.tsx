@@ -58,6 +58,19 @@ type GridEdge = {
 type BoundaryPoint = {
   sin: number;
   cos: number;
+
+  sin3: number;
+  cos3: number;
+
+  sin7: number;
+  cos7: number;
+
+  sin11: number;
+  cos11: number;
+
+  sin13: number;
+  cos13: number;
+
   angle: number;
   fieldIndex: number;
 };
@@ -926,6 +939,46 @@ function createBoundary(
             angle
           ),
 
+        sin3:
+          Math.sin(
+            angle * 3
+          ),
+
+        cos3:
+          Math.cos(
+            angle * 3
+          ),
+
+        sin7:
+          Math.sin(
+            angle * 7
+          ),
+
+        cos7:
+          Math.cos(
+            angle * 7
+          ),
+
+        sin11:
+          Math.sin(
+            angle * 11
+          ),
+
+        cos11:
+          Math.cos(
+            angle * 11
+          ),
+
+        sin13:
+          Math.sin(
+            angle * 13
+          ),
+
+        cos13:
+          Math.cos(
+            angle * 13
+          ),
+
         angle,
 
         fieldIndex:
@@ -1630,6 +1683,36 @@ export default function RedMagic({
     let pointerAngle =
       0;
 
+    let pointerAngleSin =
+      0;
+
+    let pointerAngleCos =
+      1;
+
+    let boundaryPrimaryPhaseSin =
+      0;
+
+    let boundaryPrimaryPhaseCos =
+      1;
+
+    let boundarySecondaryPhaseSin =
+      0;
+
+    let boundarySecondaryPhaseCos =
+      1;
+
+    let boundaryTertiaryPhaseSin =
+      0;
+
+    let boundaryTertiaryPhaseCos =
+      1;
+
+    let boundaryTurbulencePhaseSin =
+      0;
+
+    let boundaryTurbulencePhaseCos =
+      1;
+
     let interactionEnergy =
       0;
 
@@ -1980,16 +2063,19 @@ export default function RedMagic({
       );
 
       centerX =
-        width * 0.5;
+        width *
+        0.5;
 
       centerY =
-        height * 0.5;
+        height *
+        0.5;
 
       radius =
         Math.min(
           width,
           height
-        ) * 0.39;
+        ) *
+        0.39;
 
       rebuildMembraneGradient();
 
@@ -2082,6 +2168,20 @@ export default function RedMagic({
                 dx
               )
             : 0;
+
+        pointerAngleSin =
+          pointerDistance >
+          0.0001
+            ? dy /
+              pointerDistance
+            : 0;
+
+        pointerAngleCos =
+          pointerDistance >
+          0.0001
+            ? dx /
+              pointerDistance
+            : 1;
       };
 
     const nearestGridNode = (
@@ -3173,28 +3273,36 @@ export default function RedMagic({
         BoundaryPoint,
       time: number
     ) => {
+      /*
+       * The four spatial harmonics are cached on every
+       * BoundaryPoint. Their temporal phases are also
+       * computed once per frame before membrane drawing.
+       */
+
       const primaryWave =
-        Math.sin(
-          point.angle * 3 +
-            time *
-              0.0011
+        (
+          point.sin3 *
+            boundaryPrimaryPhaseCos +
+          point.cos3 *
+            boundaryPrimaryPhaseSin
         ) *
         0.034;
 
       const secondaryWave =
-        Math.sin(
-          point.angle * 7 -
-            time *
-              0.0008 +
-            1.3
+        (
+          point.sin7 *
+            boundarySecondaryPhaseCos +
+          point.cos7 *
+            boundarySecondaryPhaseSin
         ) *
         0.022;
 
       const tertiaryWave =
-        Math.sin(
-          point.angle * 11 +
-            time *
-              0.00065
+        (
+          point.sin11 *
+            boundaryTertiaryPhaseCos +
+          point.cos11 *
+            boundaryTertiaryPhaseSin
         ) *
         0.012;
 
@@ -3206,16 +3314,22 @@ export default function RedMagic({
         pointerDistance >
           0.0001
       ) {
+        const deltaSin =
+          point.sin *
+            pointerAngleCos -
+          point.cos *
+            pointerAngleSin;
+
+        const deltaCos =
+          point.cos *
+            pointerAngleCos +
+          point.sin *
+            pointerAngleSin;
+
         const delta =
           Math.atan2(
-            Math.sin(
-              point.angle -
-                pointerAngle
-            ),
-            Math.cos(
-              point.angle -
-                pointerAngle
-            )
+            deltaSin,
+            deltaCos
           );
 
         const sigma =
@@ -3252,17 +3366,19 @@ export default function RedMagic({
           profile.pointerGain;
       }
 
+      const turbulenceWave =
+        (
+          point.sin13 *
+            boundaryTurbulencePhaseCos +
+          point.cos13 *
+            boundaryTurbulencePhaseSin
+        );
+
       const turbulence =
         interactionTurbulence *
         (
           0.012 +
-          Math.sin(
-            point.angle * 13 +
-              time *
-                0.004 +
-              pointerAngle *
-                2
-          ) *
+          turbulenceWave *
             0.008
         );
 
@@ -3775,6 +3891,65 @@ export default function RedMagic({
       time: number
     ) => {
       prepareShockwaveFrame();
+
+      const primaryPhase =
+        time *
+        0.0011;
+
+      boundaryPrimaryPhaseSin =
+        Math.sin(
+          primaryPhase
+        );
+
+      boundaryPrimaryPhaseCos =
+        Math.cos(
+          primaryPhase
+        );
+
+      const secondaryPhase =
+        1.3 -
+        time *
+          0.0008;
+
+      boundarySecondaryPhaseSin =
+        Math.sin(
+          secondaryPhase
+        );
+
+      boundarySecondaryPhaseCos =
+        Math.cos(
+          secondaryPhase
+        );
+
+      const tertiaryPhase =
+        time *
+        0.00065;
+
+      boundaryTertiaryPhaseSin =
+        Math.sin(
+          tertiaryPhase
+        );
+
+      boundaryTertiaryPhaseCos =
+        Math.cos(
+          tertiaryPhase
+        );
+
+      const turbulencePhase =
+        time *
+          0.004 +
+        pointerAngle *
+          2;
+
+      boundaryTurbulencePhaseSin =
+        Math.sin(
+          turbulencePhase
+        );
+
+      boundaryTurbulencePhaseCos =
+        Math.cos(
+          turbulencePhase
+        );
 
       context.beginPath();
 
