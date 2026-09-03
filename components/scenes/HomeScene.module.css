@@ -495,39 +495,9 @@
 
   isolation:
     isolate;
-}
-
-.homeOriginMagicOrganism :global(.red-magic) {
-  position:
-    absolute;
-
-  inset:
-    0;
-
-  width:
-    100%;
-
-  height:
-    100%;
-
-  display:
-    block;
 
   opacity:
     0.92;
-}
-
-.homeOriginMagicOrganism
-:global(.red-magic)
-canvas {
-  display:
-    block;
-
-  width:
-    100%;
-
-  height:
-    100%;
 }
 
 .homeOriginMagicVignette {
