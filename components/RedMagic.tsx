@@ -59,6 +59,7 @@ type BoundaryPoint = {
   sin: number;
   cos: number;
   angle: number;
+  fieldIndex: number;
 };
 
 type Shockwave = {
@@ -522,7 +523,10 @@ function createBoundary(
             angle
           ),
 
-        angle
+        angle,
+
+        fieldIndex:
+          index
       };
     }
   );
@@ -1126,6 +1130,11 @@ export default function RedMagic({
     let membraneBoundary:
       BoundaryPoint[] = [];
 
+    let boundaryNetworkWeights =
+      new Float32Array(
+        0
+      );
+
     let shockwaves:
       Shockwave[] = [];
 
@@ -1150,6 +1159,85 @@ export default function RedMagic({
       MODE_PROFILES[
         modeRef.current
       ];
+
+    const buildBoundaryNetworkWeights =
+      () => {
+        const boundaryCount =
+          membraneBoundary.length;
+
+        const nodeCount =
+          gridNodes.length;
+
+        const weights =
+          new Float32Array(
+            boundaryCount *
+              nodeCount
+          );
+
+        for (
+          let boundaryIndex = 0;
+          boundaryIndex <
+            boundaryCount;
+          boundaryIndex += 1
+        ) {
+          const point =
+            membraneBoundary[
+              boundaryIndex
+            ];
+
+          const targetX =
+            point.cos *
+            0.9;
+
+          const targetY =
+            point.sin *
+            0.9;
+
+          const rowOffset =
+            boundaryIndex *
+            nodeCount;
+
+          for (
+            let nodeIndex = 0;
+            nodeIndex <
+              nodeCount;
+            nodeIndex += 1
+          ) {
+            const node =
+              gridNodes[
+                nodeIndex
+              ];
+
+            const dx =
+              targetX -
+              node.homeX;
+
+            const dy =
+              targetY -
+              node.homeY;
+
+            const distance =
+              Math.hypot(
+                dx,
+                dy
+              );
+
+            weights[
+              rowOffset +
+                nodeIndex
+            ] =
+              0.004 /
+              (
+                1 +
+                distance *
+                  3.5
+              );
+          }
+        }
+
+        boundaryNetworkWeights =
+          weights;
+      };
 
     const buildWorld = (
       name: QualityName
@@ -1214,6 +1302,8 @@ export default function RedMagic({
         createBoundary(
           quality.membraneSteps
         );
+
+      buildBoundaryNetworkWeights();
 
       shockwaves =
         [];
@@ -2508,43 +2598,26 @@ export default function RedMagic({
       let networkDeformation =
         0;
 
+      const nodeCount =
+        gridNodes.length;
+
+      const rowOffset =
+        point.fieldIndex *
+        nodeCount;
+
       for (
         let index = 0;
-        index <
-          gridNodes.length;
+        index < nodeCount;
         index += 1
       ) {
-        const node =
-          gridNodes[index];
-
-        const dx =
-          point.cos *
-            0.9 -
-          node.homeX;
-
-        const dy =
-          point.sin *
-            0.9 -
-          node.homeY;
-
-        const distance =
-          Math.hypot(
-            dx,
-            dy
-          );
-
-        const field =
-          1 /
-          (
-            1 +
-            distance *
-              3.5
-          );
-
         networkDeformation +=
-          node.energy *
-          field *
-          0.004;
+          gridNodes[
+            index
+          ].energy *
+          boundaryNetworkWeights[
+            rowOffset +
+              index
+          ];
       }
 
       let shockwaveDeformation =
