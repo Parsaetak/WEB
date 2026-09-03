@@ -51,6 +51,7 @@ type BoundaryPoint = {
 type Shockwave = {
   x: number;
   y: number;
+  angle: number;
   age: number;
   strength: number;
 };
@@ -190,6 +191,9 @@ const SHOCKWAVE_DURATION =
 
 const PARTICLE_INFLUENCE_FACTOR =
   0.62;
+
+const IDLE_SIMULATION_SCALE =
+  0.32;
 
 function clamp(
   value: number,
@@ -596,15 +600,10 @@ export default function RedMagic({
     let interactionTurbulence =
       0;
 
-    let interactionDirectionX =
-      0;
-
-    let interactionDirectionY =
-      0;
-
     let charge = 0;
+
     let pointerHeld = false;
-    
+
     let qualityName:
       QualityName = "high";
 
@@ -714,18 +713,6 @@ export default function RedMagic({
           1,
           "rgba(255, 25, 20, 0.01)"
         );
-      };
-
-    const refreshCanvasRect =
-      () => {
-        const rect =
-          canvas.getBoundingClientRect();
-
-        canvasRectLeft =
-          rect.left;
-
-        canvasRectTop =
-          rect.top;
       };
 
     const resize = () => {
@@ -873,6 +860,14 @@ export default function RedMagic({
 
           y:
             detail.y,
+
+          angle:
+            Math.atan2(
+              detail.y -
+                centerY,
+              detail.x -
+                centerX
+            ),
 
           age:
             0,
@@ -1061,23 +1056,6 @@ export default function RedMagic({
           detail.y -
           pointer.y;
 
-        const movementLength =
-          Math.max(
-            0.0001,
-            Math.hypot(
-              pointerVelocityX,
-              pointerVelocityY
-            )
-          );
-
-        interactionDirectionX =
-          pointerVelocityX /
-          movementLength;
-
-        interactionDirectionY =
-          pointerVelocityY /
-          movementLength;
-
         interactionTurbulence =
           clamp(
             (
@@ -1117,31 +1095,30 @@ export default function RedMagic({
             break;
 
           case "impact":
-  pointerActive =
-    true;
+            pointerActive =
+              true;
 
-  interactionEnergy =
-    Math.max(
-      interactionEnergy,
-      detail.proximity
-    );
+            interactionEnergy =
+              Math.max(
+                interactionEnergy,
+                detail.proximity
+              );
 
-  spawnShockwave(
-    detail,
-    0.62 +
-      detail.proximity *
-        0.28
-  );
+            spawnShockwave(
+              detail,
+              0.62 +
+                detail.proximity *
+                  0.28
+            );
 
-  applyParticleImpulse(
-    detail,
-    0.48 +
-      detail.proximity *
-        0.38
-  );
+            applyParticleImpulse(
+              detail,
+              0.48 +
+                detail.proximity *
+                  0.38
+            );
 
             break;
-
 
           case "flick":
             pointerActive =
@@ -1178,56 +1155,51 @@ export default function RedMagic({
             break;
 
           case "charge":
-  pointerHeld =
-    true;
+            pointerHeld =
+              true;
 
-  charge =
-    detail.charge;
+            charge =
+              detail.charge;
 
-  interactionEnergy =
-    Math.max(
-      interactionEnergy,
-      detail.charge
-    );
+            interactionEnergy =
+              Math.max(
+                interactionEnergy,
+                detail.charge
+              );
 
             break;
 
           case "release":
-
             pointerHeld =
-  
               false;
 
-
             charge =
-  
               detail.charge;
 
-
             interactionEnergy =
-    Math.max(
-      interactionEnergy,
-      detail.charge
-    );
+              Math.max(
+                interactionEnergy,
+                detail.charge
+              );
 
-  if (
-    detail.charge >
-    0.08
-  ) {
-    spawnShockwave(
-      detail,
-      0.42 +
-        detail.charge *
-          0.58
-    );
+            if (
+              detail.charge >
+              0.08
+            ) {
+              spawnShockwave(
+                detail,
+                0.42 +
+                  detail.charge *
+                    0.58
+              );
 
-    applyParticleImpulse(
-      detail,
-      0.55 +
-        detail.charge *
-          0.9
-    );
-  }
+              applyParticleImpulse(
+                detail,
+                0.55 +
+                  detail.charge *
+                    0.9
+              );
+            }
 
             break;
 
@@ -1245,20 +1217,20 @@ export default function RedMagic({
             break;
 
           case "leave":
-  pointerActive =
-    false;
+            pointerActive =
+              false;
 
-  pointerHeld =
-    false;
+            pointerHeld =
+              false;
 
-  interactionEnergy =
-    Math.min(
-      interactionEnergy,
-      0.35
-    );
+            interactionEnergy =
+              Math.min(
+                interactionEnergy,
+                0.35
+              );
 
-  charge =
-    0;
+            charge =
+              0;
 
             break;
         }
@@ -1387,31 +1359,15 @@ export default function RedMagic({
               1
             );
 
-          const angleToPoint =
-            Math.atan2(
-              point.sin,
-              point.cos
-            );
-
           const delta =
             Math.atan2(
               Math.sin(
-                angleToPoint -
-                  Math.atan2(
-                    shockwave.y -
-                      centerY,
-                    shockwave.x -
-                      centerX
-                  )
+                point.angle -
+                  shockwave.angle
               ),
               Math.cos(
-                angleToPoint -
-                  Math.atan2(
-                    shockwave.y -
-                      centerY,
-                    shockwave.x -
-                      centerX
-                  )
+                point.angle -
+                  shockwave.angle
               )
             );
 
@@ -1432,10 +1388,6 @@ export default function RedMagic({
                 1.05
             );
 
-          const targetRadius =
-            radius *
-            0.88;
-
           const pointRadius =
             radius *
             0.9;
@@ -1448,17 +1400,20 @@ export default function RedMagic({
             radius *
             0.11;
 
+          const widthSquared =
+            Math.max(
+              1,
+              widthFactor *
+                widthFactor
+            );
+
           const radialInfluence =
             Math.exp(
               -(
                 waveOffset *
                 waveOffset
               ) /
-                Math.max(
-                  1,
-                  widthFactor *
-                    widthFactor
-                )
+                widthSquared
             );
 
           shockwaveDeformation +=
@@ -1469,17 +1424,7 @@ export default function RedMagic({
               progress
             ) *
             shockwave.strength *
-            (
-              0.1 +
-              0.04 *
-                (
-                  targetRadius /
-                  Math.max(
-                    1,
-                    radius
-                  )
-                )
-            );
+            0.1352;
         }
 
         return (
@@ -1951,6 +1896,13 @@ export default function RedMagic({
             quality.flowCount;
           index += 1
         ) {
+          const direction =
+            index %
+              2 ===
+            0
+              ? 1
+              : -1;
+
           const baseAngle =
             (
               index /
@@ -1959,22 +1911,10 @@ export default function RedMagic({
               TAU +
             time *
               0.00016 *
-              (
-                index %
-                  2 ===
-                0
-                  ? 1
-                  : -1
-              ) +
+              direction +
             interactionTurbulence *
               0.04 *
-              (
-                index %
-                  2 ===
-                0
-                  ? 1
-                  : -1
-              );
+              direction;
 
           context.beginPath();
 
@@ -2093,8 +2033,203 @@ export default function RedMagic({
           0.0009 *
           16;
 
+        const impulseDecay =
+          Math.pow(
+            0.91,
+            delta /
+              16
+          );
+
+        const pointerActiveNow =
+          pointerActive;
+
+        const surgeMode =
+          modeRef.current ===
+          "surge";
+
+        const surgeInteraction =
+          surgeMode &&
+          pointerActiveNow &&
+          pointerDistance <
+            radius *
+              0.95;
+
+        const impulseScale =
+          radius *
+          0.11;
+
+        const influenceRadius =
+          radius *
+          PARTICLE_INFLUENCE_FACTOR;
+
+        const influenceRadiusSquared =
+          influenceRadius *
+          influenceRadius;
+
+        const pointerX =
+          pointer.x;
+
+        const pointerY =
+          pointer.y;
+
+        const dxFromPointer =
+          pointerX -
+          centerX;
+
+        const dyFromPointer =
+          pointerY -
+          centerY;
+
+        let radialX = 0;
+
+        let radialY = 0;
+
+        let surgePull = 0;
+
+        if (
+          surgeInteraction
+        ) {
+          const radialPointerLength =
+            Math.max(
+              0.0001,
+              Math.hypot(
+                dxFromPointer,
+                dyFromPointer
+              )
+            );
+
+          radialX =
+            dxFromPointer /
+            radialPointerLength;
+
+          radialY =
+            dyFromPointer /
+            radialPointerLength;
+
+          surgePull =
+            (
+              1 -
+              clamp(
+                pointerDistance /
+                  (
+                    radius *
+                    0.95
+                  ),
+                0,
+                1
+              )
+            ) *
+            0.0025;
+        }
+
+        const baseAlpha =
+          0.28 +
+          charge *
+            0.08;
+
         context.fillStyle =
           "rgb(255, 72, 55)";
+
+        if (
+          !pointerActiveNow
+        ) {
+          context.globalAlpha =
+            baseAlpha;
+
+          for (
+            let index = 0;
+            index <
+              particles.length;
+            index += 1
+          ) {
+            const particle =
+              particles[index];
+
+            particle.impulseX *=
+              impulseDecay;
+
+            particle.impulseY *=
+              impulseDecay;
+
+            particle.angle +=
+              particle.speed *
+              (
+                1 +
+                pointerEnergy *
+                  1.8 +
+                interactionTurbulence *
+                  0.6
+              ) *
+              step;
+
+            const breathing =
+              1 +
+              Math.sin(
+                time *
+                  0.0013 *
+                  particle.drift +
+                  particle.phase
+              ) *
+                0.055;
+
+            const orbitalRadius =
+              Math.max(
+                radius *
+                  0.08,
+                radius *
+                  particle.radius *
+                  breathing *
+                  particle.orbit
+              );
+
+            const swirl =
+              Math.sin(
+                time *
+                  0.0007 +
+                  particle.phase
+              ) *
+              radius *
+              0.02;
+
+            const x =
+              centerX +
+              Math.cos(
+                particle.angle
+              ) *
+                orbitalRadius +
+              swirl +
+              particle.impulseX *
+                impulseScale;
+
+            const y =
+              centerY +
+              Math.sin(
+                particle.angle
+              ) *
+                orbitalRadius +
+              swirl *
+                0.55 +
+              particle.impulseY *
+                impulseScale;
+
+            context.beginPath();
+
+            context.arc(
+              x,
+              y,
+              particle.size,
+              0,
+              TAU
+            );
+
+            context.fill();
+          }
+
+          context.globalAlpha =
+            1;
+
+          return;
+        }
 
         for (
           let index = 0;
@@ -2106,18 +2241,10 @@ export default function RedMagic({
             particles[index];
 
           particle.impulseX *=
-            Math.pow(
-              0.91,
-              delta /
-                16
-            );
+            impulseDecay;
 
           particle.impulseY *=
-            Math.pow(
-              0.91,
-              delta /
-                16
-            );
+            impulseDecay;
 
           particle.angle +=
             particle.speed *
@@ -2155,61 +2282,16 @@ export default function RedMagic({
             radius *
             0.02;
 
-          const dxFromPointer =
-            pointer.x -
-            centerX;
-
-          const dyFromPointer =
-            pointer.y -
-            centerY;
-
-          const radialPointerLength =
-            Math.max(
-              0.0001,
-              Math.hypot(
-                dxFromPointer,
-                dyFromPointer
-              )
-            );
-
-          const radialX =
-            dxFromPointer /
-            radialPointerLength;
-
-          const radialY =
-            dyFromPointer /
-            radialPointerLength;
-
           if (
-            modeRef.current ===
-            "surge" &&
-            pointerActive &&
-            pointerDistance <
-              radius *
-                0.95
+            surgeInteraction
           ) {
-            const pull =
-              (
-                1 -
-                clamp(
-                  pointerDistance /
-                    (
-                      radius *
-                      0.95
-                    ),
-                  0,
-                  1
-                )
-              ) *
-              0.0025;
-
             particle.impulseX +=
               radialX *
-              pull;
+              surgePull;
 
             particle.impulseY +=
               radialY *
-              pull;
+              surgePull;
           }
 
           orbitalRadius =
@@ -2218,10 +2300,6 @@ export default function RedMagic({
                 0.08,
               orbitalRadius
             );
-
-          const impulseScale =
-            radius *
-            0.11;
 
           const x =
             centerX +
@@ -2244,31 +2322,22 @@ export default function RedMagic({
             particle.impulseY *
               impulseScale;
 
-          const influenceRadius =
-            radius *
-            PARTICLE_INFLUENCE_FACTOR;
-
-          const influenceRadiusSquared =
-            influenceRadius *
-            influenceRadius;
-
           const localDistanceSquared =
             distanceSquared(
-              pointer.x,
-              pointer.y,
+              pointerX,
+              pointerY,
               x,
               y
             );
 
-          let pointerInfluence =
+          let clampedInfluence =
             0;
 
           if (
-            pointerActive &&
             localDistanceSquared <
-              influenceRadiusSquared
+            influenceRadiusSquared
           ) {
-            pointerInfluence =
+            const pointerInfluence =
               smoothstep(
                 1 -
                   Math.sqrt(
@@ -2277,13 +2346,13 @@ export default function RedMagic({
                     influenceRadius
               ) *
               profile.pointerGain;
-          }
 
-          const clampedInfluence =
-            Math.min(
-              1,
-              pointerInfluence
-            );
+            clampedInfluence =
+              Math.min(
+                1,
+                pointerInfluence
+              );
+          }
 
           const size =
             particle.size *
@@ -2296,11 +2365,9 @@ export default function RedMagic({
             );
 
           context.globalAlpha =
-            0.28 +
+            baseAlpha +
             clampedInfluence *
-              0.42 +
-            charge *
-              0.08;
+              0.42;
 
           context.beginPath();
 
@@ -2677,49 +2744,31 @@ export default function RedMagic({
           modeRef.current
         ];
 
-      /*
- * RED MAGIC idles slowly when nobody is interacting with it.
- *
- * 0.32x = calm autonomous motion.
- * 1.00x = full simulation speed while interacting.
- *
- * The mode's own timeScale is still applied on top:
- *   DRIFT  ≈ 0.55x active
- *   LISTEN = 1.00x active
- *   SURGE  ≈ 1.45x active
- */
-const IDLE_SIMULATION_SCALE =
-  0.32;
+      const interactionScale =
+        pointerActive
+          ? 1
+          : IDLE_SIMULATION_SCALE;
 
-const interactionScale =
-  pointerActive
-    ? 1
-    : IDLE_SIMULATION_SCALE;
+      if (
+        !reducedMotion
+      ) {
+        elapsed +=
+          delta *
+          profile.timeScale *
+          interactionScale;
+      }
 
-if (
-  !reducedMotion
-) {
-  elapsed +=
-    delta *
-    profile.timeScale *
-    interactionScale;
-}
+      const time =
+        reducedMotion
+          ? 0
+          : elapsed;
 
-const time =
-  reducedMotion
-    ? 0
-    : elapsed;
-
-/*
- * Particles, nodes and the rest of the physical animation
- * use the same idle/active multiplier as the main clock.
- */
-const stepDelta =
-  reducedMotion
-    ? 0
-    : delta *
-      profile.timeScale *
-      interactionScale;
+      const stepDelta =
+        reducedMotion
+          ? 0
+          : delta *
+            profile.timeScale *
+            interactionScale;
 
       pointer.x +=
         (
@@ -2760,17 +2809,17 @@ const stepDelta =
         );
 
       if (
-  pointerHeld
-) {
-  charge =
-    clamp(
-      charge +
-        delta *
-          0.00082,
-      0,
-      1
-    );
-}
+        pointerHeld
+      ) {
+        charge =
+          clamp(
+            charge +
+              delta *
+                0.00082,
+            0,
+            1
+          );
+      }
 
       updatePointerGeometry();
 
@@ -2821,7 +2870,6 @@ const stepDelta =
           render
         );
     };
-
 
     const start = () => {
       if (
