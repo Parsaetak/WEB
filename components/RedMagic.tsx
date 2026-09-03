@@ -500,8 +500,7 @@ function createNodeSprite():
   context.arc(
     center,
     center,
-    radius *
-      0.9,
+    radius * 0.9,
     0,
     TAU
   );
@@ -721,6 +720,7 @@ function createCoreSprite():
       alpha:
         0.4
     },
+
     {
       x:
         center +
@@ -736,6 +736,7 @@ function createCoreSprite():
       alpha:
         0.32
     },
+
     {
       x:
         center +
@@ -751,6 +752,7 @@ function createCoreSprite():
       alpha:
         0.3
     },
+
     {
       x:
         center -
@@ -1837,10 +1839,59 @@ export default function RedMagic({
       GridEdge[] =
       [];
 
-    let edgeBuckets =
-      new Uint8Array(
+    /*
+     * Each buffer contains:
+     *
+     *   x1, y1, x2, y2
+     *
+     * for every possible edge slot.
+     *
+     * Buffers are allocated only when the world is
+     * rebuilt and reused for every animation frame.
+     *
+     * This lets drawNetwork() classify every edge
+     * exactly once and then render the five visual
+     * buckets without rescanning gridEdges.
+     */
+    let baselineSegments =
+      new Float32Array(
         0
       );
+
+    let faintSegments =
+      new Float32Array(
+        0
+      );
+
+    let lowSegments =
+      new Float32Array(
+        0
+      );
+
+    let mediumSegments =
+      new Float32Array(
+        0
+      );
+
+    let highSegments =
+      new Float32Array(
+        0
+      );
+
+    let baselineSegmentCount =
+      0;
+
+    let faintSegmentCount =
+      0;
+
+    let lowSegmentCount =
+      0;
+
+    let mediumSegmentCount =
+      0;
+
+    let highSegmentCount =
+      0;
 
     let nodePotential =
       new Float32Array(
@@ -2212,10 +2263,59 @@ export default function RedMagic({
       gridEdges =
         grid.edges;
 
-      edgeBuckets =
-        new Uint8Array(
-          gridEdges.length
+      /*
+       * Four float values per edge:
+       *
+       * x1, y1, x2, y2
+       *
+       * for each of the five buckets.
+       *
+       * These are persistent buffers and therefore
+       * generate no per-frame JavaScript allocations.
+       */
+      const segmentCapacity =
+        gridEdges.length *
+        4;
+
+      baselineSegments =
+        new Float32Array(
+          segmentCapacity
         );
+
+      faintSegments =
+        new Float32Array(
+          segmentCapacity
+        );
+
+      lowSegments =
+        new Float32Array(
+          segmentCapacity
+        );
+
+      mediumSegments =
+        new Float32Array(
+          segmentCapacity
+        );
+
+      highSegments =
+        new Float32Array(
+          segmentCapacity
+        );
+
+      baselineSegmentCount =
+        0;
+
+      faintSegmentCount =
+        0;
+
+      lowSegmentCount =
+        0;
+
+      mediumSegmentCount =
+        0;
+
+      highSegmentCount =
+        0;
 
       nodePotential =
         new Float32Array(
@@ -3938,529 +4038,604 @@ export default function RedMagic({
         1;
     };
 
-    const drawNetwork = (
-      time: number
-    ) => {
-      if (
-        gridNodes.length ===
-        0
-      ) {
-        return;
-      }
-
-      context.lineCap =
-        "round";
-
-      context.lineJoin =
-        "round";
-
-      /*
-       * Phase 3:
-       *
-       * Network edges are classified once into a
-       * preallocated Uint8Array.
-       *
-       * No Path2D objects are allocated during the
-       * animation frame.
-       *
-       * The five buckets preserve the visual hierarchy
-       * while reducing stroke submissions from one per
-       * edge to at most five per frame.
-       */
-
-      let hasBaseline =
-        false;
-
-      let hasFaint =
-        false;
-
-      let hasLow =
-        false;
-
-      let hasMedium =
-        false;
-
-      let hasHigh =
-        false;
-
-      for (
-        let index = 0;
-        index <
-          gridEdges.length;
-        index += 1
-      ) {
-        const edge =
-          gridEdges[index];
-
-        const a =
-          gridNodes[
-            edge.a
-          ];
-
-        const b =
-          gridNodes[
-            edge.b
-          ];
-
-        const energy =
-          (
-            a.energy +
-            b.energy
-          ) *
-          0.5;
-
-        const active =
-          clamp(
-            energy *
-              1.8 +
-              edge.flow *
-                1.4,
-            0,
-            1
-          );
-
-        let bucket =
-          4;
-
+    const drawNetwork =
+      (
+        time: number
+      ) => {
         if (
-          active <
-          0.01
+          gridNodes.length ===
+          0
         ) {
-          bucket =
-            0;
-
-          hasBaseline =
-            true;
-        } else if (
-          active <
-          0.12
-        ) {
-          bucket =
-            1;
-
-          hasFaint =
-            true;
-        } else if (
-          active <
-          0.3
-        ) {
-          bucket =
-            2;
-
-          hasLow =
-            true;
-        } else if (
-          active <
-          0.62
-        ) {
-          bucket =
-            3;
-
-          hasMedium =
-            true;
-        } else {
-          bucket =
-            4;
-
-          hasHigh =
-            true;
+          return;
         }
 
-        edgeBuckets[
-          index
-        ] =
-          bucket;
-      }
+        context.lineCap =
+          "round";
 
-      if (
-        hasBaseline
-      ) {
-        context.beginPath();
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          if (
-            edgeBuckets[
-              index
-            ] !==
-            0
-          ) {
-            continue;
-          }
-
-          const edge =
-            gridEdges[
-              index
-            ];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-        }
-
-        context.globalAlpha =
-          0.012;
-
-        context.lineWidth =
-          0.4;
-
-        context.strokeStyle =
-          "rgba(115, 18, 18, 1)";
-
-        context.stroke();
-      }
-
-      if (
-        hasFaint
-      ) {
-        context.beginPath();
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          if (
-            edgeBuckets[
-              index
-            ] !==
-            1
-          ) {
-            continue;
-          }
-
-          const edge =
-            gridEdges[
-              index
-            ];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-        }
-
-        context.globalAlpha =
-          0.028;
-
-        context.lineWidth =
-          0.46;
-
-        context.strokeStyle =
-          "rgba(255, 70, 52, 1)";
-
-        context.stroke();
-      }
-
-      if (
-        hasLow
-      ) {
-        context.beginPath();
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          if (
-            edgeBuckets[
-              index
-            ] !==
-            2
-          ) {
-            continue;
-          }
-
-          const edge =
-            gridEdges[
-              index
-            ];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-        }
-
-        context.globalAlpha =
-          0.052;
-
-        context.lineWidth =
-          0.56;
-
-        context.strokeStyle =
-          "rgba(255, 70, 52, 1)";
-
-        context.stroke();
-      }
-
-      if (
-        hasMedium
-      ) {
-        context.beginPath();
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          if (
-            edgeBuckets[
-              index
-            ] !==
-            3
-          ) {
-            continue;
-          }
-
-          const edge =
-            gridEdges[
-              index
-            ];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-        }
-
-        context.globalAlpha =
-          0.092;
-
-        context.lineWidth =
-          0.72;
-
-        context.strokeStyle =
-          "rgba(255, 70, 52, 1)";
-
-        context.stroke();
-      }
-
-      if (
-        hasHigh
-      ) {
-        context.beginPath();
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          if (
-            edgeBuckets[
-              index
-            ] !==
-            4
-          ) {
-            continue;
-          }
-
-          const edge =
-            gridEdges[
-              index
-            ];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-        }
-
-        context.globalAlpha =
-          0.13;
-
-        context.lineWidth =
-          1.1;
-
-        context.strokeStyle =
-          "rgba(255, 70, 52, 1)";
-
-        context.stroke();
-      }
-
-      /*
-       * Node rendering:
-       *
-       * The old implementation built a fresh Canvas
-       * arc path for every node every frame.
-       *
-       * The node body is now a cached sprite, scaled
-       * according to its current radius. This removes
-       * the repeated beginPath/arc/fill sequence from
-       * the primary animation hot path.
-       */
-
-      for (
-        let index = 0;
-        index <
-          gridNodes.length;
-        index += 1
-      ) {
-        const node =
-          gridNodes[index];
-
-        const potential =
-          nodePotential[
-            index
-          ];
-
-        const energy =
-          node.energy;
-
-        const localPulse =
-          1 +
-          Math.sin(
-            time *
-              0.003 +
-              node.phase
-          ) *
-            0.12;
-
-        const nodeRadius =
-          (
-            1.5 +
-            energy *
-              4.2 +
-            potential *
-              1.5
-          ) *
-          localPulse;
-
-        const nodeAlpha =
-          clamp(
-            0.24 +
-              energy *
-                0.72 +
-              potential *
-                0.16,
-            0,
-            1
-          );
-
-        drawNodeCore(
-          node.x,
-          node.y,
-          Math.max(
-            1.2,
-            nodeRadius
-          ),
-          nodeAlpha
-        );
+        context.lineJoin =
+          "round";
 
         /*
-         * Keep the existing glow response, but only
-         * invoke it once a node has meaningful energy.
-         * The glow itself is already backed by a cached
-         * sprite.
+         * Phase 4:
+         *
+         * Classify every edge exactly once.
+         *
+         * Each bucket receives its coordinates in a
+         * persistent Float32Array. The render stage then
+         * walks those compact buffers directly.
+         *
+         * This removes:
+         *
+         *   - per-frame Path2D allocations
+         *   - repeated gridEdges scans
+         *   - repeated energy calculations
+         *   - repeated GridNode lookups
+         *
+         * from the bucket rendering stage.
+         */
+
+        baselineSegmentCount =
+          0;
+
+        faintSegmentCount =
+          0;
+
+        lowSegmentCount =
+          0;
+
+        mediumSegmentCount =
+          0;
+
+        highSegmentCount =
+          0;
+
+        for (
+          let index = 0;
+          index <
+            gridEdges.length;
+          index += 1
+        ) {
+          const edge =
+            gridEdges[index];
+
+          const a =
+            gridNodes[
+              edge.a
+            ];
+
+          const b =
+            gridNodes[
+              edge.b
+            ];
+
+          const energy =
+            (
+              a.energy +
+              b.energy
+            ) *
+            0.5;
+
+          const active =
+            clamp(
+              energy *
+                1.8 +
+                edge.flow *
+                  1.4,
+              0,
+              1
+            );
+
+          if (
+            active <
+            0.01
+          ) {
+            const offset =
+              baselineSegmentCount *
+              4;
+
+            baselineSegments[
+              offset
+            ] =
+              a.x;
+
+            baselineSegments[
+              offset + 1
+            ] =
+              a.y;
+
+            baselineSegments[
+              offset + 2
+            ] =
+              b.x;
+
+            baselineSegments[
+              offset + 3
+            ] =
+              b.y;
+
+            baselineSegmentCount +=
+              1;
+
+            continue;
+          }
+
+          if (
+            active <
+            0.12
+          ) {
+            const offset =
+              faintSegmentCount *
+              4;
+
+            faintSegments[
+              offset
+            ] =
+              a.x;
+
+            faintSegments[
+              offset + 1
+            ] =
+              a.y;
+
+            faintSegments[
+              offset + 2
+            ] =
+              b.x;
+
+            faintSegments[
+              offset + 3
+            ] =
+              b.y;
+
+            faintSegmentCount +=
+              1;
+
+            continue;
+          }
+
+          if (
+            active <
+            0.3
+          ) {
+            const offset =
+              lowSegmentCount *
+              4;
+
+            lowSegments[
+              offset
+            ] =
+              a.x;
+
+            lowSegments[
+              offset + 1
+            ] =
+              a.y;
+
+            lowSegments[
+              offset + 2
+            ] =
+              b.x;
+
+            lowSegments[
+              offset + 3
+            ] =
+              b.y;
+
+            lowSegmentCount +=
+              1;
+
+            continue;
+          }
+
+          if (
+            active <
+            0.62
+          ) {
+            const offset =
+              mediumSegmentCount *
+              4;
+
+            mediumSegments[
+              offset
+            ] =
+              a.x;
+
+            mediumSegments[
+              offset + 1
+            ] =
+              a.y;
+
+            mediumSegments[
+              offset + 2
+            ] =
+              b.x;
+
+            mediumSegments[
+              offset + 3
+            ] =
+              b.y;
+
+            mediumSegmentCount +=
+              1;
+
+            continue;
+          }
+
+          const offset =
+            highSegmentCount *
+            4;
+
+          highSegments[
+            offset
+          ] =
+            a.x;
+
+          highSegments[
+            offset + 1
+          ] =
+            a.y;
+
+          highSegments[
+            offset + 2
+          ] =
+            b.x;
+
+          highSegments[
+            offset + 3
+          ] =
+            b.y;
+
+          highSegmentCount +=
+            1;
+        }
+
+        /*
+         * Baseline bucket.
          */
         if (
-          energy >
-          0.018
+          baselineSegmentCount >
+          0
         ) {
-          drawGlow(
+          context.beginPath();
+
+          let offset =
+            0;
+
+          for (
+            let index = 0;
+            index <
+              baselineSegmentCount;
+            index += 1
+          ) {
+            context.moveTo(
+              baselineSegments[
+                offset
+              ],
+              baselineSegments[
+                offset + 1
+              ]
+            );
+
+            context.lineTo(
+              baselineSegments[
+                offset + 2
+              ],
+              baselineSegments[
+                offset + 3
+              ]
+            );
+
+            offset +=
+              4;
+          }
+
+          context.globalAlpha =
+            0.012;
+
+          context.lineWidth =
+            0.4;
+
+          context.strokeStyle =
+            "rgba(115, 18, 18, 1)";
+
+          context.stroke();
+        }
+
+        /*
+         * Faint bucket.
+         */
+        if (
+          faintSegmentCount >
+          0
+        ) {
+          context.beginPath();
+
+          let offset =
+            0;
+
+          for (
+            let index = 0;
+            index <
+              faintSegmentCount;
+            index += 1
+          ) {
+            context.moveTo(
+              faintSegments[
+                offset
+              ],
+              faintSegments[
+                offset + 1
+              ]
+            );
+
+            context.lineTo(
+              faintSegments[
+                offset + 2
+              ],
+              faintSegments[
+                offset + 3
+              ]
+            );
+
+            offset +=
+              4;
+          }
+
+          context.globalAlpha =
+            0.028;
+
+          context.lineWidth =
+            0.46;
+
+          context.strokeStyle =
+            "rgba(255, 70, 52, 1)";
+
+          context.stroke();
+        }
+
+        /*
+         * Low bucket.
+         */
+        if (
+          lowSegmentCount >
+          0
+        ) {
+          context.beginPath();
+
+          let offset =
+            0;
+
+          for (
+            let index = 0;
+            index <
+              lowSegmentCount;
+            index += 1
+          ) {
+            context.moveTo(
+              lowSegments[
+                offset
+              ],
+              lowSegments[
+                offset + 1
+              ]
+            );
+
+            context.lineTo(
+              lowSegments[
+                offset + 2
+              ],
+              lowSegments[
+                offset + 3
+              ]
+            );
+
+            offset +=
+              4;
+          }
+
+          context.globalAlpha =
+            0.052;
+
+          context.lineWidth =
+            0.56;
+
+          context.strokeStyle =
+            "rgba(255, 70, 52, 1)";
+
+          context.stroke();
+        }
+
+        /*
+         * Medium bucket.
+         */
+        if (
+          mediumSegmentCount >
+          0
+        ) {
+          context.beginPath();
+
+          let offset =
+            0;
+
+          for (
+            let index = 0;
+            index <
+              mediumSegmentCount;
+            index += 1
+          ) {
+            context.moveTo(
+              mediumSegments[
+                offset
+              ],
+              mediumSegments[
+                offset + 1
+              ]
+            );
+
+            context.lineTo(
+              mediumSegments[
+                offset + 2
+              ],
+              mediumSegments[
+                offset + 3
+              ]
+            );
+
+            offset +=
+              4;
+          }
+
+          context.globalAlpha =
+            0.092;
+
+          context.lineWidth =
+            0.72;
+
+          context.strokeStyle =
+            "rgba(255, 70, 52, 1)";
+
+          context.stroke();
+        }
+
+        /*
+         * High bucket.
+         */
+        if (
+          highSegmentCount >
+          0
+        ) {
+          context.beginPath();
+
+          let offset =
+            0;
+
+          for (
+            let index = 0;
+            index <
+              highSegmentCount;
+            index += 1
+          ) {
+            context.moveTo(
+              highSegments[
+                offset
+              ],
+              highSegments[
+                offset + 1
+              ]
+            );
+
+            context.lineTo(
+              highSegments[
+                offset + 2
+              ],
+              highSegments[
+                offset + 3
+              ]
+            );
+
+            offset +=
+              4;
+          }
+
+          context.globalAlpha =
+            0.13;
+
+          context.lineWidth =
+            1.1;
+
+          context.strokeStyle =
+            "rgba(255, 70, 52, 1)";
+
+          context.stroke();
+        }
+
+        /*
+         * Network nodes.
+         *
+         * Node bodies use the cached sprite instead of
+         * constructing a fresh arc path each frame.
+         */
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[index];
+
+          const potential =
+            nodePotential[
+              index
+            ];
+
+          const energy =
+            node.energy;
+
+          const localPulse =
+            1 +
+            Math.sin(
+              time *
+                0.003 +
+                node.phase
+            ) *
+              0.12;
+
+          const nodeRadius =
+            (
+              1.5 +
+              energy *
+                4.2 +
+              potential *
+                1.5
+            ) *
+            localPulse;
+
+          const nodeAlpha =
+            clamp(
+              0.24 +
+                energy *
+                  0.72 +
+                potential *
+                  0.16,
+              0,
+              1
+            );
+
+          drawNodeCore(
             node.x,
             node.y,
-            0,
-            nodeRadius *
-              (
-                3.2 +
-                energy *
-                  2
-              ),
-            0.028 +
-              energy *
-                0.07
+            Math.max(
+              1.2,
+              nodeRadius
+            ),
+            nodeAlpha
           );
-        }
-      }
 
-      context.globalAlpha =
-        1;
-    };
+          if (
+            energy >
+            0.018
+          ) {
+            drawGlow(
+              node.x,
+              node.y,
+              0,
+              nodeRadius *
+                (
+                  3.2 +
+                  energy *
+                    2
+                ),
+              0.028 +
+                energy *
+                  0.07
+            );
+          }
+        }
+
+        context.globalAlpha =
+          1;
+      };
 
     const drawInteraction =
       () => {
