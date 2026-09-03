@@ -315,6 +315,9 @@ const GRID_POINTER_RADIUS =
 const GRID_POINTER_CONTRIBUTION =
   0.025;
 
+const MAX_NETWORK_INFLUENCES =
+  14;
+
 const CORE_ROTATION_SPEED =
   0.00008;
 
@@ -640,11 +643,6 @@ function createCoreSprite():
 
   context.clip();
 
-  /*
-   * Irregular darker solar regions.
-   * Their asymmetry is what makes
-   * the slow core rotation visible.
-   */
   const spots = [
     {
       x:
@@ -926,7 +924,8 @@ function createBoundary(
         (
           index /
           count
-        ) * TAU;
+        ) *
+        TAU;
 
       return {
         sin:
@@ -1047,7 +1046,8 @@ function buildFlowGeometry(
       (
         flowIndex /
         flowCount
-      ) * TAU;
+      ) *
+      TAU;
 
     directions[
       flowIndex
@@ -1058,7 +1058,10 @@ function buildFlowGeometry(
 
     const flowOffset =
       flowIndex *
-      (segments + 1);
+      (
+        segments +
+        1
+      );
 
     for (
       let segment = 0;
@@ -1087,7 +1090,8 @@ function buildFlowGeometry(
         pointIndex
       ] =
         0.12 +
-        progress * 0.67;
+        progress *
+          0.67;
 
       anglePhaseSin[
         pointIndex
@@ -1543,7 +1547,8 @@ function buildGlobalPotentialWeights(
       weights[
         index * count +
           otherIndex
-      ] = weight;
+      ] =
+        weight;
 
       total +=
         weight;
@@ -1635,27 +1640,36 @@ export default function RedMagic({
       | IntersectionObserver
       | null = null;
 
-    let visible = true;
+    let visible =
+      true;
 
     let documentVisible =
       document.visibilityState ===
       "visible";
 
-    let width = 1;
+    let width =
+      1;
 
-    let height = 1;
+    let height =
+      1;
 
-    let centerX = 0;
+    let centerX =
+      0;
 
-    let centerY = 0;
+    let centerY =
+      0;
 
-    let radius = 1;
+    let radius =
+      1;
 
-    let dpr = 1;
+    let dpr =
+      1;
 
-    let elapsed = 0;
+    let elapsed =
+      0;
 
-    let lastTimestamp = 0;
+    let lastTimestamp =
+      0;
 
     let pointer: Point = {
       x: 0,
@@ -1719,10 +1733,14 @@ export default function RedMagic({
     let interactionTurbulence =
       0;
 
-    let charge = 0;
+    let charge =
+      0;
 
     let pointerHeld =
       false;
+
+    let averageGridEnergy =
+      0;
 
     let qualityName:
       QualityName =
@@ -1739,13 +1757,16 @@ export default function RedMagic({
       );
 
     let particles:
-      RedMagicParticle[] = [];
+      RedMagicParticle[] =
+      [];
 
     let gridNodes:
-      GridNode[] = [];
+      GridNode[] =
+      [];
 
     let gridEdges:
-      GridEdge[] = [];
+      GridEdge[] =
+      [];
 
     let nodePotential =
       new Float32Array(
@@ -1768,15 +1789,32 @@ export default function RedMagic({
       );
 
     let membraneBoundary:
-      BoundaryPoint[] = [];
+      BoundaryPoint[] =
+      [];
 
-    let boundaryNetworkWeights =
+    let boundaryNetworkNodeIndices =
+      new Int16Array(
+        0
+      );
+
+    let boundaryNetworkNodeWeights =
       new Float32Array(
         0
       );
 
+    let boundaryNetworkResidualWeights =
+      new Float32Array(
+        0
+      );
+
+    let boundaryNetworkInfluenceCounts =
+      new Uint8Array(
+        0
+      );
+
     let shockwaves:
-      Shockwave[] = [];
+      Shockwave[] =
+      [];
 
     const shockwaveRadialInfluence =
       new Float32Array(
@@ -1798,9 +1836,11 @@ export default function RedMagic({
         MAX_SHOCKWAVES
       );
 
-    let canvasRectLeft = 0;
+    let canvasRectLeft =
+      0;
 
-    let canvasRectTop = 0;
+    let canvasRectTop =
+      0;
 
     let performanceSampleTime =
       0;
@@ -1828,10 +1868,32 @@ export default function RedMagic({
         const nodeCount =
           gridNodes.length;
 
-        const weights =
+        const influenceCapacity =
+          Math.min(
+            MAX_NETWORK_INFLUENCES,
+            nodeCount
+          );
+
+        const nodeIndices =
+          new Int16Array(
+            boundaryCount *
+              influenceCapacity
+          );
+
+        const influenceWeights =
           new Float32Array(
             boundaryCount *
-              nodeCount
+              influenceCapacity
+          );
+
+        const residualWeights =
+          new Float32Array(
+            boundaryCount
+          );
+
+        const influenceCounts =
+          new Uint8Array(
+            boundaryCount
           );
 
         for (
@@ -1853,9 +1915,25 @@ export default function RedMagic({
             point.sin *
             0.9;
 
-          const rowOffset =
-            boundaryIndex *
-            nodeCount;
+          const selectedIndices =
+            new Int16Array(
+              influenceCapacity
+            );
+
+          const selectedWeights =
+            new Float32Array(
+              influenceCapacity
+            );
+
+          selectedIndices.fill(
+            -1
+          );
+
+          let totalWeight =
+            0;
+
+          let selectedWeight =
+            0;
 
           for (
             let nodeIndex = 0;
@@ -1882,21 +1960,149 @@ export default function RedMagic({
                 dy
               );
 
-            weights[
-              rowOffset +
-                nodeIndex
-            ] =
+            const weight =
               0.004 /
               (
                 1 +
                 distance *
                   3.5
               );
+
+            totalWeight +=
+              weight;
+
+            let insertionIndex =
+              influenceCapacity;
+
+            for (
+              let slot = 0;
+              slot <
+                influenceCapacity;
+              slot += 1
+            ) {
+              if (
+                weight >
+                selectedWeights[
+                  slot
+                ]
+              ) {
+                insertionIndex =
+                  slot;
+
+                break;
+              }
+            }
+
+            if (
+              insertionIndex >=
+              influenceCapacity
+            ) {
+              continue;
+            }
+
+            for (
+              let slot =
+                influenceCapacity -
+                1;
+              slot >
+                insertionIndex;
+              slot -= 1
+            ) {
+              selectedWeights[
+                slot
+              ] =
+                selectedWeights[
+                  slot - 1
+                ];
+
+              selectedIndices[
+                slot
+              ] =
+                selectedIndices[
+                  slot - 1
+                ];
+            }
+
+            selectedWeights[
+              insertionIndex
+            ] =
+              weight;
+
+            selectedIndices[
+              insertionIndex
+            ] =
+              nodeIndex;
           }
+
+          const rowOffset =
+            boundaryIndex *
+            influenceCapacity;
+
+          for (
+            let slot = 0;
+            slot <
+              influenceCapacity;
+            slot += 1
+          ) {
+            const nodeIndex =
+              selectedIndices[
+                slot
+              ];
+
+            if (
+              nodeIndex <
+              0
+            ) {
+              continue;
+            }
+
+            const weight =
+              selectedWeights[
+                slot
+              ];
+
+            nodeIndices[
+              rowOffset +
+                slot
+            ] =
+              nodeIndex;
+
+            influenceWeights[
+              rowOffset +
+                slot
+            ] =
+              weight;
+
+            selectedWeight +=
+              weight;
+          }
+
+          influenceCounts[
+            boundaryIndex
+          ] =
+            influenceCapacity;
+
+          residualWeights[
+            boundaryIndex
+          ] =
+            Math.max(
+              0,
+              totalWeight -
+                selectedWeight
+            );
         }
 
-        boundaryNetworkWeights =
-          weights;
+        boundaryNetworkNodeIndices =
+          nodeIndices;
+
+        boundaryNetworkNodeWeights =
+          influenceWeights;
+
+        boundaryNetworkResidualWeights =
+          residualWeights;
+
+        boundaryNetworkInfluenceCounts =
+          influenceCounts;
       };
 
     const buildWorld = (
@@ -1972,6 +2178,9 @@ export default function RedMagic({
 
       shockwaves =
         [];
+
+      averageGridEnergy =
+        0;
 
       lastQualityChange =
         performance.now();
@@ -3081,6 +3290,9 @@ export default function RedMagic({
         pointerInfluenceRadius *
         pointerInfluenceRadius;
 
+      let totalGridEnergy =
+        0;
+
       for (
         let index = 0;
         index <
@@ -3161,6 +3373,9 @@ export default function RedMagic({
             GRID_MAX_NODE_ENERGY
           );
 
+        totalGridEnergy +=
+          node.energy;
+
         node.velocity *=
           0.96;
 
@@ -3173,6 +3388,12 @@ export default function RedMagic({
             0.01;
         }
       }
+
+      averageGridEnergy =
+        gridNodes.length > 0
+          ? totalGridEnergy /
+            gridNodes.length
+          : 0;
     };
 
     const prepareShockwaveFrame =
@@ -3270,15 +3491,8 @@ export default function RedMagic({
 
     const getBoundaryRadius = (
       point:
-        BoundaryPoint,
-      time: number
+        BoundaryPoint
     ) => {
-      /*
-       * The four spatial harmonics are cached on every
-       * BoundaryPoint. Their temporal phases are also
-       * computed once per frame before membrane drawing.
-       */
-
       const primaryWave =
         (
           point.sin3 *
@@ -3382,27 +3596,52 @@ export default function RedMagic({
             0.008
         );
 
+      const influenceCapacity =
+        Math.min(
+          MAX_NETWORK_INFLUENCES,
+          gridNodes.length
+        );
+
       let networkDeformation =
-        0;
+        averageGridEnergy *
+        boundaryNetworkResidualWeights[
+          point.fieldIndex
+        ];
 
-      const nodeCount =
-        gridNodes.length;
-
-      const rowOffset =
+      const networkOffset =
         point.fieldIndex *
-        nodeCount;
+        influenceCapacity;
+
+      const influenceCount =
+        boundaryNetworkInfluenceCounts[
+          point.fieldIndex
+        ];
 
       for (
         let index = 0;
-        index < nodeCount;
+        index <
+          influenceCount;
         index += 1
       ) {
+        const nodeIndex =
+          boundaryNetworkNodeIndices[
+            networkOffset +
+              index
+          ];
+
+        if (
+          nodeIndex <
+          0
+        ) {
+          continue;
+        }
+
         networkDeformation +=
           gridNodes[
-            index
+            nodeIndex
           ].energy *
-          boundaryNetworkWeights[
-            rowOffset +
+          boundaryNetworkNodeWeights[
+            networkOffset +
               index
           ];
       }
@@ -3966,8 +4205,7 @@ export default function RedMagic({
 
         const normalizedRadius =
           getBoundaryRadius(
-            point,
-            time
+            point
           ) *
           radius;
 
@@ -4290,9 +4528,6 @@ export default function RedMagic({
         ) *
           0.012;
 
-      let totalGridEnergy =
-        0;
-
       let highestGridEnergy =
         0;
 
@@ -4307,21 +4542,12 @@ export default function RedMagic({
             index
           ].energy;
 
-        totalGridEnergy +=
-          energy;
-
         highestGridEnergy =
           Math.max(
             highestGridEnergy,
             energy
           );
       }
-
-      const averageGridEnergy =
-        gridNodes.length > 0
-          ? totalGridEnergy /
-            gridNodes.length
-          : 0;
 
       const activePulse =
         pointerEnergy *
@@ -4379,11 +4605,6 @@ export default function RedMagic({
         ) *
         solarBreathing;
 
-      /*
-       * Keep the solar body's position fixed.
-       * Its movement is entirely internal through
-       * rotation, layer motion and breathing scale.
-       */
       const coreRotation =
         time *
         CORE_ROTATION_SPEED;
@@ -4557,10 +4778,6 @@ export default function RedMagic({
             0.05
       );
 
-      /*
-       * The central core is deliberately
-       * kept red/white-red.
-       */
       context.fillStyle =
         "rgba(255, 220, 205, 0.92)";
 
