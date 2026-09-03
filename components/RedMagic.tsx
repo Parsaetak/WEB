@@ -22,13 +22,24 @@ type Point = {
 };
 
 type Particle = {
-  angle: number;
-  radius: number;
-  speed: number;
+  x: number;
+  y: number;
+
+  spawnX: number;
+  spawnY: number;
+
+  velocityX: number;
+  velocityY: number;
+
   size: number;
   phase: number;
-  orbit: number;
   drift: number;
+  twinkle: number;
+
+  hue: number;
+  saturation: number;
+  lightness: number;
+  hueDrift: number;
 
   impulseX: number;
   impulseY: number;
@@ -265,9 +276,6 @@ const MAX_SHOCKWAVES =
 const SHOCKWAVE_DURATION =
   820;
 
-const PARTICLE_INFLUENCE_FACTOR =
-  0.62;
-
 const IDLE_SIMULATION_SCALE =
   0.32;
 
@@ -290,31 +298,64 @@ const GRID_FLOW_LIMIT =
   0.16;
 
 /*
- * Particle visibility is intentionally distance based.
+ * Particle visibility.
  *
- * Close particles stay bright.
- * Mid-range particles gradually fade.
- * Far particles become effectively invisible.
- *
- * The values are normalized against the RED MAGIC radius.
+ * Unlike the previous implementation,
+ * distant particles never completely
+ * disappear. They become smaller,
+ * softer and quieter, allowing the
+ * magical field to exist across the
+ * entire canvas.
  */
 const PARTICLE_VISIBILITY_START =
-  0.38;
+  0.12;
 
 const PARTICLE_VISIBILITY_END =
-  0.88;
+  1.15;
 
 const PARTICLE_VISIBILITY_POWER =
-  1.35;
+  1.2;
 
 const PARTICLE_MIN_VISIBLE_ALPHA =
-  0.008;
+  0.028;
+
+const PARTICLE_EDGE_MIN_ALPHA =
+  0.12;
+
+const PARTICLE_EDGE_SIZE_SCALE =
+  0.5;
+
+const PARTICLE_DRIFT_SCALE =
+  0.0009;
+
+const PARTICLE_WRAP_MARGIN =
+  80;
 
 const GRID_POINTER_RADIUS =
   0.72;
 
 const GRID_POINTER_CONTRIBUTION =
   0.025;
+
+/*
+ * A deliberately varied but coherent
+ * magical coding palette.
+ *
+ * Red remains dominant because the core
+ * and computational substrate are RED MAGIC.
+ */
+const PARTICLE_HUES = [
+  0,
+  8,
+  22,
+  42,
+  190,
+  212,
+  252,
+  282,
+  315,
+  336
+];
 
 function clamp(
   value: number,
@@ -362,6 +403,52 @@ function distanceSquared(
   return (
     dx * dx +
     dy * dy
+  );
+}
+
+function createRandomGenerator(
+  seed: number
+) {
+  let state =
+    seed >>> 0;
+
+  return () => {
+    state =
+      (
+        state *
+          1664525 +
+        1013904223
+      ) >>> 0;
+
+    return (
+      state /
+      4294967296
+    );
+  };
+}
+
+function createPageSeed() {
+  const now =
+    Date.now();
+
+  const performanceSeed =
+    Math.floor(
+      performance.now() *
+        1000
+    );
+
+  /*
+   * The page-open timestamp is the
+   * primary source of entropy.
+   */
+  return (
+    (
+      now ^
+      performanceSeed ^
+      (
+        now >>> 7
+      )
+    ) >>> 0
   );
 }
 
@@ -523,72 +610,107 @@ function createCoreSprite():
 }
 
 function createParticles(
-  count: number
+  count: number,
+  seed: number
 ): Particle[] {
+  const random =
+    createRandomGenerator(
+      seed
+    );
+
   return Array.from(
     {
       length:
         count
     },
-    (
-      _,
-      index
-    ) => ({
-      angle:
-        (
-          index /
-          Math.max(
-            1,
-            count
-          )
-        ) *
-          TAU +
-        Math.random() *
-          0.35,
+    () => {
+      const hueIndex =
+        Math.floor(
+          random() *
+            PARTICLE_HUES.length
+        );
 
-      radius:
-        0.18 +
-        Math.random() *
-          0.7,
+      const baseHue =
+        PARTICLE_HUES[
+          hueIndex
+        ];
 
-      speed:
-        (
-          0.08 +
-          Math.random() *
-            0.22
-        ) *
-        (
-          Math.random() >
-          0.5
-            ? 1
-            : -1
-        ),
+      return {
+        x:
+          random(),
 
-      size:
-        0.7 +
-        Math.random() *
-          1.8,
+        y:
+          random(),
 
-      phase:
-        Math.random() *
-        TAU,
+        spawnX:
+          random(),
 
-      orbit:
-        0.75 +
-        Math.random() *
-          0.45,
+        spawnY:
+          random(),
 
-      drift:
-        0.15 +
-        Math.random() *
-          0.45,
+        velocityX:
+          (
+            random() -
+            0.5
+          ) *
+          0.06,
 
-      impulseX:
-        0,
+        velocityY:
+          (
+            random() -
+            0.5
+          ) *
+          0.06,
 
-      impulseY:
-        0
-    })
+        size:
+          0.38 +
+          random() *
+            1.45,
+
+        phase:
+          random() *
+          TAU,
+
+        drift:
+          0.35 +
+          random() *
+            1.15,
+
+        twinkle:
+          0.6 +
+          random() *
+            1.6,
+
+        hue:
+          baseHue +
+          (
+            random() -
+            0.5
+          ) *
+            12,
+
+        saturation:
+          74 +
+          random() *
+            20,
+
+        lightness:
+          58 +
+          random() *
+            22,
+
+        hueDrift:
+          3 +
+          random() *
+            12,
+
+        impulseX:
+          0,
+
+        impulseY:
+          0
+      };
+    }
   );
 }
 
@@ -1094,6 +1216,9 @@ export default function RedMagic({
       return;
     }
 
+    const pageSeed =
+      createPageSeed();
+
     const glowSprite =
       createGlowSprite();
 
@@ -1256,9 +1381,23 @@ export default function RedMagic({
       quality =
         QUALITY[name];
 
+      /*
+       * Add a deterministic offset from
+       * the page-open seed whenever the
+       * quality is rebuilt, preventing
+       * every quality level from using
+       * exactly the same arrangement.
+       */
       particles =
         createParticles(
-          quality.particles
+          quality.particles,
+          (
+            pageSeed +
+            quality.gridSize *
+              1009 +
+            quality.particles *
+              9176
+          ) >>> 0
         );
 
       const grid =
@@ -1439,6 +1578,31 @@ export default function RedMagic({
           centerY +
           node.homeY *
             radius;
+      }
+
+      for (
+        let index = 0;
+        index <
+          particles.length;
+        index += 1
+      ) {
+        const particle =
+          particles[index];
+
+        if (
+          particle.x <=
+            0 &&
+          particle.y <=
+            0
+        ) {
+          particle.x =
+            particle.spawnX *
+            width;
+
+          particle.y =
+            particle.spawnY *
+            height;
+        }
       }
     };
 
@@ -1647,7 +1811,7 @@ export default function RedMagic({
           (
             0.24 +
             detail.proximity *
-              PARTICLE_INFLUENCE_FACTOR
+              0.62
           );
 
         const influenceRadiusSquared =
@@ -1671,30 +1835,12 @@ export default function RedMagic({
           const particle =
             particles[index];
 
-          const orbitalRadius =
-            radius *
-            particle.radius;
-
-          const x =
-            centerX +
-            Math.cos(
-              particle.angle
-            ) *
-              orbitalRadius;
-
-          const y =
-            centerY +
-            Math.sin(
-              particle.angle
-            ) *
-              orbitalRadius;
-
           const dx =
-            x -
+            particle.x -
             detail.x;
 
           const dy =
-            y -
+            particle.y -
             detail.y;
 
           const localDistanceSquared =
@@ -2870,11 +3016,8 @@ export default function RedMagic({
           );
 
         /*
-         * The network is intentionally subtle.
-         *
-         * These lines provide structure,
-         * but the core, particles and active
-         * energy events remain visually dominant.
+         * The network remains a subtle
+         * computational skeleton.
          */
         if (
           active <
@@ -3370,16 +3513,14 @@ export default function RedMagic({
       time: number,
       delta: number
     ) => {
-      const step =
-        delta *
-        0.0009 *
+      const deltaScale =
+        delta /
         16;
 
       const impulseDecay =
         Math.pow(
           0.91,
-          delta /
-            16
+          deltaScale
         );
 
       const pointerActiveNow =
@@ -3396,13 +3537,9 @@ export default function RedMagic({
           radius *
             0.95;
 
-      const impulseScale =
-        radius *
-        0.11;
-
       const influenceRadius =
         radius *
-        PARTICLE_INFLUENCE_FACTOR;
+        0.62;
 
       const influenceRadiusSquared =
         influenceRadius *
@@ -3465,13 +3602,19 @@ export default function RedMagic({
       }
 
       const baseAlpha =
-        0.28 +
+        0.22 +
         charge *
           0.08;
 
-      context.fillStyle =
-        "rgb(255, 72, 55)";
-
+      /*
+       * The particles are now independent
+       * from the central orbit.
+       *
+       * Their spawn positions cover the
+       * complete canvas, while the motion
+       * field remains quiet enough that the
+       * core still dominates the composition.
+       */
       for (
         let index = 0;
         index <
@@ -3487,93 +3630,152 @@ export default function RedMagic({
         particle.impulseY *=
           impulseDecay;
 
-        particle.angle +=
-          particle.speed *
-          (
-            1 +
-            pointerEnergy *
-              1.8 +
-            interactionTurbulence *
-              0.6
-          ) *
-          step;
-
-        const breathing =
-          1 +
+        const waveX =
           Math.sin(
             time *
-              0.0013 *
+              PARTICLE_DRIFT_SCALE *
               particle.drift +
               particle.phase
           ) *
-            0.055;
+          0.0028;
 
-        let orbitalRadius =
-          radius *
-          particle.radius *
-          breathing *
-          particle.orbit;
-
-        const swirl =
-          Math.sin(
+        const waveY =
+          Math.cos(
             time *
-              0.0007 +
-              particle.phase
+              PARTICLE_DRIFT_SCALE *
+              (
+                particle.drift *
+                0.82
+              ) +
+              particle.phase *
+                1.37
           ) *
-          radius *
-          0.02;
+          0.0028;
+
+        particle.velocityX +=
+          waveX *
+          deltaScale;
+
+        particle.velocityY +=
+          waveY *
+          deltaScale;
 
         if (
           surgeInteraction
         ) {
-          particle.impulseX +=
+          particle.velocityX +=
             radialX *
             surgePull;
 
-          particle.impulseY +=
+          particle.velocityY +=
             radialY *
             surgePull;
         }
 
-        orbitalRadius =
-          Math.max(
-            radius *
-              0.08,
-            orbitalRadius
+        const damping =
+          Math.pow(
+            0.985,
+            deltaScale
           );
 
-        const x =
-          centerX +
-          Math.cos(
-            particle.angle
-          ) *
-            orbitalRadius +
-          swirl +
+        particle.velocityX *=
+          damping;
+
+        particle.velocityY *=
+          damping;
+
+        particle.x +=
+          particle.velocityX *
+          deltaScale;
+
+        particle.y +=
+          particle.velocityY *
+          deltaScale;
+
+        particle.x +=
           particle.impulseX *
-            impulseScale;
+          0.003 *
+          deltaScale;
 
-        const y =
-          centerY +
-          Math.sin(
-            particle.angle
-          ) *
-            orbitalRadius +
-          swirl *
-            0.55 +
+        particle.y +=
           particle.impulseY *
-            impulseScale;
+          0.003 *
+          deltaScale;
 
-        const normalizedDistance =
-          orbitalRadius /
-          Math.max(
-            radius,
-            1
+        /*
+         * Wrap particles instead of respawning
+         * them abruptly. This keeps the field
+         * continuous and avoids visible resets.
+         */
+        if (
+          particle.x <
+          -PARTICLE_WRAP_MARGIN
+        ) {
+          particle.x =
+            width +
+            PARTICLE_WRAP_MARGIN;
+        } else if (
+          particle.x >
+          width +
+            PARTICLE_WRAP_MARGIN
+        ) {
+          particle.x =
+            -PARTICLE_WRAP_MARGIN;
+        }
+
+        if (
+          particle.y <
+          -PARTICLE_WRAP_MARGIN
+        ) {
+          particle.y =
+            height +
+            PARTICLE_WRAP_MARGIN;
+        } else if (
+          particle.y >
+          height +
+            PARTICLE_WRAP_MARGIN
+        ) {
+          particle.y =
+            -PARTICLE_WRAP_MARGIN;
+        }
+
+        /*
+         * Normalized distance from the central
+         * RED MAGIC core.
+         */
+        const normalizedCenterDistance =
+          Math.min(
+            1.6,
+            Math.hypot(
+              (
+                particle.x -
+                centerX
+              ) /
+                Math.max(
+                  width *
+                    0.5,
+                  1
+                ),
+              (
+                particle.y -
+                centerY
+              ) /
+                Math.max(
+                  height *
+                    0.5,
+                  1
+                )
+            )
           );
 
+        /*
+         * Distant particles fade, but never
+         * disappear completely.
+         */
         const visibilityProgress =
           clamp(
             (
-              normalizedDistance -
+              normalizedCenterDistance -
               PARTICLE_VISIBILITY_START
             ) /
               (
@@ -3585,21 +3787,42 @@ export default function RedMagic({
           );
 
         const radialVisibility =
-          Math.pow(
-            1 -
-              smoothstep(
-                visibilityProgress
-              ),
-            PARTICLE_VISIBILITY_POWER
+          clamp(
+            Math.pow(
+              1 -
+                smoothstep(
+                  visibilityProgress
+                ),
+              PARTICLE_VISIBILITY_POWER
+            ),
+            0,
+            1
           );
 
-        if (
-          radialVisibility <=
-          PARTICLE_MIN_VISIBLE_ALPHA
-        ) {
-          continue;
-        }
+        const stableVisibility =
+          PARTICLE_EDGE_MIN_ALPHA +
+          radialVisibility *
+            (
+              1 -
+              PARTICLE_EDGE_MIN_ALPHA
+            );
 
+        /*
+         * Natural twinkle.
+         */
+        const twinkle =
+          0.82 +
+          Math.sin(
+            time *
+              0.0025 *
+              particle.twinkle +
+              particle.phase
+          ) *
+            0.18;
+
+        /*
+         * Local pointer influence.
+         */
         let interactionVisibility =
           0;
 
@@ -3610,15 +3833,15 @@ export default function RedMagic({
             distanceSquared(
               pointerX,
               pointerY,
-              x,
-              y
+              particle.x,
+              particle.y
             );
 
           if (
             localDistanceSquared <
             influenceRadiusSquared
           ) {
-            const pointerInfluence =
+            interactionVisibility =
               smoothstep(
                 1 -
                   Math.sqrt(
@@ -3627,28 +3850,30 @@ export default function RedMagic({
                     influenceRadius
               ) *
               profile.pointerGain;
-
-            interactionVisibility =
-              Math.min(
-                1,
-                pointerInfluence
-              );
           }
         }
 
+        /*
+         * Small outer particles stay tiny.
+         * Inner particles can bloom slightly.
+         */
+        const sizeScale =
+          PARTICLE_EDGE_SIZE_SCALE +
+          radialVisibility *
+            (
+              1 -
+              PARTICLE_EDGE_SIZE_SCALE
+            );
+
         const size =
           particle.size *
+          sizeScale *
           (
             1 +
             interactionVisibility *
-              0.75 +
+              0.7 +
             charge *
-              0.16
-          ) *
-          (
-            0.72 +
-            radialVisibility *
-              0.28
+              0.12
           );
 
         const alpha =
@@ -3657,11 +3882,8 @@ export default function RedMagic({
             interactionVisibility *
               0.42
           ) *
-          (
-            0.15 +
-            radialVisibility *
-              0.85
-          );
+          stableVisibility *
+          twinkle;
 
         if (
           alpha <=
@@ -3670,19 +3892,48 @@ export default function RedMagic({
           continue;
         }
 
+        /*
+         * Colors slowly breathe while
+         * remaining inside the selected
+         * magical palette.
+         */
+        const hue =
+          (
+            particle.hue +
+            Math.sin(
+              time *
+                0.00055 +
+                particle.phase
+            ) *
+              particle.hueDrift
+          ) %
+          360;
+
         context.globalAlpha =
           clamp(
             alpha,
-            0,
+            PARTICLE_MIN_VISIBLE_ALPHA,
             1
           );
+
+        context.fillStyle =
+          `hsl(${(
+            hue + 360
+          ) % 360}, ${
+            particle.saturation
+          }%, ${
+            particle.lightness
+          }%)`;
 
         context.beginPath();
 
         context.arc(
-          x,
-          y,
-          size,
+          particle.x,
+          particle.y,
+          Math.max(
+            0.35,
+            size
+          ),
           0,
           TAU
         );
@@ -3768,6 +4019,9 @@ export default function RedMagic({
           activePulse
         );
 
+      /*
+       * Core remains exclusively red.
+       */
       drawGlow(
         centerX,
         centerY,
@@ -4225,6 +4479,20 @@ export default function RedMagic({
         height
       );
 
+      /*
+       * Render order:
+       *
+       * 1. Interaction field
+       * 2. Membrane
+       * 3. Computational network
+       * 4. Energy flows
+       * 5. Red core
+       * 6. Magical particles
+       *
+       * The final particle layer lets the
+       * colored micro-field float above the
+       * deeper red computational structure.
+       */
       drawInteraction();
 
       drawMembrane(
@@ -4490,7 +4758,7 @@ export default function RedMagic({
     <div
       className={styles.root}
       role="img"
-      aria-label="Interactive RED MAGIC interconnected living energy grid"
+      aria-label="Interactive RED MAGIC interconnected living energy field"
     >
       <canvas
         ref={canvasRef}
