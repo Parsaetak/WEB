@@ -5818,27 +5818,15 @@ export default function RedMagic({
             profile.timeScale *
             interactionScale;
 
-      pointer.x +=
-        (
-          pointerTarget.x -
-          pointer.x
-        ) *
-        Math.min(
-          1,
-          delta *
-            profile.responseLag
-        );
+      // Keep the canvas interaction light locked to the real pointer position.
+// The interaction layer and native cursor already follow the pointer
+// directly, so an additional interpolation here creates visible
+// synchronization error and makes the light feel detached from the cursor.
+      pointer.x =
+        pointerTarget.x;
 
-      pointer.y +=
-        (
-          pointerTarget.y -
-          pointer.y
-        ) *
-        Math.min(
-          1,
-          delta *
-            profile.responseLag
-        );
+      pointer.y =
+        pointerTarget.y;
 
       const targetEnergy =
         pointerActive
