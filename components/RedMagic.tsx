@@ -72,6 +72,12 @@ type Shockwave = {
   strength: number;
 };
 
+type ShockwaveFrameState = {
+  progress: number;
+  radialInfluence: number;
+  angularCoefficient: number;
+};
+
 type QualityName =
   | "high"
   | "medium"
@@ -1138,6 +1144,10 @@ export default function RedMagic({
     let shockwaves:
       Shockwave[] = [];
 
+    let shockwaveFrameStates:
+      ShockwaveFrameState[] =
+      [];
+
     let canvasRectLeft = 0;
 
     let canvasRectTop = 0;
@@ -1306,6 +1316,9 @@ export default function RedMagic({
       buildBoundaryNetworkWeights();
 
       shockwaves =
+        [];
+
+      shockwaveFrameStates =
         [];
 
       lastQualityChange =
@@ -2493,6 +2506,92 @@ export default function RedMagic({
       }
     };
 
+    const prepareShockwaveFrame =
+      () => {
+        const shockwaveCount =
+          shockwaves.length;
+
+        shockwaveFrameStates.length =
+          shockwaveCount;
+
+        if (
+          shockwaveCount ===
+          0
+        ) {
+          return;
+        }
+
+        const pointRadius =
+          radius *
+          0.9;
+
+        const widthFactor =
+          radius *
+          0.11;
+
+        const widthSquared =
+          Math.max(
+            1,
+            widthFactor *
+              widthFactor
+          );
+
+        for (
+          let index = 0;
+          index <
+            shockwaveCount;
+          index += 1
+        ) {
+          const shockwave =
+            shockwaves[index];
+
+          const progress =
+            clamp(
+              shockwave.age /
+                SHOCKWAVE_DURATION,
+              0,
+              1
+            );
+
+          const currentRadius =
+            radius *
+            (
+              0.08 +
+              progress *
+                1.05
+            );
+
+          const waveOffset =
+            pointRadius -
+            currentRadius;
+
+          const radialInfluence =
+            Math.exp(
+              -(
+                waveOffset *
+                waveOffset
+              ) /
+                widthSquared
+            );
+
+          shockwaveFrameStates[
+            index
+          ] = {
+            progress,
+
+            radialInfluence,
+
+            angularCoefficient:
+              (
+                1 -
+                progress
+              ) *
+              shockwave.strength *
+              0.1352
+          };
+        }
+      };
+
     const getBoundaryRadius = (
       point:
         BoundaryPoint,
@@ -2623,33 +2722,53 @@ export default function RedMagic({
       let shockwaveDeformation =
         0;
 
+      const boundarySin =
+        point.sin;
+
+      const boundaryCos =
+        point.cos;
+
+      const shockwaveCount =
+        shockwaves.length;
+
       for (
         let index = 0;
         index <
-          shockwaves.length;
+          shockwaveCount;
         index += 1
       ) {
         const shockwave =
           shockwaves[index];
 
-        const progress =
-          clamp(
-            shockwave.age /
-              SHOCKWAVE_DURATION,
-            0,
-            1
-          );
+        const frameState =
+          shockwaveFrameStates[
+            index
+          ];
+
+        const deltaSin =
+          boundarySin *
+            Math.cos(
+              shockwave.angle
+            ) -
+          boundaryCos *
+            Math.sin(
+              shockwave.angle
+            );
+
+        const deltaCos =
+          boundaryCos *
+            Math.cos(
+              shockwave.angle
+            ) +
+          boundarySin *
+            Math.sin(
+              shockwave.angle
+            );
 
         const delta =
           Math.atan2(
-            Math.sin(
-              point.angle -
-                shockwave.angle
-            ),
-            Math.cos(
-              point.angle -
-                shockwave.angle
-            )
+            deltaSin,
+            deltaCos
           );
 
         const angularInfluence =
@@ -2661,51 +2780,10 @@ export default function RedMagic({
               0.34
           );
 
-        const currentRadius =
-          radius *
-          (
-            0.08 +
-            progress *
-              1.05
-          );
-
-        const pointRadius =
-          radius *
-          0.9;
-
-        const waveOffset =
-          pointRadius -
-          currentRadius;
-
-        const widthFactor =
-          radius *
-          0.11;
-
-        const widthSquared =
-          Math.max(
-            1,
-            widthFactor *
-              widthFactor
-          );
-
-        const radialInfluence =
-          Math.exp(
-            -(
-              waveOffset *
-              waveOffset
-            ) /
-              widthSquared
-          );
-
         shockwaveDeformation +=
-          radialInfluence *
+          frameState.radialInfluence *
           angularInfluence *
-          (
-            1 -
-            progress
-          ) *
-          shockwave.strength *
-          0.1352;
+          frameState.angularCoefficient;
       }
 
       return (
@@ -3126,6 +3204,8 @@ export default function RedMagic({
     const drawMembrane = (
       time: number
     ) => {
+      prepareShockwaveFrame();
+
       context.beginPath();
 
       for (
