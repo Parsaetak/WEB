@@ -308,6 +308,18 @@ const GRID_POINTER_RADIUS =
 const GRID_POINTER_CONTRIBUTION =
   0.025;
 
+const CORE_ROTATION_SPEED =
+  0.00008;
+
+const CORE_DETAIL_ROTATION_SPEED =
+  0.000125;
+
+const CORE_MOVEMENT_SPEED =
+  0.00135;
+
+const CORE_MOVEMENT_AMPLITUDE =
+  0.014;
+
 function clamp(
   value: number,
   min: number,
@@ -352,7 +364,8 @@ function distanceSquared(
     ay - by;
 
   return (
-    dx * dx + dy * dy
+    dx * dx +
+    dy * dy
   );
 }
 
@@ -427,6 +440,87 @@ function createGlowSprite():
   return sprite;
 }
 
+function drawCoreFilament(
+  context: CanvasRenderingContext2D,
+  center: number,
+  radius: number,
+  startAngle: number,
+  length: number,
+  bend: number,
+  width: number,
+  alpha: number
+) {
+  context.beginPath();
+
+  const segments = 18;
+
+  for (
+    let index = 0;
+    index <= segments;
+    index += 1
+  ) {
+    const progress =
+      index /
+      segments;
+
+    const angle =
+      startAngle +
+      progress *
+        length;
+
+    const radial =
+      radius *
+      (
+        0.34 +
+        progress *
+          0.52 +
+        Math.sin(
+          progress *
+            Math.PI *
+            2
+        ) *
+          bend
+      );
+
+    const x =
+      center +
+      Math.cos(
+        angle
+      ) *
+        radial;
+
+    const y =
+      center +
+      Math.sin(
+        angle
+      ) *
+        radial;
+
+    if (
+      index ===
+      0
+    ) {
+      context.moveTo(
+        x,
+        y
+      );
+    } else {
+      context.lineTo(
+        x,
+        y
+      );
+    }
+  }
+
+  context.lineWidth =
+    width;
+
+  context.strokeStyle =
+    `rgba(255, 205, 180, ${alpha})`;
+
+  context.stroke();
+}
+
 function createCoreSprite():
   HTMLCanvasElement | null {
   if (
@@ -460,44 +554,58 @@ function createCoreSprite():
     CORE_SPRITE_SIZE *
     0.5;
 
+  const radius =
+    CORE_SPRITE_SIZE *
+    0.5;
+
   const gradient =
     context.createRadialGradient(
       center -
         CORE_SPRITE_SIZE *
-          0.09,
+          0.1,
       center -
         CORE_SPRITE_SIZE *
-          0.1,
+          0.12,
       CORE_SPRITE_SIZE *
-        0.04,
+        0.045,
       center,
       center,
-      center
+      radius
     );
 
   gradient.addColorStop(
     0,
-    "rgba(255, 115, 95, 0.96)"
+    "rgba(255, 245, 235, 0.98)"
   );
 
   gradient.addColorStop(
-    0.16,
-    "rgba(255, 48, 35, 0.95)"
+    0.11,
+    "rgba(255, 115, 95, 0.99)"
   );
 
   gradient.addColorStop(
-    0.48,
-    "rgba(185, 10, 10, 0.78)"
+    0.28,
+    "rgba(255, 52, 35, 0.98)"
   );
 
   gradient.addColorStop(
-    0.78,
-    "rgba(85, 0, 0, 0.28)"
+    0.52,
+    "rgba(205, 16, 10, 0.92)"
+  );
+
+  gradient.addColorStop(
+    0.76,
+    "rgba(105, 0, 0, 0.62)"
+  );
+
+  gradient.addColorStop(
+    0.9,
+    "rgba(48, 0, 0, 0.28)"
   );
 
   gradient.addColorStop(
     1,
-    "rgba(20, 0, 0, 0)"
+    "rgba(12, 0, 0, 0)"
   );
 
   context.fillStyle =
@@ -509,6 +617,288 @@ function createCoreSprite():
     CORE_SPRITE_SIZE,
     CORE_SPRITE_SIZE
   );
+
+  context.save();
+
+  context.beginPath();
+
+  context.arc(
+    center,
+    center,
+    radius *
+      0.91,
+    0,
+    TAU
+  );
+
+  context.clip();
+
+  /*
+   * Irregular darker solar regions.
+   * Their asymmetry is what makes
+   * the slow core rotation visible.
+   */
+  const spots = [
+    {
+      x:
+        center -
+        radius *
+          0.31,
+      y:
+        center -
+        radius *
+          0.18,
+      radius:
+        radius *
+        0.075,
+      alpha:
+        0.4
+    },
+    {
+      x:
+        center +
+        radius *
+          0.23,
+      y:
+        center -
+        radius *
+          0.31,
+      radius:
+        radius *
+        0.048,
+      alpha:
+        0.32
+    },
+    {
+      x:
+        center +
+        radius *
+          0.34,
+      y:
+        center +
+        radius *
+          0.19,
+      radius:
+        radius *
+        0.067,
+      alpha:
+        0.3
+    },
+    {
+      x:
+        center -
+        radius *
+          0.16,
+      y:
+        center +
+        radius *
+          0.34,
+      radius:
+        radius *
+        0.045,
+      alpha:
+        0.26
+    }
+  ];
+
+  for (
+    let index = 0;
+    index < spots.length;
+    index += 1
+  ) {
+    const spot =
+      spots[index];
+
+    const spotGradient =
+      context.createRadialGradient(
+        spot.x,
+        spot.y,
+        0,
+        spot.x,
+        spot.y,
+        spot.radius
+      );
+
+    spotGradient.addColorStop(
+      0,
+      `rgba(48, 0, 0, ${spot.alpha})`
+    );
+
+    spotGradient.addColorStop(
+      0.68,
+      `rgba(120, 0, 0, ${
+        spot.alpha *
+        0.5
+      })`
+    );
+
+    spotGradient.addColorStop(
+      1,
+      "rgba(190, 0, 0, 0)"
+    );
+
+    context.fillStyle =
+      spotGradient;
+
+    context.beginPath();
+
+    context.arc(
+      spot.x,
+      spot.y,
+      spot.radius,
+      0,
+      TAU
+    );
+
+    context.fill();
+  }
+
+  drawCoreFilament(
+    context,
+    center,
+    radius,
+    -2.55,
+    1.4,
+    0.026,
+    2.1,
+    0.28
+  );
+
+  drawCoreFilament(
+    context,
+    center,
+    radius,
+    -0.75,
+    1.18,
+    0.022,
+    1.6,
+    0.22
+  );
+
+  drawCoreFilament(
+    context,
+    center,
+    radius,
+    0.65,
+    1.28,
+    0.028,
+    1.8,
+    0.2
+  );
+
+  drawCoreFilament(
+    context,
+    center,
+    radius,
+    2.35,
+    1.05,
+    0.02,
+    1.5,
+    0.18
+  );
+
+  context.restore();
+
+  return sprite;
+}
+
+function createCoreDetailSprite():
+  HTMLCanvasElement | null {
+  if (
+    typeof document ===
+    "undefined"
+  ) {
+    return null;
+  }
+
+  const sprite =
+    document.createElement(
+      "canvas"
+    );
+
+  sprite.width =
+    CORE_SPRITE_SIZE;
+
+  sprite.height =
+    CORE_SPRITE_SIZE;
+
+  const context =
+    sprite.getContext(
+      "2d"
+    );
+
+  if (!context) {
+    return null;
+  }
+
+  const center =
+    CORE_SPRITE_SIZE *
+    0.5;
+
+  const radius =
+    CORE_SPRITE_SIZE *
+    0.5;
+
+  context.save();
+
+  context.beginPath();
+
+  context.arc(
+    center,
+    center,
+    radius *
+      0.84,
+    0,
+    TAU
+  );
+
+  context.clip();
+
+  drawCoreFilament(
+    context,
+    center,
+    radius,
+    -1.9,
+    1.7,
+    0.035,
+    1.35,
+    0.25
+  );
+
+  drawCoreFilament(
+    context,
+    center,
+    radius,
+    -0.12,
+    1.42,
+    0.032,
+    1.15,
+    0.2
+  );
+
+  drawCoreFilament(
+    context,
+    center,
+    radius,
+    1.15,
+    1.52,
+    0.028,
+    1.45,
+    0.22
+  );
+
+  drawCoreFilament(
+    context,
+    center,
+    radius,
+    2.75,
+    1.32,
+    0.026,
+    1.1,
+    0.18
+  );
+
+  context.restore();
 
   return sprite;
 }
@@ -1175,6 +1565,9 @@ export default function RedMagic({
 
     const coreSprite =
       createCoreSprite();
+
+    const coreDetailSprite =
+      createCoreDetailSprite();
 
     const reduceMotionQuery =
       window.matchMedia(
@@ -3586,14 +3979,6 @@ export default function RedMagic({
             phaseSin *
             angleAmplitude;
 
-          /*
-           * The angular perturbation is always
-           * very small (< ~0.07 rad), so the
-           * third-order sine and second-order
-           * cosine approximations are more than
-           * accurate enough while avoiding two
-           * trig calls per segment.
-           */
           const angleOffsetSquared =
             angleOffset *
             angleOffset;
@@ -3768,13 +4153,61 @@ export default function RedMagic({
         highestGridEnergy *
           0.035;
 
+      const solarBreathing =
+        1 +
+        Math.sin(
+          time *
+            CORE_MOVEMENT_SPEED
+        ) *
+          CORE_MOVEMENT_AMPLITUDE +
+        Math.sin(
+          time *
+            0.0029
+        ) *
+          0.004;
+
+      const movementEnergy =
+        clamp(
+          (
+            pointerEnergy *
+              0.08 +
+            charge *
+              0.12 +
+            averageGridEnergy *
+              0.035 +
+            interactionTurbulence *
+              0.03
+          ) *
+            profile.coreGain,
+          0,
+          0.18
+        );
+
       const coreRadius =
         radius *
         0.49 *
         (
           pulse +
           activePulse
-        );
+        ) *
+        solarBreathing;
+
+      /*
+       * Keep the solar body's position fixed.
+       * Its movement is entirely internal through
+       * rotation, layer motion and breathing scale.
+       */
+      const coreRotation =
+        time *
+        CORE_ROTATION_SPEED;
+
+      const detailRotation =
+        time *
+        CORE_DETAIL_ROTATION_SPEED;
+
+      const dynamicScale =
+        1 +
+        movementEnergy;
 
       drawGlow(
         centerX,
@@ -3782,7 +4215,11 @@ export default function RedMagic({
         coreRadius *
           0.08,
         coreRadius *
-          1.75,
+          (
+            1.72 +
+            movementEnergy *
+              1.8
+          ),
         0.11 +
           pointerEnergy *
             0.04 *
@@ -3790,7 +4227,9 @@ export default function RedMagic({
           charge *
             0.035 +
           averageGridEnergy *
-            0.04
+            0.04 +
+          movementEnergy *
+            0.09
       );
 
       if (
@@ -3817,20 +4256,84 @@ export default function RedMagic({
       if (
         coreSprite
       ) {
+        context.save();
+
         context.globalAlpha =
           1;
 
+        context.translate(
+          centerX,
+          centerY
+        );
+
+        context.rotate(
+          coreRotation
+        );
+
+        context.scale(
+          dynamicScale,
+          dynamicScale
+        );
+
         context.drawImage(
           coreSprite,
-          centerX -
-            coreRadius,
-          centerY -
-            coreRadius,
+          -coreRadius,
+          -coreRadius,
           coreRadius *
             2,
           coreRadius *
             2
         );
+
+        context.restore();
+      }
+
+      if (
+        coreDetailSprite
+      ) {
+        context.save();
+
+        context.globalAlpha =
+          0.42 +
+          pointerEnergy *
+            0.14 +
+          interactionTurbulence *
+            0.1 +
+          charge *
+            0.08;
+
+        context.translate(
+          centerX,
+          centerY
+        );
+
+        context.rotate(
+          detailRotation
+        );
+
+        context.scale(
+          1 +
+            movementEnergy *
+              0.45,
+          1 +
+            movementEnergy *
+              0.45
+        );
+
+        context.drawImage(
+          coreDetailSprite,
+          -coreRadius,
+          -coreRadius,
+          coreRadius *
+            2,
+          coreRadius *
+            2
+        );
+
+        context.restore();
+
+        context.globalAlpha =
+          1;
       }
 
       const nucleusRadius =
@@ -3846,7 +4349,9 @@ export default function RedMagic({
           charge *
             0.25 +
           averageGridEnergy *
-            0.12
+            0.12 +
+          movementEnergy *
+            0.35
         );
 
       drawGlow(
@@ -3860,7 +4365,9 @@ export default function RedMagic({
           pointerEnergy *
             0.05 +
           averageGridEnergy *
-            0.04
+            0.04 +
+          movementEnergy *
+            0.05
       );
 
       /*
@@ -3868,7 +4375,7 @@ export default function RedMagic({
        * kept red/white-red.
        */
       context.fillStyle =
-        "rgba(255, 205, 190, 0.9)";
+        "rgba(255, 220, 205, 0.92)";
 
       context.beginPath();
 
@@ -3879,7 +4386,12 @@ export default function RedMagic({
         centerY -
           nucleusRadius *
             0.17,
-        nucleusRadius,
+        nucleusRadius *
+          (
+            1 +
+            movementEnergy *
+              0.3
+          ),
         0,
         TAU
       );
