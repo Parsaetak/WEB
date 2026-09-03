@@ -376,7 +376,8 @@ function distanceSquared(
     ay - by;
 
   return (
-    dx * dx + dy * dy
+    dx * dx +
+    dy * dy
   );
 }
 
@@ -463,7 +464,8 @@ function drawCoreFilament(
 ) {
   context.beginPath();
 
-  const segments = 18;
+  const segments =
+    18;
 
   for (
     let index = 0;
@@ -1993,7 +1995,8 @@ export default function RedMagic({
 
             for (
               let slot =
-                influenceCapacity - 1;
+                influenceCapacity -
+                1;
               slot >
                 insertionIndex;
               slot -= 1
@@ -3816,6 +3819,38 @@ export default function RedMagic({
       context.lineJoin =
         "round";
 
+      /*
+       * Phase 3:
+       * Batch network edges into fixed visual
+       * intensity buckets so the expensive Canvas
+       * stroke submission happens only a handful of
+       * times per frame instead of once per edge.
+       *
+       * The bucket thresholds preserve the existing
+       * visual hierarchy:
+       *
+       * 0 = inactive baseline
+       * 1 = faint
+       * 2 = low
+       * 3 = medium
+       * 4 = high
+       */
+
+      const baselinePath =
+        new Path2D();
+
+      const faintPath =
+        new Path2D();
+
+      const lowPath =
+        new Path2D();
+
+      const mediumPath =
+        new Path2D();
+
+      const highPath =
+        new Path2D();
+
       for (
         let index = 0;
         index <
@@ -3856,43 +3891,145 @@ export default function RedMagic({
           active <
           0.01
         ) {
-          context.globalAlpha =
-            0.012;
+          baselinePath.moveTo(
+            a.x,
+            a.y
+          );
 
-          context.lineWidth =
-            0.4;
+          baselinePath.lineTo(
+            b.x,
+            b.y
+          );
 
-          context.strokeStyle =
-            "rgba(115, 18, 18, 1)";
-        } else {
-          context.globalAlpha =
-            0.018 +
-            active *
-              0.12;
-
-          context.lineWidth =
-            0.5 +
-            active *
-              0.75;
-
-          context.strokeStyle =
-            "rgba(255, 70, 52, 1)";
+          continue;
         }
 
-        context.beginPath();
+        if (
+          active <
+          0.12
+        ) {
+          faintPath.moveTo(
+            a.x,
+            a.y
+          );
 
-        context.moveTo(
+          faintPath.lineTo(
+            b.x,
+            b.y
+          );
+
+          continue;
+        }
+
+        if (
+          active <
+          0.3
+        ) {
+          lowPath.moveTo(
+            a.x,
+            a.y
+          );
+
+          lowPath.lineTo(
+            b.x,
+            b.y
+          );
+
+          continue;
+        }
+
+        if (
+          active <
+          0.62
+        ) {
+          mediumPath.moveTo(
+            a.x,
+            a.y
+          );
+
+          mediumPath.lineTo(
+            b.x,
+            b.y
+          );
+
+          continue;
+        }
+
+        highPath.moveTo(
           a.x,
           a.y
         );
 
-        context.lineTo(
+        highPath.lineTo(
           b.x,
           b.y
         );
-
-        context.stroke();
       }
+
+      context.globalAlpha =
+        0.012;
+
+      context.lineWidth =
+        0.4;
+
+      context.strokeStyle =
+        "rgba(115, 18, 18, 1)";
+
+      context.stroke(
+        baselinePath
+      );
+
+      context.globalAlpha =
+        0.028;
+
+      context.lineWidth =
+        0.46;
+
+      context.strokeStyle =
+        "rgba(255, 70, 52, 1)";
+
+      context.stroke(
+        faintPath
+      );
+
+      context.globalAlpha =
+        0.052;
+
+      context.lineWidth =
+        0.56;
+
+      context.strokeStyle =
+        "rgba(255, 70, 52, 1)";
+
+      context.stroke(
+        lowPath
+      );
+
+      context.globalAlpha =
+        0.092;
+
+      context.lineWidth =
+        0.72;
+
+      context.strokeStyle =
+        "rgba(255, 70, 52, 1)";
+
+      context.stroke(
+        mediumPath
+      );
+
+      context.globalAlpha =
+        0.13;
+
+      context.lineWidth =
+        1.1;
+
+      context.strokeStyle =
+        "rgba(255, 70, 52, 1)";
+
+      context.stroke(
+        highPath
+      );
 
       for (
         let index = 0;
@@ -4055,7 +4192,9 @@ export default function RedMagic({
           index += 1
         ) {
           const shockwave =
-            shockwaves[index];
+            shockwaves[
+              index
+            ];
 
           const progress =
             clamp(
