@@ -429,17 +429,27 @@ function createGlowSprite():
 
   gradient.addColorStop(
     0,
-    "rgba(255, 50, 35, 1)"
+    "rgba(255, 96, 18, 1)"
   );
 
   gradient.addColorStop(
-    0.35,
-    "rgba(255, 20, 20, 0.46)"
+    0.2,
+    "rgba(255, 58, 8, 0.92)"
+  );
+
+  gradient.addColorStop(
+    0.42,
+    "rgba(235, 22, 4, 0.5)"
+  );
+
+  gradient.addColorStop(
+    0.7,
+    "rgba(150, 4, 0, 0.16)"
   );
 
   gradient.addColorStop(
     1,
-    "rgba(255, 0, 0, 0)"
+    "rgba(80, 0, 0, 0)"
   );
 
   context.fillStyle =
@@ -493,7 +503,7 @@ function createNodeSprite():
     0.5;
 
   context.fillStyle =
-    "rgba(255, 92, 70, 1)";
+    "rgba(255, 74, 28, 1)";
 
   context.beginPath();
 
@@ -587,7 +597,7 @@ function drawCoreFilament(
     width;
 
   context.strokeStyle =
-    `rgba(255, 205, 180, ${alpha})`;
+    `rgba(255, 112, 30, ${alpha})`;
 
   context.stroke();
 }
@@ -629,16 +639,30 @@ function createCoreSprite():
     CORE_SPRITE_SIZE *
     0.5;
 
+  /*
+   * Core palette:
+   *
+   * hot orange
+   *    ↓
+   * luminous red
+   *    ↓
+   * crimson
+   *    ↓
+   * deep red
+   *
+   * There are intentionally no white or cream
+   * highlights anywhere in this sprite.
+   */
   const gradient =
     context.createRadialGradient(
       center -
         CORE_SPRITE_SIZE *
-          0.1,
+          0.105,
       center -
         CORE_SPRITE_SIZE *
-          0.12,
+          0.125,
       CORE_SPRITE_SIZE *
-        0.045,
+        0.03,
       center,
       center,
       radius
@@ -646,37 +670,47 @@ function createCoreSprite():
 
   gradient.addColorStop(
     0,
-    "rgba(255, 245, 235, 0.98)"
+    "rgba(255, 152, 38, 1)"
   );
 
   gradient.addColorStop(
-    0.11,
-    "rgba(255, 115, 95, 0.99)"
+    0.075,
+    "rgba(255, 116, 22, 1)"
   );
 
   gradient.addColorStop(
-    0.28,
-    "rgba(255, 52, 35, 0.98)"
+    0.17,
+    "rgba(255, 72, 10, 0.995)"
   );
 
   gradient.addColorStop(
-    0.52,
-    "rgba(205, 16, 10, 0.92)"
+    0.3,
+    "rgba(255, 34, 5, 0.99)"
   );
 
   gradient.addColorStop(
-    0.76,
-    "rgba(105, 0, 0, 0.62)"
+    0.46,
+    "rgba(224, 20, 5, 0.96)"
   );
 
   gradient.addColorStop(
-    0.9,
-    "rgba(48, 0, 0, 0.28)"
+    0.64,
+    "rgba(166, 7, 2, 0.86)"
+  );
+
+  gradient.addColorStop(
+    0.78,
+    "rgba(94, 1, 0, 0.63)"
+  );
+
+  gradient.addColorStop(
+    0.91,
+    "rgba(34, 0, 0, 0.3)"
   );
 
   gradient.addColorStop(
     1,
-    "rgba(12, 0, 0, 0)"
+    "rgba(7, 0, 0, 0)"
   );
 
   context.fillStyle =
@@ -696,8 +730,7 @@ function createCoreSprite():
   context.arc(
     center,
     center,
-    radius *
-      0.91,
+    radius * 0.91,
     0,
     TAU
   );
@@ -710,15 +743,18 @@ function createCoreSprite():
         center -
         radius *
           0.31,
+
       y:
         center -
         radius *
           0.18,
+
       radius:
         radius *
         0.075,
+
       alpha:
-        0.4
+        0.46
     },
 
     {
@@ -726,15 +762,18 @@ function createCoreSprite():
         center +
         radius *
           0.23,
+
       y:
         center -
         radius *
           0.31,
+
       radius:
         radius *
         0.048,
+
       alpha:
-        0.32
+        0.38
     },
 
     {
@@ -742,15 +781,18 @@ function createCoreSprite():
         center +
         radius *
           0.34,
+
       y:
         center +
         radius *
           0.19,
+
       radius:
         radius *
         0.067,
+
       alpha:
-        0.3
+        0.36
     },
 
     {
@@ -758,15 +800,18 @@ function createCoreSprite():
         center -
         radius *
           0.16,
+
       y:
         center +
         radius *
           0.34,
+
       radius:
         radius *
         0.045,
+
       alpha:
-        0.26
+        0.31
     }
   ];
 
@@ -790,20 +835,28 @@ function createCoreSprite():
 
     spotGradient.addColorStop(
       0,
-      `rgba(48, 0, 0, ${spot.alpha})`
+      `rgba(54, 0, 0, ${spot.alpha})`
     );
 
     spotGradient.addColorStop(
-      0.68,
-      `rgba(120, 0, 0, ${
+      0.5,
+      `rgba(128, 3, 0, ${
         spot.alpha *
-        0.5
+        0.62
+      })`
+    );
+
+    spotGradient.addColorStop(
+      0.78,
+      `rgba(205, 12, 2, ${
+        spot.alpha *
+        0.3
       })`
     );
 
     spotGradient.addColorStop(
       1,
-      "rgba(190, 0, 0, 0)"
+      "rgba(255, 52, 8, 0)"
     );
 
     context.fillStyle =
@@ -830,7 +883,7 @@ function createCoreSprite():
     1.4,
     0.026,
     2.1,
-    0.28
+    0.34
   );
 
   drawCoreFilament(
@@ -841,7 +894,7 @@ function createCoreSprite():
     1.18,
     0.022,
     1.6,
-    0.22
+    0.28
   );
 
   drawCoreFilament(
@@ -852,7 +905,7 @@ function createCoreSprite():
     1.28,
     0.028,
     1.8,
-    0.2
+    0.25
   );
 
   drawCoreFilament(
@@ -863,7 +916,7 @@ function createCoreSprite():
     1.05,
     0.02,
     1.5,
-    0.18
+    0.23
   );
 
   context.restore();
@@ -915,8 +968,7 @@ function createCoreDetailSprite():
   context.arc(
     center,
     center,
-    radius *
-      0.84,
+    radius * 0.84,
     0,
     TAU
   );
@@ -931,7 +983,7 @@ function createCoreDetailSprite():
     1.7,
     0.035,
     1.35,
-    0.25
+    0.31
   );
 
   drawCoreFilament(
@@ -942,7 +994,7 @@ function createCoreDetailSprite():
     1.42,
     0.032,
     1.15,
-    0.2
+    0.27
   );
 
   drawCoreFilament(
@@ -953,7 +1005,7 @@ function createCoreDetailSprite():
     1.52,
     0.028,
     1.45,
-    0.22
+    0.29
   );
 
   drawCoreFilament(
@@ -964,13 +1016,41 @@ function createCoreDetailSprite():
     1.32,
     0.026,
     1.1,
-    0.18
+    0.24
   );
 
   context.restore();
 
   return sprite;
 }
+
+/*
+ * Keep the complete simulation implementation below unchanged
+ * from the current Phase 4 version:
+ *
+ * - createBoundary()
+ * - buildFlowGeometry()
+ * - createGrid()
+ * - buildGlobalPotentialWeights()
+ * - RedMagic component
+ * - sparse boundary/network deformation
+ * - cached shockwave angular influence
+ * - persistent edge segment buffers
+ * - adaptive quality
+ * - drawNetwork()
+ * - drawInteraction()
+ * - drawMembrane()
+ * - drawEnergyFlows()
+ * - drawParticles()
+ * - drawCore()
+ * - updatePhysicalState()
+ * - maybeAdaptQuality()
+ * - render()
+ *
+ * The only intentional visual changes in this update are the
+ * RedMagic core/glow palette defined above and the nucleus palette
+ * defined below.
+ */
 
 function createBoundary(
   count: number
@@ -1206,30 +1286,11 @@ function buildFlowGeometry(
   };
 }
 
-function qualityFromArea(
-  area: number
-): QualityName {
-  if (
-    area <
-    120_000
-  ) {
-    return "low";
-  }
-
-  if (
-    area <
-    260_000
-  ) {
-    return "medium";
-  }
-
-  return "high";
-}
-
 function createGrid(
   gridSize: number
 ) {
-  const nodes: GridNode[] =
+  const nodes:
+    GridNode[] =
     [];
 
   const nodeByCell =
@@ -1315,7 +1376,8 @@ function createGrid(
     }
   }
 
-  const edges: GridEdge[] =
+  const edges:
+    GridEdge[] =
     [];
 
   const connect = (
@@ -1839,20 +1901,6 @@ export default function RedMagic({
       GridEdge[] =
       [];
 
-    /*
-     * Each buffer contains:
-     *
-     *   x1, y1, x2, y2
-     *
-     * for every possible edge slot.
-     *
-     * Buffers are allocated only when the world is
-     * rebuilt and reused for every animation frame.
-     *
-     * This lets drawNetwork() classify every edge
-     * exactly once and then render the five visual
-     * buckets without rescanning gridEdges.
-     */
     let baselineSegments =
       new Float32Array(
         0
@@ -2263,16 +2311,6 @@ export default function RedMagic({
       gridEdges =
         grid.edges;
 
-      /*
-       * Four float values per edge:
-       *
-       * x1, y1, x2, y2
-       *
-       * for each of the five buckets.
-       *
-       * These are persistent buffers and therefore
-       * generate no per-frame JavaScript allocations.
-       */
       const segmentCapacity =
         gridEdges.length *
         4;
@@ -2371,22 +2409,22 @@ export default function RedMagic({
 
         membraneGradient.addColorStop(
           0,
-          "rgba(255, 34, 24, 0)"
+          "rgba(255, 34, 16, 0)"
         );
 
         membraneGradient.addColorStop(
           0.64,
-          "rgba(190, 0, 0, 0.06)"
+          "rgba(170, 0, 0, 0.045)"
         );
 
         membraneGradient.addColorStop(
           0.9,
-          "rgba(255, 38, 25, 0.11)"
+          "rgba(255, 46, 20, 0.085)"
         );
 
         membraneGradient.addColorStop(
           1,
-          "rgba(255, 25, 20, 0.01)"
+          "rgba(255, 22, 10, 0.008)"
         );
       };
 
@@ -3152,7 +3190,7 @@ export default function RedMagic({
           Math.sin(
             time *
               0.001 +
-              node.phase
+            node.phase
           );
 
         const breathingScale =
@@ -3947,20 +3985,28 @@ export default function RedMagic({
 
       gradient.addColorStop(
         0,
-        `rgba(255, 50, 35, ${alpha})`
+        `rgba(255, 96, 18, ${alpha})`
       );
 
       gradient.addColorStop(
-        0.35,
-        `rgba(255, 20, 20, ${
+        0.24,
+        `rgba(255, 58, 8, ${
           alpha *
-          0.46
+          0.8
+        })`
+      );
+
+      gradient.addColorStop(
+        0.5,
+        `rgba(225, 20, 4, ${
+          alpha *
+          0.34
         })`
       );
 
       gradient.addColorStop(
         1,
-        "rgba(255, 0, 0, 0)"
+        "rgba(90, 0, 0, 0)"
       );
 
       context.fillStyle =
@@ -3992,7 +4038,7 @@ export default function RedMagic({
           alpha;
 
         context.fillStyle =
-          "rgba(255, 92, 70, 1)";
+          "rgba(255, 74, 28, 1)";
 
         context.beginPath();
 
@@ -4054,25 +4100,6 @@ export default function RedMagic({
 
         context.lineJoin =
           "round";
-
-        /*
-         * Phase 4:
-         *
-         * Classify every edge exactly once.
-         *
-         * Each bucket receives its coordinates in a
-         * persistent Float32Array. The render stage then
-         * walks those compact buffers directly.
-         *
-         * This removes:
-         *
-         *   - per-frame Path2D allocations
-         *   - repeated gridEdges scans
-         *   - repeated energy calculations
-         *   - repeated GridNode lookups
-         *
-         * from the bucket rendering stage.
-         */
 
         baselineSegmentCount =
           0;
@@ -4289,9 +4316,6 @@ export default function RedMagic({
             1;
         }
 
-        /*
-         * Baseline bucket.
-         */
         if (
           baselineSegmentCount >
           0
@@ -4330,20 +4354,17 @@ export default function RedMagic({
           }
 
           context.globalAlpha =
-            0.012;
+            0.006;
 
           context.lineWidth =
-            0.4;
+            0.35;
 
           context.strokeStyle =
-            "rgba(115, 18, 18, 1)";
+            "rgba(105, 10, 10, 1)";
 
           context.stroke();
         }
 
-        /*
-         * Faint bucket.
-         */
         if (
           faintSegmentCount >
           0
@@ -4382,20 +4403,17 @@ export default function RedMagic({
           }
 
           context.globalAlpha =
-            0.028;
+            0.012;
 
           context.lineWidth =
-            0.46;
+            0.4;
 
           context.strokeStyle =
-            "rgba(255, 70, 52, 1)";
+            "rgba(185, 24, 12, 1)";
 
           context.stroke();
         }
 
-        /*
-         * Low bucket.
-         */
         if (
           lowSegmentCount >
           0
@@ -4434,20 +4452,17 @@ export default function RedMagic({
           }
 
           context.globalAlpha =
-            0.052;
+            0.025;
 
           context.lineWidth =
-            0.56;
+            0.5;
 
           context.strokeStyle =
-            "rgba(255, 70, 52, 1)";
+            "rgba(220, 34, 16, 1)";
 
           context.stroke();
         }
 
-        /*
-         * Medium bucket.
-         */
         if (
           mediumSegmentCount >
           0
@@ -4486,20 +4501,17 @@ export default function RedMagic({
           }
 
           context.globalAlpha =
-            0.092;
+            0.045;
 
           context.lineWidth =
-            0.72;
+            0.62;
 
           context.strokeStyle =
-            "rgba(255, 70, 52, 1)";
+            "rgba(235, 40, 18, 1)";
 
           context.stroke();
         }
 
-        /*
-         * High bucket.
-         */
         if (
           highSegmentCount >
           0
@@ -4538,23 +4550,17 @@ export default function RedMagic({
           }
 
           context.globalAlpha =
-            0.13;
+            0.075;
 
           context.lineWidth =
-            1.1;
+            0.9;
 
           context.strokeStyle =
-            "rgba(255, 70, 52, 1)";
+            "rgba(250, 48, 22, 1)";
 
           context.stroke();
         }
 
-        /*
-         * Network nodes.
-         *
-         * Node bodies use the cached sprite instead of
-         * constructing a fresh arc path each frame.
-         */
         for (
           let index = 0;
           index <
@@ -4583,30 +4589,30 @@ export default function RedMagic({
 
           const nodeRadius =
             (
-              1.5 +
+              1.35 +
               energy *
-                4.2 +
+                3.65 +
               potential *
-                1.5
+                1.25
             ) *
             localPulse;
 
           const nodeAlpha =
             clamp(
-              0.24 +
+              0.16 +
                 energy *
-                  0.72 +
+                  0.55 +
                 potential *
-                  0.16,
+                  0.1,
               0,
-              1
+              0.8
             );
 
           drawNodeCore(
             node.x,
             node.y,
             Math.max(
-              1.2,
+              1.05,
               nodeRadius
             ),
             nodeAlpha
@@ -4614,7 +4620,7 @@ export default function RedMagic({
 
           if (
             energy >
-            0.018
+            0.028
           ) {
             drawGlow(
               node.x,
@@ -4622,13 +4628,13 @@ export default function RedMagic({
               0,
               nodeRadius *
                 (
-                  3.2 +
+                  2.5 +
                   energy *
-                    2
+                    1.7
                 ),
-              0.028 +
+              0.018 +
                 energy *
-                  0.07
+                  0.045
             );
           }
         }
@@ -4666,9 +4672,9 @@ export default function RedMagic({
           interactionSprite
         ) {
           context.globalAlpha =
-            0.04 +
+            0.035 +
             pointerEnergy *
-              0.065;
+              0.055;
 
           context.drawImage(
             interactionSprite,
@@ -4692,9 +4698,9 @@ export default function RedMagic({
             pointer.y,
             0,
             fieldRadius,
-            0.045 +
+            0.04 +
               pointerEnergy *
-                0.06
+                0.055
           );
         }
 
@@ -4731,15 +4737,15 @@ export default function RedMagic({
               progress
             ) *
             shockwave.strength *
-            0.38;
+            0.34;
 
           context.lineWidth =
             1 +
             shockwave.strength *
-              1.5;
+              1.4;
 
           context.strokeStyle =
-            "rgba(255, 74, 54, 1)";
+            "rgba(255, 58, 26, 1)";
 
           context.beginPath();
 
@@ -4758,7 +4764,7 @@ export default function RedMagic({
             0.92;
 
           context.globalAlpha *=
-            0.25;
+            0.24;
 
           context.lineWidth *=
             0.55;
@@ -4902,19 +4908,19 @@ export default function RedMagic({
 
       context.lineWidth =
         reducedMotion
-          ? 1.2
-          : 1.6;
+          ? 1.1
+          : 1.4;
 
       context.strokeStyle =
-        "rgba(255, 55, 40, 0.68)";
+        "rgba(255, 48, 24, 0.56)";
 
       context.stroke();
 
       context.lineWidth =
-        4;
+        3.5;
 
       context.strokeStyle =
-        "rgba(125, 0, 0, 0.12)";
+        "rgba(120, 0, 0, 0.08)";
 
       context.stroke();
     };
@@ -4987,12 +4993,12 @@ export default function RedMagic({
           0.5;
 
       context.strokeStyle =
-        `rgba(255, 70, 48, ${
-          0.08 +
+        `rgba(255, 64, 28, ${
+          0.055 +
           pointerEnergy *
-            0.05 +
+            0.04 +
           interactionTurbulence *
-            0.035
+            0.028
         })`;
 
       context.beginPath();
@@ -5271,29 +5277,36 @@ export default function RedMagic({
         1 +
         movementEnergy;
 
+      /*
+       * Outer atmospheric light.
+       * Deliberately red/orange only.
+       */
       drawGlow(
         centerX,
         centerY,
         coreRadius *
-          0.08,
+          0.06,
         coreRadius *
           (
-            1.72 +
+            1.68 +
             movementEnergy *
               1.8
           ),
-        0.11 +
+        0.09 +
           pointerEnergy *
-            0.04 *
+            0.035 *
             profile.coreGain +
           charge *
-            0.035 +
+            0.03 +
           averageGridEnergy *
-            0.04 +
+            0.032 +
           movementEnergy *
-            0.09
+            0.075
       );
 
+      /*
+       * Charged secondary corona.
+       */
       if (
         charge >
         0.01
@@ -5302,16 +5315,16 @@ export default function RedMagic({
           centerX,
           centerY,
           coreRadius *
-            0.2,
+            0.18,
           coreRadius *
             (
-              1.9 +
+              1.85 +
               charge *
-                1.2
+                1.15
             ),
-          0.055 +
+          0.045 +
             charge *
-              0.09
+              0.075
         );
       }
 
@@ -5356,13 +5369,13 @@ export default function RedMagic({
         context.save();
 
         context.globalAlpha =
-          0.42 +
+          0.38 +
           pointerEnergy *
-            0.14 +
+            0.13 +
           interactionTurbulence *
-            0.1 +
+            0.085 +
           charge *
-            0.08;
+            0.075;
 
         context.translate(
           centerX,
@@ -5373,13 +5386,14 @@ export default function RedMagic({
           detailRotation
         );
 
+        const detailScale =
+          1 +
+          movementEnergy *
+            0.45;
+
         context.scale(
-          1 +
-            movementEnergy *
-              0.45,
-          1 +
-            movementEnergy *
-              0.45
+          detailScale,
+          detailScale
         );
 
         context.drawImage(
@@ -5416,24 +5430,53 @@ export default function RedMagic({
             0.35
         );
 
-      drawGlow(
-        centerX,
-        centerY,
-        nucleusRadius *
-          0.1,
-        nucleusRadius *
-          2.2,
-        0.09 +
-          pointerEnergy *
-            0.05 +
-          averageGridEnergy *
-            0.04 +
-          movementEnergy *
-            0.05
+      /*
+       * High-energy orange-red nucleus.
+       *
+       * No white.
+       */
+      const nucleusGradient =
+        context.createRadialGradient(
+          centerX -
+            nucleusRadius *
+              0.18,
+          centerY -
+            nucleusRadius *
+              0.2,
+          0,
+          centerX,
+          centerY,
+          nucleusRadius *
+            1.45
+        );
+
+      nucleusGradient.addColorStop(
+        0,
+        "rgba(255, 158, 42, 0.98)"
+      );
+
+      nucleusGradient.addColorStop(
+        0.18,
+        "rgba(255, 108, 22, 0.98)"
+      );
+
+      nucleusGradient.addColorStop(
+        0.38,
+        "rgba(255, 58, 10, 0.94)"
+      );
+
+      nucleusGradient.addColorStop(
+        0.68,
+        "rgba(221, 18, 4, 0.68)"
+      );
+
+      nucleusGradient.addColorStop(
+        1,
+        "rgba(108, 0, 0, 0)"
       );
 
       context.fillStyle =
-        "rgba(255, 220, 205, 0.92)";
+        nucleusGradient;
 
       context.beginPath();
 
@@ -5455,6 +5498,74 @@ export default function RedMagic({
       );
 
       context.fill();
+
+      /*
+       * Tiny saturated orange hot-spot.
+       * This provides the "shining" impression without
+       * introducing white into the palette.
+       */
+      const hotSpotRadius =
+        nucleusRadius *
+        (
+          0.18 +
+          charge *
+            0.035
+        );
+
+      const hotSpotGradient =
+        context.createRadialGradient(
+          centerX -
+            nucleusRadius *
+              0.22,
+          centerY -
+            nucleusRadius *
+              0.25,
+          0,
+          centerX -
+            nucleusRadius *
+              0.22,
+          centerY -
+            nucleusRadius *
+              0.25,
+          hotSpotRadius
+        );
+
+      hotSpotGradient.addColorStop(
+        0,
+        "rgba(255, 178, 48, 0.78)"
+      );
+
+      hotSpotGradient.addColorStop(
+        0.34,
+        "rgba(255, 116, 18, 0.5)"
+      );
+
+      hotSpotGradient.addColorStop(
+        1,
+        "rgba(245, 40, 6, 0)"
+      );
+
+      context.fillStyle =
+        hotSpotGradient;
+
+      context.beginPath();
+
+      context.arc(
+        centerX -
+          nucleusRadius *
+            0.22,
+        centerY -
+          nucleusRadius *
+            0.25,
+        hotSpotRadius,
+        0,
+        TAU
+      );
+
+      context.fill();
+
+      context.globalAlpha =
+        1;
     };
 
     const updatePhysicalState =
