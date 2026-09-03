@@ -78,6 +78,20 @@ type ShockwaveFrameState = {
   angularCoefficient: number;
 };
 
+type FlowGeometry = {
+  baseAngles: Float32Array;
+  directions: Int8Array;
+
+  distanceScales: Float32Array;
+  anglePhaseSin: Float32Array;
+  anglePhaseCos: Float32Array;
+
+  wavePhaseSin: Float32Array;
+  wavePhaseCos: Float32Array;
+
+  pointCount: number;
+};
+
 type QualityName =
   | "high"
   | "medium"
@@ -338,8 +352,7 @@ function distanceSquared(
     ay - by;
 
   return (
-    dx * dx +
-    dy * dy
+    dx * dx + dy * dy
   );
 }
 
@@ -536,6 +549,152 @@ function createBoundary(
       };
     }
   );
+}
+
+function buildFlowGeometry(
+  quality: Quality
+): FlowGeometry {
+  const flowCount =
+    quality.flowCount;
+
+  const segments =
+    quality.flowSegments;
+
+  const pointCount =
+    flowCount *
+    (segments + 1);
+
+  const baseAngles =
+    new Float32Array(
+      flowCount
+    );
+
+  const directions =
+    new Int8Array(
+      flowCount
+    );
+
+  const distanceScales =
+    new Float32Array(
+      pointCount
+    );
+
+  const anglePhaseSin =
+    new Float32Array(
+      pointCount
+    );
+
+  const anglePhaseCos =
+    new Float32Array(
+      pointCount
+    );
+
+  const wavePhaseSin =
+    new Float32Array(
+      pointCount
+    );
+
+  const wavePhaseCos =
+    new Float32Array(
+      pointCount
+    );
+
+  for (
+    let flowIndex = 0;
+    flowIndex < flowCount;
+    flowIndex += 1
+  ) {
+    baseAngles[
+      flowIndex
+    ] =
+      (
+        flowIndex /
+        flowCount
+      ) * TAU;
+
+    directions[
+      flowIndex
+    ] =
+      flowIndex % 2 === 0
+        ? 1
+        : -1;
+
+    const flowOffset =
+      flowIndex *
+      (segments + 1);
+
+    for (
+      let segment = 0;
+      segment <= segments;
+      segment += 1
+    ) {
+      const progress =
+        segment /
+        segments;
+
+      const pointIndex =
+        flowOffset +
+        segment;
+
+      const anglePhase =
+        progress *
+        TAU;
+
+      const wavePhase =
+        progress *
+          Math.PI *
+          3.2 +
+        flowIndex;
+
+      distanceScales[
+        pointIndex
+      ] =
+        0.12 +
+        progress * 0.67;
+
+      anglePhaseSin[
+        pointIndex
+      ] =
+        Math.sin(
+          anglePhase
+        );
+
+      anglePhaseCos[
+        pointIndex
+      ] =
+        Math.cos(
+          anglePhase
+        );
+
+      wavePhaseSin[
+        pointIndex
+      ] =
+        Math.sin(
+          wavePhase
+        );
+
+      wavePhaseCos[
+        pointIndex
+      ] =
+        Math.cos(
+          wavePhase
+        );
+    }
+  }
+
+  return {
+    baseAngles,
+    directions,
+
+    distanceScales,
+    anglePhaseSin,
+    anglePhaseCos,
+
+    wavePhaseSin,
+    wavePhaseCos,
+
+    pointCount
+  };
 }
 
 function qualityFromArea(
@@ -1104,6 +1263,11 @@ export default function RedMagic({
         qualityName
       ];
 
+    let flowGeometry =
+      buildFlowGeometry(
+        quality
+      );
+
     let particles:
       RedMagicParticle[] = [];
 
@@ -1257,6 +1421,11 @@ export default function RedMagic({
 
       quality =
         QUALITY[name];
+
+      flowGeometry =
+        buildFlowGeometry(
+          quality
+        );
 
       particles =
         createParticles(
@@ -2599,8 +2768,7 @@ export default function RedMagic({
     ) => {
       const primaryWave =
         Math.sin(
-          point.angle *
-            3 +
+          point.angle * 3 +
             time *
               0.0011
         ) *
@@ -2608,8 +2776,7 @@ export default function RedMagic({
 
       const secondaryWave =
         Math.sin(
-          point.angle *
-            7 -
+          point.angle * 7 -
             time *
               0.0008 +
             1.3
@@ -2618,8 +2785,7 @@ export default function RedMagic({
 
       const tertiaryWave =
         Math.sin(
-          point.angle *
-            11 +
+          point.angle * 11 +
             time *
               0.00065
         ) *
@@ -2684,8 +2850,7 @@ export default function RedMagic({
         (
           0.012 +
           Math.sin(
-            point.angle *
-              13 +
+            point.angle * 13 +
               time *
                 0.004 +
               pointerAngle *
@@ -3285,24 +3450,95 @@ export default function RedMagic({
     const drawEnergyFlows = (
       time: number
     ) => {
+      const flowCount =
+        quality.flowCount;
+
+      if (
+        flowCount ===
+        0
+      ) {
+        return;
+      }
+
+      const flowSegments =
+        quality.flowSegments;
+
+      const geometry =
+        flowGeometry;
+
+      const angleTime =
+        time *
+        0.0012;
+
+      const waveTime =
+        time *
+        0.0017;
+
+      const angleTimeSin =
+        Math.sin(
+          angleTime
+        );
+
+      const angleTimeCos =
+        Math.cos(
+          angleTime
+        );
+
+      const waveTimeSin =
+        Math.sin(
+          waveTime
+        );
+
+      const waveTimeCos =
+        Math.cos(
+          waveTime
+        );
+
+      const angleAmplitude =
+        0.05 +
+        interactionTurbulence *
+          0.018;
+
+      const waveAmplitude =
+        radius *
+        (
+          0.025 +
+          interactionTurbulence *
+            0.016
+        );
+
+      context.lineWidth =
+        0.8 +
+        pointerEnergy *
+          0.8 +
+        interactionTurbulence *
+          0.5;
+
+      context.strokeStyle =
+        `rgba(255, 70, 48, ${
+          0.08 +
+          pointerEnergy *
+            0.05 +
+          interactionTurbulence *
+            0.035
+        })`;
+
+      context.beginPath();
+
       for (
         let index = 0;
-        index <
-          quality.flowCount;
+        index < flowCount;
         index += 1
       ) {
         const direction =
-          index % 2 ===
-          0
-            ? 1
-            : -1;
+          geometry.directions[
+            index
+          ];
 
         const baseAngle =
-          (
-            index /
-            quality.flowCount
-          ) *
-            TAU +
+          geometry.baseAngles[
+            index
+          ] +
           time *
             0.00016 *
             direction +
@@ -3310,76 +3546,110 @@ export default function RedMagic({
             0.04 *
             direction;
 
-        context.beginPath();
+        const baseSin =
+          Math.sin(
+            baseAngle
+          );
+
+        const baseCos =
+          Math.cos(
+            baseAngle
+          );
+
+        const flowOffset =
+          index *
+          (
+            flowSegments +
+            1
+          );
 
         for (
           let segment = 0;
-          segment <=
-            quality.flowSegments;
+          segment <= flowSegments;
           segment += 1
         ) {
-          const progress =
-            segment /
-            quality.flowSegments;
+          const pointIndex =
+            flowOffset +
+            segment;
 
-          const angle =
-            baseAngle +
-            Math.sin(
-              progress *
-                Math.PI *
-                2 +
-                time *
-                  0.0012
-            ) *
-              (
-                0.05 +
-                interactionTurbulence *
-                  0.018
-              );
+          const phaseSin =
+            geometry.anglePhaseSin[
+              pointIndex
+            ] *
+              angleTimeCos +
+            geometry.anglePhaseCos[
+              pointIndex
+            ] *
+              angleTimeSin;
 
-          const distance =
-            radius *
+          const angleOffset =
+            phaseSin *
+            angleAmplitude;
+
+          /*
+           * The angular perturbation is always
+           * very small (< ~0.07 rad), so the
+           * third-order sine and second-order
+           * cosine approximations are more than
+           * accurate enough while avoiding two
+           * trig calls per segment.
+           */
+          const angleOffsetSquared =
+            angleOffset *
+            angleOffset;
+
+          const offsetSin =
+            angleOffset -
+            angleOffset *
+              angleOffsetSquared /
+              6;
+
+          const offsetCos =
+            1 -
+            angleOffsetSquared *
+              0.5;
+
+          const directionX =
+            baseCos *
+              offsetCos -
+            baseSin *
+              offsetSin;
+
+          const directionY =
+            baseSin *
+              offsetCos +
+            baseCos *
+              offsetSin;
+
+          const waveSin =
+            geometry.wavePhaseSin[
+              pointIndex
+            ] *
+              waveTimeCos +
+            geometry.wavePhaseCos[
+              pointIndex
+            ] *
+              waveTimeSin;
+
+          const radialDistance =
             (
-              0.12 +
-              progress *
-                0.67
-            );
-
-          const wave =
-            Math.sin(
-              progress *
-                Math.PI *
-                3.2 +
-                time *
-                  0.0017 +
-                index
-            ) *
-            radius *
-            (
-              0.025 +
-              interactionTurbulence *
-                0.016
-            );
+              geometry.distanceScales[
+                pointIndex
+              ] *
+              radius
+            ) +
+            waveSin *
+              waveAmplitude;
 
           const x =
             centerX +
-            Math.cos(
-              angle
-            ) *
-              (
-                distance +
-                wave
-              );
+            directionX *
+              radialDistance;
 
           const y =
             centerY +
-            Math.sin(
-              angle
-            ) *
-              (
-                distance +
-                wave
-              );
+            directionY *
+              radialDistance;
 
           if (
             segment ===
@@ -3396,25 +3666,9 @@ export default function RedMagic({
             );
           }
         }
-
-        context.lineWidth =
-          0.8 +
-          pointerEnergy *
-            0.8 +
-          interactionTurbulence *
-            0.5;
-
-        context.strokeStyle =
-          `rgba(255, 70, 48, ${
-            0.08 +
-            pointerEnergy *
-              0.05 +
-            interactionTurbulence *
-              0.035
-          })`;
-
-        context.stroke();
       }
+
+      context.stroke();
     };
 
     const drawParticles = (
