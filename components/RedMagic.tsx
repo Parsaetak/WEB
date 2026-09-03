@@ -91,45 +91,45 @@ const MODE_PROFILES:
     RedMagicMode,
     ModeProfile
   > = {
-    drift: {
-      timeScale: 0.55,
-      energyCeiling: 0.55,
-      energyFloor: 0.06,
-      pointerGain: 0.7,
-      coreGain: 0.85,
-      responseLag: 0.008,
-      particleImpulse: 0.42,
-      turbulenceGain: 0.55,
-      shockwaveGain: 0.72,
-      recovery: 0.78
-    },
+  drift: {
+    timeScale: 0.55,
+    energyCeiling: 0.55,
+    energyFloor: 0.06,
+    pointerGain: 0.7,
+    coreGain: 0.85,
+    responseLag: 0.008,
+    particleImpulse: 0.42,
+    turbulenceGain: 0.55,
+    shockwaveGain: 0.72,
+    recovery: 0.78
+  },
 
-    listen: {
-      timeScale: 1,
-      energyCeiling: 1,
-      energyFloor: 0,
-      pointerGain: 1,
-      coreGain: 1,
-      responseLag: 0.018,
-      particleImpulse: 0.7,
-      turbulenceGain: 1,
-      shockwaveGain: 1,
-      recovery: 1
-    },
+  listen: {
+    timeScale: 1,
+    energyCeiling: 1,
+    energyFloor: 0,
+    pointerGain: 1,
+    coreGain: 1,
+    responseLag: 0.018,
+    particleImpulse: 0.7,
+    turbulenceGain: 1,
+    shockwaveGain: 1,
+    recovery: 1
+  },
 
-    surge: {
-      timeScale: 1.45,
-      energyCeiling: 1,
-      energyFloor: 0.42,
-      pointerGain: 1.45,
-      coreGain: 1.3,
-      responseLag: 0.028,
-      particleImpulse: 1.15,
-      turbulenceGain: 1.45,
-      shockwaveGain: 1.35,
-      recovery: 1.22
-    }
-  };
+  surge: {
+    timeScale: 1.45,
+    energyCeiling: 1,
+    energyFloor: 0.42,
+    pointerGain: 1.45,
+    coreGain: 1.3,
+    responseLag: 0.028,
+    particleImpulse: 1.15,
+    turbulenceGain: 1.45,
+    shockwaveGain: 1.35,
+    recovery: 1.22
+  }
+};
 
 type Quality = {
   particles: number;
@@ -144,30 +144,30 @@ const QUALITY:
     QualityName,
     Quality
   > = {
-    high: {
-      particles: 112,
-      nodes: 12,
-      membraneSteps: 180,
-      flowCount: 7,
-      flowSegments: 28
-    },
+  high: {
+    particles: 112,
+    nodes: 12,
+    membraneSteps: 180,
+    flowCount: 7,
+    flowSegments: 28
+  },
 
-    medium: {
-      particles: 76,
-      nodes: 9,
-      membraneSteps: 132,
-      flowCount: 5,
-      flowSegments: 22
-    },
+  medium: {
+    particles: 76,
+    nodes: 9,
+    membraneSteps: 132,
+    flowCount: 5,
+    flowSegments: 22
+  },
 
-    low: {
-      particles: 42,
-      nodes: 7,
-      membraneSteps: 90,
-      flowCount: 4,
-      flowSegments: 17
-    }
-  };
+  low: {
+    particles: 42,
+    nodes: 7,
+    membraneSteps: 90,
+    flowCount: 4,
+    flowSegments: 17
+  }
+};
 
 const TAU =
   Math.PI * 2;
@@ -175,6 +175,9 @@ const TAU =
 const MAX_DPR = 2;
 
 const GLOW_SPRITE_SIZE =
+  256;
+
+const CORE_SPRITE_SIZE =
   256;
 
 const HIGH_FPS_TARGET =
@@ -289,6 +292,92 @@ function createGlowSprite():
     0,
     GLOW_SPRITE_SIZE,
     GLOW_SPRITE_SIZE
+  );
+
+  return sprite;
+}
+
+function createCoreSprite():
+  HTMLCanvasElement | null {
+  if (
+    typeof document ===
+    "undefined"
+  ) {
+    return null;
+  }
+
+  const sprite =
+    document.createElement(
+      "canvas"
+    );
+
+  sprite.width =
+    CORE_SPRITE_SIZE;
+
+  sprite.height =
+    CORE_SPRITE_SIZE;
+
+  const context =
+    sprite.getContext(
+      "2d"
+    );
+
+  if (!context) {
+    return null;
+  }
+
+  const center =
+    CORE_SPRITE_SIZE *
+    0.5;
+
+  const gradient =
+    context.createRadialGradient(
+      center -
+        CORE_SPRITE_SIZE *
+          0.09,
+      center -
+        CORE_SPRITE_SIZE *
+          0.10,
+      CORE_SPRITE_SIZE *
+        0.04,
+      center,
+      center,
+      center
+    );
+
+  gradient.addColorStop(
+    0,
+    "rgba(255, 115, 95, 0.96)"
+  );
+
+  gradient.addColorStop(
+    0.16,
+    "rgba(255, 48, 35, 0.95)"
+  );
+
+  gradient.addColorStop(
+    0.48,
+    "rgba(185, 10, 10, 0.78)"
+  );
+
+  gradient.addColorStop(
+    0.78,
+    "rgba(85, 0, 0, 0.28)"
+  );
+
+  gradient.addColorStop(
+    1,
+    "rgba(20, 0, 0, 0)"
+  );
+
+  context.fillStyle =
+    gradient;
+
+  context.fillRect(
+    0,
+    0,
+    CORE_SPRITE_SIZE,
+    CORE_SPRITE_SIZE
   );
 
   return sprite;
@@ -527,6 +616,9 @@ export default function RedMagic({
 
     const interactionSprite =
       createGlowSprite();
+
+    const coreSprite =
+      createCoreSprite();
 
     const reduceMotionQuery =
       window.matchMedia(
@@ -800,27 +892,26 @@ export default function RedMagic({
       }
     };
 
-    const updatePointer =
-      (
-        clientX: number,
-        clientY: number
-      ) => {
-        pointerTarget.x =
-          clamp(
-            clientX -
-              canvasRectLeft,
-            0,
-            width
-          );
+    const updatePointer = (
+      clientX: number,
+      clientY: number
+    ) => {
+      pointerTarget.x =
+        clamp(
+          clientX -
+            canvasRectLeft,
+          0,
+          width
+        );
 
-        pointerTarget.y =
-          clamp(
-            clientY -
-              canvasRectTop,
-            0,
-            height
-          );
-      };
+      pointerTarget.y =
+        clamp(
+          clientY -
+            canvasRectTop,
+          0,
+          height
+        );
+    };
 
     const updatePointerGeometry =
       () => {
@@ -1331,10 +1422,10 @@ export default function RedMagic({
             Math.sin(
               point.angle *
                 13 +
-                time *
-                  0.004 +
-                pointerAngle *
-                  2
+              time *
+                0.004 +
+              pointerAngle *
+                2
             ) *
               0.008
           );
@@ -1707,60 +1798,79 @@ export default function RedMagic({
           );
         }
 
-        const coreGradient =
-          context.createRadialGradient(
+        if (
+          coreSprite
+        ) {
+          context.globalAlpha =
+            1;
+
+          context.drawImage(
+            coreSprite,
             centerX -
-              coreRadius *
-                0.18,
+              coreRadius,
             centerY -
-              coreRadius *
-                0.2,
+              coreRadius,
             coreRadius *
-              0.08,
-            centerX,
-            centerY,
-            coreRadius
+              2,
+            coreRadius *
+              2
+          );
+        } else {
+          const coreGradient =
+            context.createRadialGradient(
+              centerX -
+                coreRadius *
+                  0.18,
+              centerY -
+                coreRadius *
+                  0.2,
+              coreRadius *
+                0.08,
+              centerX,
+              centerY,
+              coreRadius
+            );
+
+          coreGradient.addColorStop(
+            0,
+            "rgba(255, 115, 95, 0.96)"
           );
 
-        coreGradient.addColorStop(
-          0,
-          "rgba(255, 115, 95, 0.96)"
-        );
+          coreGradient.addColorStop(
+            0.16,
+            "rgba(255, 48, 35, 0.95)"
+          );
 
-        coreGradient.addColorStop(
-          0.16,
-          "rgba(255, 48, 35, 0.95)"
-        );
+          coreGradient.addColorStop(
+            0.48,
+            "rgba(185, 10, 10, 0.78)"
+          );
 
-        coreGradient.addColorStop(
-          0.48,
-          "rgba(185, 10, 10, 0.78)"
-        );
+          coreGradient.addColorStop(
+            0.78,
+            "rgba(85, 0, 0, 0.28)"
+          );
 
-        coreGradient.addColorStop(
-          0.78,
-          "rgba(85, 0, 0, 0.28)"
-        );
+          coreGradient.addColorStop(
+            1,
+            "rgba(20, 0, 0, 0)"
+          );
 
-        coreGradient.addColorStop(
-          1,
-          "rgba(20, 0, 0, 0)"
-        );
+          context.fillStyle =
+            coreGradient;
 
-        context.fillStyle =
-          coreGradient;
+          context.beginPath();
 
-        context.beginPath();
+          context.arc(
+            centerX,
+            centerY,
+            coreRadius,
+            0,
+            TAU
+          );
 
-        context.arc(
-          centerX,
-          centerY,
-          coreRadius,
-          0,
-          TAU
-        );
-
-        context.fill();
+          context.fill();
+        }
 
         const nucleusRadius =
           radius *
