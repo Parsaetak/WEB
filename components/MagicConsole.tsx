@@ -97,15 +97,27 @@ function vitalityLabel(
   fps: number
 ) {
   if (
-    fps >= 55
+    fps >= 120
   ) {
-    return "FLOWING";
+    return "120 HZ";
   }
 
   if (
-    fps >= 34
+    fps >= 105
   ) {
-    return "STEADY";
+    return "SMOOTH";
+  }
+
+  if (
+    fps >= 90
+  ) {
+    return "STABLE";
+  }
+
+  if (
+    fps >= 60
+  ) {
+    return "DEGRADED";
   }
 
   return "CONSERVING";
