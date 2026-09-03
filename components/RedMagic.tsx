@@ -45,9 +45,9 @@ type GridNode = {
   velocity: number;
 
   phase: number;
-  seed: number;
 
   neighbors: number[];
+  neighborEdges: number[];
 };
 
 type GridEdge = {
@@ -244,7 +244,8 @@ const QUALITY:
 const TAU =
   Math.PI * 2;
 
-const MAX_DPR = 2;
+const MAX_DPR =
+  2;
 
 const GLOW_SPRITE_SIZE =
   256;
@@ -288,6 +289,33 @@ const GRID_ROUTE_BONUS =
 const GRID_FLOW_LIMIT =
   0.16;
 
+/*
+ * Particle visibility is intentionally distance based.
+ *
+ * Close particles stay bright.
+ * Mid-range particles gradually fade.
+ * Far particles become effectively invisible.
+ *
+ * The values are normalized against the RED MAGIC radius.
+ */
+const PARTICLE_VISIBILITY_START =
+  0.38;
+
+const PARTICLE_VISIBILITY_END =
+  0.88;
+
+const PARTICLE_VISIBILITY_POWER =
+  1.35;
+
+const PARTICLE_MIN_VISIBLE_ALPHA =
+  0.008;
+
+const GRID_POINTER_RADIUS =
+  0.72;
+
+const GRID_POINTER_CONTRIBUTION =
+  0.025;
+
 function clamp(
   value: number,
   min: number,
@@ -295,7 +323,10 @@ function clamp(
 ) {
   return Math.max(
     min,
-    Math.min(max, value)
+    Math.min(
+      max,
+      value
+    )
   );
 }
 
@@ -443,18 +474,13 @@ function createCoreSprite():
       center -
         CORE_SPRITE_SIZE *
           0.09,
-
       center -
         CORE_SPRITE_SIZE *
           0.1,
-
       CORE_SPRITE_SIZE *
         0.04,
-
       center,
-
       center,
-
       center
     );
 
@@ -625,7 +651,8 @@ function qualityFromArea(
 function createGrid(
   gridSize: number
 ) {
-  const nodes: GridNode[] = [];
+  const nodes: GridNode[] =
+    [];
 
   const nodeByCell =
     new Map<
@@ -689,7 +716,6 @@ function createGrid(
           y,
 
         x,
-
         y,
 
         energy:
@@ -702,87 +728,93 @@ function createGrid(
           Math.random() *
           TAU,
 
-        seed:
-          Math.random(),
-
         neighbors:
+          [],
+
+        neighborEdges:
           []
       });
     }
   }
 
-  const edges: GridEdge[] = [];
+  const edges: GridEdge[] =
+    [];
 
-  const connect =
-    (
-      a: number,
-      b: number
-    ) => {
-      if (
-        a === b
-      ) {
-        return;
-      }
+  const connect = (
+    a: number,
+    b: number
+  ) => {
+    if (
+      a === b
+    ) {
+      return;
+    }
 
-      if (
-        nodes[a].neighbors.includes(
-          b
-        )
-      ) {
-        return;
-      }
-
-      const dx =
-        nodes[a].homeX -
-        nodes[b].homeX;
-
-      const dy =
-        nodes[a].homeY -
-        nodes[b].homeY;
-
-      const restLength =
-        Math.hypot(
-          dx,
-          dy
-        );
-
-      if (
-        restLength <=
-        0.0001
-      ) {
-        return;
-      }
-
-      const resistance =
-        0.72 +
-        restLength *
-          0.85;
-
-      const edgeIndex =
-        edges.length;
-
-      edges.push({
-        a,
-        b,
-
-        restLength,
-
-        resistance,
-
-        flow:
-          0
-      });
-
-      nodes[a].neighbors.push(
+    if (
+      nodes[a].neighbors.includes(
         b
+      )
+    ) {
+      return;
+    }
+
+    const dx =
+      nodes[a].homeX -
+      nodes[b].homeX;
+
+    const dy =
+      nodes[a].homeY -
+      nodes[b].homeY;
+
+    const restLength =
+      Math.hypot(
+        dx,
+        dy
       );
 
-      nodes[b].neighbors.push(
-        a
-      );
+    if (
+      restLength <=
+      0.0001
+    ) {
+      return;
+    }
 
-      void edgeIndex;
-    };
+    const resistance =
+      0.72 +
+      restLength *
+        0.85;
+
+    const edgeIndex =
+      edges.length;
+
+    edges.push({
+      a,
+      b,
+
+      restLength,
+
+      resistance,
+
+      flow:
+        0
+    });
+
+    nodes[a].neighbors.push(
+      b
+    );
+
+    nodes[a].neighborEdges.push(
+      edgeIndex
+    );
+
+    nodes[b].neighbors.push(
+      a
+    );
+
+    nodes[b].neighborEdges.push(
+      edgeIndex
+    );
+  };
 
   for (
     let row = 0;
@@ -898,7 +930,7 @@ function createGrid(
     ) {
       if (
         other ===
-        index ||
+          index ||
         node.neighbors.includes(
           other
         )
@@ -940,6 +972,84 @@ function createGrid(
   return {
     nodes,
     edges
+  };
+}
+
+function buildGlobalPotentialWeights(
+  nodes: GridNode[]
+) {
+  const count =
+    nodes.length;
+
+  const weights =
+    new Float32Array(
+      count * count
+    );
+
+  const totals =
+    new Float32Array(
+      count
+    );
+
+  for (
+    let index = 0;
+    index < count;
+    index += 1
+  ) {
+    let total =
+      0;
+
+    const node =
+      nodes[index];
+
+    for (
+      let otherIndex = 0;
+      otherIndex < count;
+      otherIndex += 1
+    ) {
+      const other =
+        nodes[
+          otherIndex
+        ];
+
+      const dx =
+        node.homeX -
+        other.homeX;
+
+      const dy =
+        node.homeY -
+        other.homeY;
+
+      const distance =
+        Math.hypot(
+          dx,
+          dy
+        );
+
+      const weight =
+        1 /
+        (
+          1 +
+          distance *
+            GRID_GLOBAL_RADIUS
+        );
+
+      weights[
+        index * count +
+          otherIndex
+      ] = weight;
+
+      total +=
+        weight;
+    }
+
+    totals[index] =
+      total;
+  }
+
+  return {
+    weights,
+    totals
   };
 }
 
@@ -1040,38 +1150,41 @@ export default function RedMagic({
       y: 0
     };
 
-    let pointerTarget:
-      Point = {
-      x: 0,
-      y: 0
-    };
+    let pointerTarget: Point =
+      {
+        x: 0,
+        y: 0
+      };
 
     let pointerActive =
       false;
 
-    let pointerEnergy = 0;
+    let pointerEnergy =
+      0;
 
-    let pointerVelocity = 0;
+    let pointerVelocity =
+      0;
 
-    let pointerVelocityX = 0;
+    let pointerDistance =
+      0;
 
-    let pointerVelocityY = 0;
+    let pointerAngle =
+      0;
 
-    let pointerDistance = 0;
-
-    let pointerAngle = 0;
-
-    let interactionEnergy = 0;
+    let interactionEnergy =
+      0;
 
     let interactionTurbulence =
       0;
 
     let charge = 0;
 
-    let pointerHeld = false;
+    let pointerHeld =
+      false;
 
     let qualityName:
-      QualityName = "high";
+      QualityName =
+      "high";
 
     let quality =
       QUALITY[
@@ -1097,17 +1210,25 @@ export default function RedMagic({
         0
       );
 
+    let globalPotentialWeights =
+      new Float32Array(
+        0
+      );
+
+    let globalPotentialTotals =
+      new Float32Array(
+        0
+      );
+
     let membraneBoundary:
       BoundaryPoint[] = [];
 
     let shockwaves:
       Shockwave[] = [];
 
-    let canvasRectLeft =
-      0;
+    let canvasRectLeft = 0;
 
-    let canvasRectTop =
-      0;
+    let canvasRectTop = 0;
 
     let performanceSampleTime =
       0;
@@ -1128,8 +1249,7 @@ export default function RedMagic({
       ];
 
     const buildWorld = (
-      name:
-        QualityName
+      name: QualityName
     ) => {
       qualityName =
         name;
@@ -1162,6 +1282,17 @@ export default function RedMagic({
         new Float32Array(
           gridNodes.length
         );
+
+      const globalPotential =
+        buildGlobalPotentialWeights(
+          gridNodes
+        );
+
+      globalPotentialWeights =
+        globalPotential.weights;
+
+      globalPotentialTotals =
+        globalPotential.totals;
 
       membraneBoundary =
         createBoundary(
@@ -1261,19 +1392,16 @@ export default function RedMagic({
       );
 
       centerX =
-        width *
-        0.5;
+        width * 0.5;
 
       centerY =
-        height *
-        0.5;
+        height * 0.5;
 
       radius =
         Math.min(
           width,
           height
-        ) *
-        0.39;
+        ) * 0.39;
 
       rebuildMembraneGradient();
 
@@ -1362,154 +1490,152 @@ export default function RedMagic({
             : 0;
       };
 
-    const nearestGridNode =
-      (
-        x: number,
-        y: number
-      ) => {
-        let closest =
-          -1;
+    const nearestGridNode = (
+      x: number,
+      y: number
+    ) => {
+      let closest =
+        -1;
 
-        let closestDistance =
-          Number.POSITIVE_INFINITY;
+      let closestDistance =
+        Number.POSITIVE_INFINITY;
 
-        for (
-          let index = 0;
-          index <
-            gridNodes.length;
-          index += 1
-        ) {
-          const node =
-            gridNodes[index];
+      for (
+        let index = 0;
+        index <
+          gridNodes.length;
+        index += 1
+      ) {
+        const node =
+          gridNodes[index];
 
-          const distance =
-            distanceSquared(
-              x,
-              y,
-              node.x,
-              node.y
-            );
-
-          if (
-            distance <
-            closestDistance
-          ) {
-            closestDistance =
-              distance;
-
-            closest =
-              index;
-          }
-        }
-
-        return closest;
-      };
-
-    const spawnShockwave =
-      (
-        detail:
-          RedMagicInteractionDetail,
-        strength: number
-      ) => {
-        const shockwaveAngle =
-          Math.atan2(
-            detail.y -
-              centerY,
-            detail.x -
-              centerX
-          );
-
-        shockwaves.push({
-          x:
-            detail.x,
-
-          y:
-            detail.y,
-
-          angle:
-            shockwaveAngle,
-
-          age:
-            0,
-
-          strength:
-            clamp(
-              strength *
-                profile.shockwaveGain,
-              0,
-              1.4
-            )
-        });
-
-        if (
-          shockwaves.length >
-          MAX_SHOCKWAVES
-        ) {
-          shockwaves.shift();
-        }
-
-        const closest =
-          nearestGridNode(
-            detail.x,
-            detail.y
+        const distance =
+          distanceSquared(
+            x,
+            y,
+            node.x,
+            node.y
           );
 
         if (
-          closest <
-          0
+          distance <
+          closestDistance
         ) {
-          return;
-        }
+          closestDistance =
+            distance;
 
-        const injection =
+          closest =
+            index;
+        }
+      }
+
+      return closest;
+    };
+
+    const spawnShockwave = (
+      detail:
+        RedMagicInteractionDetail,
+      strength: number
+    ) => {
+      const shockwaveAngle =
+        Math.atan2(
+          detail.y -
+            centerY,
+          detail.x -
+            centerX
+        );
+
+      shockwaves.push({
+        x:
+          detail.x,
+
+        y:
+          detail.y,
+
+        angle:
+          shockwaveAngle,
+
+        age:
+          0,
+
+        strength:
           clamp(
             strength *
               profile.shockwaveGain,
             0,
-            1.2
-          );
+            1.4
+          )
+      });
 
+      if (
+        shockwaves.length >
+        MAX_SHOCKWAVES
+      ) {
+        shockwaves.shift();
+      }
+
+      const closest =
+        nearestGridNode(
+          detail.x,
+          detail.y
+        );
+
+      if (
+        closest <
+        0
+      ) {
+        return;
+      }
+
+      const injection =
+        clamp(
+          strength *
+            profile.shockwaveGain,
+          0,
+          1.2
+        );
+
+      gridNodes[
+        closest
+      ].energy =
+        clamp(
+          gridNodes[
+            closest
+          ].energy +
+            injection,
+          0,
+          GRID_MAX_NODE_ENERGY
+        );
+
+      const neighbors =
         gridNodes[
           closest
-        ].energy =
+        ].neighbors;
+
+      for (
+        let index = 0;
+        index <
+          neighbors.length;
+        index += 1
+      ) {
+        const neighborIndex =
+          neighbors[index];
+
+        const neighbor =
+          gridNodes[
+            neighborIndex
+          ];
+
+        neighbor.energy =
           clamp(
-            gridNodes[
-              closest
-            ].energy +
-              injection,
+            neighbor.energy +
+              injection *
+                0.09,
             0,
             GRID_MAX_NODE_ENERGY
           );
-
-        const neighbors =
-          gridNodes[
-            closest
-          ].neighbors;
-
-        for (
-          let index = 0;
-          index <
-            neighbors.length;
-          index += 1
-        ) {
-          const neighborIndex =
-            neighbors[index];
-
-          const neighbor =
-            gridNodes[
-              neighborIndex
-            ];
-
-          neighbor.energy =
-            clamp(
-              neighbor.energy +
-                injection *
-                  0.09,
-              0,
-              GRID_MAX_NODE_ENERGY
-            );
-        }
-      };
+      }
+    };
 
     const applyParticleImpulse =
       (
@@ -1668,14 +1794,6 @@ export default function RedMagic({
 
         pointerVelocity =
           detail.velocity;
-
-        pointerVelocityX =
-          detail.x -
-          pointer.x;
-
-        pointerVelocityY =
-          detail.y -
-          pointer.y;
 
         interactionTurbulence =
           clamp(
@@ -1857,544 +1975,464 @@ export default function RedMagic({
         }
       };
 
-    const updateGrid =
-      (
-        delta: number,
-        time: number
-      ) => {
-        if (
-          gridNodes.length ===
-          0
-        ) {
-          return;
-        }
+    const updateGrid = (
+      delta: number,
+      time: number
+    ) => {
+      if (
+        gridNodes.length ===
+        0
+      ) {
+        return;
+      }
 
-        const deltaScale =
-          clamp(
-            delta /
-              16,
-            0,
-            2
-          );
-
-        const mode =
-          modeRef.current;
-
-        const activeProfile =
-          MODE_PROFILES[
-            mode
-          ];
-
-        const decay =
-          Math.pow(
-            GRID_ENERGY_DECAY,
-            deltaScale *
-              activeProfile.recovery
-          );
-
-        for (
-          let index = 0;
-          index <
-            gridNodes.length;
-          index += 1
-        ) {
-          const node =
-            gridNodes[index];
-
-          node.x =
-            centerX +
-            node.homeX *
-              radius;
-
-          node.y =
-            centerY +
-            node.homeY *
-              radius;
-
-          node.energy *=
-            decay;
-
-          node.velocity *=
-            Math.pow(
-              0.8,
-              deltaScale
-            );
-
-          const breathing =
-            Math.sin(
-              time *
-                0.001 +
-                node.phase
-            );
-
-          const breathingScale =
-            1 +
-            breathing *
-              0.012;
-
-          node.x =
-            centerX +
-            node.homeX *
-              radius *
-              breathingScale;
-
-          node.y =
-            centerY +
-            node.homeY *
-              radius *
-              breathingScale;
-        }
-
-        /*
-         * Every node evaluates the potential
-         * of the complete network.
-         *
-         * This is intentionally global:
-         * no node is isolated from the state
-         * of the other nodes.
-         */
-        for (
-          let index = 0;
-          index <
-            gridNodes.length;
-          index += 1
-        ) {
-          const node =
-            gridNodes[index];
-
-          let weightedEnergy =
-            0;
-
-          let totalWeight =
-            0;
-
-          for (
-            let otherIndex = 0;
-            otherIndex <
-              gridNodes.length;
-            otherIndex += 1
-          ) {
-            const other =
-              gridNodes[
-                otherIndex
-              ];
-
-            const dx =
-              node.homeX -
-              other.homeX;
-
-            const dy =
-              node.homeY -
-              other.homeY;
-
-            const distance =
-              Math.hypot(
-                dx,
-                dy
-              );
-
-            const weight =
-              1 /
-              (
-                1 +
-                distance *
-                  GRID_GLOBAL_RADIUS
-              );
-
-            weightedEnergy +=
-              other.energy *
-              weight;
-
-            totalWeight +=
-              weight;
-          }
-
-          const potential =
-            totalWeight >
-            0
-              ? weightedEnergy /
-                totalWeight
-              : 0;
-
-          nodePotential[
-            index
-          ] =
-            clamp(
-              potential,
-              0,
-              GRID_MAX_NODE_ENERGY
-            );
-        }
-
-        nextNodeEnergy.fill(
-          0
+      const deltaScale =
+        clamp(
+          delta /
+            16,
+          0,
+          2
         );
 
+      const activeProfile =
+        MODE_PROFILES[
+          modeRef.current
+        ];
+
+      const decay =
+        Math.pow(
+          GRID_ENERGY_DECAY,
+          deltaScale *
+            activeProfile.recovery
+        );
+
+      for (
+        let index = 0;
+        index <
+          gridNodes.length;
+        index += 1
+      ) {
+        const node =
+          gridNodes[index];
+
+        node.x =
+          centerX +
+          node.homeX *
+            radius;
+
+        node.y =
+          centerY +
+          node.homeY *
+            radius;
+
+        node.energy *=
+          decay;
+
+        node.velocity *=
+          Math.pow(
+            0.8,
+            deltaScale
+          );
+
+        const breathing =
+          Math.sin(
+            time *
+              0.001 +
+              node.phase
+          );
+
+        const breathingScale =
+          1 +
+          breathing *
+            0.012;
+
+        node.x =
+          centerX +
+          node.homeX *
+            radius *
+            breathingScale;
+
+        node.y =
+          centerY +
+          node.homeY *
+            radius *
+            breathingScale;
+      }
+
+      const nodeCount =
+        gridNodes.length;
+
+      for (
+        let index = 0;
+        index < nodeCount;
+        index += 1
+      ) {
+        const rowOffset =
+          index *
+          nodeCount;
+
+        let weightedEnergy =
+          0;
+
         for (
-          let index = 0;
-          index <
-            gridNodes.length;
-          index += 1
+          let otherIndex = 0;
+          otherIndex <
+            nodeCount;
+          otherIndex += 1
         ) {
-          nextNodeEnergy[
-            index
-          ] =
+          weightedEnergy +=
             gridNodes[
-              index
-            ].energy;
+              otherIndex
+            ].energy *
+            globalPotentialWeights[
+              rowOffset +
+                otherIndex
+            ];
         }
 
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
+        const totalWeight =
+          globalPotentialTotals[
+            index
+          ];
+
+        nodePotential[
+          index
+        ] =
+          totalWeight > 0
+            ? clamp(
+                weightedEnergy /
+                  totalWeight,
+                0,
+                GRID_MAX_NODE_ENERGY
+              )
+            : 0;
+      }
+
+      nextNodeEnergy.fill(
+        0
+      );
+
+      for (
+        let index = 0;
+        index <
+          gridNodes.length;
+        index += 1
+      ) {
+        nextNodeEnergy[
+          index
+        ] =
+          gridNodes[
+            index
+          ].energy;
+      }
+
+      for (
+        let index = 0;
+        index <
+          gridEdges.length;
+        index += 1
+      ) {
+        const edge =
+          gridEdges[index];
+
+        const a =
+          gridNodes[
+            edge.a
+          ];
+
+        const b =
+          gridNodes[
+            edge.b
+          ];
+
+        const energyDifference =
+          a.energy -
+          b.energy;
+
+        if (
+          Math.abs(
+            energyDifference
+          ) <
+          GRID_ENERGY_DECAY *
+            0.004
         ) {
+          edge.flow *=
+            0.86;
+
+          continue;
+        }
+
+        const potentialDifference =
+          nodePotential[
+            edge.a
+          ] -
+          nodePotential[
+            edge.b
+          ];
+
+        const directionalDifference =
+          energyDifference +
+          potentialDifference *
+            0.42;
+
+        const sign =
+          directionalDifference >=
+          0
+            ? 1
+            : -1;
+
+        const magnitude =
+          Math.abs(
+            directionalDifference
+          );
+
+        const resistance =
+          edge.resistance *
+          (
+            1 +
+            edge.flow *
+              0.65
+          );
+
+        const conductance =
+          activeProfile.gridConductance /
+          Math.max(
+            0.5,
+            resistance
+          );
+
+        const flow =
+          clamp(
+            magnitude *
+              conductance *
+              deltaScale,
+            0,
+            GRID_FLOW_LIMIT
+          );
+
+        if (
+          sign > 0
+        ) {
+          nextNodeEnergy[
+            edge.a
+          ] -=
+            flow;
+
+          nextNodeEnergy[
+            edge.b
+          ] +=
+            flow;
+        } else {
+          nextNodeEnergy[
+            edge.a
+          ] +=
+            flow;
+
+          nextNodeEnergy[
+            edge.b
+          ] -=
+            flow;
+        }
+
+        edge.flow =
+          clamp(
+            edge.flow *
+              0.74 +
+              flow *
+                1.8,
+            0,
+            1
+          );
+
+        const nodeVelocity =
+          flow /
+          Math.max(
+            0.02,
+            edge.restLength
+          );
+
+        a.velocity +=
+          nodeVelocity *
+          sign *
+          0.12;
+
+        b.velocity -=
+          nodeVelocity *
+          sign *
+          0.12;
+      }
+
+      /*
+       * Lowest-effort routing.
+       *
+       * Each node directly references the
+       * edge belonging to every neighbor.
+       * There is no full grid-edge scan here.
+       */
+      for (
+        let index = 0;
+        index <
+          gridNodes.length;
+        index += 1
+      ) {
+        const node =
+          gridNodes[index];
+
+        if (
+          node.energy <
+          GRID_IDLE_ENERGY
+        ) {
+          continue;
+        }
+
+        const neighbors =
+          node.neighbors;
+
+        const neighborEdges =
+          node.neighborEdges;
+
+        if (
+          neighbors.length ===
+          0
+        ) {
+          continue;
+        }
+
+        let bestNeighbor =
+          -1;
+
+        let bestEffort =
+          Number.POSITIVE_INFINITY;
+
+        const currentPotential =
+          nodePotential[
+            index
+          ];
+
+        for (
+          let neighborIndex = 0;
+          neighborIndex <
+            neighbors.length;
+          neighborIndex += 1
+        ) {
+          const neighbor =
+            neighbors[
+              neighborIndex
+            ];
+
+          const edgeIndex =
+            neighborEdges[
+              neighborIndex
+            ];
+
           const edge =
-            gridEdges[index];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          const energyDifference =
-            a.energy -
-            b.energy;
-
-          if (
-            Math.abs(
-              energyDifference
-            ) <
-            GRID_ENERGY_DECAY *
-              0.004
-          ) {
-            edge.flow *=
-              0.86;
-
-            continue;
-          }
-
-          const aPotential =
-            nodePotential[
-              edge.a
-            ];
-
-          const bPotential =
-            nodePotential[
-              edge.b
+            gridEdges[
+              edgeIndex
             ];
 
           const potentialDifference =
-            aPotential -
-            bPotential;
-
-          const directionalDifference =
-            (
-              energyDifference +
-              potentialDifference *
-                0.42
+            Math.max(
+              0,
+              currentPotential -
+                nodePotential[
+                  neighbor
+                ]
             );
 
-          const sign =
-            directionalDifference >=
-            0
-              ? 1
-              : -1;
-
-          const magnitude =
-            Math.abs(
-              directionalDifference
-            );
-
-          const resistance =
+          const edgeResistance =
             edge.resistance *
             (
               1 +
               edge.flow *
-                0.65
+                0.55
             );
 
-          const conductance =
-            activeProfile.gridConductance /
-            Math.max(
-              0.5,
-              resistance
-            );
-
-          const flow =
-            clamp(
-              magnitude *
-                conductance *
-                deltaScale,
-              0,
-              GRID_FLOW_LIMIT
-            );
-
-          if (
-            sign > 0
-          ) {
-            nextNodeEnergy[
-              edge.a
-            ] -=
-              flow;
-
-            nextNodeEnergy[
-              edge.b
-            ] +=
-              flow;
-          } else {
-            nextNodeEnergy[
-              edge.a
-            ] +=
-              flow;
-
-            nextNodeEnergy[
-              edge.b
-            ] -=
-              flow;
-          }
-
-          edge.flow =
-            clamp(
-              edge.flow *
-                0.74 +
-                flow *
-                  1.8,
-              0,
-              1
-            );
-
-          const nodeVelocity =
-            flow /
-            Math.max(
-              0.02,
-              edge.restLength
-            );
-
-          a.velocity +=
-            nodeVelocity *
-            sign *
-            0.12;
-
-          b.velocity -=
-            nodeVelocity *
-            sign *
-            0.12;
-        }
-
-        /*
-         * Lowest-effort route selection.
-         *
-         * Each energized node evaluates its
-         * available neighbors and chooses the
-         * connection with the smallest
-         * effective resistance.
-         */
-        for (
-          let index = 0;
-          index <
-            gridNodes.length;
-          index += 1
-        ) {
-          const node =
-            gridNodes[index];
-
-          const energy =
-            node.energy;
-
-          if (
-            energy <
-            GRID_IDLE_ENERGY
-          ) {
-            continue;
-          }
-
-          const neighbors =
-            node.neighbors;
-
-          if (
-            neighbors.length ===
-            0
-          ) {
-            continue;
-          }
-
-          let bestNeighbor =
-            -1;
-
-          let bestEffort =
-            Number.POSITIVE_INFINITY;
-
-          const currentPotential =
+          const effort =
+            edgeResistance +
+            potentialDifference *
+              0.7 -
             nodePotential[
-              index
-            ];
-
-          for (
-            let neighborIndex = 0;
-            neighborIndex <
-              neighbors.length;
-            neighborIndex += 1
-          ) {
-            const neighbor =
-              neighbors[
-                neighborIndex
-              ];
-
-            const neighborNode =
-              gridNodes[
-                neighbor
-              ];
-
-            const dx =
-              node.homeX -
-              neighborNode.homeX;
-
-            const dy =
-              node.homeY -
-              neighborNode.homeY;
-
-            const geometricDistance =
-              Math.hypot(
-                dx,
-                dy
-              );
-
-            const potentialDifference =
-              Math.max(
-                0,
-                currentPotential -
-                  nodePotential[
-                    neighbor
-                  ]
-              );
-
-            let edgeResistance =
-              1 +
-              geometricDistance *
-                0.7;
-
-            for (
-              let edgeIndex = 0;
-              edgeIndex <
-                gridEdges.length;
-              edgeIndex += 1
-            ) {
-              const edge =
-                gridEdges[
-                  edgeIndex
-                ];
-
-              if (
-                (
-                  edge.a ===
-                    index &&
-                  edge.b ===
-                    neighbor
-                ) ||
-                (
-                  edge.a ===
-                    neighbor &&
-                  edge.b ===
-                    index
-                )
-              ) {
-                edgeResistance =
-                  edge.resistance *
-                  (
-                    1 +
-                    edge.flow *
-                      0.55
-                  );
-
-                break;
-              }
-            }
-
-            /*
-             * Lower effort means:
-             * - shorter route
-             * - less loaded connection
-             * - lower destination potential
-             */
-            const effort =
-              edgeResistance +
-              potentialDifference *
-                0.7 -
-              nodePotential[
-                neighbor
-              ] *
-                GRID_ROUTE_BONUS;
-
-            if (
-              effort <
-              bestEffort
-            ) {
-              bestEffort =
-                effort;
-
-              bestNeighbor =
-                neighbor;
-            }
-          }
-
-          if (
-            bestNeighbor <
-            0
-          ) {
-            continue;
-          }
-
-          const availableEnergy =
-            Math.max(
-              0,
-              nextNodeEnergy[
-                index
-              ]
-            );
-
-          const routeFlow =
-            clamp(
-              availableEnergy *
-                activeProfile.gridConductance *
-                0.09 *
-                deltaScale,
-              0,
-              0.035
-            );
-
-          nextNodeEnergy[
-            index
-          ] -=
-            routeFlow;
-
-          nextNodeEnergy[
-            bestNeighbor
-          ] +=
-            routeFlow;
-        }
-
-        for (
-          let index = 0;
-          index <
-            gridNodes.length;
-          index += 1
-        ) {
-          const node =
-            gridNodes[index];
-
-          const globalTarget =
-            nodePotential[
-              index
+              neighbor
             ] *
-            activeProfile.globalPotentialGain;
+              GRID_ROUTE_BONUS;
 
+          if (
+            effort <
+            bestEffort
+          ) {
+            bestEffort =
+              effort;
+
+            bestNeighbor =
+              neighbor;
+          }
+        }
+
+        if (
+          bestNeighbor <
+          0
+        ) {
+          continue;
+        }
+
+        const availableEnergy =
+          Math.max(
+            0,
+            nextNodeEnergy[
+              index
+            ]
+          );
+
+        const routeFlow =
+          clamp(
+            availableEnergy *
+              activeProfile.gridConductance *
+              0.09 *
+              deltaScale,
+            0,
+            0.035
+          );
+
+        nextNodeEnergy[
+          index
+        ] -=
+          routeFlow;
+
+        nextNodeEnergy[
+          bestNeighbor
+        ] +=
+          routeFlow;
+      }
+
+      const pointerInfluenceRadius =
+        radius *
+        GRID_POINTER_RADIUS;
+
+      const pointerInfluenceRadiusSquared =
+        pointerInfluenceRadius *
+        pointerInfluenceRadius;
+
+      for (
+        let index = 0;
+        index <
+          gridNodes.length;
+        index += 1
+      ) {
+        const node =
+          gridNodes[index];
+
+        const globalTarget =
+          nodePotential[
+            index
+          ] *
+          activeProfile.globalPotentialGain;
+
+        let pointerInfluence =
+          0;
+
+        if (
+          pointerActive
+        ) {
           const pointerDistanceSquared =
             distanceSquared(
               pointer.x,
@@ -2403,19 +2441,7 @@ export default function RedMagic({
               node.y
             );
 
-          const pointerInfluenceRadius =
-            radius *
-            0.72;
-
-          const pointerInfluenceRadiusSquared =
-            pointerInfluenceRadius *
-            pointerInfluenceRadius;
-
-          let pointerInfluence =
-            0;
-
           if (
-            pointerActive &&
             pointerDistanceSquared <
             pointerInfluenceRadiusSquared
           ) {
@@ -2429,564 +2455,562 @@ export default function RedMagic({
               ) *
               activeProfile.pointerGain;
           }
-
-          const pointerContribution =
-            pointerInfluence *
-            0.025;
-
-          const organicPulse =
-            (
-              Math.sin(
-                time *
-                  0.0015 +
-                  node.phase
-              ) +
-              1
-            ) *
-            0.5 *
-            0.003;
-
-          nextNodeEnergy[
-            index
-          ] +=
-            globalTarget *
-              deltaScale +
-            pointerContribution *
-              deltaScale +
-            organicPulse *
-              deltaScale;
-
-          node.energy =
-            clamp(
-              nextNodeEnergy[
-                index
-              ],
-              0,
-              GRID_MAX_NODE_ENERGY
-            );
-
-          node.velocity *=
-            0.96;
-
-          if (
-            node.energy >
-            0.03
-          ) {
-            node.velocity +=
-              node.energy *
-              0.01;
-          }
         }
-      };
 
-    const getBoundaryRadius =
-      (
-        point:
-          BoundaryPoint,
-        time: number
-      ) => {
-        const primaryWave =
-          Math.sin(
-            point.angle *
-              3 +
+        const pointerContribution =
+          pointerInfluence *
+          GRID_POINTER_CONTRIBUTION;
+
+        const organicPulse =
+          (
+            Math.sin(
               time *
-                0.0011
+                0.0015 +
+                node.phase
+            ) +
+            1
           ) *
-          0.034;
+          0.5 *
+          0.003;
 
-        const secondaryWave =
-          Math.sin(
-            point.angle *
-              7 -
-              time *
-                0.0008 +
-              1.3
-          ) *
-          0.022;
+        nextNodeEnergy[
+          index
+        ] +=
+          globalTarget *
+            deltaScale +
+          pointerContribution *
+            deltaScale +
+          organicPulse *
+            deltaScale;
 
-        const tertiaryWave =
-          Math.sin(
-            point.angle *
-              11 +
-              time *
-                0.00065
-          ) *
-          0.012;
+        node.energy =
+          clamp(
+            nextNodeEnergy[
+              index
+            ],
+            0,
+            GRID_MAX_NODE_ENERGY
+          );
 
-        let interaction =
-          0;
+        node.velocity *=
+          0.96;
 
         if (
-          pointerActive &&
-          pointerDistance >
-            0.0001
+          node.energy >
+          0.03
         ) {
-          const delta =
-            Math.atan2(
-              Math.sin(
-                point.angle -
-                  pointerAngle
-              ),
-              Math.cos(
-                point.angle -
-                  pointerAngle
-              )
-            );
-
-          const sigma =
-            modeRef.current ===
-            "surge"
-              ? 0.28
-              : 0.18;
-
-          const influence =
-            Math.exp(
-              -(
-                delta *
-                delta
-              ) /
-                sigma
-            );
-
-          const distanceFactor =
-            clamp(
-              1 -
-                pointerDistance /
-                  (
-                    radius *
-                    2.2
-                  ),
-              0,
-              1
-            );
-
-          interaction =
-            influence *
-            distanceFactor *
-            0.075 *
-            profile.pointerGain;
+          node.velocity +=
+            node.energy *
+            0.01;
         }
+      }
+    };
 
-        const turbulence =
-          interactionTurbulence *
-          (
-            0.012 +
+    const getBoundaryRadius = (
+      point:
+        BoundaryPoint,
+      time: number
+    ) => {
+      const primaryWave =
+        Math.sin(
+          point.angle *
+            3 +
+            time *
+              0.0011
+        ) *
+        0.034;
+
+      const secondaryWave =
+        Math.sin(
+          point.angle *
+            7 -
+            time *
+              0.0008 +
+            1.3
+        ) *
+        0.022;
+
+      const tertiaryWave =
+        Math.sin(
+          point.angle *
+            11 +
+            time *
+              0.00065
+        ) *
+        0.012;
+
+      let interaction =
+        0;
+
+      if (
+        pointerActive &&
+        pointerDistance >
+          0.0001
+      ) {
+        const delta =
+          Math.atan2(
             Math.sin(
-              point.angle *
-                13 +
+              point.angle -
+                pointerAngle
+            ),
+            Math.cos(
+              point.angle -
+                pointerAngle
+            )
+          );
+
+        const sigma =
+          modeRef.current ===
+          "surge"
+            ? 0.28
+            : 0.18;
+
+        const influence =
+          Math.exp(
+            -(
+              delta *
+              delta
+            ) /
+              sigma
+          );
+
+        const distanceFactor =
+          clamp(
+            1 -
+              pointerDistance /
+                (
+                  radius *
+                  2.2
+                ),
+            0,
+            1
+          );
+
+        interaction =
+          influence *
+          distanceFactor *
+          0.075 *
+          profile.pointerGain;
+      }
+
+      const turbulence =
+        interactionTurbulence *
+        (
+          0.012 +
+          Math.sin(
+            point.angle *
+              13 +
               time *
                 0.004 +
               pointerAngle *
                 2
-            ) *
-              0.008
+          ) *
+            0.008
+        );
+
+      let networkDeformation =
+        0;
+
+      for (
+        let index = 0;
+        index <
+          gridNodes.length;
+        index += 1
+      ) {
+        const node =
+          gridNodes[index];
+
+        const dx =
+          point.cos *
+            0.9 -
+          node.homeX;
+
+        const dy =
+          point.sin *
+            0.9 -
+          node.homeY;
+
+        const distance =
+          Math.hypot(
+            dx,
+            dy
           );
 
-        let networkDeformation =
-          0;
+        const field =
+          1 /
+          (
+            1 +
+            distance *
+              3.5
+          );
 
-        for (
-          let index = 0;
-          index <
-            gridNodes.length;
-          index += 1
-        ) {
-          const node =
-            gridNodes[index];
+        networkDeformation +=
+          node.energy *
+          field *
+          0.004;
+      }
 
-          const dx =
-            point.cos *
-              0.9 -
-            node.homeX;
+      let shockwaveDeformation =
+        0;
 
-          const dy =
-            point.sin *
-              0.9 -
-            node.homeY;
+      for (
+        let index = 0;
+        index <
+          shockwaves.length;
+        index += 1
+      ) {
+        const shockwave =
+          shockwaves[index];
 
-          const distance =
-            Math.hypot(
-              dx,
-              dy
-            );
+        const progress =
+          clamp(
+            shockwave.age /
+              SHOCKWAVE_DURATION,
+            0,
+            1
+          );
 
-          const field =
-            1 /
-            (
-              1 +
-              distance *
-                3.5
-            );
+        const delta =
+          Math.atan2(
+            Math.sin(
+              point.angle -
+                shockwave.angle
+            ),
+            Math.cos(
+              point.angle -
+                shockwave.angle
+            )
+          );
 
-          networkDeformation +=
-            node.energy *
-            field *
-            0.004;
-        }
+        const angularInfluence =
+          Math.exp(
+            -(
+              delta *
+              delta
+            ) /
+              0.34
+          );
 
-        let shockwaveDeformation =
-          0;
+        const currentRadius =
+          radius *
+          (
+            0.08 +
+            progress *
+              1.05
+          );
 
-        for (
-          let index = 0;
-          index <
-            shockwaves.length;
-          index += 1
-        ) {
-          const shockwave =
-            shockwaves[index];
+        const pointRadius =
+          radius *
+          0.9;
 
-          const progress =
-            clamp(
-              shockwave.age /
-                SHOCKWAVE_DURATION,
-              0,
-              1
-            );
+        const waveOffset =
+          pointRadius -
+          currentRadius;
 
-          const delta =
-            Math.atan2(
-              Math.sin(
-                point.angle -
-                  shockwave.angle
-              ),
-              Math.cos(
-                point.angle -
-                  shockwave.angle
-              )
-            );
+        const widthFactor =
+          radius *
+          0.11;
 
-          const angularInfluence =
-            Math.exp(
-              -(
-                delta *
-                delta
-              ) /
-                0.34
-            );
+        const widthSquared =
+          Math.max(
+            1,
+            widthFactor *
+              widthFactor
+          );
 
-          const currentRadius =
-            radius *
-            (
-              0.08 +
-              progress *
-                1.05
-            );
+        const radialInfluence =
+          Math.exp(
+            -(
+              waveOffset *
+              waveOffset
+            ) /
+              widthSquared
+          );
 
-          const pointRadius =
-            radius *
-            0.9;
+        shockwaveDeformation +=
+          radialInfluence *
+          angularInfluence *
+          (
+            1 -
+            progress
+          ) *
+          shockwave.strength *
+          0.1352;
+      }
 
-          const waveOffset =
-            pointRadius -
-            currentRadius;
+      return (
+        1 +
+        primaryWave +
+        secondaryWave +
+        tertiaryWave +
+        interaction +
+        turbulence +
+        networkDeformation +
+        shockwaveDeformation
+      );
+    };
 
-          const widthFactor =
-            radius *
-            0.11;
+    const drawGlow = (
+      x: number,
+      y: number,
+      innerRadius: number,
+      outerRadius: number,
+      alpha: number
+    ) => {
+      if (
+        glowSprite
+      ) {
+        context.globalAlpha =
+          alpha;
 
-          const widthSquared =
-            Math.max(
-              1,
-              widthFactor *
-                widthFactor
-            );
-
-          const radialInfluence =
-            Math.exp(
-              -(
-                waveOffset *
-                waveOffset
-              ) /
-                widthSquared
-            );
-
-          shockwaveDeformation +=
-            radialInfluence *
-            angularInfluence *
-            (
-              1 -
-              progress
-            ) *
-            shockwave.strength *
-            0.1352;
-        }
-
-        return (
-          1 +
-          primaryWave +
-          secondaryWave +
-          tertiaryWave +
-          interaction +
-          turbulence +
-          networkDeformation +
-          shockwaveDeformation
+        context.drawImage(
+          glowSprite,
+          x -
+            outerRadius,
+          y -
+            outerRadius,
+          outerRadius *
+            2,
+          outerRadius *
+            2
         );
-      };
 
-    const drawGlow =
-      (
-        x: number,
-        y: number,
-        innerRadius: number,
-        outerRadius: number,
-        alpha: number
-      ) => {
+        context.globalAlpha =
+          1;
+
+        return;
+      }
+
+      const gradient =
+        context.createRadialGradient(
+          x,
+          y,
+          innerRadius,
+          x,
+          y,
+          outerRadius
+        );
+
+      gradient.addColorStop(
+        0,
+        `rgba(255, 50, 35, ${alpha})`
+      );
+
+      gradient.addColorStop(
+        0.35,
+        `rgba(255, 20, 20, ${
+          alpha *
+          0.46
+        })`
+      );
+
+      gradient.addColorStop(
+        1,
+        "rgba(255, 0, 0, 0)"
+      );
+
+      context.fillStyle =
+        gradient;
+
+      context.beginPath();
+
+      context.arc(
+        x,
+        y,
+        outerRadius,
+        0,
+        TAU
+      );
+
+      context.fill();
+    };
+
+    const drawNetwork = (
+      time: number
+    ) => {
+      if (
+        gridNodes.length ===
+        0
+      ) {
+        return;
+      }
+
+      context.lineCap =
+        "round";
+
+      context.lineJoin =
+        "round";
+
+      for (
+        let index = 0;
+        index <
+          gridEdges.length;
+        index += 1
+      ) {
+        const edge =
+          gridEdges[index];
+
+        const a =
+          gridNodes[
+            edge.a
+          ];
+
+        const b =
+          gridNodes[
+            edge.b
+          ];
+
+        const energy =
+          (
+            a.energy +
+            b.energy
+          ) *
+          0.5;
+
+        const active =
+          clamp(
+            energy *
+              1.8 +
+              edge.flow *
+                1.4,
+            0,
+            1
+          );
+
         if (
-          glowSprite
+          active <
+          0.01
         ) {
           context.globalAlpha =
-            alpha;
+            0.035;
 
-          context.drawImage(
-            glowSprite,
-            x -
-              outerRadius,
-            y -
-              outerRadius,
-            outerRadius *
-              2,
-            outerRadius *
-              2
-          );
+          context.lineWidth =
+            0.45;
 
+          context.strokeStyle =
+            "rgba(115, 18, 18, 1)";
+        } else {
           context.globalAlpha =
-            1;
+            0.045 +
+            active *
+              0.24;
 
-          return;
+          context.lineWidth =
+            0.6 +
+            active *
+              1.15;
+
+          context.strokeStyle =
+            "rgba(255, 70, 52, 1)";
         }
 
-        const gradient =
-          context.createRadialGradient(
-            x,
-            y,
-            innerRadius,
-            x,
-            y,
-            outerRadius
+        context.beginPath();
+
+        context.moveTo(
+          a.x,
+          a.y
+        );
+
+        context.lineTo(
+          b.x,
+          b.y
+        );
+
+        context.stroke();
+      }
+
+      for (
+        let index = 0;
+        index <
+          gridNodes.length;
+        index += 1
+      ) {
+        const node =
+          gridNodes[index];
+
+        const potential =
+          nodePotential[
+            index
+          ];
+
+        const energy =
+          node.energy;
+
+        const localPulse =
+          1 +
+          Math.sin(
+            time *
+              0.003 +
+              node.phase
+          ) *
+            0.12;
+
+        const nodeRadius =
+          (
+            1.5 +
+            energy *
+              4.2 +
+            potential *
+              1.5
+          ) *
+          localPulse;
+
+        const nodeAlpha =
+          clamp(
+            0.24 +
+              energy *
+                0.72 +
+              potential *
+                0.16,
+            0,
+            1
           );
 
-        gradient.addColorStop(
-          0,
-          `rgba(255, 50, 35, ${alpha})`
-        );
-
-        gradient.addColorStop(
-          0.35,
-          `rgba(255, 20, 20, ${
-            alpha *
-            0.46
-          })`
-        );
-
-        gradient.addColorStop(
-          1,
-          "rgba(255, 0, 0, 0)"
-        );
+        context.globalAlpha =
+          nodeAlpha;
 
         context.fillStyle =
-          gradient;
+          "rgba(255, 92, 70, 1)";
 
         context.beginPath();
 
         context.arc(
-          x,
-          y,
-          outerRadius,
+          node.x,
+          node.y,
+          Math.max(
+            1.2,
+            nodeRadius
+          ),
           0,
           TAU
         );
 
         context.fill();
-      };
 
-    const drawNetwork =
-      (
-        time: number
-      ) => {
         if (
-          gridNodes.length ===
-          0
+          energy >
+          0.018
         ) {
-          return;
-        }
-
-        context.lineCap =
-          "round";
-
-        context.lineJoin =
-          "round";
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          const edge =
-            gridEdges[index];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          const energy =
-            (
-              a.energy +
-              b.energy
-            ) *
-            0.5;
-
-          const active =
-            clamp(
-              energy *
-                1.8 +
-                edge.flow *
-                  1.4,
-              0,
-              1
-            );
-
-          if (
-            active <
-            0.01
-          ) {
-            context.globalAlpha =
-              0.035;
-
-            context.lineWidth =
-              0.45;
-
-            context.strokeStyle =
-              "rgba(115, 18, 18, 1)";
-          } else {
-            context.globalAlpha =
-              0.045 +
-              active *
-                0.24;
-
-            context.lineWidth =
-              0.6 +
-              active *
-                1.15;
-
-            context.strokeStyle =
-              "rgba(255, 70, 52, 1)";
-          }
-
-          context.beginPath();
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-
-          context.stroke();
-        }
-
-        for (
-          let index = 0;
-          index <
-            gridNodes.length;
-          index += 1
-        ) {
-          const node =
-            gridNodes[index];
-
-          const potential =
-            nodePotential[
-              index
-            ];
-
-          const energy =
-            node.energy;
-
-          const localPulse =
-            1 +
-            Math.sin(
-              time *
-                0.003 +
-                node.phase
-            ) *
-              0.12;
-
-          const nodeRadius =
-            (
-              1.5 +
-              energy *
-                4.2 +
-              potential *
-                1.5
-            ) *
-            localPulse;
-
-          const nodeAlpha =
-            clamp(
-              0.24 +
-                energy *
-                  0.72 +
-                potential *
-                  0.16,
-              0,
-              1
-            );
-
-          context.globalAlpha =
-            nodeAlpha;
-
-          context.fillStyle =
-            "rgba(255, 92, 70, 1)";
-
-          context.beginPath();
-
-          context.arc(
+          drawGlow(
             node.x,
             node.y,
-            Math.max(
-              1.2,
-              nodeRadius
-            ),
             0,
-            TAU
-          );
-
-          context.fill();
-
-          if (
-            energy >
-            0.018
-          ) {
-            drawGlow(
-              node.x,
-              node.y,
-              0,
-              nodeRadius *
-                (
-                  3.2 +
-                  energy *
-                    2
-                ),
-              0.028 +
+            nodeRadius *
+              (
+                3.2 +
                 energy *
-                  0.07
-            );
-          }
+                  2
+              ),
+            0.028 +
+              energy *
+                0.07
+          );
         }
+      }
 
-        context.globalAlpha =
-          1;
-      };
+      context.globalAlpha =
+        1;
+    };
 
     const drawInteraction =
       () => {
@@ -3129,42 +3153,186 @@ export default function RedMagic({
           1;
       };
 
-    const drawMembrane =
-      (
-        time: number
-      ) => {
+    const drawMembrane = (
+      time: number
+    ) => {
+      context.beginPath();
+
+      for (
+        let index = 0;
+        index <
+          membraneBoundary.length;
+        index += 1
+      ) {
+        const point =
+          membraneBoundary[
+            index
+          ];
+
+        const normalizedRadius =
+          getBoundaryRadius(
+            point,
+            time
+          ) *
+          radius;
+
+        const x =
+          centerX +
+          point.cos *
+            normalizedRadius;
+
+        const y =
+          centerY +
+          point.sin *
+            normalizedRadius;
+
+        if (
+          index ===
+          0
+        ) {
+          context.moveTo(
+            x,
+            y
+          );
+        } else {
+          context.lineTo(
+            x,
+            y
+          );
+        }
+      }
+
+      context.closePath();
+
+      if (
+        membraneGradient
+      ) {
+        context.fillStyle =
+          membraneGradient;
+
+        context.fill();
+      }
+
+      context.lineWidth =
+        reducedMotion
+          ? 1.2
+          : 1.6;
+
+      context.strokeStyle =
+        "rgba(255, 55, 40, 0.68)";
+
+      context.stroke();
+
+      context.lineWidth =
+        4;
+
+      context.strokeStyle =
+        "rgba(125, 0, 0, 0.12)";
+
+      context.stroke();
+    };
+
+    const drawEnergyFlows = (
+      time: number
+    ) => {
+      for (
+        let index = 0;
+        index <
+          quality.flowCount;
+        index += 1
+      ) {
+        const direction =
+          index % 2 ===
+          0
+            ? 1
+            : -1;
+
+        const baseAngle =
+          (
+            index /
+            quality.flowCount
+          ) *
+            TAU +
+          time *
+            0.00016 *
+            direction +
+          interactionTurbulence *
+            0.04 *
+            direction;
+
         context.beginPath();
 
         for (
-          let index = 0;
-          index <
-            membraneBoundary.length;
-          index += 1
+          let segment = 0;
+          segment <=
+            quality.flowSegments;
+          segment += 1
         ) {
-          const point =
-            membraneBoundary[
-              index
-            ];
+          const progress =
+            segment /
+            quality.flowSegments;
 
-          const normalizedRadius =
-            getBoundaryRadius(
-              point,
-              time
+          const angle =
+            baseAngle +
+            Math.sin(
+              progress *
+                Math.PI *
+                2 +
+                time *
+                  0.0012
             ) *
-            radius;
+              (
+                0.05 +
+                interactionTurbulence *
+                  0.018
+              );
+
+          const distance =
+            radius *
+            (
+              0.12 +
+              progress *
+                0.67
+            );
+
+          const wave =
+            Math.sin(
+              progress *
+                Math.PI *
+                3.2 +
+                time *
+                  0.0017 +
+                index
+            ) *
+            radius *
+            (
+              0.025 +
+              interactionTurbulence *
+                0.016
+            );
 
           const x =
             centerX +
-            point.cos *
-              normalizedRadius;
+            Math.cos(
+              angle
+            ) *
+              (
+                distance +
+                wave
+              );
 
           const y =
             centerY +
-            point.sin *
-              normalizedRadius;
+            Math.sin(
+              angle
+            ) *
+              (
+                distance +
+                wave
+              );
 
           if (
-            index ===
+            segment ===
             0
           ) {
             context.moveTo(
@@ -3179,472 +3347,282 @@ export default function RedMagic({
           }
         }
 
-        context.closePath();
-
-        if (
-          membraneGradient
-        ) {
-          context.fillStyle =
-            membraneGradient;
-
-          context.fill();
-        }
-
         context.lineWidth =
-          reducedMotion
-            ? 1.2
-            : 1.6;
-
-        context.strokeStyle =
-          "rgba(255, 55, 40, 0.68)";
-
-        context.stroke();
-
-        context.lineWidth =
-          4;
-
-        context.strokeStyle =
-          "rgba(125, 0, 0, 0.12)";
-
-        context.stroke();
-      };
-
-    const drawEnergyFlows =
-      (
-        time: number
-      ) => {
-        for (
-          let index = 0;
-          index <
-            quality.flowCount;
-          index += 1
-        ) {
-          const direction =
-            index %
-              2 ===
-            0
-              ? 1
-              : -1;
-
-          const baseAngle =
-            (
-              index /
-              quality.flowCount
-            ) *
-              TAU +
-            time *
-              0.00016 *
-              direction +
-            interactionTurbulence *
-              0.04 *
-              direction;
-
-          context.beginPath();
-
-          for (
-            let segment = 0;
-            segment <=
-              quality.flowSegments;
-            segment += 1
-          ) {
-            const progress =
-              segment /
-              quality.flowSegments;
-
-            const angle =
-              baseAngle +
-              Math.sin(
-                progress *
-                  Math.PI *
-                  2 +
-                  time *
-                    0.0012
-              ) *
-                (
-                  0.05 +
-                  interactionTurbulence *
-                    0.018
-                );
-
-            const distance =
-              radius *
-              (
-                0.12 +
-                progress *
-                  0.67
-              );
-
-            const wave =
-              Math.sin(
-                progress *
-                  Math.PI *
-                  3.2 +
-                  time *
-                    0.0017 +
-                  index
-              ) *
-              radius *
-              (
-                0.025 +
-                interactionTurbulence *
-                  0.016
-              );
-
-            const x =
-              centerX +
-              Math.cos(
-                angle
-              ) *
-                (
-                  distance +
-                  wave
-                );
-
-            const y =
-              centerY +
-              Math.sin(
-                angle
-              ) *
-                (
-                  distance +
-                  wave
-                );
-
-            if (
-              segment ===
-              0
-            ) {
-              context.moveTo(
-                x,
-                y
-              );
-            } else {
-              context.lineTo(
-                x,
-                y
-              );
-            }
-          }
-
-          context.lineWidth =
+          0.8 +
+          pointerEnergy *
             0.8 +
+          interactionTurbulence *
+            0.5;
+
+        context.strokeStyle =
+          `rgba(255, 70, 48, ${
+            0.08 +
             pointerEnergy *
-              0.8 +
+              0.05 +
             interactionTurbulence *
-              0.5;
+              0.035
+          })`;
 
-          context.strokeStyle =
-            `rgba(255, 70, 48, ${
-              0.08 +
-              pointerEnergy *
-                0.05 +
-              interactionTurbulence *
-                0.035
-            })`;
+        context.stroke();
+      }
+    };
 
-          context.stroke();
-        }
-      };
+    const drawParticles = (
+      time: number,
+      delta: number
+    ) => {
+      const step =
+        delta *
+        0.0009 *
+        16;
 
-    const drawParticles =
-      (
-        time: number,
-        delta: number
-      ) => {
-        const step =
-          delta *
-          0.0009 *
-          16;
+      const impulseDecay =
+        Math.pow(
+          0.91,
+          delta /
+            16
+        );
 
-        const impulseDecay =
-          Math.pow(
-            0.91,
-            delta /
-              16
+      const pointerActiveNow =
+        pointerActive;
+
+      const surgeMode =
+        modeRef.current ===
+        "surge";
+
+      const surgeInteraction =
+        surgeMode &&
+        pointerActiveNow &&
+        pointerDistance <
+          radius *
+            0.95;
+
+      const impulseScale =
+        radius *
+        0.11;
+
+      const influenceRadius =
+        radius *
+        PARTICLE_INFLUENCE_FACTOR;
+
+      const influenceRadiusSquared =
+        influenceRadius *
+        influenceRadius;
+
+      const pointerX =
+        pointer.x;
+
+      const pointerY =
+        pointer.y;
+
+      const dxFromPointer =
+        pointerX -
+        centerX;
+
+      const dyFromPointer =
+        pointerY -
+        centerY;
+
+      let radialX = 0;
+
+      let radialY = 0;
+
+      let surgePull = 0;
+
+      if (
+        surgeInteraction
+      ) {
+        const radialPointerLength =
+          Math.max(
+            0.0001,
+            Math.hypot(
+              dxFromPointer,
+              dyFromPointer
+            )
           );
 
-        const pointerActiveNow =
-          pointerActive;
+        radialX =
+          dxFromPointer /
+          radialPointerLength;
 
-        const surgeMode =
-          modeRef.current ===
-          "surge";
+        radialY =
+          dyFromPointer /
+          radialPointerLength;
 
-        const surgeInteraction =
-          surgeMode &&
-          pointerActiveNow &&
-          pointerDistance <
-            radius *
-              0.95;
+        surgePull =
+          (
+            1 -
+            clamp(
+              pointerDistance /
+                (
+                  radius *
+                  0.95
+                ),
+              0,
+              1
+            )
+          ) *
+          0.0025;
+      }
 
-        const impulseScale =
+      const baseAlpha =
+        0.28 +
+        charge *
+          0.08;
+
+      context.fillStyle =
+        "rgb(255, 72, 55)";
+
+      for (
+        let index = 0;
+        index <
+          particles.length;
+        index += 1
+      ) {
+        const particle =
+          particles[index];
+
+        particle.impulseX *=
+          impulseDecay;
+
+        particle.impulseY *=
+          impulseDecay;
+
+        particle.angle +=
+          particle.speed *
+          (
+            1 +
+            pointerEnergy *
+              1.8 +
+            interactionTurbulence *
+              0.6
+          ) *
+          step;
+
+        const breathing =
+          1 +
+          Math.sin(
+            time *
+              0.0013 *
+              particle.drift +
+              particle.phase
+          ) *
+            0.055;
+
+        let orbitalRadius =
           radius *
-          0.11;
+          particle.radius *
+          breathing *
+          particle.orbit;
 
-        const influenceRadius =
+        const swirl =
+          Math.sin(
+            time *
+              0.0007 +
+              particle.phase
+          ) *
           radius *
-          PARTICLE_INFLUENCE_FACTOR;
-
-        const influenceRadiusSquared =
-          influenceRadius *
-          influenceRadius;
-
-        const pointerX =
-          pointer.x;
-
-        const pointerY =
-          pointer.y;
-
-        const dxFromPointer =
-          pointerX -
-          centerX;
-
-        const dyFromPointer =
-          pointerY -
-          centerY;
-
-        let radialX = 0;
-
-        let radialY = 0;
-
-        let surgePull = 0;
+          0.02;
 
         if (
           surgeInteraction
         ) {
-          const radialPointerLength =
-            Math.max(
-              0.0001,
-              Math.hypot(
-                dxFromPointer,
-                dyFromPointer
-              )
-            );
+          particle.impulseX +=
+            radialX *
+            surgePull;
 
-          radialX =
-            dxFromPointer /
-            radialPointerLength;
-
-          radialY =
-            dyFromPointer /
-            radialPointerLength;
-
-          surgePull =
-            (
-              1 -
-              clamp(
-                pointerDistance /
-                  (
-                    radius *
-                    0.95
-                  ),
-                0,
-                1
-              )
-            ) *
-            0.0025;
+          particle.impulseY +=
+            radialY *
+            surgePull;
         }
 
-        const baseAlpha =
-          0.28 +
-          charge *
-            0.08;
+        orbitalRadius =
+          Math.max(
+            radius *
+              0.08,
+            orbitalRadius
+          );
 
-        context.fillStyle =
-          "rgb(255, 72, 55)";
+        const x =
+          centerX +
+          Math.cos(
+            particle.angle
+          ) *
+            orbitalRadius +
+          swirl +
+          particle.impulseX *
+            impulseScale;
+
+        const y =
+          centerY +
+          Math.sin(
+            particle.angle
+          ) *
+            orbitalRadius +
+          swirl *
+            0.55 +
+          particle.impulseY *
+            impulseScale;
+
+        /*
+         * Radial visibility:
+         *
+         * 0..START
+         *   Fully visible.
+         *
+         * START..END
+         *   Smoothly fading.
+         *
+         * END+
+         *   Effectively invisible.
+         *
+         * Power > 1 keeps the inner region
+         * bright while producing a softer
+         * outer disappearance.
+         */
+        const normalizedDistance =
+          orbitalRadius /
+          Math.max(
+            radius,
+            1
+          );
+
+        const visibilityProgress =
+          clamp(
+            (
+              normalizedDistance -
+              PARTICLE_VISIBILITY_START
+            ) /
+              (
+                PARTICLE_VISIBILITY_END -
+                PARTICLE_VISIBILITY_START
+              ),
+            0,
+            1
+          );
+
+        const radialVisibility =
+          Math.pow(
+            1 -
+              smoothstep(
+                visibilityProgress
+              ),
+            PARTICLE_VISIBILITY_POWER
+          );
 
         if (
-          !pointerActiveNow
+          radialVisibility <=
+          PARTICLE_MIN_VISIBLE_ALPHA
         ) {
-          context.globalAlpha =
-            baseAlpha;
-
-          for (
-            let index = 0;
-            index <
-              particles.length;
-            index += 1
-          ) {
-            const particle =
-              particles[index];
-
-            particle.impulseX *=
-              impulseDecay;
-
-            particle.impulseY *=
-              impulseDecay;
-
-            particle.angle +=
-              particle.speed *
-              (
-                1 +
-                pointerEnergy *
-                  1.8 +
-                interactionTurbulence *
-                  0.6
-              ) *
-              step;
-
-            const breathing =
-              1 +
-              Math.sin(
-                time *
-                  0.0013 *
-                  particle.drift +
-                  particle.phase
-              ) *
-                0.055;
-
-            const orbitalRadius =
-              Math.max(
-                radius *
-                  0.08,
-                radius *
-                  particle.radius *
-                  breathing *
-                  particle.orbit
-              );
-
-            const swirl =
-              Math.sin(
-                time *
-                  0.0007 +
-                  particle.phase
-              ) *
-              radius *
-              0.02;
-
-            const x =
-              centerX +
-              Math.cos(
-                particle.angle
-              ) *
-                orbitalRadius +
-              swirl +
-              particle.impulseX *
-                impulseScale;
-
-            const y =
-              centerY +
-              Math.sin(
-                particle.angle
-              ) *
-                orbitalRadius +
-              swirl *
-                0.55 +
-              particle.impulseY *
-                impulseScale;
-
-            context.beginPath();
-
-            context.arc(
-              x,
-              y,
-              particle.size,
-              0,
-              TAU
-            );
-
-            context.fill();
-          }
-
-          context.globalAlpha =
-            1;
-
-          return;
+          continue;
         }
 
-        for (
-          let index = 0;
-          index <
-            particles.length;
-          index += 1
+        let interactionVisibility =
+          0;
+
+        if (
+          pointerActiveNow
         ) {
-          const particle =
-            particles[index];
-
-          particle.impulseX *=
-            impulseDecay;
-
-          particle.impulseY *=
-            impulseDecay;
-
-          particle.angle +=
-            particle.speed *
-            (
-              1 +
-              pointerEnergy *
-                1.8 +
-              interactionTurbulence *
-                0.6
-            ) *
-            step;
-
-          const breathing =
-            1 +
-            Math.sin(
-              time *
-                0.0013 *
-                particle.drift +
-                particle.phase
-            ) *
-              0.055;
-
-          let orbitalRadius =
-            radius *
-            particle.radius *
-            breathing *
-            particle.orbit;
-
-          const swirl =
-            Math.sin(
-              time *
-                0.0007 +
-                particle.phase
-            ) *
-            radius *
-            0.02;
-
-          if (
-            surgeInteraction
-          ) {
-            particle.impulseX +=
-              radialX *
-              surgePull;
-
-            particle.impulseY +=
-              radialY *
-              surgePull;
-          }
-
-          orbitalRadius =
-            Math.max(
-              radius *
-                0.08,
-              orbitalRadius
-            );
-
-          const x =
-            centerX +
-            Math.cos(
-              particle.angle
-            ) *
-              orbitalRadius +
-            swirl +
-            particle.impulseX *
-              impulseScale;
-
-          const y =
-            centerY +
-            Math.sin(
-              particle.angle
-            ) *
-              orbitalRadius +
-            swirl *
-              0.55 +
-            particle.impulseY *
-              impulseScale;
-
           const localDistanceSquared =
             distanceSquared(
               pointerX,
@@ -3652,9 +3630,6 @@ export default function RedMagic({
               x,
               y
             );
-
-          let clampedInfluence =
-            0;
 
           if (
             localDistanceSquared <
@@ -3670,227 +3645,252 @@ export default function RedMagic({
               ) *
               profile.pointerGain;
 
-            clampedInfluence =
+            interactionVisibility =
               Math.min(
                 1,
                 pointerInfluence
               );
           }
+        }
 
-          const size =
-            particle.size *
-            (
-              1 +
-              clampedInfluence *
-                0.75 +
-              charge *
-                0.16
-            );
-
-          context.globalAlpha =
-            baseAlpha +
-            clampedInfluence *
-              0.42;
-
-          context.beginPath();
-
-          context.arc(
-            x,
-            y,
-            size,
-            0,
-            TAU
+        const size =
+          particle.size *
+          (
+            1 +
+            interactionVisibility *
+              0.75 +
+            charge *
+              0.16
+          ) *
+          (
+            0.72 +
+            radialVisibility *
+              0.28
           );
 
-          context.fill();
+        const alpha =
+          (
+            baseAlpha +
+            interactionVisibility *
+              0.42
+          ) *
+          (
+            0.15 +
+            radialVisibility *
+              0.85
+          );
+
+        if (
+          alpha <=
+          PARTICLE_MIN_VISIBLE_ALPHA
+        ) {
+          continue;
         }
 
         context.globalAlpha =
-          1;
-      };
-
-    const drawCore =
-      (
-        time: number
-      ) => {
-        const pulse =
-          1 +
-          Math.sin(
-            time *
-              0.0022
-          ) *
-            0.035 +
-          Math.sin(
-            time *
-              0.0049
-          ) *
-            0.012;
-
-        let totalGridEnergy =
-          0;
-
-        let highestGridEnergy =
-          0;
-
-        for (
-          let index = 0;
-          index <
-            gridNodes.length;
-          index += 1
-        ) {
-          const energy =
-            gridNodes[
-              index
-            ].energy;
-
-          totalGridEnergy +=
-            energy;
-
-          highestGridEnergy =
-            Math.max(
-              highestGridEnergy,
-              energy
-            );
-        }
-
-        const averageGridEnergy =
-          gridNodes.length >
-          0
-            ? totalGridEnergy /
-              gridNodes.length
-            : 0;
-
-        const activePulse =
-          pointerEnergy *
-            0.11 *
-            profile.coreGain +
-          charge *
-            0.18 *
-            profile.coreGain +
-          interactionTurbulence *
-            0.035 +
-          pointerVelocity *
-            0.003 *
-            profile.coreGain +
-          averageGridEnergy *
-            0.09 +
-          highestGridEnergy *
-            0.035;
-
-        const coreRadius =
-          radius *
-          0.49 *
-          (
-            pulse +
-            activePulse
+          clamp(
+            alpha,
+            0,
+            1
           );
-
-        drawGlow(
-          centerX,
-          centerY,
-          coreRadius *
-            0.08,
-          coreRadius *
-            1.75,
-          0.11 +
-            pointerEnergy *
-              0.04 *
-              profile.coreGain +
-            charge *
-              0.035 +
-            averageGridEnergy *
-              0.04
-        );
-
-        if (
-          charge >
-          0.01
-        ) {
-          drawGlow(
-            centerX,
-            centerY,
-            coreRadius *
-              0.2,
-            coreRadius *
-              (
-                1.9 +
-                charge *
-                  1.2
-              ),
-            0.055 +
-              charge *
-                0.09
-          );
-        }
-
-        if (
-          coreSprite
-        ) {
-          context.globalAlpha =
-            1;
-
-          context.drawImage(
-            coreSprite,
-            centerX -
-              coreRadius,
-            centerY -
-              coreRadius,
-            coreRadius *
-              2,
-            coreRadius *
-              2
-          );
-        }
-
-        const nucleusRadius =
-          radius *
-          0.17 *
-          (
-            1 +
-            Math.sin(
-              time *
-                0.0036
-            ) *
-              0.08 +
-            charge *
-              0.25 +
-            averageGridEnergy *
-              0.12
-          );
-
-        drawGlow(
-          centerX,
-          centerY,
-          nucleusRadius *
-            0.1,
-          nucleusRadius *
-            2.2,
-          0.09 +
-            pointerEnergy *
-              0.05 +
-            averageGridEnergy *
-              0.04
-        );
-
-        context.fillStyle =
-          "rgba(255, 205, 190, 0.9)";
 
         context.beginPath();
 
         context.arc(
-          centerX -
-            nucleusRadius *
-              0.15,
-          centerY -
-            nucleusRadius *
-              0.17,
-          nucleusRadius,
+          x,
+          y,
+          size,
           0,
           TAU
         );
 
         context.fill();
-      };
+      }
+
+      context.globalAlpha =
+        1;
+    };
+
+    const drawCore = (
+      time: number
+    ) => {
+      const pulse =
+        1 +
+        Math.sin(
+          time *
+            0.0022
+        ) *
+          0.035 +
+        Math.sin(
+          time *
+            0.0049
+        ) *
+          0.012;
+
+      let totalGridEnergy =
+        0;
+
+      let highestGridEnergy =
+        0;
+
+      for (
+        let index = 0;
+        index <
+          gridNodes.length;
+        index += 1
+      ) {
+        const energy =
+          gridNodes[
+            index
+          ].energy;
+
+        totalGridEnergy +=
+          energy;
+
+        highestGridEnergy =
+          Math.max(
+            highestGridEnergy,
+            energy
+          );
+      }
+
+      const averageGridEnergy =
+        gridNodes.length > 0
+          ? totalGridEnergy /
+            gridNodes.length
+          : 0;
+
+      const activePulse =
+        pointerEnergy *
+          0.11 *
+          profile.coreGain +
+        charge *
+          0.18 *
+          profile.coreGain +
+        interactionTurbulence *
+          0.035 +
+        pointerVelocity *
+          0.003 *
+          profile.coreGain +
+        averageGridEnergy *
+          0.09 +
+        highestGridEnergy *
+          0.035;
+
+      const coreRadius =
+        radius *
+        0.49 *
+        (
+          pulse +
+          activePulse
+        );
+
+      drawGlow(
+        centerX,
+        centerY,
+        coreRadius *
+          0.08,
+        coreRadius *
+          1.75,
+        0.11 +
+          pointerEnergy *
+            0.04 *
+            profile.coreGain +
+          charge *
+            0.035 +
+          averageGridEnergy *
+            0.04
+      );
+
+      if (
+        charge >
+        0.01
+      ) {
+        drawGlow(
+          centerX,
+          centerY,
+          coreRadius *
+            0.2,
+          coreRadius *
+            (
+              1.9 +
+              charge *
+                1.2
+            ),
+          0.055 +
+            charge *
+              0.09
+        );
+      }
+
+      if (
+        coreSprite
+      ) {
+        context.globalAlpha =
+          1;
+
+        context.drawImage(
+          coreSprite,
+          centerX -
+            coreRadius,
+          centerY -
+            coreRadius,
+          coreRadius *
+            2,
+          coreRadius *
+            2
+        );
+      }
+
+      const nucleusRadius =
+        radius *
+        0.17 *
+        (
+          1 +
+          Math.sin(
+            time *
+              0.0036
+          ) *
+            0.08 +
+          charge *
+            0.25 +
+          averageGridEnergy *
+            0.12
+        );
+
+      drawGlow(
+        centerX,
+        centerY,
+        nucleusRadius *
+          0.1,
+        nucleusRadius *
+          2.2,
+        0.09 +
+          pointerEnergy *
+            0.05 +
+          averageGridEnergy *
+            0.04
+      );
+
+      context.fillStyle =
+        "rgba(255, 205, 190, 0.9)";
+
+      context.beginPath();
+
+      context.arc(
+        centerX -
+          nucleusRadius *
+            0.15,
+        centerY -
+          nucleusRadius *
+            0.17,
+        nucleusRadius,
+        0,
+        TAU
+      );
+
+      context.fill();
+    };
 
     const updatePhysicalState =
       (
@@ -3950,7 +3950,9 @@ export default function RedMagic({
           index -= 1
         ) {
           const shockwave =
-            shockwaves[index];
+            shockwaves[
+              index
+            ];
 
           shockwave.age +=
             delta *
@@ -4013,8 +4015,7 @@ export default function RedMagic({
           sampleElapsed;
 
         const frameTime =
-          sampledFrames >
-          0
+          sampledFrames > 0
             ? sampleElapsed /
               sampledFrames
             : 0;
@@ -4028,6 +4029,7 @@ export default function RedMagic({
         publishRedMagicPerformance(
           {
             fps,
+
             frameTime,
 
             quality:
@@ -4395,7 +4397,8 @@ export default function RedMagic({
       "pointermove",
       handlePointerMove,
       {
-        passive: true
+        passive:
+          true
       }
     );
 
@@ -4403,7 +4406,8 @@ export default function RedMagic({
       "pointerleave",
       handlePointerLeave,
       {
-        passive: true
+        passive:
+          true
       }
     );
 
