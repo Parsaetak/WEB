@@ -335,14 +335,6 @@ const CORE_MOVEMENT_SPEED =
 const CORE_MOVEMENT_AMPLITUDE =
   0.014;
 
-/*
- * Persistent click-particle system.
- *
- * Exactly one particle is added per user click.
- * After 100 successful particle additions,
- * subsequent clicks only trigger a temporary
- * global illumination response.
- */
 const MAX_CLICK_PARTICLES =
   100;
 
@@ -402,7 +394,8 @@ function distanceSquared(
     ay - by;
 
   return (
-    dx * dx + dy * dy
+    dx * dx +
+    dy * dy
   );
 }
 
@@ -451,12 +444,12 @@ function createGlowSprite():
 
   gradient.addColorStop(
     0,
-    "rgba(255, 50, 35, 1)"
+    "rgba(255, 80, 20, 1)"
   );
 
   gradient.addColorStop(
     0.35,
-    "rgba(255, 20, 20, 0.46)"
+    "rgba(255, 30, 10, 0.52)"
   );
 
   gradient.addColorStop(
@@ -515,7 +508,7 @@ function createNodeSprite():
     0.5;
 
   context.fillStyle =
-    "rgba(255, 92, 70, 1)";
+    "rgba(255, 72, 35, 1)";
 
   context.beginPath();
 
@@ -610,7 +603,7 @@ function drawCoreFilament(
     width;
 
   context.strokeStyle =
-    `rgba(255, 205, 180, ${alpha})`;
+    `rgba(255, 170, 70, ${alpha})`;
 
   context.stroke();
 }
@@ -661,7 +654,7 @@ function createCoreSprite():
         CORE_SPRITE_SIZE *
           0.12,
       CORE_SPRITE_SIZE *
-        0.045,
+        0.03,
       center,
       center,
       radius
@@ -669,37 +662,42 @@ function createCoreSprite():
 
   gradient.addColorStop(
     0,
-    "rgba(255, 245, 235, 0.98)"
+    "rgba(255, 188, 72, 1)"
   );
 
   gradient.addColorStop(
-    0.11,
-    "rgba(255, 115, 95, 0.99)"
+    0.1,
+    "rgba(255, 132, 38, 1)"
   );
 
   gradient.addColorStop(
-    0.28,
-    "rgba(255, 52, 35, 0.98)"
+    0.22,
+    "rgba(255, 72, 22, 1)"
   );
 
   gradient.addColorStop(
-    0.52,
-    "rgba(205, 16, 10, 0.92)"
+    0.4,
+    "rgba(235, 24, 14, 0.98)"
   );
 
   gradient.addColorStop(
-    0.76,
-    "rgba(105, 0, 0, 0.62)"
+    0.62,
+    "rgba(172, 8, 8, 0.88)"
   );
 
   gradient.addColorStop(
-    0.9,
-    "rgba(48, 0, 0, 0.28)"
+    0.8,
+    "rgba(86, 0, 4, 0.56)"
+  );
+
+  gradient.addColorStop(
+    0.92,
+    "rgba(30, 0, 2, 0.22)"
   );
 
   gradient.addColorStop(
     1,
-    "rgba(12, 0, 0, 0)"
+    "rgba(8, 0, 0, 0)"
   );
 
   context.fillStyle =
@@ -727,114 +725,123 @@ function createCoreSprite():
 
   context.clip();
 
-  const spots = [
+  const hotRegions = [
     {
       x:
         center -
         radius *
-          0.31,
+          0.26,
       y:
         center -
         radius *
           0.18,
       radius:
         radius *
-        0.075,
+        0.11,
       alpha:
-        0.4
+        0.7
     },
     {
       x:
         center +
         radius *
-          0.23,
+          0.2,
       y:
         center -
         radius *
-          0.31,
+          0.27,
       radius:
         radius *
-        0.048,
+        0.07,
       alpha:
-        0.32
+        0.52
     },
     {
       x:
         center +
         radius *
-          0.34,
+          0.28,
       y:
         center +
         radius *
-          0.19,
+          0.18,
       radius:
         radius *
-        0.067,
+        0.09,
       alpha:
-        0.3
+        0.46
     },
     {
       x:
         center -
         radius *
-          0.16,
+          0.17,
       y:
         center +
         radius *
-          0.34,
+          0.3,
       radius:
         radius *
-        0.045,
+        0.055,
       alpha:
-        0.26
+        0.38
     }
   ];
 
   for (
     let index = 0;
-    index < spots.length;
+    index <
+      hotRegions.length;
     index += 1
   ) {
-    const spot =
-      spots[index];
+    const region =
+      hotRegions[index];
 
-    const spotGradient =
+    const regionGradient =
       context.createRadialGradient(
-        spot.x,
-        spot.y,
+        region.x,
+        region.y,
         0,
-        spot.x,
-        spot.y,
-        spot.radius
+        region.x,
+        region.y,
+        region.radius
       );
 
-    spotGradient.addColorStop(
+    regionGradient.addColorStop(
       0,
-      `rgba(48, 0, 0, ${spot.alpha})`
+      `rgba(255, 205, 80, ${region.alpha})`
     );
 
-    spotGradient.addColorStop(
-      0.68,
-      `rgba(120, 0, 0, ${
-        spot.alpha *
-        0.5
+    regionGradient.addColorStop(
+      0.4,
+      `rgba(255, 105, 30, ${
+        region.alpha *
+        0.7
       })`
     );
 
-    spotGradient.addColorStop(
+    regionGradient.addColorStop(
+      0.78,
+      `rgba(205, 22, 10, ${
+        region.alpha *
+        0.34
+      })`
+    );
+
+    regionGradient.addColorStop(
       1,
-      "rgba(190, 0, 0, 0)"
+      "rgba(160, 0, 0, 0)"
     );
 
     context.fillStyle =
-      spotGradient;
+      regionGradient;
 
     context.beginPath();
 
     context.arc(
-      spot.x,
-      spot.y,
-      spot.radius,
+      region.x,
+      region.y,
+      region.radius,
       0,
       TAU
     );
@@ -849,8 +856,8 @@ function createCoreSprite():
     -2.55,
     1.4,
     0.026,
-    2.1,
-    0.28
+    2.2,
+    0.34
   );
 
   drawCoreFilament(
@@ -860,8 +867,8 @@ function createCoreSprite():
     -0.75,
     1.18,
     0.022,
-    1.6,
-    0.22
+    1.7,
+    0.28
   );
 
   drawCoreFilament(
@@ -871,8 +878,8 @@ function createCoreSprite():
     0.65,
     1.28,
     0.028,
-    1.8,
-    0.2
+    1.9,
+    0.25
   );
 
   drawCoreFilament(
@@ -882,8 +889,8 @@ function createCoreSprite():
     2.35,
     1.05,
     0.02,
-    1.5,
-    0.18
+    1.6,
+    0.22
   );
 
   context.restore();
@@ -951,7 +958,7 @@ function createCoreDetailSprite():
     1.7,
     0.035,
     1.35,
-    0.25
+    0.3
   );
 
   drawCoreFilament(
@@ -962,7 +969,7 @@ function createCoreDetailSprite():
     1.42,
     0.032,
     1.15,
-    0.2
+    0.25
   );
 
   drawCoreFilament(
@@ -973,7 +980,7 @@ function createCoreDetailSprite():
     1.52,
     0.028,
     1.45,
-    0.22
+    0.26
   );
 
   drawCoreFilament(
@@ -984,7 +991,7 @@ function createCoreDetailSprite():
     1.32,
     0.026,
     1.1,
-    0.18
+    0.22
   );
 
   context.restore();
@@ -1833,17 +1840,9 @@ export default function RedMagic({
     let averageGridEnergy =
       0;
 
-    /*
-     * This value survives the entire mounted tab session.
-     * It never gets reset by resize or adaptive quality.
-     */
     let clickParticleCount =
       0;
 
-    /*
-     * Temporary lighting energy generated after the
-     * particle cap has been reached.
-     */
     let clickLightBoost =
       0;
 
@@ -2208,24 +2207,6 @@ export default function RedMagic({
           influenceCounts;
       };
 
-    /*
-     * Quality changes now preserve the live simulation.
-     *
-     * We only change render/detail configuration.
-     * The existing:
-     *
-     * - particles
-     * - particle velocities
-     * - particle positions
-     * - grid nodes
-     * - grid energy
-     * - edge flows
-     * - membrane deformation
-     * - shockwaves
-     * - click count
-     *
-     * remain alive.
-     */
     const setQuality =
       (
         name: QualityName
@@ -2252,10 +2233,6 @@ export default function RedMagic({
           performance.now();
       };
 
-    /*
-     * World initialization happens exactly once for the
-     * lifetime of this mounted RedMagic instance.
-     */
     const buildWorld = (
       name: QualityName
     ) => {
@@ -2447,12 +2424,6 @@ export default function RedMagic({
 
       rebuildMembraneGradient();
 
-      /*
-       * Important:
-       *
-       * Resize no longer calls buildWorld().
-       * The current world remains alive.
-       */
       if (
         gridNodes.length ===
         0
@@ -2485,10 +2456,6 @@ export default function RedMagic({
             radius;
       }
 
-      /*
-       * placeParticles() preserves live positions while
-       * adapting them to the new canvas dimensions.
-       */
       placeParticles(
         particles,
         width,
@@ -2764,10 +2731,6 @@ export default function RedMagic({
       }
     };
 
-    /*
-     * Adds exactly one persistent particle for each
-     * successful click until the 100-particle cap.
-     */
     const addClickParticle = (
       x: number,
       y: number
@@ -2826,11 +2789,6 @@ export default function RedMagic({
             PARTICLE_WRAP_MARGIN
         );
 
-      /*
-       * Give click-created particles a stronger outward
-       * velocity so the click feels like particle creation
-       * rather than a static dot appearing.
-       */
       const dx =
         x -
         centerX;
@@ -2880,10 +2838,6 @@ export default function RedMagic({
         normalY *
         1.4;
 
-      /*
-       * Freshly created click particles are intentionally
-       * visible and interactive immediately.
-       */
       particle.revealable =
         false;
 
@@ -2900,10 +2854,6 @@ export default function RedMagic({
       clickParticleCount +=
         1;
 
-      /*
-       * Every particle creation also produces a brief
-       * illumination pulse.
-       */
       clickLightBoost =
         Math.max(
           clickLightBoost,
@@ -3231,12 +3181,6 @@ export default function RedMagic({
         }
       };
 
-    /*
-     * Native click handler:
-     *
-     * This deliberately counts actual clicks rather than
-     * every pointer-move or interaction event.
-     */
     const handleCanvasClick =
       (
         event:
@@ -4092,11 +4036,6 @@ export default function RedMagic({
       outerRadius: number,
       alpha: number
     ) => {
-      /*
-       * The click light boost globally increases
-       * illumination without introducing a filter,
-       * blur, shadow, or extra Canvas layer.
-       */
       const boostedAlpha =
         clamp(
           alpha *
@@ -4145,12 +4084,12 @@ export default function RedMagic({
 
       gradient.addColorStop(
         0,
-        `rgba(255, 50, 35, ${boostedAlpha})`
+        `rgba(255, 80, 20, ${boostedAlpha})`
       );
 
       gradient.addColorStop(
         0.35,
-        `rgba(255, 20, 20, ${
+        `rgba(255, 28, 12, ${
           boostedAlpha *
           0.46
         })`
@@ -4781,6 +4720,17 @@ export default function RedMagic({
           ) *
           profile.pointerGain;
 
+        /*
+         * Visual pointer light deliberately uses the exact
+         * pointer target. The simulation pointer remains
+         * smoothed separately for fluid deformation.
+         */
+        const visualPointerX =
+          pointerTarget.x;
+
+        const visualPointerY =
+          pointerTarget.y;
+
         if (
           pointerActive &&
           interactionSprite
@@ -4799,9 +4749,9 @@ export default function RedMagic({
 
           context.drawImage(
             interactionSprite,
-            pointer.x -
+            visualPointerX -
               fieldRadius,
-            pointer.y -
+            visualPointerY -
               fieldRadius,
             fieldRadius *
               2,
@@ -4815,8 +4765,8 @@ export default function RedMagic({
           pointerActive
         ) {
           drawGlow(
-            pointer.x,
-            pointer.y,
+            visualPointerX,
+            visualPointerY,
             0,
             fieldRadius,
             0.045 +
@@ -5609,16 +5559,55 @@ export default function RedMagic({
             0.05
       );
 
+      /*
+       * Keep the nucleus in the same hot orange/red
+       * solar palette as the main core instead of white.
+       */
+      const nucleusGradient =
+        context.createRadialGradient(
+          centerX -
+            nucleusRadius *
+              0.18,
+          centerY -
+            nucleusRadius *
+              0.2,
+          nucleusRadius *
+            0.05,
+          centerX,
+          centerY,
+          nucleusRadius
+        );
+
+      nucleusGradient.addColorStop(
+        0,
+        "rgba(255, 214, 108, 0.98)"
+      );
+
+      nucleusGradient.addColorStop(
+        0.28,
+        "rgba(255, 153, 52, 0.96)"
+      );
+
+      nucleusGradient.addColorStop(
+        0.62,
+        "rgba(255, 74, 24, 0.94)"
+      );
+
+      nucleusGradient.addColorStop(
+        1,
+        "rgba(185, 16, 10, 0.72)"
+      );
+
       context.fillStyle =
-        "rgba(255, 220, 205, 0.92)";
+        nucleusGradient;
 
       context.globalAlpha =
         clamp(
-          1 +
+          0.94 +
             clickLightBoost *
-              0.2,
+              0.08,
           0,
-          1.2
+          1
         );
 
       context.beginPath();
@@ -5626,13 +5615,13 @@ export default function RedMagic({
       context.arc(
         centerX -
           nucleusRadius *
-            0.15,
+            0.08,
         centerY -
           nucleusRadius *
-            0.17,
+            0.1,
         nucleusRadius *
           (
-            1 +
+            0.9 +
             movementEnergy *
               0.3
           ),
@@ -5833,10 +5822,6 @@ export default function RedMagic({
           qualityName ===
             "high"
         ) {
-          /*
-           * Adapt render detail only.
-           * DO NOT rebuild the world.
-           */
           setQuality(
             "medium"
           );
@@ -6112,12 +6097,6 @@ export default function RedMagic({
         reducedMotion =
           event.matches;
 
-        /*
-         * Do not rebuild a live world when reduced-motion
-         * preference changes.
-         *
-         * Existing simulation state remains intact.
-         */
         if (
           reducedMotion
         ) {
@@ -6236,12 +6215,6 @@ export default function RedMagic({
       canvas
     );
 
-    /*
-     * The world is constructed once.
-     *
-     * From this point until this component is unmounted,
-     * adaptive quality and resize never recreate it.
-     */
     buildWorld(
       qualityFromArea(
         canvas.clientWidth *
