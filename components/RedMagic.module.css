@@ -14,7 +14,11 @@
 
   touch-action: none;
 
-  cursor: crosshair;
+  /*
+   * Inherit the site-level native cursor so RedMagic does not
+   * replace the custom pointer with a crosshair.
+   */
+  cursor: inherit;
 
   isolation: isolate;
 
