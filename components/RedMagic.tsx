@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useRef
-} from "react";
+import { useEffect, useRef } from "react";
 
 import styles from "@/components/RedMagic.module.css";
 
@@ -350,6 +347,95 @@ const CLICK_LIGHT_DECAY =
 const CLICK_LIGHT_DECAY_REFERENCE_MS =
   16;
 
+/*
+ * Boundary angular response is sampled from precomputed Gaussian
+ * lookup tables rather than evaluating atan2/exp for every boundary
+ * point on every animation frame.
+ *
+ * The visual profile remains Gaussian; only the sampling path changes.
+ */
+const ANGULAR_LOOKUP_SIZE =
+  512;
+
+const ANGULAR_LOOKUP_SCALE =
+  ANGULAR_LOOKUP_SIZE /
+  Math.PI;
+
+function buildAngularLookup(
+  sigma: number
+) {
+  const table =
+    new Float32Array(
+      ANGULAR_LOOKUP_SIZE + 1
+    );
+
+  for (
+    let index = 0;
+    index <= ANGULAR_LOOKUP_SIZE;
+    index += 1
+  ) {
+    const angle =
+      (
+        index /
+        ANGULAR_LOOKUP_SIZE
+      ) *
+      Math.PI;
+
+    table[index] =
+      Math.exp(
+        -(
+          angle *
+          angle
+        ) /
+          sigma
+      );
+  }
+
+  return table;
+}
+
+const ANGULAR_FALLOFF_NORMAL =
+  buildAngularLookup(
+    0.18
+  );
+
+const ANGULAR_FALLOFF_SURGE =
+  buildAngularLookup(
+    0.28
+  );
+
+function sampleAngularLookup(
+  delta: number,
+  table: Float32Array
+) {
+  const magnitude =
+    delta < 0
+      ? -delta
+      : delta;
+
+  const scaled =
+    magnitude *
+    ANGULAR_LOOKUP_SCALE;
+
+  const index =
+    Math.min(
+      ANGULAR_LOOKUP_SIZE - 1,
+      scaled | 0
+    );
+
+  const fraction =
+    scaled - index;
+
+  return (
+    table[index] +
+    (
+      table[index + 1] -
+      table[index]
+    ) *
+      fraction
+  );
+}
+
 function clamp(
   value: number,
   min: number,
@@ -377,7 +463,10 @@ function smoothstep(
   return (
     x *
     x *
-    (3 - 2 * x)
+    (
+      3 -
+      2 * x
+    )
   );
 }
 
@@ -515,8 +604,7 @@ function createNodeSprite():
   context.arc(
     center,
     center,
-    radius *
-      0.9,
+    radius * 0.9,
     0,
     TAU
   );
@@ -717,8 +805,7 @@ function createCoreSprite():
   context.arc(
     center,
     center,
-    radius *
-      0.91,
+    radius * 0.91,
     0,
     TAU
   );
@@ -942,8 +1029,7 @@ function createCoreDetailSprite():
   context.arc(
     center,
     center,
-    radius *
-      0.84,
+    radius * 0.84,
     0,
     TAU
   );
@@ -1147,7 +1233,8 @@ function buildFlowGeometry(
     directions[
       flowIndex
     ] =
-      flowIndex % 2 === 0
+      flowIndex % 2 ===
+      0
         ? 1
         : -1;
 
@@ -1256,7 +1343,8 @@ function qualityFromArea(
 function createGrid(
   gridSize: number
 ) {
-  const nodes: GridNode[] =
+  const nodes:
+    GridNode[] =
     [];
 
   const nodeByCell =
@@ -1342,7 +1430,8 @@ function createGrid(
     }
   }
 
-  const edges: GridEdge[] =
+  const edges:
+    GridEdge[] =
     [];
 
   const connect = (
@@ -1356,9 +1445,11 @@ function createGrid(
     }
 
     if (
-      nodes[a].neighbors.includes(
-        b
-      )
+      nodes[a]
+        .neighbors
+        .includes(
+          b
+        )
     ) {
       return;
     }
@@ -1404,21 +1495,29 @@ function createGrid(
         0
     });
 
-    nodes[a].neighbors.push(
-      b
-    );
+    nodes[a]
+      .neighbors
+      .push(
+        b
+      );
 
-    nodes[a].neighborEdges.push(
-      edgeIndex
-    );
+    nodes[a]
+      .neighborEdges
+      .push(
+        edgeIndex
+      );
 
-    nodes[b].neighbors.push(
-      a
-    );
+    nodes[b]
+      .neighbors
+      .push(
+        a
+      );
 
-    nodes[b].neighborEdges.push(
-      edgeIndex
-    );
+    nodes[b]
+      .neighborEdges
+      .push(
+        edgeIndex
+      );
   };
 
   for (
@@ -1547,8 +1646,12 @@ function createGrid(
         distanceSquared(
           node.homeX,
           node.homeY,
-          nodes[other].homeX,
-          nodes[other].homeY
+          nodes[
+            other
+          ].homeX,
+          nodes[
+            other
+          ].homeY
         );
 
       if (
@@ -1609,7 +1712,8 @@ function buildGlobalPotentialWeights(
 
     for (
       let otherIndex = 0;
-      otherIndex < count;
+      otherIndex <
+        count;
       otherIndex += 1
     ) {
       const other =
@@ -1732,11 +1836,13 @@ export default function RedMagic({
 
     let resizeObserver:
       | ResizeObserver
-      | null = null;
+      | null =
+      null;
 
     let intersectionObserver:
       | IntersectionObserver
-      | null = null;
+      | null =
+      null;
 
     let visible =
       true;
@@ -1774,11 +1880,10 @@ export default function RedMagic({
       y: 0
     };
 
-    let pointerTarget: Point =
-      {
-        x: 0,
-        y: 0
-      };
+    let pointerTarget: Point = {
+      x: 0,
+      y: 0
+    };
 
     let pointerActive =
       false;
@@ -1800,6 +1905,20 @@ export default function RedMagic({
 
     let pointerAngleCos =
       1;
+
+    /*
+     * Precomputed once per frame and reused for every boundary point.
+     * This removes the repeated pointer-distance clamp/multiply work
+     * from the hot boundary loop.
+     */
+    let boundaryPointerDistanceFactor =
+      0;
+
+    let boundaryPointerStrength =
+      0;
+
+    let boundaryAngularLookup =
+      ANGULAR_FALLOFF_NORMAL;
 
     let boundaryPrimaryPhaseSin =
       0;
@@ -1850,7 +1969,7 @@ export default function RedMagic({
       QualityName =
       qualityFromArea(
         window.innerWidth *
-          window.innerHeight
+        window.innerHeight
       );
 
     let quality =
@@ -1979,13 +2098,13 @@ export default function RedMagic({
         const nodeIndices =
           new Int16Array(
             boundaryCount *
-              influenceCapacity
+            influenceCapacity
           );
 
         const influenceWeights =
           new Float32Array(
             boundaryCount *
-              influenceCapacity
+            influenceCapacity
           );
 
         const residualWeights =
@@ -2165,13 +2284,13 @@ export default function RedMagic({
 
             nodeIndices[
               rowOffset +
-                slot
+              slot
             ] =
               nodeIndex;
 
             influenceWeights[
               rowOffset +
-                slot
+              slot
             ] =
               weight;
 
@@ -2222,7 +2341,9 @@ export default function RedMagic({
           name;
 
         quality =
-          QUALITY[name];
+          QUALITY[
+            name
+          ];
 
         flowGeometry =
           buildFlowGeometry(
@@ -2233,94 +2354,98 @@ export default function RedMagic({
           performance.now();
       };
 
-    const buildWorld = (
-      name: QualityName
-    ) => {
-      qualityName =
-        name;
+    const buildWorld =
+      (
+        name: QualityName
+      ) => {
+        qualityName =
+          name;
 
-      quality =
-        QUALITY[name];
+        quality =
+          QUALITY[
+            name
+          ];
 
-      flowGeometry =
-        buildFlowGeometry(
-          quality
+        flowGeometry =
+          buildFlowGeometry(
+            quality
+          );
+
+        particles =
+          createParticles(
+            quality.particles,
+            (
+              pageSeed +
+              quality.gridSize *
+                1009 +
+              quality.particles *
+                9176
+            ) >>>
+              0
+          );
+
+        clickParticleCount =
+          0;
+
+        placeParticles(
+          particles,
+          width,
+          height
         );
 
-      particles =
-        createParticles(
-          quality.particles,
-          (
-            pageSeed +
-            quality.gridSize *
-              1009 +
-            quality.particles *
-              9176
-          ) >>> 0
-        );
+        const grid =
+          createGrid(
+            quality.gridSize
+          );
 
-      clickParticleCount =
-        0;
+        gridNodes =
+          grid.nodes;
 
-      placeParticles(
-        particles,
-        width,
-        height
-      );
+        gridEdges =
+          grid.edges;
 
-      const grid =
-        createGrid(
-          quality.gridSize
-        );
+        edgeBuckets =
+          new Uint8Array(
+            gridEdges.length
+          );
 
-      gridNodes =
-        grid.nodes;
+        nodePotential =
+          new Float32Array(
+            gridNodes.length
+          );
 
-      gridEdges =
-        grid.edges;
+        nextNodeEnergy =
+          new Float32Array(
+            gridNodes.length
+          );
 
-      edgeBuckets =
-        new Uint8Array(
-          gridEdges.length
-        );
+        const globalPotential =
+          buildGlobalPotentialWeights(
+            gridNodes
+          );
 
-      nodePotential =
-        new Float32Array(
-          gridNodes.length
-        );
+        globalPotentialWeights =
+          globalPotential.weights;
 
-      nextNodeEnergy =
-        new Float32Array(
-          gridNodes.length
-        );
+        globalPotentialTotals =
+          globalPotential.totals;
 
-      const globalPotential =
-        buildGlobalPotentialWeights(
-          gridNodes
-        );
+        membraneBoundary =
+          createBoundary(
+            quality.membraneSteps
+          );
 
-      globalPotentialWeights =
-        globalPotential.weights;
+        buildBoundaryNetworkWeights();
 
-      globalPotentialTotals =
-        globalPotential.totals;
+        shockwaves =
+          [];
 
-      membraneBoundary =
-        createBoundary(
-          quality.membraneSteps
-        );
+        averageGridEnergy =
+          0;
 
-      buildBoundaryNetworkWeights();
-
-      shockwaves =
-        [];
-
-      averageGridEnergy =
-        0;
-
-      lastQualityChange =
-        performance.now();
-    };
+        lastQualityChange =
+          performance.now();
+      };
 
     const rebuildMembraneGradient =
       () => {
@@ -2357,132 +2482,136 @@ export default function RedMagic({
         );
       };
 
-    const resize = () => {
-      const rect =
-        canvas.getBoundingClientRect();
+    const resize =
+      () => {
+        const rect =
+          canvas.getBoundingClientRect();
 
-      canvasRectLeft =
-        rect.left;
+        canvasRectLeft =
+          rect.left;
 
-      canvasRectTop =
-        rect.top;
+        canvasRectTop =
+          rect.top;
 
-      width =
-        Math.max(
-          1,
-          rect.width
-        );
-
-      height =
-        Math.max(
-          1,
-          rect.height
-        );
-
-      dpr =
-        Math.min(
-          window.devicePixelRatio ||
+        width =
+          Math.max(
             1,
-          MAX_DPR
+            rect.width
+          );
+
+        height =
+          Math.max(
+            1,
+            rect.height
+          );
+
+        dpr =
+          Math.min(
+            window.devicePixelRatio ||
+              1,
+            MAX_DPR
+          );
+
+        canvas.width =
+          Math.floor(
+            width *
+              dpr
+          );
+
+        canvas.height =
+          Math.floor(
+            height *
+              dpr
+          );
+
+        context.setTransform(
+          dpr,
+          0,
+          0,
+          dpr,
+          0,
+          0
         );
 
-      canvas.width =
-        Math.floor(
+        centerX =
           width *
-            dpr
-        );
+          0.5;
 
-      canvas.height =
-        Math.floor(
+        centerY =
           height *
-            dpr
-        );
+          0.5;
 
-      context.setTransform(
-        dpr,
-        0,
-        0,
-        dpr,
-        0,
-        0
-      );
+        radius =
+          Math.min(
+            width,
+            height
+          ) *
+          0.39;
 
-      centerX =
-        width *
-        0.5;
+        rebuildMembraneGradient();
 
-      centerY =
-        height *
-        0.5;
+        if (
+          gridNodes.length ===
+          0
+        ) {
+          buildWorld(
+            qualityFromArea(
+              rect.width *
+              rect.height
+            )
+          );
+        }
 
-      radius =
-        Math.min(
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[
+              index
+            ];
+
+          node.x =
+            centerX +
+            node.homeX *
+              radius;
+
+          node.y =
+            centerY +
+            node.homeY *
+              radius;
+        }
+
+        placeParticles(
+          particles,
           width,
           height
-        ) *
-        0.39;
-
-      rebuildMembraneGradient();
-
-      if (
-        gridNodes.length ===
-        0
-      ) {
-        buildWorld(
-          qualityFromArea(
-            rect.width *
-              rect.height
-          )
         );
-      }
+      };
 
-      for (
-        let index = 0;
-        index <
-          gridNodes.length;
-        index += 1
-      ) {
-        const node =
-          gridNodes[index];
+    const updatePointer =
+      (
+        clientX: number,
+        clientY: number
+      ) => {
+        pointerTarget.x =
+          clamp(
+            clientX -
+              canvasRectLeft,
+            0,
+            width
+          );
 
-        node.x =
-          centerX +
-          node.homeX *
-            radius;
-
-        node.y =
-          centerY +
-          node.homeY *
-            radius;
-      }
-
-      placeParticles(
-        particles,
-        width,
-        height
-      );
-    };
-
-    const updatePointer = (
-      clientX: number,
-      clientY: number
-    ) => {
-      pointerTarget.x =
-        clamp(
-          clientX -
-            canvasRectLeft,
-          0,
-          width
-        );
-
-      pointerTarget.y =
-        clamp(
-          clientY -
-            canvasRectTop,
-          0,
-          height
-        );
-    };
+        pointerTarget.y =
+          clamp(
+            clientY -
+              canvasRectTop,
+            0,
+            height
+          );
+      };
 
     const updatePointerGeometry =
       () => {
@@ -2500,366 +2629,409 @@ export default function RedMagic({
             dy
           );
 
-        pointerAngle =
+        if (
           pointerDistance >
           0.0001
-            ? Math.atan2(
-                dy,
-                dx
-              )
-            : 0;
+        ) {
+          pointerAngle =
+            Math.atan2(
+              dy,
+              dx
+            );
 
-        pointerAngleSin =
-          pointerDistance >
-          0.0001
-            ? dy /
-              pointerDistance
-            : 0;
+          pointerAngleSin =
+            dy /
+            pointerDistance;
 
-        pointerAngleCos =
-          pointerDistance >
-          0.0001
-            ? dx /
-              pointerDistance
-            : 1;
+          pointerAngleCos =
+            dx /
+            pointerDistance;
+        } else {
+          pointerAngle =
+            0;
+
+          pointerAngleSin =
+            0;
+
+          pointerAngleCos =
+            1;
+        }
+
+        /*
+         * These values are now calculated once per frame rather than
+         * once per boundary point.
+         */
+        boundaryPointerDistanceFactor =
+          clamp(
+            1 -
+              pointerDistance /
+                (
+                  radius *
+                  2.2
+                ),
+            0,
+            1
+          );
+
+        boundaryAngularLookup =
+          modeRef.current ===
+          "surge"
+            ? ANGULAR_FALLOFF_SURGE
+            : ANGULAR_FALLOFF_NORMAL;
+
+        boundaryPointerStrength =
+          boundaryPointerDistanceFactor *
+          0.075 *
+          profile.pointerGain;
       };
 
-    const nearestGridNode = (
-      x: number,
-      y: number
-    ) => {
-      let closest =
-        -1;
+    const nearestGridNode =
+      (
+        x: number,
+        y: number
+      ) => {
+        let closest =
+          -1;
 
-      let closestDistance =
-        Number.POSITIVE_INFINITY;
+        let closestDistance =
+          Number.POSITIVE_INFINITY;
 
-      for (
-        let index = 0;
-        index <
-          gridNodes.length;
-        index += 1
-      ) {
-        const node =
-          gridNodes[index];
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[
+              index
+            ];
 
-        const distance =
-          distanceSquared(
-            x,
-            y,
-            node.x,
-            node.y
+          const distance =
+            distanceSquared(
+              x,
+              y,
+              node.x,
+              node.y
+            );
+
+          if (
+            distance <
+            closestDistance
+          ) {
+            closestDistance =
+              distance;
+
+            closest =
+              index;
+          }
+        }
+
+        return closest;
+      };
+
+    const spawnShockwave =
+      (
+        detail:
+          RedMagicInteractionDetail,
+        strength: number
+      ) => {
+        const shockwaveAngle =
+          Math.atan2(
+            detail.y -
+              centerY,
+            detail.x -
+              centerX
+          );
+
+        const angleSin =
+          Math.sin(
+            shockwaveAngle
+          );
+
+        const angleCos =
+          Math.cos(
+            shockwaveAngle
+          );
+
+        /*
+         * Shockwaves are created only on discrete interaction events,
+         * so keeping this exact calculation preserves their visual
+         * response without moving the cost into the animation loop.
+         */
+        const angularInfluence =
+          new Float32Array(
+            membraneBoundary.length
+          );
+
+        for (
+          let index = 0;
+          index <
+            membraneBoundary.length;
+          index += 1
+        ) {
+          const point =
+            membraneBoundary[
+              index
+            ];
+
+          const deltaSin =
+            point.sin *
+              angleCos -
+            point.cos *
+              angleSin;
+
+          const deltaCos =
+            point.cos *
+              angleCos +
+            point.sin *
+              angleSin;
+
+          const delta =
+            Math.atan2(
+              deltaSin,
+              deltaCos
+            );
+
+          angularInfluence[
+            index
+          ] =
+            Math.exp(
+              -(
+                delta *
+                delta
+              ) /
+                0.34
+            );
+        }
+
+        shockwaves.push({
+          x:
+            detail.x,
+
+          y:
+            detail.y,
+
+          angle:
+            shockwaveAngle,
+
+          age:
+            0,
+
+          strength:
+            clamp(
+              strength *
+                profile.shockwaveGain,
+              0,
+              1.4
+            ),
+
+          angularInfluence
+        });
+
+        if (
+          shockwaves.length >
+          MAX_SHOCKWAVES
+        ) {
+          shockwaves.shift();
+        }
+
+        const closest =
+          nearestGridNode(
+            detail.x,
+            detail.y
           );
 
         if (
-          distance <
-          closestDistance
+          closest <
+          0
         ) {
-          closestDistance =
-            distance;
-
-          closest =
-            index;
+          return;
         }
-      }
 
-      return closest;
-    };
-
-    const spawnShockwave = (
-      detail:
-        RedMagicInteractionDetail,
-      strength: number
-    ) => {
-      const shockwaveAngle =
-        Math.atan2(
-          detail.y -
-            centerY,
-          detail.x -
-            centerX
-        );
-
-      const angleSin =
-        Math.sin(
-          shockwaveAngle
-        );
-
-      const angleCos =
-        Math.cos(
-          shockwaveAngle
-        );
-
-      const angularInfluence =
-        new Float32Array(
-          membraneBoundary.length
-        );
-
-      for (
-        let index = 0;
-        index <
-          membraneBoundary.length;
-        index += 1
-      ) {
-        const point =
-          membraneBoundary[
-            index
-          ];
-
-        const deltaSin =
-          point.sin *
-            angleCos -
-          point.cos *
-            angleSin;
-
-        const deltaCos =
-          point.cos *
-            angleCos +
-          point.sin *
-            angleSin;
-
-        const delta =
-          Math.atan2(
-            deltaSin,
-            deltaCos
-          );
-
-        angularInfluence[
-          index
-        ] =
-          Math.exp(
-            -(
-              delta *
-              delta
-            ) /
-              0.34
-          );
-      }
-
-      shockwaves.push({
-        x:
-          detail.x,
-
-        y:
-          detail.y,
-
-        angle:
-          shockwaveAngle,
-
-        age:
-          0,
-
-        strength:
+        const injection =
           clamp(
             strength *
               profile.shockwaveGain,
             0,
-            1.4
-          ),
+            1.2
+          );
 
-        angularInfluence
-      });
-
-      if (
-        shockwaves.length >
-        MAX_SHOCKWAVES
-      ) {
-        shockwaves.shift();
-      }
-
-      const closest =
-        nearestGridNode(
-          detail.x,
-          detail.y
-        );
-
-      if (
-        closest <
-        0
-      ) {
-        return;
-      }
-
-      const injection =
-        clamp(
-          strength *
-            profile.shockwaveGain,
-          0,
-          1.2
-        );
-
-      gridNodes[
-        closest
-      ].energy =
-        clamp(
-          gridNodes[
-            closest
-          ].energy +
-            injection,
-          0,
-          GRID_MAX_NODE_ENERGY
-        );
-
-      const neighbors =
         gridNodes[
           closest
-        ].neighbors;
-
-      for (
-        let index = 0;
-        index <
-          neighbors.length;
-        index += 1
-      ) {
-        const neighborIndex =
-          neighbors[
-            index
-          ];
-
-        const neighbor =
-          gridNodes[
-            neighborIndex
-          ];
-
-        neighbor.energy =
+        ].energy =
           clamp(
-            neighbor.energy +
-              injection *
-                0.09,
+            gridNodes[
+              closest
+            ].energy +
+              injection,
             0,
             GRID_MAX_NODE_ENERGY
           );
-      }
-    };
 
-    const addClickParticle = (
-      x: number,
-      y: number
-    ) => {
-      if (
-        clickParticleCount >=
-        MAX_CLICK_PARTICLES
-      ) {
-        clickLightBoost =
-          CLICK_LIGHT_BOOST_MAX;
+        const neighbors =
+          gridNodes[
+            closest
+          ].neighbors;
 
-        return;
-      }
+        for (
+          let index = 0;
+          index <
+            neighbors.length;
+          index += 1
+        ) {
+          const neighborIndex =
+            neighbors[
+              index
+            ];
 
-      const particleSeed =
-        (
-          pageSeed ^
+          const neighbor =
+            gridNodes[
+              neighborIndex
+            ];
+
+          neighbor.energy =
+            clamp(
+              neighbor.energy +
+                injection *
+                  0.09,
+              0,
+              GRID_MAX_NODE_ENERGY
+            );
+        }
+      };
+
+    const addClickParticle =
+      (
+        x: number,
+        y: number
+      ) => {
+        if (
+          clickParticleCount >=
+          MAX_CLICK_PARTICLES
+        ) {
+          clickLightBoost =
+            CLICK_LIGHT_BOOST_MAX;
+
+          return;
+        }
+
+        const particleSeed =
           (
+            pageSeed ^
             (
-              clickParticleCount +
-              1
-            ) *
-            0x9e3779b9
-          )
-        ) >>> 0;
+              (
+                clickParticleCount +
+                1
+              ) *
+              0x9e3779b9
+            )
+          ) >>>
+            0;
 
-      const created =
-        createParticles(
-          1,
-          particleSeed
+        const created =
+          createParticles(
+            1,
+            particleSeed
+          );
+
+        if (
+          created.length ===
+          0
+        ) {
+          return;
+        }
+
+        const particle =
+          created[0];
+
+        particle.x =
+          clamp(
+            x,
+            -PARTICLE_WRAP_MARGIN,
+            width +
+              PARTICLE_WRAP_MARGIN
+          );
+
+        particle.y =
+          clamp(
+            y,
+            -PARTICLE_WRAP_MARGIN,
+            height +
+              PARTICLE_WRAP_MARGIN
+          );
+
+        const dx =
+          x -
+          centerX;
+
+        const dy =
+          y -
+          centerY;
+
+        const distance =
+          Math.max(
+            0.001,
+            Math.hypot(
+              dx,
+              dy
+            )
+          );
+
+        const normalX =
+          dx /
+          distance;
+
+        const normalY =
+          dy /
+          distance;
+
+        const baseKick =
+          0.012 +
+          Math.min(
+            0.04,
+            pointerVelocity *
+              0.0012
+          );
+
+        particle.velocityX +=
+          normalX *
+          baseKick;
+
+        particle.velocityY +=
+          normalY *
+          baseKick;
+
+        particle.impulseX +=
+          normalX *
+          1.4;
+
+        particle.impulseY +=
+          normalY *
+          1.4;
+
+        particle.revealable =
+          false;
+
+        particle.revealStrength =
+          1;
+
+        particle.revealRadius =
+          1;
+
+        particles.push(
+          particle
         );
 
-      if (
-        created.length ===
-        0
-      ) {
-        return;
-      }
+        clickParticleCount +=
+          1;
 
-      const particle =
-        created[0];
-
-      particle.x =
-        clamp(
-          x,
-          -PARTICLE_WRAP_MARGIN,
-          width +
-            PARTICLE_WRAP_MARGIN
-        );
-
-      particle.y =
-        clamp(
-          y,
-          -PARTICLE_WRAP_MARGIN,
-          height +
-            PARTICLE_WRAP_MARGIN
-        );
-
-      const dx =
-        x -
-        centerX;
-
-      const dy =
-        y -
-        centerY;
-
-      const distance =
-        Math.max(
-          0.001,
-          Math.hypot(
-            dx,
-            dy
-          )
-        );
-
-      const normalX =
-        dx /
-        distance;
-
-      const normalY =
-        dy /
-        distance;
-
-      const baseKick =
-        0.012 +
-        Math.min(
-          0.04,
-          pointerVelocity *
-            0.0012
-        );
-
-      particle.velocityX +=
-        normalX *
-        baseKick;
-
-      particle.velocityY +=
-        normalY *
-        baseKick;
-
-      particle.impulseX +=
-        normalX *
-        1.4;
-
-      particle.impulseY +=
-        normalY *
-        1.4;
-
-      particle.revealable =
-        false;
-
-      particle.revealStrength =
-        1;
-
-      particle.revealRadius =
-        1;
-
-      particles.push(
-        particle
-      );
-
-      clickParticleCount +=
-        1;
-
-      clickLightBoost =
-        Math.max(
-          clickLightBoost,
-          0.42
-        );
-    };
+        clickLightBoost =
+          Math.max(
+            clickLightBoost,
+            0.42
+          );
+      };
 
     const applyParticleImpulse =
       (
@@ -2894,7 +3066,9 @@ export default function RedMagic({
           index += 1
         ) {
           const particle =
-            particles[index];
+            particles[
+              index
+            ];
 
           const dx =
             particle.x -
@@ -3214,541 +3388,553 @@ export default function RedMagic({
         );
       };
 
-    const updateGrid = (
-      delta: number,
-      time: number
-    ) => {
-      if (
-        gridNodes.length ===
-        0
-      ) {
-        return;
-      }
+    const updateGrid =
+      (
+        delta: number,
+        time: number
+      ) => {
+        if (
+          gridNodes.length ===
+          0
+        ) {
+          return;
+        }
 
-      const deltaScale =
-        clamp(
-          delta /
-            16,
-          0,
-          2
-        );
+        const deltaScale =
+          clamp(
+            delta /
+              16,
+            0,
+            2
+          );
 
-      const activeProfile =
-        MODE_PROFILES[
-          modeRef.current
-        ];
+        const activeProfile =
+          MODE_PROFILES[
+            modeRef.current
+          ];
 
-      const decay =
-        Math.pow(
-          GRID_ENERGY_DECAY,
-          deltaScale *
-            activeProfile.recovery
-        );
-
-      for (
-        let index = 0;
-        index <
-          gridNodes.length;
-        index += 1
-      ) {
-        const node =
-          gridNodes[index];
-
-        node.x =
-          centerX +
-          node.homeX *
-            radius;
-
-        node.y =
-          centerY +
-          node.homeY *
-            radius;
-
-        node.energy *=
-          decay;
-
-        node.velocity *=
+        const decay =
           Math.pow(
-            0.8,
-            deltaScale
+            GRID_ENERGY_DECAY,
+            deltaScale *
+              activeProfile.recovery
           );
-
-        const breathing =
-          Math.sin(
-            time *
-              0.001 +
-              node.phase
-          );
-
-        const breathingScale =
-          1 +
-          breathing *
-            0.012;
-
-        node.x =
-          centerX +
-          node.homeX *
-            radius *
-            breathingScale;
-
-        node.y =
-          centerY +
-          node.homeY *
-            radius *
-            breathingScale;
-      }
-
-      const nodeCount =
-        gridNodes.length;
-
-      for (
-        let index = 0;
-        index < nodeCount;
-        index += 1
-      ) {
-        const rowOffset =
-          index *
-          nodeCount;
-
-        let weightedEnergy =
-          0;
 
         for (
-          let otherIndex = 0;
-          otherIndex <
-            nodeCount;
-          otherIndex += 1
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
         ) {
-          weightedEnergy +=
+          const node =
             gridNodes[
-              otherIndex
-            ].energy *
-            globalPotentialWeights[
-              rowOffset +
-                otherIndex
-            ];
-        }
-
-        const totalWeight =
-          globalPotentialTotals[
-            index
-          ];
-
-        nodePotential[
-          index
-        ] =
-          totalWeight > 0
-            ? clamp(
-                weightedEnergy /
-                  totalWeight,
-                0,
-                GRID_MAX_NODE_ENERGY
-              )
-            : 0;
-      }
-
-      nextNodeEnergy.fill(
-        0
-      );
-
-      for (
-        let index = 0;
-        index <
-          gridNodes.length;
-        index += 1
-      ) {
-        nextNodeEnergy[
-          index
-        ] =
-          gridNodes[
-            index
-          ].energy;
-      }
-
-      for (
-        let index = 0;
-        index <
-          gridEdges.length;
-        index += 1
-      ) {
-        const edge =
-          gridEdges[index];
-
-        const a =
-          gridNodes[
-            edge.a
-          ];
-
-        const b =
-          gridNodes[
-            edge.b
-          ];
-
-        const energyDifference =
-          a.energy -
-          b.energy;
-
-        if (
-          Math.abs(
-            energyDifference
-          ) <
-          GRID_ENERGY_DECAY *
-            0.004
-        ) {
-          edge.flow *=
-            0.86;
-
-          continue;
-        }
-
-        const potentialDifference =
-          nodePotential[
-            edge.a
-          ] -
-          nodePotential[
-            edge.b
-          ];
-
-        const directionalDifference =
-          energyDifference +
-          potentialDifference *
-            0.42;
-
-        const sign =
-          directionalDifference >=
-          0
-            ? 1
-            : -1;
-
-        const magnitude =
-          Math.abs(
-            directionalDifference
-          );
-
-        const resistance =
-          edge.resistance *
-          (
-            1 +
-            edge.flow *
-              0.65
-          );
-
-        const conductance =
-          activeProfile.gridConductance /
-          Math.max(
-            0.5,
-            resistance
-          );
-
-        const flow =
-          clamp(
-            magnitude *
-              conductance *
-              deltaScale,
-            0,
-            GRID_FLOW_LIMIT
-          );
-
-        if (
-          sign > 0
-        ) {
-          nextNodeEnergy[
-            edge.a
-          ] -=
-            flow;
-
-          nextNodeEnergy[
-            edge.b
-          ] +=
-            flow;
-        } else {
-          nextNodeEnergy[
-            edge.a
-          ] +=
-            flow;
-
-          nextNodeEnergy[
-            edge.b
-          ] -=
-            flow;
-        }
-
-        edge.flow =
-          clamp(
-            edge.flow *
-              0.74 +
-              flow *
-                1.8,
-            0,
-            1
-          );
-
-        const nodeVelocity =
-          flow /
-          Math.max(
-            0.02,
-            edge.restLength
-          );
-
-        a.velocity +=
-          nodeVelocity *
-          sign *
-          0.12;
-
-        b.velocity -=
-          nodeVelocity *
-          sign *
-          0.12;
-      }
-
-      for (
-        let index = 0;
-        index <
-          gridNodes.length;
-        index += 1
-      ) {
-        const node =
-          gridNodes[index];
-
-        if (
-          node.energy <
-          GRID_IDLE_ENERGY
-        ) {
-          continue;
-        }
-
-        const neighbors =
-          node.neighbors;
-
-        const neighborEdges =
-          node.neighborEdges;
-
-        if (
-          neighbors.length ===
-          0
-        ) {
-          continue;
-        }
-
-        let bestNeighbor =
-          -1;
-
-        let bestEffort =
-          Number.POSITIVE_INFINITY;
-
-        const currentPotential =
-          nodePotential[
-            index
-          ];
-
-        for (
-          let neighborIndex = 0;
-          neighborIndex <
-            neighbors.length;
-          neighborIndex += 1
-        ) {
-          const neighbor =
-            neighbors[
-              neighborIndex
+              index
             ];
 
-          const edgeIndex =
-            neighborEdges[
-              neighborIndex
-            ];
+          node.x =
+            centerX +
+            node.homeX *
+              radius;
 
-          const edge =
-            gridEdges[
-              edgeIndex
-            ];
+          node.y =
+            centerY +
+            node.homeY *
+              radius;
 
-          const potentialDifference =
-            Math.max(
-              0,
-              currentPotential -
-                nodePotential[
-                  neighbor
-                ]
+          node.energy *=
+            decay;
+
+          node.velocity *=
+            Math.pow(
+              0.8,
+              deltaScale
             );
 
-          const edgeResistance =
+          const breathing =
+            Math.sin(
+              time *
+                0.001 +
+                node.phase
+            );
+
+          const breathingScale =
+            1 +
+            breathing *
+              0.012;
+
+          node.x =
+            centerX +
+            node.homeX *
+              radius *
+              breathingScale;
+
+          node.y =
+            centerY +
+            node.homeY *
+              radius *
+              breathingScale;
+        }
+
+        const nodeCount =
+          gridNodes.length;
+
+        for (
+          let index = 0;
+          index <
+            nodeCount;
+          index += 1
+        ) {
+          const rowOffset =
+            index *
+            nodeCount;
+
+          let weightedEnergy =
+            0;
+
+          for (
+            let otherIndex = 0;
+            otherIndex <
+              nodeCount;
+            otherIndex += 1
+          ) {
+            weightedEnergy +=
+              gridNodes[
+                otherIndex
+              ].energy *
+              globalPotentialWeights[
+                rowOffset +
+                  otherIndex
+              ];
+          }
+
+          const totalWeight =
+            globalPotentialTotals[
+              index
+            ];
+
+          nodePotential[
+            index
+          ] =
+            totalWeight >
+            0
+              ? clamp(
+                  weightedEnergy /
+                    totalWeight,
+                  0,
+                  GRID_MAX_NODE_ENERGY
+                )
+              : 0;
+        }
+
+        nextNodeEnergy.fill(
+          0
+        );
+
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          nextNodeEnergy[
+            index
+          ] =
+            gridNodes[
+              index
+            ].energy;
+        }
+
+        for (
+          let index = 0;
+          index <
+            gridEdges.length;
+          index += 1
+        ) {
+          const edge =
+            gridEdges[
+              index
+            ];
+
+          const a =
+            gridNodes[
+              edge.a
+            ];
+
+          const b =
+            gridNodes[
+              edge.b
+            ];
+
+          const energyDifference =
+            a.energy -
+            b.energy;
+
+          if (
+            Math.abs(
+              energyDifference
+            ) <
+            GRID_ENERGY_DECAY *
+              0.004
+          ) {
+            edge.flow *=
+              0.86;
+
+            continue;
+          }
+
+          const potentialDifference =
+            nodePotential[
+              edge.a
+            ] -
+            nodePotential[
+              edge.b
+            ];
+
+          const directionalDifference =
+            energyDifference +
+            potentialDifference *
+              0.42;
+
+          const sign =
+            directionalDifference >=
+            0
+              ? 1
+              : -1;
+
+          const magnitude =
+            Math.abs(
+              directionalDifference
+            );
+
+          const resistance =
             edge.resistance *
             (
               1 +
               edge.flow *
-                0.55
+                0.65
             );
 
-          const effort =
-            edgeResistance +
-            potentialDifference *
-              0.7 -
-            nodePotential[
-              neighbor
-            ] *
-              GRID_ROUTE_BONUS;
+          const conductance =
+            activeProfile.gridConductance /
+            Math.max(
+              0.5,
+              resistance
+            );
+
+          const flow =
+            clamp(
+              magnitude *
+                conductance *
+                deltaScale,
+              0,
+              GRID_FLOW_LIMIT
+            );
 
           if (
-            effort <
-            bestEffort
+            sign > 0
           ) {
-            bestEffort =
-              effort;
-
-            bestNeighbor =
-              neighbor;
-          }
-        }
-
-        if (
-          bestNeighbor <
-          0
-        ) {
-          continue;
-        }
-
-        const availableEnergy =
-          Math.max(
-            0,
             nextNodeEnergy[
+              edge.a
+            ] -=
+              flow;
+
+            nextNodeEnergy[
+              edge.b
+            ] +=
+              flow;
+          } else {
+            nextNodeEnergy[
+              edge.a
+            ] +=
+              flow;
+
+            nextNodeEnergy[
+              edge.b
+            ] -=
+              flow;
+          }
+
+          edge.flow =
+            clamp(
+              edge.flow *
+                0.74 +
+                flow *
+                  1.8,
+              0,
+              1
+            );
+
+          const nodeVelocity =
+            flow /
+            Math.max(
+              0.02,
+              edge.restLength
+            );
+
+          a.velocity +=
+            nodeVelocity *
+            sign *
+            0.12;
+
+          b.velocity -=
+            nodeVelocity *
+            sign *
+            0.12;
+        }
+
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[
               index
-            ]
-          );
+            ];
 
-        const routeFlow =
-          clamp(
-            availableEnergy *
-              activeProfile.gridConductance *
-              0.09 *
-              deltaScale,
-            0,
-            0.035
-          );
+          if (
+            node.energy <
+            GRID_IDLE_ENERGY
+          ) {
+            continue;
+          }
 
-        nextNodeEnergy[
-          index
-        ] -=
-          routeFlow;
+          const neighbors =
+            node.neighbors;
 
-        nextNodeEnergy[
-          bestNeighbor
-        ] +=
-          routeFlow;
-      }
+          const neighborEdges =
+            node.neighborEdges;
 
-      const pointerInfluenceRadius =
-        radius *
-        GRID_POINTER_RADIUS;
+          if (
+            neighbors.length ===
+            0
+          ) {
+            continue;
+          }
 
-      const pointerInfluenceRadiusSquared =
-        pointerInfluenceRadius *
-        pointerInfluenceRadius;
+          let bestNeighbor =
+            -1;
 
-      let totalGridEnergy =
-        0;
+          let bestEffort =
+            Number.POSITIVE_INFINITY;
 
-      for (
-        let index = 0;
-        index <
-          gridNodes.length;
-        index += 1
-      ) {
-        const node =
-          gridNodes[index];
+          const currentPotential =
+            nodePotential[
+              index
+            ];
 
-        const globalTarget =
-          nodePotential[
+          for (
+            let neighborIndex = 0;
+            neighborIndex <
+              neighbors.length;
+            neighborIndex += 1
+          ) {
+            const neighbor =
+              neighbors[
+                neighborIndex
+              ];
+
+            const edgeIndex =
+              neighborEdges[
+                neighborIndex
+              ];
+
+            const edge =
+              gridEdges[
+                edgeIndex
+              ];
+
+            const potentialDifference =
+              Math.max(
+                0,
+                currentPotential -
+                  nodePotential[
+                    neighbor
+                  ]
+              );
+
+            const edgeResistance =
+              edge.resistance *
+              (
+                1 +
+                edge.flow *
+                  0.55
+              );
+
+            const effort =
+              edgeResistance +
+              potentialDifference *
+                0.7 -
+              nodePotential[
+                neighbor
+              ] *
+                GRID_ROUTE_BONUS;
+
+            if (
+              effort <
+              bestEffort
+            ) {
+              bestEffort =
+                effort;
+
+              bestNeighbor =
+                neighbor;
+            }
+          }
+
+          if (
+            bestNeighbor <
+            0
+          ) {
+            continue;
+          }
+
+          const availableEnergy =
+            Math.max(
+              0,
+              nextNodeEnergy[
+                index
+              ]
+            );
+
+          const routeFlow =
+            clamp(
+              availableEnergy *
+                activeProfile.gridConductance *
+                0.09 *
+                deltaScale,
+              0,
+              0.035
+            );
+
+          nextNodeEnergy[
             index
-          ] *
-          activeProfile.globalPotentialGain;
+          ] -=
+            routeFlow;
 
-        let pointerInfluence =
+          nextNodeEnergy[
+            bestNeighbor
+          ] +=
+            routeFlow;
+        }
+
+        const pointerInfluenceRadius =
+          radius *
+          GRID_POINTER_RADIUS;
+
+        const pointerInfluenceRadiusSquared =
+          pointerInfluenceRadius *
+          pointerInfluenceRadius;
+
+        let totalGridEnergy =
           0;
 
-        if (
-          pointerActive
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
         ) {
-          const pointerDistanceSquared =
-            distanceSquared(
-              pointer.x,
-              pointer.y,
-              node.x,
-              node.y
-            );
+          const node =
+            gridNodes[
+              index
+            ];
+
+          const globalTarget =
+            nodePotential[
+              index
+            ] *
+            activeProfile.globalPotentialGain;
+
+          let pointerInfluence =
+            0;
 
           if (
-            pointerDistanceSquared <
-            pointerInfluenceRadiusSquared
+            pointerActive
           ) {
-            pointerInfluence =
-              smoothstep(
-                1 -
-                  Math.sqrt(
-                    pointerDistanceSquared
-                  ) /
-                    pointerInfluenceRadius
-              ) *
-              activeProfile.pointerGain;
+            const pointerDistanceSquared =
+              distanceSquared(
+                pointer.x,
+                pointer.y,
+                node.x,
+                node.y
+              );
+
+            if (
+              pointerDistanceSquared <
+              pointerInfluenceRadiusSquared
+            ) {
+              pointerInfluence =
+                smoothstep(
+                  1 -
+                    Math.sqrt(
+                      pointerDistanceSquared
+                    ) /
+                      pointerInfluenceRadius
+                ) *
+                activeProfile.pointerGain;
+            }
+          }
+
+          const pointerContribution =
+            pointerInfluence *
+            GRID_POINTER_CONTRIBUTION;
+
+          const organicPulse =
+            (
+              Math.sin(
+                time *
+                  0.0015 +
+                  node.phase
+              ) +
+              1
+            ) *
+            0.5 *
+            0.003;
+
+          nextNodeEnergy[
+            index
+          ] +=
+            globalTarget *
+              deltaScale +
+            pointerContribution *
+              deltaScale +
+            organicPulse *
+              deltaScale;
+
+          node.energy =
+            clamp(
+              nextNodeEnergy[
+                index
+              ],
+              0,
+              GRID_MAX_NODE_ENERGY
+            );
+
+          totalGridEnergy +=
+            node.energy;
+
+          node.velocity *=
+            0.96;
+
+          if (
+            node.energy >
+            0.03
+          ) {
+            node.velocity +=
+              node.energy *
+              0.01;
           }
         }
 
-        const pointerContribution =
-          pointerInfluence *
-          GRID_POINTER_CONTRIBUTION;
-
-        const organicPulse =
-          (
-            Math.sin(
-              time *
-                0.0015 +
-                node.phase
-            ) +
-            1
-          ) *
-          0.5 *
-          0.003;
-
-        nextNodeEnergy[
-          index
-        ] +=
-          globalTarget *
-            deltaScale +
-          pointerContribution *
-            deltaScale +
-          organicPulse *
-            deltaScale;
-
-        node.energy =
-          clamp(
-            nextNodeEnergy[
-              index
-            ],
-            0,
-            GRID_MAX_NODE_ENERGY
-          );
-
-        totalGridEnergy +=
-          node.energy;
-
-        node.velocity *=
-          0.96;
-
-        if (
-          node.energy >
-          0.03
-        ) {
-          node.velocity +=
-            node.energy *
-            0.01;
-        }
-      }
-
-      averageGridEnergy =
-        gridNodes.length > 0
-          ? totalGridEnergy /
-            gridNodes.length
-          : 0;
-    };
+        averageGridEnergy =
+          gridNodes.length >
+          0
+            ? totalGridEnergy /
+              gridNodes.length
+            : 0;
+      };
 
     const prepareShockwaveFrame =
       () => {
@@ -3831,827 +4017,293 @@ export default function RedMagic({
         }
       };
 
-    const getBoundaryRadius = (
-      point:
-        BoundaryPoint
-    ) => {
-      const primaryWave =
-        (
-          point.sin3 *
-            boundaryPrimaryPhaseCos +
-          point.cos3 *
-            boundaryPrimaryPhaseSin
-        ) *
-        0.034;
+    const getBoundaryRadius =
+      (
+        point:
+          BoundaryPoint
+      ) => {
+        const primaryWave =
+          (
+            point.sin3 *
+              boundaryPrimaryPhaseCos +
+            point.cos3 *
+              boundaryPrimaryPhaseSin
+          ) *
+          0.034;
 
-      const secondaryWave =
-        (
-          point.sin7 *
-            boundarySecondaryPhaseCos +
-          point.cos7 *
-            boundarySecondaryPhaseSin
-        ) *
-        0.022;
+        const secondaryWave =
+          (
+            point.sin7 *
+              boundarySecondaryPhaseCos +
+            point.cos7 *
+              boundarySecondaryPhaseSin
+          ) *
+          0.022;
 
-      const tertiaryWave =
-        (
-          point.sin11 *
-            boundaryTertiaryPhaseCos +
-          point.cos11 *
-            boundaryTertiaryPhaseSin
-        ) *
-        0.012;
+        const tertiaryWave =
+          (
+            point.sin11 *
+              boundaryTertiaryPhaseCos +
+            point.cos11 *
+              boundaryTertiaryPhaseSin
+          ) *
+          0.012;
 
-      let interaction =
-        0;
+        let interaction =
+          0;
 
-      if (
-        pointerActive &&
-        pointerDistance >
-          0.0001
-      ) {
-        const deltaSin =
-          point.sin *
-            pointerAngleCos -
-          point.cos *
-            pointerAngleSin;
+        /*
+         * The old hot path performed:
+         *
+         *   atan2(...)
+         *   exp(...)
+         *
+         * for every boundary point.
+         *
+         * Now:
+         * - point.angle is already precomputed
+         * - pointerAngle is computed once per frame
+         * - wrapped angular delta uses simple branches
+         * - Gaussian response is sampled from a lookup table
+         */
+        if (
+          pointerActive &&
+          pointerDistance >
+            0.0001 &&
+          boundaryPointerStrength >
+            0
+        ) {
+          let delta =
+            point.angle -
+            pointerAngle;
 
-        const deltaCos =
-          point.cos *
-            pointerAngleCos +
-          point.sin *
-            pointerAngleSin;
+          if (
+            delta >
+            Math.PI
+          ) {
+            delta -=
+              TAU;
+          } else if (
+            delta <
+            -Math.PI
+          ) {
+            delta +=
+              TAU;
+          }
 
-        const delta =
-          Math.atan2(
-            deltaSin,
-            deltaCos
+          interaction =
+            sampleAngularLookup(
+              delta,
+              boundaryAngularLookup
+            ) *
+            boundaryPointerStrength;
+        }
+
+        const turbulenceWave =
+          (
+            point.sin13 *
+              boundaryTurbulencePhaseCos +
+            point.cos13 *
+              boundaryTurbulencePhaseSin
           );
 
-        const sigma =
-          modeRef.current ===
-          "surge"
-            ? 0.28
-            : 0.18;
-
-        const influence =
-          Math.exp(
-            -(
-              delta *
-              delta
-            ) /
-              sigma
+        const turbulence =
+          interactionTurbulence *
+          (
+            0.012 +
+            turbulenceWave *
+              0.008
           );
 
-        const distanceFactor =
+        const influenceCapacity =
+          Math.min(
+            MAX_NETWORK_INFLUENCES,
+            gridNodes.length
+          );
+
+        let networkDeformation =
+          averageGridEnergy *
+          boundaryNetworkResidualWeights[
+            point.fieldIndex
+          ];
+
+        const networkOffset =
+          point.fieldIndex *
+          influenceCapacity;
+
+        const influenceCount =
+          boundaryNetworkInfluenceCounts[
+            point.fieldIndex
+          ];
+
+        for (
+          let index = 0;
+          index <
+            influenceCount;
+          index += 1
+        ) {
+          const nodeIndex =
+            boundaryNetworkNodeIndices[
+              networkOffset +
+                index
+            ];
+
+          if (
+            nodeIndex <
+            0
+          ) {
+            continue;
+          }
+
+          networkDeformation +=
+            gridNodes[
+              nodeIndex
+            ].energy *
+            boundaryNetworkNodeWeights[
+              networkOffset +
+                index
+            ];
+        }
+
+        let shockwaveDeformation =
+          0;
+
+        const shockwaveCount =
+          shockwaves.length;
+
+        for (
+          let index = 0;
+          index <
+            shockwaveCount;
+          index += 1
+        ) {
+          const shockwave =
+            shockwaves[
+              index
+            ];
+
+          shockwaveDeformation +=
+            shockwaveRadialInfluence[
+              index
+            ] *
+            shockwave.angularInfluence[
+              point.fieldIndex
+            ] *
+            shockwaveAngularCoefficient[
+              index
+            ];
+        }
+
+        return (
+          1 +
+          primaryWave +
+          secondaryWave +
+          tertiaryWave +
+          interaction +
+          turbulence +
+          networkDeformation +
+          shockwaveDeformation
+        );
+      };
+
+    const drawGlow =
+      (
+        x: number,
+        y: number,
+        innerRadius: number,
+        outerRadius: number,
+        alpha: number
+      ) => {
+        const boostedAlpha =
           clamp(
-            1 -
-              pointerDistance /
-                (
-                  radius *
-                  2.2
-                ),
+            alpha *
+              (
+                1 +
+                clickLightBoost *
+                  0.7
+              ),
             0,
             1
           );
 
-        interaction =
-          influence *
-          distanceFactor *
-          0.075 *
-          profile.pointerGain;
-      }
-
-      const turbulenceWave =
-        (
-          point.sin13 *
-            boundaryTurbulencePhaseCos +
-          point.cos13 *
-            boundaryTurbulencePhaseSin
-        );
-
-      const turbulence =
-        interactionTurbulence *
-        (
-          0.012 +
-          turbulenceWave *
-            0.008
-        );
-
-      const influenceCapacity =
-        Math.min(
-          MAX_NETWORK_INFLUENCES,
-          gridNodes.length
-        );
-
-      let networkDeformation =
-        averageGridEnergy *
-        boundaryNetworkResidualWeights[
-          point.fieldIndex
-        ];
-
-      const networkOffset =
-        point.fieldIndex *
-        influenceCapacity;
-
-      const influenceCount =
-        boundaryNetworkInfluenceCounts[
-          point.fieldIndex
-        ];
-
-      for (
-        let index = 0;
-        index <
-          influenceCount;
-        index += 1
-      ) {
-        const nodeIndex =
-          boundaryNetworkNodeIndices[
-            networkOffset +
-              index
-          ];
-
         if (
-          nodeIndex <
-          0
+          glowSprite
         ) {
-          continue;
+          context.globalAlpha =
+            boostedAlpha;
+
+          context.drawImage(
+            glowSprite,
+            x -
+              outerRadius,
+            y -
+              outerRadius,
+            outerRadius *
+              2,
+            outerRadius *
+              2
+          );
+
+          context.globalAlpha =
+            1;
+
+          return;
         }
 
-        networkDeformation +=
-          gridNodes[
-            nodeIndex
-          ].energy *
-          boundaryNetworkNodeWeights[
-            networkOffset +
-              index
-          ];
-      }
+        const gradient =
+          context.createRadialGradient(
+            x,
+            y,
+            innerRadius,
+            x,
+            y,
+            outerRadius
+          );
 
-      let shockwaveDeformation =
-        0;
-
-      const shockwaveCount =
-        shockwaves.length;
-
-      for (
-        let index = 0;
-        index <
-          shockwaveCount;
-        index += 1
-      ) {
-        const shockwave =
-          shockwaves[
-            index
-          ];
-
-        shockwaveDeformation +=
-          shockwaveRadialInfluence[
-            index
-          ] *
-          shockwave.angularInfluence[
-            point.fieldIndex
-          ] *
-          shockwaveAngularCoefficient[
-            index
-          ];
-      }
-
-      return (
-        1 +
-        primaryWave +
-        secondaryWave +
-        tertiaryWave +
-        interaction +
-        turbulence +
-        networkDeformation +
-        shockwaveDeformation
-      );
-    };
-
-    const drawGlow = (
-      x: number,
-      y: number,
-      innerRadius: number,
-      outerRadius: number,
-      alpha: number
-    ) => {
-      const boostedAlpha =
-        clamp(
-          alpha *
-            (
-              1 +
-              clickLightBoost *
-                0.7
-            ),
+        gradient.addColorStop(
           0,
-          1
+          `rgba(255, 80, 20, ${boostedAlpha})`
         );
 
-      if (
-        glowSprite
-      ) {
-        context.globalAlpha =
-          boostedAlpha;
-
-        context.drawImage(
-          glowSprite,
-          x -
-            outerRadius,
-          y -
-            outerRadius,
-          outerRadius *
-            2,
-          outerRadius *
-            2
+        gradient.addColorStop(
+          0.35,
+          `rgba(255, 28, 12, ${
+            boostedAlpha *
+            0.46
+          })`
         );
 
-        context.globalAlpha =
-          1;
-
-        return;
-      }
-
-      const gradient =
-        context.createRadialGradient(
-          x,
-          y,
-          innerRadius,
-          x,
-          y,
-          outerRadius
+        gradient.addColorStop(
+          1,
+          "rgba(255, 0, 0, 0)"
         );
-
-      gradient.addColorStop(
-        0,
-        `rgba(255, 80, 20, ${boostedAlpha})`
-      );
-
-      gradient.addColorStop(
-        0.35,
-        `rgba(255, 28, 12, ${
-          boostedAlpha *
-          0.46
-        })`
-      );
-
-      gradient.addColorStop(
-        1,
-        "rgba(255, 0, 0, 0)"
-      );
-
-      context.fillStyle =
-        gradient;
-
-      context.beginPath();
-
-      context.arc(
-        x,
-        y,
-        outerRadius,
-        0,
-        TAU
-      );
-
-      context.fill();
-    };
-
-    const drawNodeCore = (
-      x: number,
-      y: number,
-      radiusValue: number,
-      alpha: number
-    ) => {
-      const boostedAlpha =
-        clamp(
-          alpha *
-            (
-              1 +
-              clickLightBoost *
-                0.55
-            ),
-          0,
-          1
-        );
-
-      if (
-        !nodeSprite
-      ) {
-        context.globalAlpha =
-          boostedAlpha;
 
         context.fillStyle =
-          "rgba(255, 92, 70, 1)";
+          gradient;
 
         context.beginPath();
 
         context.arc(
           x,
           y,
-          radiusValue,
+          outerRadius,
           0,
           TAU
         );
 
         context.fill();
+      };
 
-        context.globalAlpha =
-          1;
-
-        return;
-      }
-
-      const diameter =
-        Math.max(
-          2.4,
-          radiusValue *
-            2
-        );
-
-      context.globalAlpha =
-        boostedAlpha;
-
-      context.drawImage(
-        nodeSprite,
-        x -
-          diameter *
-            0.5,
-        y -
-          diameter *
-            0.5,
-        diameter,
-        diameter
-      );
-
-      context.globalAlpha =
-        1;
-    };
-
-    const drawNetwork = (
-      time: number
-    ) => {
-      if (
-        gridNodes.length ===
-        0
-      ) {
-        return;
-      }
-
-      context.lineCap =
-        "round";
-
-      context.lineJoin =
-        "round";
-
-      let hasBaseline =
-        false;
-
-      let hasFaint =
-        false;
-
-      let hasLow =
-        false;
-
-      let hasMedium =
-        false;
-
-      let hasHigh =
-        false;
-
-      for (
-        let index = 0;
-        index <
-          gridEdges.length;
-        index += 1
-      ) {
-        const edge =
-          gridEdges[index];
-
-        const a =
-          gridNodes[
-            edge.a
-          ];
-
-        const b =
-          gridNodes[
-            edge.b
-          ];
-
-        const energy =
-          (
-            a.energy +
-            b.energy
-          ) *
-          0.5;
-
-        const active =
+    const drawNodeCore =
+      (
+        x: number,
+        y: number,
+        radiusValue: number,
+        alpha: number
+      ) => {
+        const boostedAlpha =
           clamp(
-            energy *
-              1.8 +
-              edge.flow *
-                1.4,
-            0,
-            1
-          );
-
-        let bucket =
-          4;
-
-        if (
-          active <
-          0.01
-        ) {
-          bucket =
-            0;
-
-          hasBaseline =
-            true;
-        } else if (
-          active <
-          0.12
-        ) {
-          bucket =
-            1;
-
-          hasFaint =
-            true;
-        } else if (
-          active <
-          0.3
-        ) {
-          bucket =
-            2;
-
-          hasLow =
-            true;
-        } else if (
-          active <
-          0.62
-        ) {
-          bucket =
-            3;
-
-          hasMedium =
-            true;
-        } else {
-          bucket =
-            4;
-
-          hasHigh =
-            true;
-        }
-
-        edgeBuckets[
-          index
-        ] =
-          bucket;
-      }
-
-      const lightMultiplier =
-        1 +
-        clickLightBoost *
-          0.75;
-
-      if (
-        hasBaseline
-      ) {
-        context.beginPath();
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          if (
-            edgeBuckets[
-              index
-            ] !==
-            0
-          ) {
-            continue;
-          }
-
-          const edge =
-            gridEdges[
-              index
-            ];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-        }
-
-        context.globalAlpha =
-          0.012 *
-          lightMultiplier;
-
-        context.lineWidth =
-          0.4;
-
-        context.strokeStyle =
-          "rgba(115, 18, 18, 1)";
-
-        context.stroke();
-      }
-
-      if (
-        hasFaint
-      ) {
-        context.beginPath();
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          if (
-            edgeBuckets[
-              index
-            ] !==
-            1
-          ) {
-            continue;
-          }
-
-          const edge =
-            gridEdges[
-              index
-            ];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-        }
-
-        context.globalAlpha =
-          0.028 *
-          lightMultiplier;
-
-        context.lineWidth =
-          0.46;
-
-        context.strokeStyle =
-          "rgba(255, 70, 52, 1)";
-
-        context.stroke();
-      }
-
-      if (
-        hasLow
-      ) {
-        context.beginPath();
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          if (
-            edgeBuckets[
-              index
-            ] !==
-            2
-          ) {
-            continue;
-          }
-
-          const edge =
-            gridEdges[
-              index
-            ];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-        }
-
-        context.globalAlpha =
-          0.052 *
-          lightMultiplier;
-
-        context.lineWidth =
-          0.56;
-
-        context.strokeStyle =
-          "rgba(255, 70, 52, 1)";
-
-        context.stroke();
-      }
-
-      if (
-        hasMedium
-      ) {
-        context.beginPath();
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          if (
-            edgeBuckets[
-              index
-            ] !==
-            3
-          ) {
-            continue;
-          }
-
-          const edge =
-            gridEdges[
-              index
-            ];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-        }
-
-        context.globalAlpha =
-          0.092 *
-          lightMultiplier;
-
-        context.lineWidth =
-          0.72;
-
-        context.strokeStyle =
-          "rgba(255, 70, 52, 1)";
-
-        context.stroke();
-      }
-
-      if (
-        hasHigh
-      ) {
-        context.beginPath();
-
-        for (
-          let index = 0;
-          index <
-            gridEdges.length;
-          index += 1
-        ) {
-          if (
-            edgeBuckets[
-              index
-            ] !==
-            4
-          ) {
-            continue;
-          }
-
-          const edge =
-            gridEdges[
-              index
-            ];
-
-          const a =
-            gridNodes[
-              edge.a
-            ];
-
-          const b =
-            gridNodes[
-              edge.b
-            ];
-
-          context.moveTo(
-            a.x,
-            a.y
-          );
-
-          context.lineTo(
-            b.x,
-            b.y
-          );
-        }
-
-        context.globalAlpha =
-          0.13 *
-          lightMultiplier;
-
-        context.lineWidth =
-          1.1;
-
-        context.strokeStyle =
-          "rgba(255, 70, 52, 1)";
-
-        context.stroke();
-      }
-
-      for (
-        let index = 0;
-        index <
-          gridNodes.length;
-        index += 1
-      ) {
-        const node =
-          gridNodes[index];
-
-        const potential =
-          nodePotential[
-            index
-          ];
-
-        const energy =
-          node.energy;
-
-        const localPulse =
-          1 +
-          Math.sin(
-            time *
-              0.003 +
-              node.phase
-          ) *
-            0.12;
-
-        const nodeRadius =
-          (
-            1.5 +
-            energy *
-              4.2 +
-            potential *
-              1.5
-          ) *
-          localPulse;
-
-        const nodeAlpha =
-          clamp(
-            (
-              0.24 +
-              energy *
-                0.72 +
-              potential *
-                0.16
-            ) *
+            alpha *
               (
                 1 +
                 clickLightBoost *
@@ -4661,46 +4313,579 @@ export default function RedMagic({
             1
           );
 
-        drawNodeCore(
-          node.x,
-          node.y,
+        if (
+          !nodeSprite
+        ) {
+          context.globalAlpha =
+            boostedAlpha;
+
+          context.fillStyle =
+            "rgba(255, 92, 70, 1)";
+
+          context.beginPath();
+
+          context.arc(
+            x,
+            y,
+            radiusValue,
+            0,
+            TAU
+          );
+
+          context.fill();
+
+          context.globalAlpha =
+            1;
+
+          return;
+        }
+
+        const diameter =
           Math.max(
-            1.2,
-            nodeRadius
-          ),
-          nodeAlpha
+            2.4,
+            radiusValue *
+              2
+          );
+
+        context.globalAlpha =
+          boostedAlpha;
+
+        context.drawImage(
+          nodeSprite,
+          x -
+            diameter *
+              0.5,
+          y -
+            diameter *
+              0.5,
+          diameter,
+          diameter
         );
 
+        context.globalAlpha =
+          1;
+      };
+
+    const drawNetwork =
+      (
+        time: number
+      ) => {
         if (
-          energy >
-          0.018
+          gridNodes.length ===
+          0
         ) {
-          drawGlow(
+          return;
+        }
+
+        context.lineCap =
+          "round";
+
+        context.lineJoin =
+          "round";
+
+        let hasBaseline =
+          false;
+
+        let hasFaint =
+          false;
+
+        let hasLow =
+          false;
+
+        let hasMedium =
+          false;
+
+        let hasHigh =
+          false;
+
+        for (
+          let index = 0;
+          index <
+            gridEdges.length;
+          index += 1
+        ) {
+          const edge =
+            gridEdges[
+              index
+            ];
+
+          const a =
+            gridNodes[
+              edge.a
+            ];
+
+          const b =
+            gridNodes[
+              edge.b
+            ];
+
+          const energy =
+            (
+              a.energy +
+              b.energy
+            ) *
+            0.5;
+
+          const active =
+            clamp(
+              energy *
+                1.8 +
+                edge.flow *
+                  1.4,
+              0,
+              1
+            );
+
+          let bucket =
+            4;
+
+          if (
+            active <
+            0.01
+          ) {
+            bucket =
+              0;
+
+            hasBaseline =
+              true;
+          } else if (
+            active <
+            0.12
+          ) {
+            bucket =
+              1;
+
+            hasFaint =
+              true;
+          } else if (
+            active <
+            0.3
+          ) {
+            bucket =
+              2;
+
+            hasLow =
+              true;
+          } else if (
+            active <
+            0.62
+          ) {
+            bucket =
+              3;
+
+            hasMedium =
+              true;
+          } else {
+            bucket =
+              4;
+
+            hasHigh =
+              true;
+          }
+
+          edgeBuckets[
+            index
+          ] =
+            bucket;
+        }
+
+        const lightMultiplier =
+          1 +
+          clickLightBoost *
+            0.75;
+
+        if (
+          hasBaseline
+        ) {
+          context.beginPath();
+
+          for (
+            let index = 0;
+            index <
+              gridEdges.length;
+            index += 1
+          ) {
+            if (
+              edgeBuckets[
+                index
+              ] !==
+              0
+            ) {
+              continue;
+            }
+
+            const edge =
+              gridEdges[
+                index
+              ];
+
+            const a =
+              gridNodes[
+                edge.a
+              ];
+
+            const b =
+              gridNodes[
+                edge.b
+              ];
+
+            context.moveTo(
+              a.x,
+              a.y
+            );
+
+            context.lineTo(
+              b.x,
+              b.y
+            );
+          }
+
+          context.globalAlpha =
+            0.012 *
+            lightMultiplier;
+
+          context.lineWidth =
+            0.4;
+
+          context.strokeStyle =
+            "rgba(115, 18, 18, 1)";
+
+          context.stroke();
+        }
+
+        if (
+          hasFaint
+        ) {
+          context.beginPath();
+
+          for (
+            let index = 0;
+            index <
+              gridEdges.length;
+            index += 1
+          ) {
+            if (
+              edgeBuckets[
+                index
+              ] !==
+              1
+            ) {
+              continue;
+            }
+
+            const edge =
+              gridEdges[
+                index
+              ];
+
+            const a =
+              gridNodes[
+                edge.a
+              ];
+
+            const b =
+              gridNodes[
+                edge.b
+              ];
+
+            context.moveTo(
+              a.x,
+              a.y
+            );
+
+            context.lineTo(
+              b.x,
+              b.y
+            );
+          }
+
+          context.globalAlpha =
+            0.028 *
+            lightMultiplier;
+
+          context.lineWidth =
+            0.46;
+
+          context.strokeStyle =
+            "rgba(255, 70, 52, 1)";
+
+          context.stroke();
+        }
+
+        if (
+          hasLow
+        ) {
+          context.beginPath();
+
+          for (
+            let index = 0;
+            index <
+              gridEdges.length;
+            index += 1
+          ) {
+            if (
+              edgeBuckets[
+                index
+              ] !==
+              2
+            ) {
+              continue;
+            }
+
+            const edge =
+              gridEdges[
+                index
+              ];
+
+            const a =
+              gridNodes[
+                edge.a
+              ];
+
+            const b =
+              gridNodes[
+                edge.b
+              ];
+
+            context.moveTo(
+              a.x,
+              a.y
+            );
+
+            context.lineTo(
+              b.x,
+              b.y
+            );
+          }
+
+          context.globalAlpha =
+            0.052 *
+            lightMultiplier;
+
+          context.lineWidth =
+            0.56;
+
+          context.strokeStyle =
+            "rgba(255, 70, 52, 1)";
+
+          context.stroke();
+        }
+
+        if (
+          hasMedium
+        ) {
+          context.beginPath();
+
+          for (
+            let index = 0;
+            index <
+              gridEdges.length;
+            index += 1
+          ) {
+            if (
+              edgeBuckets[
+                index
+              ] !==
+              3
+            ) {
+              continue;
+            }
+
+            const edge =
+              gridEdges[
+                index
+              ];
+
+            const a =
+              gridNodes[
+                edge.a
+              ];
+
+            const b =
+              gridNodes[
+                edge.b
+              ];
+
+            context.moveTo(
+              a.x,
+              a.y
+            );
+
+            context.lineTo(
+              b.x,
+              b.y
+            );
+          }
+
+          context.globalAlpha =
+            0.092 *
+            lightMultiplier;
+
+          context.lineWidth =
+            0.72;
+
+          context.strokeStyle =
+            "rgba(255, 70, 52, 1)";
+
+          context.stroke();
+        }
+
+        if (
+          hasHigh
+        ) {
+          context.beginPath();
+
+          for (
+            let index = 0;
+            index <
+              gridEdges.length;
+            index += 1
+          ) {
+            if (
+              edgeBuckets[
+                index
+              ] !==
+              4
+            ) {
+              continue;
+            }
+
+            const edge =
+              gridEdges[
+                index
+              ];
+
+            const a =
+              gridNodes[
+                edge.a
+              ];
+
+            const b =
+              gridNodes[
+                edge.b
+              ];
+
+            context.moveTo(
+              a.x,
+              a.y
+            );
+
+            context.lineTo(
+              b.x,
+              b.y
+            );
+          }
+
+          context.globalAlpha =
+            0.13 *
+            lightMultiplier;
+
+          context.lineWidth =
+            1.1;
+
+          context.strokeStyle =
+            "rgba(255, 70, 52, 1)";
+
+          context.stroke();
+        }
+
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const node =
+            gridNodes[
+              index
+            ];
+
+          const potential =
+            nodePotential[
+              index
+            ];
+
+          const energy =
+            node.energy;
+
+          const localPulse =
+            1 +
+            Math.sin(
+              time *
+                0.003 +
+                node.phase
+            ) *
+              0.12;
+
+          const nodeRadius =
+            (
+              1.5 +
+              energy *
+                4.2 +
+              potential *
+                1.5
+            ) *
+            localPulse;
+
+          const nodeAlpha =
+            clamp(
+              (
+                0.24 +
+                energy *
+                  0.72 +
+                potential *
+                  0.16
+              ) *
+                (
+                  1 +
+                  clickLightBoost *
+                    0.55
+                ),
+              0,
+              1
+            );
+
+          drawNodeCore(
             node.x,
             node.y,
-            0,
-            nodeRadius *
-              (
-                3.2 +
-                energy *
-                  2
-              ),
-            0.028 +
-              energy *
-                0.07
+            Math.max(
+              1.2,
+              nodeRadius
+            ),
+            nodeAlpha
           );
-        }
-      }
 
-      context.globalAlpha =
-        1;
-    };
+          if (
+            energy >
+            0.018
+          ) {
+            drawGlow(
+              node.x,
+              node.y,
+              0,
+              nodeRadius *
+                (
+                  3.2 +
+                  energy *
+                    2
+                ),
+              0.028 +
+                energy *
+                  0.07
+            );
+          }
+        }
+
+        context.globalAlpha =
+          1;
+      };
 
     const drawInteraction =
       () => {
         if (
           !pointerActive &&
-          pointerEnergy <= 0.01 &&
+          pointerEnergy <=
+            0.01 &&
           shockwaves.length ===
             0
         ) {
@@ -4720,11 +4905,6 @@ export default function RedMagic({
           ) *
           profile.pointerGain;
 
-        /*
-         * Visual pointer light deliberately uses the exact
-         * pointer target. The simulation pointer remains
-         * smoothed separately for fluid deformation.
-         */
         const visualPointerX =
           pointerTarget.x;
 
@@ -4862,371 +5042,102 @@ export default function RedMagic({
           1;
       };
 
-    const drawMembrane = (
-      time: number
-    ) => {
-      prepareShockwaveFrame();
+    const drawMembrane =
+      (
+        time: number
+      ) => {
+        prepareShockwaveFrame();
 
-      const primaryPhase =
-        time *
-        0.0011;
-
-      boundaryPrimaryPhaseSin =
-        Math.sin(
-          primaryPhase
-        );
-
-      boundaryPrimaryPhaseCos =
-        Math.cos(
-          primaryPhase
-        );
-
-      const secondaryPhase =
-        1.3 -
-        time *
-          0.0008;
-
-      boundarySecondaryPhaseSin =
-        Math.sin(
-          secondaryPhase
-        );
-
-      boundarySecondaryPhaseCos =
-        Math.cos(
-          secondaryPhase
-        );
-
-      const tertiaryPhase =
-        time *
-        0.00065;
-
-      boundaryTertiaryPhaseSin =
-        Math.sin(
-          tertiaryPhase
-        );
-
-      boundaryTertiaryPhaseCos =
-        Math.cos(
-          tertiaryPhase
-        );
-
-      const turbulencePhase =
-        time *
-          0.004 +
-        pointerAngle *
-          2;
-
-      boundaryTurbulencePhaseSin =
-        Math.sin(
-          turbulencePhase
-        );
-
-      boundaryTurbulencePhaseCos =
-        Math.cos(
-          turbulencePhase
-        );
-
-      context.beginPath();
-
-      for (
-        let index = 0;
-        index <
-          membraneBoundary.length;
-        index += 1
-      ) {
-        const point =
-          membraneBoundary[
-            index
-          ];
-
-        const normalizedRadius =
-          getBoundaryRadius(
-            point
-          ) *
-          radius;
-
-        const x =
-          centerX +
-          point.cos *
-            normalizedRadius;
-
-        const y =
-          centerY +
-          point.sin *
-            normalizedRadius;
-
-        if (
-          index ===
-          0
-        ) {
-          context.moveTo(
-            x,
-            y
-          );
-        } else {
-          context.lineTo(
-            x,
-            y
-          );
-        }
-      }
-
-      context.closePath();
-
-      if (
-        membraneGradient
-      ) {
-        context.fillStyle =
-          membraneGradient;
-
-        context.globalAlpha =
-          1 +
-          clickLightBoost *
-            0.3;
-
-        context.fill();
-
-        context.globalAlpha =
-          1;
-      }
-
-      const lightMultiplier =
-        1 +
-        clickLightBoost *
-          0.65;
-
-      context.lineWidth =
-        reducedMotion
-          ? 1.2
-          : 1.6;
-
-      context.strokeStyle =
-        `rgba(255, 55, 40, ${
-          0.68 *
-          lightMultiplier
-        })`;
-
-      context.stroke();
-
-      context.lineWidth =
-        4;
-
-      context.strokeStyle =
-        `rgba(125, 0, 0, ${
-          0.12 *
-          lightMultiplier
-        })`;
-
-      context.stroke();
-    };
-
-    const drawEnergyFlows = (
-      time: number
-    ) => {
-      const flowCount =
-        quality.flowCount;
-
-      if (
-        flowCount ===
-        0
-      ) {
-        return;
-      }
-
-      const flowSegments =
-        quality.flowSegments;
-
-      const geometry =
-        flowGeometry;
-
-      const angleTime =
-        time *
-        0.0012;
-
-      const waveTime =
-        time *
-        0.0017;
-
-      const angleTimeSin =
-        Math.sin(
-          angleTime
-        );
-
-      const angleTimeCos =
-        Math.cos(
-          angleTime
-        );
-
-      const waveTimeSin =
-        Math.sin(
-          waveTime
-        );
-
-      const waveTimeCos =
-        Math.cos(
-          waveTime
-        );
-
-      const angleAmplitude =
-        0.05 +
-        interactionTurbulence *
-          0.018;
-
-      const waveAmplitude =
-        radius *
-        (
-          0.025 +
-          interactionTurbulence *
-            0.016
-        );
-
-      context.lineWidth =
-        (
-          0.8 +
-          pointerEnergy *
-            0.8 +
-          interactionTurbulence *
-            0.5
-        );
-
-      context.strokeStyle =
-        `rgba(255, 70, 48, ${
-          (
-            0.08 +
-            pointerEnergy *
-              0.05 +
-            interactionTurbulence *
-              0.035
-          ) *
-          (
-            1 +
-            clickLightBoost *
-              0.65
-          )
-        })`;
-
-      context.beginPath();
-
-      for (
-        let index = 0;
-        index < flowCount;
-        index += 1
-      ) {
-        const direction =
-          geometry.directions[
-            index
-          ];
-
-        const baseAngle =
-          geometry.baseAngles[
-            index
-          ] +
+        const primaryPhase =
           time *
-            0.00016 *
-            direction +
-          interactionTurbulence *
-            0.04 *
-            direction;
+          0.0011;
 
-        const baseSin =
+        boundaryPrimaryPhaseSin =
           Math.sin(
-            baseAngle
+            primaryPhase
           );
 
-        const baseCos =
+        boundaryPrimaryPhaseCos =
           Math.cos(
-            baseAngle
+            primaryPhase
           );
 
-        const flowOffset =
-          index *
-          (
-            flowSegments +
-            1
+        const secondaryPhase =
+          1.3 -
+          time *
+            0.0008;
+
+        boundarySecondaryPhaseSin =
+          Math.sin(
+            secondaryPhase
           );
+
+        boundarySecondaryPhaseCos =
+          Math.cos(
+            secondaryPhase
+          );
+
+        const tertiaryPhase =
+          time *
+          0.00065;
+
+        boundaryTertiaryPhaseSin =
+          Math.sin(
+            tertiaryPhase
+          );
+
+        boundaryTertiaryPhaseCos =
+          Math.cos(
+            tertiaryPhase
+          );
+
+        const turbulencePhase =
+          time *
+            0.004 +
+          pointerAngle *
+            2;
+
+        boundaryTurbulencePhaseSin =
+          Math.sin(
+            turbulencePhase
+          );
+
+        boundaryTurbulencePhaseCos =
+          Math.cos(
+            turbulencePhase
+          );
+
+        context.beginPath();
 
         for (
-          let segment = 0;
-          segment <= flowSegments;
-          segment += 1
+          let index = 0;
+          index <
+            membraneBoundary.length;
+          index += 1
         ) {
-          const pointIndex =
-            flowOffset +
-            segment;
+          const point =
+            membraneBoundary[
+              index
+            ];
 
-          const phaseSin =
-            geometry.anglePhaseSin[
-              pointIndex
-            ] *
-              angleTimeCos +
-            geometry.anglePhaseCos[
-              pointIndex
-            ] *
-              angleTimeSin;
-
-          const angleOffset =
-            phaseSin *
-            angleAmplitude;
-
-          const angleOffsetSquared =
-            angleOffset *
-            angleOffset;
-
-          const offsetSin =
-            angleOffset -
-            angleOffset *
-              angleOffsetSquared /
-              6;
-
-          const offsetCos =
-            1 -
-            angleOffsetSquared *
-              0.5;
-
-          const directionX =
-            baseCos *
-              offsetCos -
-            baseSin *
-              offsetSin;
-
-          const directionY =
-            baseSin *
-              offsetCos +
-            baseCos *
-              offsetSin;
-
-          const waveSin =
-            geometry.wavePhaseSin[
-              pointIndex
-            ] *
-              waveTimeCos +
-            geometry.wavePhaseCos[
-              pointIndex
-            ] *
-              waveTimeSin;
-
-          const radialDistance =
-            (
-              geometry.distanceScales[
-                pointIndex
-              ] *
-              radius
-            ) +
-            waveSin *
-              waveAmplitude;
+          const normalizedRadius =
+            getBoundaryRadius(
+              point
+            ) *
+            radius;
 
           const x =
             centerX +
-            directionX *
-              radialDistance;
+            point.cos *
+              normalizedRadius;
 
           const y =
             centerY +
-            directionY *
-              radialDistance;
+            point.sin *
+              normalizedRadius;
 
           if (
-            segment ===
+            index ===
             0
           ) {
             context.moveTo(
@@ -5240,400 +5151,668 @@ export default function RedMagic({
             );
           }
         }
-      }
 
-      context.stroke();
-    };
+        context.closePath();
 
-    const drawParticles = (
-      time: number,
-      delta: number
-    ) => {
-      updateAndDrawParticles({
-        context,
+        if (
+          membraneGradient
+        ) {
+          context.fillStyle =
+            membraneGradient;
 
-        particles,
-
-        width,
-        height,
-
-        centerX,
-        centerY,
-        radius,
-
-        pointer,
-        pointerActive,
-
-        pointerEnergy,
-        charge,
-
-        profile,
-
-        time,
-        delta,
-
-        reducedMotion
-      });
-    };
-
-    const drawCore = (
-      time: number
-    ) => {
-      const pulse =
-        1 +
-        Math.sin(
-          time *
-            0.0022
-        ) *
-          0.035 +
-        Math.sin(
-          time *
-            0.0049
-        ) *
-          0.012;
-
-      let highestGridEnergy =
-        0;
-
-      for (
-        let index = 0;
-        index <
-          gridNodes.length;
-        index += 1
-      ) {
-        const energy =
-          gridNodes[
-            index
-          ].energy;
-
-        highestGridEnergy =
-          Math.max(
-            highestGridEnergy,
-            energy
-          );
-      }
-
-      const activePulse =
-        pointerEnergy *
-          0.11 *
-          profile.coreGain +
-        charge *
-          0.18 *
-          profile.coreGain +
-        interactionTurbulence *
-          0.035 +
-        pointerVelocity *
-          0.003 *
-          profile.coreGain +
-        averageGridEnergy *
-          0.09 +
-        highestGridEnergy *
-          0.035 +
-        clickLightBoost *
-          0.06;
-
-      const solarBreathing =
-        1 +
-        Math.sin(
-          time *
-            CORE_MOVEMENT_SPEED
-        ) *
-          CORE_MOVEMENT_AMPLITUDE +
-        Math.sin(
-          time *
-            0.0029
-        ) *
-          0.004;
-
-      const movementEnergy =
-        clamp(
-          (
-            pointerEnergy *
-              0.08 +
-            charge *
-              0.12 +
-            averageGridEnergy *
-              0.035 +
-            interactionTurbulence *
-              0.03 +
+          context.globalAlpha =
+            1 +
             clickLightBoost *
-              0.035
-          ) *
-            profile.coreGain,
-          0,
-          0.18
-        );
+              0.3;
 
-      const coreRadius =
-        radius *
-        0.49 *
-        (
-          pulse +
-          activePulse
-        ) *
-        solarBreathing;
+          context.fill();
 
-      const coreRotation =
-        time *
-        CORE_ROTATION_SPEED;
+          context.globalAlpha =
+            1;
+        }
 
-      const detailRotation =
-        time *
-        CORE_DETAIL_ROTATION_SPEED;
+        const lightMultiplier =
+          1 +
+          clickLightBoost *
+            0.65;
 
-      const dynamicScale =
-        1 +
-        movementEnergy;
+        context.lineWidth =
+          reducedMotion
+            ? 1.2
+            : 1.6;
 
-      drawGlow(
-        centerX,
-        centerY,
-        coreRadius *
-          0.08,
-        coreRadius *
+        context.strokeStyle =
+          `rgba(255, 55, 40, ${
+            0.68 *
+            lightMultiplier
+          })`;
+
+        context.stroke();
+
+        context.lineWidth =
+          4;
+
+        context.strokeStyle =
+          `rgba(125, 0, 0, ${
+            0.12 *
+            lightMultiplier
+          })`;
+
+        context.stroke();
+      };
+
+    const drawEnergyFlows =
+      (
+        time: number
+      ) => {
+        const flowCount =
+          quality.flowCount;
+
+        if (
+          flowCount ===
+          0
+        ) {
+          return;
+        }
+
+        const flowSegments =
+          quality.flowSegments;
+
+        const geometry =
+          flowGeometry;
+
+        const angleTime =
+          time *
+          0.0012;
+
+        const waveTime =
+          time *
+          0.0017;
+
+        const angleTimeSin =
+          Math.sin(
+            angleTime
+          );
+
+        const angleTimeCos =
+          Math.cos(
+            angleTime
+          );
+
+        const waveTimeSin =
+          Math.sin(
+            waveTime
+          );
+
+        const waveTimeCos =
+          Math.cos(
+            waveTime
+          );
+
+        const angleAmplitude =
+          0.05 +
+          interactionTurbulence *
+            0.018;
+
+        const waveAmplitude =
+          radius *
           (
-            1.72 +
-            movementEnergy *
-              1.8
-          ),
-        0.11 +
+            0.025 +
+            interactionTurbulence *
+              0.016
+          );
+
+        context.lineWidth =
+          (
+            0.8 +
+            pointerEnergy *
+              0.8 +
+            interactionTurbulence *
+              0.5
+          );
+
+        context.strokeStyle =
+          `rgba(255, 70, 48, ${
+            (
+              0.08 +
+              pointerEnergy *
+                0.05 +
+              interactionTurbulence *
+                0.035
+            ) *
+            (
+              1 +
+              clickLightBoost *
+                0.65
+            )
+          })`;
+
+        context.beginPath();
+
+        for (
+          let index = 0;
+          index <
+            flowCount;
+          index += 1
+        ) {
+          const direction =
+            geometry.directions[
+              index
+            ];
+
+          const baseAngle =
+            geometry.baseAngles[
+              index
+            ] +
+            time *
+              0.00016 *
+              direction +
+            interactionTurbulence *
+              0.04 *
+              direction;
+
+          const baseSin =
+            Math.sin(
+              baseAngle
+            );
+
+          const baseCos =
+            Math.cos(
+              baseAngle
+            );
+
+          const flowOffset =
+            index *
+            (
+              flowSegments +
+              1
+            );
+
+          for (
+            let segment = 0;
+            segment <= flowSegments;
+            segment += 1
+          ) {
+            const pointIndex =
+              flowOffset +
+              segment;
+
+            const phaseSin =
+              geometry.anglePhaseSin[
+                pointIndex
+              ] *
+                angleTimeCos +
+              geometry.anglePhaseCos[
+                pointIndex
+              ] *
+                angleTimeSin;
+
+            const angleOffset =
+              phaseSin *
+              angleAmplitude;
+
+            const angleOffsetSquared =
+              angleOffset *
+              angleOffset;
+
+            const offsetSin =
+              angleOffset -
+              angleOffset *
+                angleOffsetSquared /
+                6;
+
+            const offsetCos =
+              1 -
+              angleOffsetSquared *
+                0.5;
+
+            const directionX =
+              baseCos *
+                offsetCos -
+              baseSin *
+                offsetSin;
+
+            const directionY =
+              baseSin *
+                offsetCos +
+              baseCos *
+                offsetSin;
+
+            const waveSin =
+              geometry.wavePhaseSin[
+                pointIndex
+              ] *
+                waveTimeCos +
+              geometry.wavePhaseCos[
+                pointIndex
+              ] *
+                waveTimeSin;
+
+            const radialDistance =
+              geometry.distanceScales[
+                pointIndex
+              ] *
+              radius +
+              waveSin *
+                waveAmplitude;
+
+            const x =
+              centerX +
+              directionX *
+                radialDistance;
+
+            const y =
+              centerY +
+              directionY *
+                radialDistance;
+
+            if (
+              segment ===
+              0
+            ) {
+              context.moveTo(
+                x,
+                y
+              );
+            } else {
+              context.lineTo(
+                x,
+                y
+              );
+            }
+          }
+        }
+
+        context.stroke();
+      };
+
+    const drawParticles =
+      (
+        time: number,
+        delta: number
+      ) => {
+        updateAndDrawParticles({
+          context,
+
+          particles,
+
+          width,
+          height,
+
+          centerX,
+          centerY,
+          radius,
+
+          pointer,
+          pointerActive,
+
+          pointerEnergy,
+          charge,
+
+          profile,
+
+          time,
+          delta,
+
+          reducedMotion
+        });
+      };
+
+    const drawCore =
+      (
+        time: number
+      ) => {
+        const pulse =
+          1 +
+          Math.sin(
+            time *
+              0.0022
+          ) *
+            0.035 +
+          Math.sin(
+            time *
+              0.0049
+          ) *
+            0.012;
+
+        let highestGridEnergy =
+          0;
+
+        for (
+          let index = 0;
+          index <
+            gridNodes.length;
+          index += 1
+        ) {
+          const energy =
+            gridNodes[
+              index
+            ].energy;
+
+          highestGridEnergy =
+            Math.max(
+              highestGridEnergy,
+              energy
+            );
+        }
+
+        const activePulse =
           pointerEnergy *
-            0.04 *
+            0.11 *
             profile.coreGain +
           charge *
+            0.18 *
+            profile.coreGain +
+          interactionTurbulence *
             0.035 +
+          pointerVelocity *
+            0.003 *
+            profile.coreGain +
           averageGridEnergy *
-            0.04 +
-          movementEnergy *
-            0.09
-      );
+            0.09 +
+          highestGridEnergy *
+            0.035 +
+          clickLightBoost *
+            0.06;
 
-      if (
-        charge >
-        0.01
-      ) {
+        const solarBreathing =
+          1 +
+          Math.sin(
+            time *
+              CORE_MOVEMENT_SPEED
+          ) *
+            CORE_MOVEMENT_AMPLITUDE +
+          Math.sin(
+            time *
+              0.0029
+          ) *
+            0.004;
+
+        const movementEnergy =
+          clamp(
+            (
+              pointerEnergy *
+                0.08 +
+              charge *
+                0.12 +
+              averageGridEnergy *
+                0.035 +
+              interactionTurbulence *
+                0.03 +
+              clickLightBoost *
+                0.035
+            ) *
+              profile.coreGain,
+            0,
+            0.18
+          );
+
+        const coreRadius =
+          radius *
+          0.49 *
+          (
+            pulse +
+            activePulse
+          ) *
+          solarBreathing;
+
+        const coreRotation =
+          time *
+          CORE_ROTATION_SPEED;
+
+        const detailRotation =
+          time *
+          CORE_DETAIL_ROTATION_SPEED;
+
+        const dynamicScale =
+          1 +
+          movementEnergy;
+
         drawGlow(
           centerX,
           centerY,
           coreRadius *
-            0.2,
+            0.08,
           coreRadius *
             (
-              1.9 +
-              charge *
-                1.2
+              1.72 +
+              movementEnergy *
+                1.8
             ),
-          0.055 +
+          0.11 +
+            pointerEnergy *
+              0.04 *
+              profile.coreGain +
             charge *
+              0.035 +
+            averageGridEnergy *
+              0.04 +
+            movementEnergy *
               0.09
         );
-      }
 
-      if (
-        coreSprite
-      ) {
-        context.save();
+        if (
+          charge >
+          0.01
+        ) {
+          drawGlow(
+            centerX,
+            centerY,
+            coreRadius *
+              0.2,
+            coreRadius *
+              (
+                1.9 +
+                charge *
+                  1.2
+              ),
+            0.055 +
+              charge *
+                0.09
+          );
+        }
 
-        context.globalAlpha =
-          1;
+        if (
+          coreSprite
+        ) {
+          context.save();
 
-        context.translate(
+          context.globalAlpha =
+            1;
+
+          context.translate(
+            centerX,
+            centerY
+          );
+
+          context.rotate(
+            coreRotation
+          );
+
+          context.scale(
+            dynamicScale,
+            dynamicScale
+          );
+
+          context.drawImage(
+            coreSprite,
+            -coreRadius,
+            -coreRadius,
+            coreRadius *
+              2,
+            coreRadius *
+              2
+          );
+
+          context.restore();
+        }
+
+        if (
+          coreDetailSprite
+        ) {
+          context.save();
+
+          context.globalAlpha =
+            clamp(
+              (
+                0.42 +
+                pointerEnergy *
+                  0.14 +
+                interactionTurbulence *
+                  0.1 +
+                charge *
+                  0.08
+              ) *
+                (
+                  1 +
+                  clickLightBoost *
+                    0.35
+                ),
+              0,
+              1
+            );
+
+          context.translate(
+            centerX,
+            centerY
+          );
+
+          context.rotate(
+            detailRotation
+          );
+
+          context.scale(
+            1 +
+              movementEnergy *
+                0.45,
+            1 +
+              movementEnergy *
+                0.45
+          );
+
+          context.drawImage(
+            coreDetailSprite,
+            -coreRadius,
+            -coreRadius,
+            coreRadius *
+              2,
+            coreRadius *
+              2
+          );
+
+          context.restore();
+
+          context.globalAlpha =
+            1;
+        }
+
+        const nucleusRadius =
+          radius *
+          0.17 *
+          (
+            1 +
+            Math.sin(
+              time *
+                0.0036
+            ) *
+              0.08 +
+            charge *
+              0.25 +
+            averageGridEnergy *
+              0.12 +
+            movementEnergy *
+              0.35 +
+            clickLightBoost *
+              0.1
+          );
+
+        drawGlow(
           centerX,
-          centerY
+          centerY,
+          nucleusRadius *
+            0.1,
+          nucleusRadius *
+            2.2,
+          0.09 +
+            pointerEnergy *
+              0.05 +
+            averageGridEnergy *
+              0.04 +
+            movementEnergy *
+              0.05
         );
 
-        context.rotate(
-          coreRotation
+        const nucleusGradient =
+          context.createRadialGradient(
+            centerX -
+              nucleusRadius *
+                0.18,
+            centerY -
+              nucleusRadius *
+                0.2,
+            nucleusRadius *
+              0.05,
+            centerX,
+            centerY,
+            nucleusRadius
+          );
+
+        nucleusGradient.addColorStop(
+          0,
+          "rgba(255, 214, 108, 0.98)"
         );
 
-        context.scale(
-          dynamicScale,
-          dynamicScale
+        nucleusGradient.addColorStop(
+          0.28,
+          "rgba(255, 153, 52, 0.96)"
         );
 
-        context.drawImage(
-          coreSprite,
-          -coreRadius,
-          -coreRadius,
-          coreRadius *
-            2,
-          coreRadius *
-            2
+        nucleusGradient.addColorStop(
+          0.62,
+          "rgba(255, 74, 24, 0.94)"
         );
 
-        context.restore();
-      }
+        nucleusGradient.addColorStop(
+          1,
+          "rgba(185, 16, 10, 0.72)"
+        );
 
-      if (
-        coreDetailSprite
-      ) {
-        context.save();
+        context.fillStyle =
+          nucleusGradient;
 
         context.globalAlpha =
           clamp(
-            (
-              0.42 +
-              pointerEnergy *
-                0.14 +
-              interactionTurbulence *
-                0.1 +
-              charge *
-                0.08
-            ) *
-              (
-                1 +
-                clickLightBoost *
-                  0.35
-              ),
+            0.94 +
+              clickLightBoost *
+                0.08,
             0,
             1
           );
 
-        context.translate(
-          centerX,
-          centerY
+        context.beginPath();
+
+        context.arc(
+          centerX -
+            nucleusRadius *
+              0.08,
+          centerY -
+            nucleusRadius *
+              0.1,
+          nucleusRadius *
+            (
+              0.9 +
+              movementEnergy *
+                0.3
+            ),
+          0,
+          TAU
         );
 
-        context.rotate(
-          detailRotation
-        );
-
-        context.scale(
-          1 +
-            movementEnergy *
-              0.45,
-          1 +
-            movementEnergy *
-              0.45
-        );
-
-        context.drawImage(
-          coreDetailSprite,
-          -coreRadius,
-          -coreRadius,
-          coreRadius *
-            2,
-          coreRadius *
-            2
-        );
-
-        context.restore();
+        context.fill();
 
         context.globalAlpha =
           1;
-      }
-
-      const nucleusRadius =
-        radius *
-        0.17 *
-        (
-          1 +
-          Math.sin(
-            time *
-              0.0036
-          ) *
-            0.08 +
-          charge *
-            0.25 +
-          averageGridEnergy *
-            0.12 +
-          movementEnergy *
-            0.35 +
-          clickLightBoost *
-            0.1
-        );
-
-      drawGlow(
-        centerX,
-        centerY,
-        nucleusRadius *
-          0.1,
-        nucleusRadius *
-          2.2,
-        0.09 +
-          pointerEnergy *
-            0.05 +
-          averageGridEnergy *
-            0.04 +
-          movementEnergy *
-            0.05
-      );
-
-      /*
-       * Keep the nucleus in the same hot orange/red
-       * solar palette as the main core instead of white.
-       */
-      const nucleusGradient =
-        context.createRadialGradient(
-          centerX -
-            nucleusRadius *
-              0.18,
-          centerY -
-            nucleusRadius *
-              0.2,
-          nucleusRadius *
-            0.05,
-          centerX,
-          centerY,
-          nucleusRadius
-        );
-
-      nucleusGradient.addColorStop(
-        0,
-        "rgba(255, 214, 108, 0.98)"
-      );
-
-      nucleusGradient.addColorStop(
-        0.28,
-        "rgba(255, 153, 52, 0.96)"
-      );
-
-      nucleusGradient.addColorStop(
-        0.62,
-        "rgba(255, 74, 24, 0.94)"
-      );
-
-      nucleusGradient.addColorStop(
-        1,
-        "rgba(185, 16, 10, 0.72)"
-      );
-
-      context.fillStyle =
-        nucleusGradient;
-
-      context.globalAlpha =
-        clamp(
-          0.94 +
-            clickLightBoost *
-              0.08,
-          0,
-          1
-        );
-
-      context.beginPath();
-
-      context.arc(
-        centerX -
-          nucleusRadius *
-            0.08,
-        centerY -
-          nucleusRadius *
-            0.1,
-        nucleusRadius *
-          (
-            0.9 +
-            movementEnergy *
-              0.3
-          ),
-        0,
-        TAU
-      );
-
-      context.fill();
-
-      context.globalAlpha =
-        1;
-    };
+      };
 
     const updatePhysicalState =
       (
@@ -5773,7 +5952,8 @@ export default function RedMagic({
           sampleElapsed;
 
         const frameTime =
-          sampledFrames > 0
+          sampledFrames >
+          0
             ? sampleElapsed /
               sampledFrames
             : 0;
@@ -5784,29 +5964,27 @@ export default function RedMagic({
         performanceFrames =
           0;
 
-        publishRedMagicPerformance(
-          {
-            fps,
+        publishRedMagicPerformance({
+          fps,
 
-            frameTime,
+          frameTime,
 
-            quality:
-              qualityName,
+          quality:
+            qualityName,
 
-            dpr,
+          dpr,
 
-            width,
+          width,
 
-            height,
+          height,
 
-            pointerEnergy:
-              Math.round(
-                pointerEnergy *
-                  100
-              ) /
-              100
-          }
-        );
+          pointerEnergy:
+            Math.round(
+              pointerEnergy *
+                100
+            ) /
+            100
+        });
 
         if (
           timestamp -
@@ -5867,207 +6045,210 @@ export default function RedMagic({
         }
       };
 
-    const render = (
-      timestamp: number
-    ) => {
-      if (
-        !visible ||
-        !documentVisible
-      ) {
-        animationFrame =
-          0;
+    const render =
+      (
+        timestamp: number
+      ) => {
+        if (
+          !visible ||
+          !documentVisible
+        ) {
+          animationFrame =
+            0;
 
-        return;
-      }
+          return;
+        }
 
-      if (
-        lastTimestamp ===
-        0
-      ) {
+        if (
+          lastTimestamp ===
+          0
+        ) {
+          lastTimestamp =
+            timestamp;
+
+          performanceSampleTime =
+            timestamp;
+        }
+
+        const delta =
+          clamp(
+            timestamp -
+              lastTimestamp,
+            0,
+            32
+          );
+
         lastTimestamp =
           timestamp;
 
-        performanceSampleTime =
-          timestamp;
-      }
+        profile =
+          MODE_PROFILES[
+            modeRef.current
+          ];
 
-      const delta =
-        clamp(
-          timestamp -
-            lastTimestamp,
-          0,
-          32
-        );
+        const interactionScale =
+          pointerActive
+            ? 1
+            : IDLE_SIMULATION_SCALE;
 
-      lastTimestamp =
-        timestamp;
-
-      profile =
-        MODE_PROFILES[
-          modeRef.current
-        ];
-
-      const interactionScale =
-        pointerActive
-          ? 1
-          : IDLE_SIMULATION_SCALE;
-
-      if (
-        !reducedMotion
-      ) {
-        elapsed +=
-          delta *
-          profile.timeScale *
-          interactionScale;
-      }
-
-      const time =
-        reducedMotion
-          ? 0
-          : elapsed;
-
-      const stepDelta =
-        reducedMotion
-          ? 0
-          : delta *
+        if (
+          !reducedMotion
+        ) {
+          elapsed +=
+            delta *
             profile.timeScale *
             interactionScale;
+        }
 
-      pointer.x +=
-        (
-          pointerTarget.x -
-          pointer.x
-        ) *
-        Math.min(
-          1,
-          delta *
-            profile.responseLag
-        );
+        const time =
+          reducedMotion
+            ? 0
+            : elapsed;
 
-      pointer.y +=
-        (
-          pointerTarget.y -
-          pointer.y
-        ) *
-        Math.min(
-          1,
-          delta *
-            profile.responseLag
-        );
+        const stepDelta =
+          reducedMotion
+            ? 0
+            : delta *
+              profile.timeScale *
+              interactionScale;
 
-      const targetEnergy =
-        pointerActive
-          ? profile.energyCeiling
-          : profile.energyFloor;
-
-      pointerEnergy +=
-        (
-          targetEnergy -
-          pointerEnergy
-        ) *
-        Math.min(
-          1,
-          delta *
-            0.008
-        );
-
-      if (
-        pointerHeld
-      ) {
-        charge =
-          clamp(
-            charge +
-              delta *
-                0.00082,
-            0,
-            1
+        pointer.x +=
+          (
+            pointerTarget.x -
+            pointer.x
+          ) *
+          Math.min(
+            1,
+            delta *
+              profile.responseLag
           );
-      }
 
-      updatePointerGeometry();
+        pointer.y +=
+          (
+            pointerTarget.y -
+            pointer.y
+          ) *
+          Math.min(
+            1,
+            delta *
+              profile.responseLag
+          );
 
-      updatePhysicalState(
-        stepDelta
-      );
+        const targetEnergy =
+          pointerActive
+            ? profile.energyCeiling
+            : profile.energyFloor;
 
-      context.globalAlpha =
-        1;
+        pointerEnergy +=
+          (
+            targetEnergy -
+            pointerEnergy
+          ) *
+          Math.min(
+            1,
+            delta *
+              0.008
+          );
 
-      context.clearRect(
-        0,
-        0,
-        width,
-        height
-      );
+        if (
+          pointerHeld
+        ) {
+          charge =
+            clamp(
+              charge +
+                delta *
+                  0.00082,
+              0,
+              1
+            );
+        }
 
-      drawInteraction();
+        updatePointerGeometry();
 
-      drawMembrane(
-        time
-      );
-
-      drawNetwork(
-        time
-      );
-
-      drawEnergyFlows(
-        time
-      );
-
-      drawCore(
-        time
-      );
-
-      drawParticles(
-        time,
-        stepDelta
-      );
-
-      maybeAdaptQuality(
-        timestamp
-      );
-
-      animationFrame =
-        window.requestAnimationFrame(
-          render
+        updatePhysicalState(
+          stepDelta
         );
-    };
 
-    const start = () => {
-      if (
-        animationFrame !==
-          0 ||
-        !visible ||
-        !documentVisible
-      ) {
-        return;
-      }
+        context.globalAlpha =
+          1;
 
-      lastTimestamp =
-        0;
-
-      animationFrame =
-        window.requestAnimationFrame(
-          render
+        context.clearRect(
+          0,
+          0,
+          width,
+          height
         );
-    };
 
-    const stop = () => {
-      if (
-        animationFrame !==
-        0
-      ) {
-        window.cancelAnimationFrame(
-          animationFrame
+        drawInteraction();
+
+        drawMembrane(
+          time
+        );
+
+        drawNetwork(
+          time
+        );
+
+        drawEnergyFlows(
+          time
+        );
+
+        drawCore(
+          time
+        );
+
+        drawParticles(
+          time,
+          stepDelta
+        );
+
+        maybeAdaptQuality(
+          timestamp
         );
 
         animationFrame =
-          0;
-      }
+          window.requestAnimationFrame(
+            render
+          );
+      };
 
-      lastTimestamp =
-        0;
-    };
+    const start =
+      () => {
+        if (
+          animationFrame !==
+            0 ||
+          !visible ||
+          !documentVisible
+        ) {
+          return;
+        }
+
+        lastTimestamp =
+          0;
+
+        animationFrame =
+          window.requestAnimationFrame(
+            render
+          );
+      };
+
+    const stop =
+      () => {
+        if (
+          animationFrame !==
+          0
+        ) {
+          window.cancelAnimationFrame(
+            animationFrame
+          );
+
+          animationFrame =
+            0;
+        }
+
+        lastTimestamp =
+          0;
+      };
 
     const handlePointerMove =
       (
@@ -6277,7 +6458,9 @@ export default function RedMagic({
 
   return (
     <div
-      className={styles.root}
+      className={
+        styles.root
+      }
       role="img"
       aria-label="Interactive RED MAGIC interconnected computational energy field"
     >
