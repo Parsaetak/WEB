@@ -346,6 +346,9 @@ const CORE_MOVEMENT_AMPLITUDE =
 const MAX_CLICK_PARTICLES =
   100;
 
+const PARTICLE_WRAP_MARGIN =
+  80;
+
 const CLICK_LIGHT_BOOST_MAX =
   1;
 
@@ -399,8 +402,7 @@ function distanceSquared(
     ay - by;
 
   return (
-    dx * dx +
-    dy * dy
+    dx * dx + dy * dy
   );
 }
 
