@@ -12,9 +12,12 @@ permissions:
   pages: write
   id-token: write
 
+# GitHub Pages deployments must be allowed to finish.
+# Newer pushes may replace pending work, but must not cancel
+# an already-running production deployment.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -112,6 +115,21 @@ jobs:
       - name: Build Next.js site
         run: npm run build
 
+      # This file is deliberately added after the Next.js export.
+      # It lets the deploy job verify that GitHub Pages is serving
+      # the exact commit that triggered this workflow.
+      - name: Write deployment manifest
+        env:
+          DEPLOYMENT_SHA: ${{ github.sha }}
+          DEPLOYMENT_RUN_ID: ${{ github.run_id }}
+        run: |
+          cat > out/deployment.json <<EOF
+          {
+            "commit": "${DEPLOYMENT_SHA}",
+            "runId": "${DEPLOYMENT_RUN_ID}"
+          }
+          EOF
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
@@ -132,3 +150,39 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+      # Do not consider the workflow completely successful merely
+      # because deploy-pages accepted the artifact. Verify that the
+      # newly deployed revision is actually being served.
+      - name: Verify deployed revision
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          manifest_url="${PAGE_URL%/}/deployment.json?sha=${EXPECTED_SHA}"
+
+          for attempt in $(seq 1 36); do
+            response="$(
+              curl \
+                --fail \
+                --silent \
+                --show-error \
+                --location \
+                --max-time 10 \
+                "$manifest_url" \
+                2>/dev/null || true
+            )"
+
+            if printf '%s' "$response" | grep -Fq "\"commit\": \"$EXPECTED_SHA\""; then
+              echo "GitHub Pages is serving commit $EXPECTED_SHA."
+              exit 0
+            fi
+
+            echo "Deployment not visible yet; verification attempt ${attempt}/36."
+            sleep 5
+          done
+
+          echo "GitHub Pages accepted the deployment, but the expected commit was not reachable after verification retries."
+          exit 1
