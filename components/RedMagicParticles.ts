@@ -30,6 +30,22 @@ export type RedMagicParticle = {
   revealable: boolean;
   revealRadius: number;
   revealStrength: number;
+
+  /*
+   * true only for particles created directly by a user click.
+   *
+   * These particles are persisted for the lifetime of the
+   * current browser tab through sessionStorage.
+   */
+  persistentClick: boolean;
+
+  /*
+   * Restored particles temporarily keep their position,
+   * velocity and impulse values normalized to the previous
+   * canvas dimensions until placeParticles() applies the
+   * current canvas size.
+   */
+  persistentLayoutNormalized: boolean;
 };
 
 type Point = {
@@ -66,55 +82,115 @@ type ParticleLayout = {
   height: number;
 };
 
-const TAU = Math.PI * 2;
+type PersistedClickParticle = {
+  x: number;
+  y: number;
 
-const PARTICLE_WRAP_MARGIN = 80;
+  velocityX: number;
+  velocityY: number;
 
-const PARTICLE_EDGE_MIN_ALPHA = 0.12;
+  impulseX: number;
+  impulseY: number;
 
-const PARTICLE_MIN_VISIBLE_ALPHA = 0.008;
+  size: number;
 
-const PARTICLE_REVEAL_MIN_ALPHA = 0.84;
+  phase: number;
+  drift: number;
+  twinkle: number;
 
-const PARTICLE_REVEAL_DISTANCE_SCALE = 0.32;
+  hue: number;
+  saturation: number;
+  lightness: number;
+  hueDrift: number;
 
-const PARTICLE_REVEAL_DISTANCE_POWER = 1.75;
+  revealRadius: number;
+  revealStrength: number;
+};
 
-const PARTICLE_REVEAL_SIZE_BOOST = 1.8;
+const TAU =
+  Math.PI * 2;
 
-const PARTICLE_REVEAL_BRIGHTNESS = 24;
+const PARTICLE_WRAP_MARGIN =
+  80;
 
-const PARTICLE_REVEAL_SATURATION = 12;
+const PARTICLE_EDGE_MIN_ALPHA =
+  0.12;
 
-const PARTICLE_REVEALABLE_RATIO = 0.42;
+const PARTICLE_MIN_VISIBLE_ALPHA =
+  0.008;
 
-const PARTICLE_HUES = [
-  0,
-  8,
-  22,
-  42,
-  190,
-  212,
-  252,
-  282,
-  315,
-  336
-];
+const PARTICLE_REVEAL_MIN_ALPHA =
+  0.84;
+
+const PARTICLE_REVEAL_DISTANCE_SCALE =
+  0.32;
+
+const PARTICLE_REVEAL_DISTANCE_POWER =
+  1.75;
+
+const PARTICLE_REVEAL_SIZE_BOOST =
+  1.8;
+
+const PARTICLE_REVEAL_BRIGHTNESS =
+  24;
+
+const PARTICLE_REVEAL_SATURATION =
+  12;
+
+const PARTICLE_REVEALABLE_RATIO =
+  0.42;
 
 /*
- * RedMagic calls placeParticles() during both:
+ * These values intentionally match the requested click-particle
+ * lifetime behavior:
  *
- * 1. the initial world build
- * 2. canvas resize
- *
- * The particle array itself remains the owner of its layout lifetime.
- * WeakMap lets us preserve the live simulation without introducing
- * additional React state or changing the main RedMagic component.
+ * - one particle per click
+ * - hard lifetime cap of 100 click-created particles
+ * - lifetime is scoped to the browser tab
+ */
+const MAX_PERSISTENT_CLICK_PARTICLES =
+  100;
+
+const CLICK_PARTICLE_SESSION_KEY =
+  "parsaetak:red-magic:click-particles:v1";
+
+/*
+ * WeakMap preserves normal particle-layout state without introducing
+ * React state or per-frame allocations.
  */
 const particleLayouts = new WeakMap<
   RedMagicParticle[],
   ParticleLayout
 >();
+
+/*
+ * Cached tab-session persistence state.
+ *
+ * - persistedClickParticlesCache:
+ *   null until sessionStorage has been read.
+ *
+ * - persistedClickParticleCount:
+ *   number of particles confirmed in storage.
+ *
+ * - livePersistentClickParticleCount:
+ *   number of click particles created in this JS lifetime.
+ *
+ * - persistentClickParticlePending:
+ *   true only after one or more click particles have been created
+ *   and need to be serialized.
+ */
+let persistedClickParticlesCache:
+  PersistedClickParticle[] | null =
+  null;
+
+let persistedClickParticleCount =
+  -1;
+
+let livePersistentClickParticleCount =
+  -1;
+
+let persistentClickParticlePending =
+  false;
 
 function clamp(
   value: number,
@@ -133,11 +209,12 @@ function clamp(
 function smoothstep(
   value: number
 ) {
-  const x = clamp(
-    value,
-    0,
-    1
-  );
+  const x =
+    clamp(
+      value,
+      0,
+      1
+    );
 
   return (
     x *
@@ -152,8 +229,11 @@ function distanceSquared(
   bx: number,
   by: number
 ) {
-  const dx = ax - bx;
-  const dy = ay - by;
+  const dx =
+    ax - bx;
+
+  const dy =
+    ay - by;
 
   return (
     dx * dx +
@@ -181,6 +261,481 @@ function createRandomGenerator(
   };
 }
 
+function getPersistedClickParticles():
+  PersistedClickParticle[] {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return [];
+  }
+
+  if (
+    persistedClickParticlesCache !==
+    null
+  ) {
+    return persistedClickParticlesCache;
+  }
+
+  try {
+    const raw =
+      window.sessionStorage.getItem(
+        CLICK_PARTICLE_SESSION_KEY
+      );
+
+    if (!raw) {
+      persistedClickParticlesCache =
+        [];
+
+      persistedClickParticleCount =
+        0;
+
+      livePersistentClickParticleCount =
+        0;
+
+      return persistedClickParticlesCache;
+    }
+
+    const parsed =
+      JSON.parse(raw) as unknown;
+
+    if (
+      !Array.isArray(parsed)
+    ) {
+      window.sessionStorage.removeItem(
+        CLICK_PARTICLE_SESSION_KEY
+      );
+
+      persistedClickParticlesCache =
+        [];
+
+      persistedClickParticleCount =
+        0;
+
+      livePersistentClickParticleCount =
+        0;
+
+      return persistedClickParticlesCache;
+    }
+
+    const result:
+      PersistedClickParticle[] =
+      [];
+
+    const count =
+      Math.min(
+        parsed.length,
+        MAX_PERSISTENT_CLICK_PARTICLES
+      );
+
+    for (
+      let index = 0;
+      index < count;
+      index += 1
+    ) {
+      const value =
+        parsed[index] as
+          | Partial<PersistedClickParticle>
+          | null;
+
+      if (
+        !value ||
+        typeof value.x !== "number" ||
+        typeof value.y !== "number" ||
+        typeof value.velocityX !== "number" ||
+        typeof value.velocityY !== "number" ||
+        typeof value.impulseX !== "number" ||
+        typeof value.impulseY !== "number" ||
+        typeof value.size !== "number" ||
+        typeof value.phase !== "number" ||
+        typeof value.drift !== "number" ||
+        typeof value.twinkle !== "number" ||
+        typeof value.hue !== "number" ||
+        typeof value.saturation !== "number" ||
+        typeof value.lightness !== "number" ||
+        typeof value.hueDrift !== "number" ||
+        typeof value.revealRadius !== "number" ||
+        typeof value.revealStrength !== "number"
+      ) {
+        continue;
+      }
+
+      result.push({
+        x: clamp(
+          value.x,
+          -1,
+          2
+        ),
+
+        y: clamp(
+          value.y,
+          -1,
+          2
+        ),
+
+        velocityX:
+          value.velocityX,
+
+        velocityY:
+          value.velocityY,
+
+        impulseX:
+          value.impulseX,
+
+        impulseY:
+          value.impulseY,
+
+        size:
+          value.size,
+
+        phase:
+          value.phase,
+
+        drift:
+          value.drift,
+
+        twinkle:
+          value.twinkle,
+
+        hue:
+          value.hue,
+
+        saturation:
+          value.saturation,
+
+        lightness:
+          value.lightness,
+
+        hueDrift:
+          value.hueDrift,
+
+        revealRadius:
+          value.revealRadius,
+
+        revealStrength:
+          value.revealStrength
+      });
+    }
+
+    persistedClickParticlesCache =
+      result;
+
+    persistedClickParticleCount =
+      result.length;
+
+    livePersistentClickParticleCount =
+      result.length;
+
+    if (
+      result.length ===
+      0
+    ) {
+      window.sessionStorage.removeItem(
+        CLICK_PARTICLE_SESSION_KEY
+      );
+    }
+
+    return result;
+  } catch {
+    persistedClickParticlesCache =
+      [];
+
+    persistedClickParticleCount =
+      0;
+
+    livePersistentClickParticleCount =
+      0;
+
+    try {
+      window.sessionStorage.removeItem(
+        CLICK_PARTICLE_SESSION_KEY
+      );
+    } catch {
+      /*
+       * sessionStorage may be disabled.
+       * The simulation must continue normally.
+       */
+    }
+
+    return [];
+  }
+}
+
+function getPersistentClickParticleCount() {
+  if (
+    livePersistentClickParticleCount <
+    0
+  ) {
+    getPersistedClickParticles();
+  }
+
+  return Math.min(
+    livePersistentClickParticleCount,
+    MAX_PERSISTENT_CLICK_PARTICLES
+  );
+}
+
+function persistClickParticles(
+  particles: RedMagicParticle[],
+  width: number,
+  height: number
+) {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return;
+  }
+
+  const safeWidth =
+    Math.max(
+      1,
+      width
+    );
+
+  const safeHeight =
+    Math.max(
+      1,
+      height
+    );
+
+  const records:
+    PersistedClickParticle[] =
+    [];
+
+  for (
+    let index = 0;
+    index < particles.length;
+    index += 1
+  ) {
+    const particle =
+      particles[index];
+
+    if (
+      !particle.persistentClick
+    ) {
+      continue;
+    }
+
+    if (
+      records.length >=
+      MAX_PERSISTENT_CLICK_PARTICLES
+    ) {
+      break;
+    }
+
+    records.push({
+      x:
+        particle.x /
+        safeWidth,
+
+      y:
+        particle.y /
+        safeHeight,
+
+      velocityX:
+        particle.velocityX /
+        safeWidth,
+
+      velocityY:
+        particle.velocityY /
+        safeHeight,
+
+      impulseX:
+        particle.impulseX /
+        safeWidth,
+
+      impulseY:
+        particle.impulseY /
+        safeHeight,
+
+      size:
+        particle.size,
+
+      phase:
+        particle.phase,
+
+      drift:
+        particle.drift,
+
+      twinkle:
+        particle.twinkle,
+
+      hue:
+        particle.hue,
+
+      saturation:
+        particle.saturation,
+
+      lightness:
+        particle.lightness,
+
+      hueDrift:
+        particle.hueDrift,
+
+      revealRadius:
+        particle.revealRadius,
+
+      revealStrength:
+        particle.revealStrength
+    });
+  }
+
+  if (
+    records.length ===
+    0
+  ) {
+    persistedClickParticlesCache =
+      [];
+
+    persistedClickParticleCount =
+      0;
+
+    try {
+      window.sessionStorage.removeItem(
+        CLICK_PARTICLE_SESSION_KEY
+      );
+    } catch {
+      /*
+       * Ignore unavailable storage.
+       */
+    }
+
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(
+      CLICK_PARTICLE_SESSION_KEY,
+      JSON.stringify(
+        records
+      )
+    );
+
+    persistedClickParticlesCache =
+      records;
+
+    persistedClickParticleCount =
+      records.length;
+
+    livePersistentClickParticleCount =
+      Math.max(
+        livePersistentClickParticleCount,
+        records.length
+      );
+  } catch {
+    /*
+     * Storage failure must never interrupt rendering.
+     * The in-memory cap remains enforced.
+     */
+  }
+}
+
+function restorePersistedClickParticles(
+  particles: RedMagicParticle[]
+) {
+  const persisted =
+    getPersistedClickParticles();
+
+  if (
+    persisted.length ===
+    0
+  ) {
+    return;
+  }
+
+  for (
+    let index = 0;
+    index < persisted.length;
+    index += 1
+  ) {
+    const value =
+      persisted[index];
+
+    particles.push({
+      /*
+       * x/y are assigned by placeParticles().
+       */
+      x:
+        0,
+
+      y:
+        0,
+
+      /*
+       * Store click positions as normalized
+       * coordinates so the particle survives
+       * viewport-size changes.
+       */
+      spawnX:
+        value.x,
+
+      spawnY:
+        value.y,
+
+      /*
+       * These values remain normalized until
+       * placeParticles() applies the actual
+       * current canvas dimensions.
+       */
+      velocityX:
+        value.velocityX,
+
+      velocityY:
+        value.velocityY,
+
+      impulseX:
+        value.impulseX,
+
+      impulseY:
+        value.impulseY,
+
+      size:
+        value.size,
+
+      phase:
+        value.phase,
+
+      drift:
+        value.drift,
+
+      twinkle:
+        value.twinkle,
+
+      hue:
+        value.hue,
+
+      saturation:
+        value.saturation,
+
+      lightness:
+        value.lightness,
+
+      hueDrift:
+        value.hueDrift,
+
+      /*
+       * Restored click particles must remain
+       * permanently visible.
+       */
+      revealable:
+        false,
+
+      revealRadius:
+        value.revealRadius,
+
+      revealStrength:
+        value.revealStrength,
+
+      persistentClick:
+        true,
+
+      persistentLayoutNormalized:
+        true
+    });
+  }
+}
+
 export function createPageSeed() {
   const now =
     Date.now();
@@ -196,7 +751,8 @@ export function createPageSeed() {
       now ^
       performanceSeed ^
       (
-        now >>> 7
+        now >>>
+        7
       )
     ) >>> 0
   );
@@ -206,116 +762,178 @@ export function createParticles(
   count: number,
   seed: number
 ): RedMagicParticle[] {
+  /*
+   * The main RedMagic click path calls
+   * createParticles(1, seed).
+   *
+   * Enforce the 100-particle lifetime cap
+   * independently of the component-local counter.
+   */
+  if (
+    count === 1 &&
+    getPersistentClickParticleCount() >=
+      MAX_PERSISTENT_CLICK_PARTICLES
+  ) {
+    return [];
+  }
+
   const random =
     createRandomGenerator(
       seed
     );
 
-  return Array.from(
-    {
-      length:
-        count
-    },
-    () => {
-      const baseHue =
-        PARTICLE_HUES[
-          Math.floor(
+  const particles =
+    Array.from(
+      {
+        length:
+          count
+      },
+      () => {
+        const baseHue =
+          PARTICLE_HUES[
+            Math.floor(
+              random() *
+              PARTICLE_HUES.length
+            )
+          ];
+
+        return {
+          x:
+            0,
+
+          y:
+            0,
+
+          spawnX:
+            random(),
+
+          spawnY:
+            random(),
+
+          velocityX:
+            (
+              random() -
+              0.5
+            ) *
+            0.06,
+
+          velocityY:
+            (
+              random() -
+              0.5
+            ) *
+            0.06,
+
+          size:
+            0.38 +
             random() *
-            PARTICLE_HUES.length
-          )
-        ];
+            1.45,
 
-      return {
-        x:
-          0,
+          phase:
+            random() *
+            TAU,
 
-        y:
-          0,
+          drift:
+            0.35 +
+            random() *
+            1.15,
 
-        spawnX:
-          random(),
+          twinkle:
+            0.6 +
+            random() *
+            1.6,
 
-        spawnY:
-          random(),
+          hue:
+            baseHue +
+            (
+              random() -
+              0.5
+            ) *
+            12,
 
-        velocityX:
-          (
-            random() -
-            0.5
-          ) *
-          0.06,
+          saturation:
+            74 +
+            random() *
+            20,
 
-        velocityY:
-          (
-            random() -
-            0.5
-          ) *
-          0.06,
+          lightness:
+            58 +
+            random() *
+            22,
 
-        size:
-          0.38 +
-          random() *
-          1.45,
+          hueDrift:
+            3 +
+            random() *
+            12,
 
-        phase:
-          random() *
-          TAU,
+          impulseX:
+            0,
 
-        drift:
-          0.35 +
-          random() *
-          1.15,
+          impulseY:
+            0,
 
-        twinkle:
-          0.6 +
-          random() *
-          1.6,
+          revealable:
+            random() <
+            PARTICLE_REVEALABLE_RATIO,
 
-        hue:
-          baseHue +
-          (
-            random() -
-            0.5
-          ) *
-          12,
+          revealRadius:
+            0.65 +
+            random() *
+            0.7,
 
-        saturation:
-          74 +
-          random() *
-          20,
+          revealStrength:
+            0.55 +
+            random() *
+            0.75,
 
-        lightness:
-          58 +
-          random() *
-          22,
+          /*
+           * createParticles(1) is the click-particle
+           * creation path in the current RedMagic renderer.
+           */
+          persistentClick:
+            count === 1,
 
-        hueDrift:
-          3 +
-          random() *
-          12,
+          persistentLayoutNormalized:
+            false
+        };
+      }
+    );
 
-        impulseX:
-          0,
+  if (
+    count === 1
+  ) {
+    /*
+     * Keep the lifetime cap in module scope so a
+     * component remount cannot reset it.
+     */
+    livePersistentClickParticleCount =
+      Math.min(
+        livePersistentClickParticleCount +
+        1,
+        MAX_PERSISTENT_CLICK_PARTICLES
+      );
 
-        impulseY:
-          0,
+    /*
+     * The actual click position and impulse are
+     * assigned by RedMagic immediately after this
+     * function returns. Serialization therefore
+     * happens on the next animation frame.
+     */
+    persistentClickParticlePending =
+      true;
+  } else if (
+    count > 1
+  ) {
+    /*
+     * The normal world build is allowed to append
+     * the click particles saved for this tab.
+     */
+    restorePersistedClickParticles(
+      particles
+    );
+  }
 
-        revealable:
-          random() <
-          PARTICLE_REVEALABLE_RATIO,
-
-        revealRadius:
-          0.65 +
-          random() *
-          0.7,
-
-        revealStrength:
-          0.55 +
-          random() *
-          0.75
-      };
-    }
-  );
+  return particles;
 }
 
 export function placeParticles(
@@ -341,8 +959,7 @@ export function placeParticles(
     );
 
   /*
-   * First placement:
-   * use the page-open seed positions.
+   * Initial placement.
    */
   if (
     !previous ||
@@ -351,8 +968,7 @@ export function placeParticles(
   ) {
     for (
       let index = 0;
-      index <
-      particles.length;
+      index < particles.length;
       index += 1
     ) {
       const particle =
@@ -365,17 +981,37 @@ export function placeParticles(
       particle.y =
         particle.spawnY *
         safeHeight;
+
+      /*
+       * Restored click particles keep their
+       * normalized velocity/impulse until the
+       * current canvas size is known.
+       */
+      if (
+        particle.persistentClick &&
+        particle.persistentLayoutNormalized
+      ) {
+        particle.velocityX *=
+          safeWidth;
+
+        particle.velocityY *=
+          safeHeight;
+
+        particle.impulseX *=
+          safeWidth;
+
+        particle.impulseY *=
+          safeHeight;
+
+        particle.persistentLayoutNormalized =
+          false;
+      }
     }
   } else {
     /*
-     * Subsequent placements:
-     * preserve the live simulation state.
-     *
-     * This means:
-     * - resize does not respawn particles
-     * - browser rotation does not reset particles
-     * - layout changes do not destroy motion
-     * - the particle field remains visually continuous
+     * Existing live particle field:
+     * preserve the current simulation and only
+     * scale it to the new canvas dimensions.
      */
     const scaleX =
       safeWidth /
@@ -395,8 +1031,7 @@ export function placeParticles(
     ) {
       for (
         let index = 0;
-        index <
-        particles.length;
+        index < particles.length;
         index += 1
       ) {
         const particle =
@@ -464,16 +1099,8 @@ export function updateAndDrawParticles(
     options;
 
   /*
-   * Normalize around the same 60 Hz reference used by the existing
-   * simulation, while preventing a large hitch from producing a huge
-   * positional jump.
-   *
-   * At 120 Hz:
-   *
-   *     delta ~= 8.33 ms
-   *     deltaScale ~= 0.52
-   *
-   * so the simulation remains frame-rate independent.
+   * Keep the existing 60 Hz reference and
+   * frame-hitch protection.
    */
   const deltaScale =
     clamp(
@@ -523,6 +1150,26 @@ export function updateAndDrawParticles(
 
   const pointerY =
     pointer.y;
+
+  /*
+   * Persistence is intentionally outside the
+   * per-particle hot loop.
+   *
+   * It executes only after at least one new click
+   * particle has been created.
+   */
+  if (
+    persistentClickParticlePending
+  ) {
+    persistClickParticles(
+      particles,
+      width,
+      height
+    );
+
+    persistentClickParticlePending =
+      false;
+  }
 
   context.globalAlpha =
     1;
@@ -601,7 +1248,8 @@ export function updateAndDrawParticles(
       deltaScale;
 
     /*
-     * Continuous wrapping keeps particles alive indefinitely.
+     * Continuous wrapping keeps every particle
+     * alive indefinitely.
      */
     if (
       particle.x <
@@ -645,16 +1293,17 @@ export function updateAndDrawParticles(
           ) /
             Math.max(
               width *
-                0.5,
+              0.5,
               1
             ),
+
           (
             particle.y -
             centerY
           ) /
             Math.max(
               height *
-                0.5,
+              0.5,
               1
             )
         )
@@ -664,17 +1313,15 @@ export function updateAndDrawParticles(
       clamp(
         1 -
           normalizedCenterDistance *
-            0.45,
+          0.45,
+
         PARTICLE_EDGE_MIN_ALPHA,
+
         1
       );
 
     /*
-     * Calculate cursor distance at most once per particle.
-     *
-     * The previous implementation could calculate the same distance
-     * twice: once for reveal and once again for local interaction.
-     * Keeping the result here reduces CPU work in the hottest path.
+     * Calculate cursor distance once.
      */
     const pointerDistanceSquared =
       pointerVisible
@@ -719,8 +1366,10 @@ export function updateAndDrawParticles(
       }
 
       /*
-       * Revealable particles genuinely disappear when the cursor
-       * is far away. They are not merely made darker.
+       * Only normal revealable particles can
+       * disappear when the pointer moves away.
+       *
+       * Click-created particles remain visible.
        */
       if (
         particle.revealable &&
@@ -780,7 +1429,7 @@ export function updateAndDrawParticles(
           particle.twinkle +
           particle.phase
       ) *
-        0.18;
+      0.18;
 
     const revealIntensity =
       clamp(
@@ -794,7 +1443,7 @@ export function updateAndDrawParticles(
       (
         0.5 +
         centerVisibility *
-          0.5
+        0.5
       );
 
     const revealSize =
@@ -802,10 +1451,10 @@ export function updateAndDrawParticles(
       (
         1 +
         revealIntensity *
-          (
-            PARTICLE_REVEAL_SIZE_BOOST -
-            1
-          )
+        (
+          PARTICLE_REVEAL_SIZE_BOOST -
+          1
+        )
       );
 
     const size =
@@ -813,9 +1462,9 @@ export function updateAndDrawParticles(
       (
         1 +
         interactionVisibility *
-          0.7 +
+        0.7 +
         charge *
-          0.12
+        0.12
       );
 
     const ambientAlpha =
@@ -824,7 +1473,7 @@ export function updateAndDrawParticles(
         : (
             0.15 +
             centerVisibility *
-              0.85
+            0.85
           );
 
     const revealAlpha =
@@ -832,25 +1481,25 @@ export function updateAndDrawParticles(
         ? (
             PARTICLE_REVEAL_MIN_ALPHA +
             revealIntensity *
-              (
-                1 -
-                PARTICLE_REVEAL_MIN_ALPHA
-              )
+            (
+              1 -
+              PARTICLE_REVEAL_MIN_ALPHA
+            )
           )
         : 1;
 
     const interactionAlpha =
       1 +
       interactionVisibility *
-        0.45;
+      0.45;
 
     const alpha =
       (
         0.22 +
         pointerEnergy *
-          0.08 +
+        0.08 +
         charge *
-          0.06
+        0.06
       ) *
       ambientAlpha *
       revealAlpha *
@@ -872,7 +1521,7 @@ export function updateAndDrawParticles(
             0.00055 +
           particle.phase
         ) *
-          particle.hueDrift
+        particle.hueDrift
       ) %
       360;
 
@@ -880,7 +1529,7 @@ export function updateAndDrawParticles(
       clamp(
         particle.saturation +
           revealIntensity *
-            PARTICLE_REVEAL_SATURATION,
+          PARTICLE_REVEAL_SATURATION,
         55,
         100
       );
@@ -889,7 +1538,7 @@ export function updateAndDrawParticles(
       clamp(
         particle.lightness +
           revealIntensity *
-            PARTICLE_REVEAL_BRIGHTNESS,
+          PARTICLE_REVEAL_BRIGHTNESS,
         40,
         96
       );
@@ -923,7 +1572,7 @@ export function updateAndDrawParticles(
     context.fill();
 
     /*
-     * Revealed particles receive a tiny hot center.
+     * Revealed particles get a tiny hot center.
      */
     if (
       revealIntensity >
@@ -933,11 +1582,11 @@ export function updateAndDrawParticles(
         Math.max(
           0.35,
           size *
-            (
-              0.28 +
-              revealIntensity *
-                0.3
-            )
+          (
+            0.28 +
+            revealIntensity *
+            0.3
+          )
         );
 
       context.globalAlpha =
@@ -946,7 +1595,7 @@ export function updateAndDrawParticles(
             (
               0.65 +
               revealIntensity *
-                0.35
+              0.35
             ),
           PARTICLE_MIN_VISIBLE_ALPHA,
           1
