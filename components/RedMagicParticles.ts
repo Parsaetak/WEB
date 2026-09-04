@@ -31,20 +31,7 @@ export type RedMagicParticle = {
   revealRadius: number;
   revealStrength: number;
 
-  /*
-   * true only for particles created directly by a user click.
-   *
-   * These particles are persisted for the lifetime of the
-   * current browser tab through sessionStorage.
-   */
   persistentClick: boolean;
-
-  /*
-   * Restored particles temporarily keep their position,
-   * velocity and impulse values normalized to the previous
-   * canvas dimensions until placeParticles() applies the
-   * current canvas size.
-   */
   persistentLayoutNormalized: boolean;
 };
 
@@ -141,12 +128,28 @@ const PARTICLE_REVEALABLE_RATIO =
   0.42;
 
 /*
- * These values intentionally match the requested click-particle
- * lifetime behavior:
+ * Full particle palette.
  *
- * - one particle per click
- * - hard lifetime cap of 100 click-created particles
- * - lifetime is scoped to the browser tab
+ * This was missing from the current deployed file even though
+ * createParticles() still references PARTICLE_HUES.
+ */
+const PARTICLE_HUES = [
+  0,
+  8,
+  22,
+  42,
+  190,
+  212,
+  252,
+  282,
+  315,
+  336
+];
+
+/*
+ * One click-created particle per successful click,
+ * with a hard maximum of 100 click-created particles
+ * for the current browser tab.
  */
 const MAX_PERSISTENT_CLICK_PARTICLES =
   100;
@@ -155,7 +158,7 @@ const CLICK_PARTICLE_SESSION_KEY =
   "parsaetak:red-magic:click-particles:v1";
 
 /*
- * WeakMap preserves normal particle-layout state without introducing
+ * WeakMap preserves layout dimensions without introducing
  * React state or per-frame allocations.
  */
 const particleLayouts = new WeakMap<
@@ -164,20 +167,9 @@ const particleLayouts = new WeakMap<
 >();
 
 /*
- * Cached tab-session persistence state.
+ * Cached tab-scoped persistence state.
  *
- * - persistedClickParticlesCache:
- *   null until sessionStorage has been read.
- *
- * - persistedClickParticleCount:
- *   number of particles confirmed in storage.
- *
- * - livePersistentClickParticleCount:
- *   number of click particles created in this JS lifetime.
- *
- * - persistentClickParticlePending:
- *   true only after one or more click particles have been created
- *   and need to be serialized.
+ * Nothing here runs inside the normal particle loop.
  */
 let persistedClickParticlesCache:
   PersistedClickParticle[] | null =
@@ -274,7 +266,9 @@ function getPersistedClickParticles():
     persistedClickParticlesCache !==
     null
   ) {
-    return persistedClickParticlesCache;
+    return (
+      persistedClickParticlesCache
+    );
   }
 
   try {
@@ -293,7 +287,9 @@ function getPersistedClickParticles():
       livePersistentClickParticleCount =
         0;
 
-      return persistedClickParticlesCache;
+      return (
+        persistedClickParticlesCache
+      );
     }
 
     const parsed =
@@ -315,7 +311,9 @@ function getPersistedClickParticles():
       livePersistentClickParticleCount =
         0;
 
-      return persistedClickParticlesCache;
+      return (
+        persistedClickParticlesCache
+      );
     }
 
     const result:
@@ -361,17 +359,19 @@ function getPersistedClickParticles():
       }
 
       result.push({
-        x: clamp(
-          value.x,
-          -1,
-          2
-        ),
+        x:
+          clamp(
+            value.x,
+            -1,
+            2
+          ),
 
-        y: clamp(
-          value.y,
-          -1,
-          2
-        ),
+        y:
+          clamp(
+            value.y,
+            -1,
+            2
+          ),
 
         velocityX:
           value.velocityX,
@@ -452,8 +452,8 @@ function getPersistedClickParticles():
       );
     } catch {
       /*
-       * sessionStorage may be disabled.
-       * The simulation must continue normally.
+       * Storage may be unavailable.
+       * Rendering must continue normally.
        */
     }
 
@@ -505,7 +505,8 @@ function persistClickParticles(
 
   for (
     let index = 0;
-    index < particles.length;
+    index <
+    particles.length;
     index += 1
   ) {
     const particle =
@@ -625,8 +626,8 @@ function persistClickParticles(
       );
   } catch {
     /*
-     * Storage failure must never interrupt rendering.
-     * The in-memory cap remains enforced.
+     * Storage errors must never interrupt
+     * the animation.
      */
   }
 }
@@ -646,16 +647,14 @@ function restorePersistedClickParticles(
 
   for (
     let index = 0;
-    index < persisted.length;
+    index <
+    persisted.length;
     index += 1
   ) {
     const value =
       persisted[index];
 
     particles.push({
-      /*
-       * x/y are assigned by placeParticles().
-       */
       x:
         0,
 
@@ -663,9 +662,7 @@ function restorePersistedClickParticles(
         0,
 
       /*
-       * Store click positions as normalized
-       * coordinates so the particle survives
-       * viewport-size changes.
+       * Normalized position survives viewport changes.
        */
       spawnX:
         value.x,
@@ -674,9 +671,7 @@ function restorePersistedClickParticles(
         value.y,
 
       /*
-       * These values remain normalized until
-       * placeParticles() applies the actual
-       * current canvas dimensions.
+       * Normalized until first placement.
        */
       velocityX:
         value.velocityX,
@@ -715,8 +710,7 @@ function restorePersistedClickParticles(
         value.hueDrift,
 
       /*
-       * Restored click particles must remain
-       * permanently visible.
+       * Click particles are always visible.
        */
       revealable:
         false,
@@ -763,11 +757,11 @@ export function createParticles(
   seed: number
 ): RedMagicParticle[] {
   /*
-   * The main RedMagic click path calls
-   * createParticles(1, seed).
+   * The current RedMagic click path creates one particle
+   * using createParticles(1, seed).
    *
-   * Enforce the 100-particle lifetime cap
-   * independently of the component-local counter.
+   * The tab-scoped counter prevents remounts from bypassing
+   * the lifetime limit.
    */
   if (
     count === 1 &&
@@ -886,10 +880,6 @@ export function createParticles(
             random() *
             0.75,
 
-          /*
-           * createParticles(1) is the click-particle
-           * creation path in the current RedMagic renderer.
-           */
           persistentClick:
             count === 1,
 
@@ -903,8 +893,9 @@ export function createParticles(
     count === 1
   ) {
     /*
-     * Keep the lifetime cap in module scope so a
-     * component remount cannot reset it.
+     * Increment the lifetime counter before returning the
+     * new particle so the component cannot create a 101st
+     * click particle.
      */
     livePersistentClickParticleCount =
       Math.min(
@@ -914,10 +905,11 @@ export function createParticles(
       );
 
     /*
-     * The actual click position and impulse are
-     * assigned by RedMagic immediately after this
-     * function returns. Serialization therefore
-     * happens on the next animation frame.
+     * The click handler supplies the final click position
+     * immediately after this function returns.
+     *
+     * Persistence is therefore deferred until the next
+     * particle-render call.
      */
     persistentClickParticlePending =
       true;
@@ -925,8 +917,8 @@ export function createParticles(
     count > 1
   ) {
     /*
-     * The normal world build is allowed to append
-     * the click particles saved for this tab.
+     * Normal world initialization restores click particles
+     * already stored for this browser tab.
      */
     restorePersistedClickParticles(
       particles
@@ -959,7 +951,7 @@ export function placeParticles(
     );
 
   /*
-   * Initial placement.
+   * First placement.
    */
   if (
     !previous ||
@@ -968,7 +960,8 @@ export function placeParticles(
   ) {
     for (
       let index = 0;
-      index < particles.length;
+      index <
+      particles.length;
       index += 1
     ) {
       const particle =
@@ -983,9 +976,8 @@ export function placeParticles(
         safeHeight;
 
       /*
-       * Restored click particles keep their
-       * normalized velocity/impulse until the
-       * current canvas size is known.
+       * Restored particles carry normalized velocity/impulse
+       * until this first placement establishes the real size.
        */
       if (
         particle.persistentClick &&
@@ -1009,9 +1001,7 @@ export function placeParticles(
     }
   } else {
     /*
-     * Existing live particle field:
-     * preserve the current simulation and only
-     * scale it to the new canvas dimensions.
+     * Preserve the existing live particle field through resize.
      */
     const scaleX =
       safeWidth /
@@ -1031,7 +1021,8 @@ export function placeParticles(
     ) {
       for (
         let index = 0;
-        index < particles.length;
+        index <
+        particles.length;
         index += 1
       ) {
         const particle =
@@ -1099,8 +1090,8 @@ export function updateAndDrawParticles(
     options;
 
   /*
-   * Keep the existing 60 Hz reference and
-   * frame-hitch protection.
+   * Maintain the existing frame-rate-independent
+   * simulation scaling.
    */
   const deltaScale =
     clamp(
@@ -1152,11 +1143,9 @@ export function updateAndDrawParticles(
     pointer.y;
 
   /*
-   * Persistence is intentionally outside the
-   * per-particle hot loop.
+   * Persistence only occurs after an actual new click.
    *
-   * It executes only after at least one new click
-   * particle has been created.
+   * It is deliberately outside the hot particle loop.
    */
   if (
     persistentClickParticlePending
@@ -1248,8 +1237,7 @@ export function updateAndDrawParticles(
       deltaScale;
 
     /*
-     * Continuous wrapping keeps every particle
-     * alive indefinitely.
+     * Continuous wrapping.
      */
     if (
       particle.x <
@@ -1321,7 +1309,7 @@ export function updateAndDrawParticles(
       );
 
     /*
-     * Calculate cursor distance once.
+     * Calculate pointer distance once.
      */
     const pointerDistanceSquared =
       pointerVisible
@@ -1366,9 +1354,7 @@ export function updateAndDrawParticles(
       }
 
       /*
-       * Only normal revealable particles can
-       * disappear when the pointer moves away.
-       *
+       * Normal ambient particles can reveal/disappear.
        * Click-created particles remain visible.
        */
       if (
@@ -1572,7 +1558,7 @@ export function updateAndDrawParticles(
     context.fill();
 
     /*
-     * Revealed particles get a tiny hot center.
+     * Small hot center for revealed particles.
      */
     if (
       revealIntensity >
