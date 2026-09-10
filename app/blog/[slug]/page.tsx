@@ -195,6 +195,7 @@ export default async function ArticlePage({
       <div className="page-container">
         <header
           className={styles.header}
+          data-reveal="instant"
         >
           <p
             className={
@@ -284,6 +285,7 @@ export default async function ArticlePage({
             className={
               styles.cover
             }
+            data-reveal="scale"
           >
             <img
               src={
@@ -320,6 +322,7 @@ export default async function ArticlePage({
               styles.tags
             }
             aria-label="Article tags"
+            data-reveal="instant"
           >
             {post.tags.map(
               (tag) => (
@@ -342,6 +345,7 @@ export default async function ArticlePage({
             (adjacent.next ? 1 : 0)
           }
           aria-label="Article navigation"
+          data-reveal=""
         >
           {adjacent.prev ? (
             <Link
@@ -404,6 +408,7 @@ export default async function ArticlePage({
               styles.related
             }
             aria-label="Related articles"
+            data-reveal=""
           >
             <p
               className={

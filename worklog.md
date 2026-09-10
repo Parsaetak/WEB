@@ -52,7 +52,7 @@ Top-level routed areas:
 /blog/ — blog index (static route)
 /blog/<slug>/ — article pages (static routes)
 
-Current version: 2.1.0
+Current version: 2.2.0
 
 ---
 
@@ -323,7 +323,7 @@ Do not introduce a second canvas solely for the global background.
 
 The dedicated RedMagic.tsx engine already owns the interactive simulation.
 
-10-b. Living Organism Law (v2.1)
+10-b. Living Organism Law (v2.1, amended v2.2)
 
 WorldBackground is ONE continuous living system, not a collection of
 independent decorations. It is mounted exactly once per route tree
@@ -332,13 +332,16 @@ independent decorations. It is mounted exactly once per route tree
 Looped timescales are layered and must remain non-synchronized
 (particles/sparks micro loops, wisps short loops, rings medium loops,
 aura/masses long loops, core/nucleus heartbeat, event pulse/ripples).
-Every element keeps its own duration and phase offset.
+Every element keeps its own duration and phase offset. Long-period
+loops (rings, wisps, resonance) additionally carry NEGATIVE
+animation-delays so the organism is never phase-synchronized at t=0.
 
 Shared organism state is expressed through:
 
 - root attributes: data-scene (mood), data-quality, data-hidden,
   data-reduced, data-pulse
 - shared CSS variables: --organism-energy, --organism-pointer-x/y
+- layer-group mood bases: --mood-opacity (v2.2)
 
 The single controller (WorldBackground.tsx + lib/worldSignals.ts):
 
@@ -349,6 +352,19 @@ The single controller (WorldBackground.tsx + lib/worldSignals.ts):
   (zero JavaScript cost while calm)
 - listens passively; pointer movement is coalesced through the loop,
   never processed expensively per event
+
+Energy coupling (v2.2): the rings/wisps/particles/sparks group
+wrappers modulate their opacity around the scene's mood base via
+--mood-opacity, scaled by shared energy. Scene moods declare the base;
+interaction visibly wakes the field as ONE system. Never couple layer
+opacity to React state or re-introduce per-element JS writes.
+
+The RESONANCE layer (v2.2) — two energy-scaled heartbeat-echo rings —
+is an interaction-tier layer: invisible at rest (opacity derives from
+--organism-energy), display:none on data-quality="low" and under
+prefers-reduced-motion, paused with the rest of the organism on
+hidden tabs. It must not gain elements with unconditioned animation
+opacity.
 
 Scene connection happens through data-scene mood selectors — static
 attribute CSS, no React state, no per-frame cost.
@@ -423,6 +439,26 @@ Quality adaptation exists to protect frame rate.
 Do not remove adaptive quality merely to increase visual density.
 
 Visual additions should preferably increase perceived complexity rather than brute-force particle counts.
+
+13-b. Refresh-Rate-Aware Quality Law (v2.2)
+
+Quality thresholds are RELATIVE to the display the engine measures,
+never absolute fps numbers. The engine derives the native refresh rate
+from its fastest sustained rAF interval (window minimum, promoted only
+when 3% above the current estimate) and applies:
+
+- demote line: max(48, refreshHz * 0.72) — two consecutive bad
+  windows required
+- promote line: refreshHz * 0.9 — three consecutive clean windows
+  required
+- hard protection: sustained fps < 50 demotes medium → low
+- 3.5 s cooldown between changes
+
+A display running at its native rate must NEVER be demoted for being
+below an arbitrary fps number (the 2.1 absolute thresholds punished
+60 Hz panels). Telemetry publishes the measured refreshHz and the
+console labels vitality relative to it. Claiming a guaranteed frame
+rate anywhere in the UI is forbidden — report measurements only.
 
 14. RedMagic Canvas Invariant
 
@@ -717,6 +753,53 @@ confirm the component using it
 
 Never invent selectors based on remembered versions.
 
+31-b. Motion and Reveal Law (v2.2)
+
+All appearance/disappearance motion flows through ONE vocabulary and
+ONE observer system.
+
+Transition tokens live in app/globals.css (:root):
+
+--motion-micro / --motion-short / --motion-medium / --motion-long
+--ease-out-soft / --ease-standard
+--motion-stagger, --reveal-shift
+
+New UI motion must reference these tokens for its perceptual band;
+scattering one-off durations across module CSS is forbidden.
+Animation is compositor-only: opacity, transform, visibility,
+cheap clip-path. Animating layout properties for reveal purposes is
+forbidden.
+
+The reveal system:
+
+- elements opt in with data-reveal ("", "scale", or "instant")
+  plus optional data-reveal-order (grid position for stagger)
+- components/MotionReveal.tsx owns THE single IntersectionObserver
+  per route tree (mounted once from LivingShell and the blog layout);
+  it is one-shot, self-draining, and never runs a rAF loop or timers
+- a passive MutationObserver in the same controller joins late-
+  mounted data-reveal elements (blog filter results) into the same
+  observer
+- stagger is deterministic: data-reveal-order wins, else batch
+  position, capped at 5 steps of --motion-stagger
+- the hidden initial state exists ONLY under html.reveal-js, set by
+  the pre-paint inline script in app/layout.tsx. Without JavaScript
+  nothing is ever hidden — animation is enhancement, never a gate
+- prefers-reduced-motion: no travel, minimal crossfade, no delays
+- article body HTML on /blog/<slug>/ is NEVER wrapped in the reveal
+  gate — readability outranks theatre
+
+Scene transitions: the SceneRegistry transition layer owns the
+outgoing fade (data-transitioning); the keyed sceneEnterHost replays
+one settle animation per scene mount. The minimum transition timing
+(MIN_TRANSITION_MS) is unchanged. Preloaded scenes must still feel
+instant.
+
+Do not add Framer Motion or any animation dependency; CSS + the
+existing controllers are the architecture. Do not use rAF for fades,
+card reveals, or ordinary opacity work — JS animation loops are for
+actual simulation only.
+
 XIV. COMPONENT DISCIPLINE
 32. Static Data
 
@@ -796,6 +879,20 @@ per keystroke.
 Article pages generate canonical URLs, Open Graph article metadata,
 published/modified times, and BlogPosting JSON-LD statically.
 Do not add metadata that does not correspond to real content.
+
+40-b. Deterministic Ordering and Edition Dating (v2.2)
+
+Ordering is date-descending with slug-ascending as the tiebreak at
+both the generator (scripts/build-blog.mjs) and the access layer
+(lib/blog.ts). When all articles share one publication date (the
+September 10, 2026 edition), the index order is deterministic and
+must never change between builds. Do not introduce a secondary
+ordering source (no timestamps, no random, no manual order file).
+
+The 2026 content policy: articles carry date: 2026-09-10 and
+updated: 2026-09-10; factual claims about external AI systems are
+attributed in the text and separated from analysis and personal
+position. Claims about this site must be backed by this repository.
 
 XIV-C. DATA PIPELINE CONSTITUTION
 
@@ -920,6 +1017,14 @@ duplicate dedicated RedMagic canvas
 reintroduced cursor glow/shadow filters
 per-frame radial-gradient allocation in RedMagic
 per-frame allocation anywhere in a steady-state render loop
+per-frame color/string allocation in a steady-state render loop
+quality adaptation judged against absolute fps instead of the
+  measured display refresh rate
+a second IntersectionObserver for data-reveal elements
+reveal/hidden states applied without the pre-paint reveal-js gate
+animating layout properties for reveal or transition purposes
+an animation dependency (Framer Motion or similar)
+phase-synchronized organism loops (no negative animation-delays)
 client components importing lib/blog.ts (article bodies in the bundle)
 a second background work queue outside lib/backgroundScheduler.ts
 a second WorldBackground runtime or per-scene background mounts
@@ -967,6 +1072,42 @@ and verify that it matches the commit being evaluated.
 Never use a successful older run to declare a newer commit healthy.
 
 XVII. CURRENT BASELINE
+
+Version 2.2.0 — the high-refresh smoothness upgrade:
+
+- Refresh-rate-aware adaptive quality (RedMagic.tsx): the engine
+  derives the display's native rate from its fastest sustained rAF
+  interval; quality thresholds are relative (demote < max(48, hz*0.72)
+  after 2 bad windows, promote > hz*0.9 after 3 clean windows, 3.5 s
+  cooldown). Replaced the 2.1 absolute thresholds that punished
+  60 Hz panels. Telemetry publishes measured refreshHz; the console
+  labels vitality relative to it (MagicConsole.tsx)
+- Zero steady-state allocation in the particle loop
+  (RedMagicParticles.ts): bounded quantized hsl() color-string cache
+  replaces per-particle-per-frame string building
+- Site-wide motion vocabulary (app/globals.css :root): motion tokens
+  (micro/short/medium/long + easings + stagger unit) as CSS custom
+  properties
+- Reveal system: components/MotionReveal.tsx owns THE single
+  IntersectionObserver per route tree (one-shot, self-draining,
+  deterministic stagger via data-reveal-order); a passive
+  MutationObserver joins late-mounted reveal elements. Hidden state
+  gated by a pre-paint reveal-js class (app/layout.tsx) so no-JS
+  never hides content. Applied to blog hero/featured/cards, article
+  header/cover/tags/nav/related; article body HTML stays ungated
+- Scene transition motion: keyed scene-enter settle animation in
+  SceneRegistry (transform/opacity only, reduced-motion aware) on top
+  of the existing outgoing fade
+- Living organism evolution (WorldBackground): long-period loops carry
+  negative animation-delays (no t=0 phase sync); energy coupling
+  modulates rings/wisps/particles/sparks around scene mood bases via
+  --mood-opacity; new RESONANCE layer (two energy-scaled heartbeat
+  echo rings, hidden on low quality / reduced motion, paused on hidden
+  tabs)
+- Blog 2026 edition: all four articles rewritten around AI + Will +
+  Systems; date/updated 2026-09-10; ordering stays deterministic via
+  the existing slug-ascending tiebreak; factual 2026 AI claims
+  attributed in text and separated from analysis/position
 
 Version 2.1.0 — memory lifecycle, pipeline throughput, loading
 orchestration, and the living organism upgrade:

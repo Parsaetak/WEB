@@ -233,6 +233,74 @@ function distanceSquared(
   );
 }
 
+/*
+ * PARTICLE COLOR CACHE (v2.2).
+ *
+ * The particle loop previously built an `hsl(h, s%, l%)` string for
+ * every drawn particle on every frame — hundreds of small allocations
+ * per frame, multiplied by every animation frame at 90–120 Hz. Colors
+ * are now quantized (hue to 3 degrees, saturation/lightness to 3
+ * percent — far below perceptual threshold) and resolved through a
+ * bounded Map, so steady-state rendering reuses existing strings and
+ * allocates no garbage. The cap keeps the cache bounded; an overflow
+ * clear is a rare O(1) event, never per-frame work.
+ */
+const COLOR_STRING_CACHE = new Map<
+  string,
+  string
+>();
+
+const COLOR_CACHE_MAX_ENTRIES =
+  4096;
+
+function particleColor(
+  hue: number,
+  saturation: number,
+  lightness: number
+) {
+  const normalizedHue =
+    ((hue % 360) + 360) % 360;
+
+  const hueStep = Math.round(
+    normalizedHue / 3
+  );
+
+  const saturationStep = Math.round(
+    saturation / 3
+  );
+
+  const lightnessStep = Math.round(
+    lightness / 3
+  );
+
+  const key = `${hueStep},${saturationStep},${lightnessStep}`;
+
+  let color =
+    COLOR_STRING_CACHE.get(
+      key
+    );
+
+  if (color === undefined) {
+    if (
+      COLOR_STRING_CACHE.size >=
+      COLOR_CACHE_MAX_ENTRIES
+    ) {
+      COLOR_STRING_CACHE.clear();
+    }
+
+    color = `hsl(${hueStep * 3}, ${
+      saturationStep * 3
+    }%, ${lightnessStep}%)`;
+
+    COLOR_STRING_CACHE.set(
+      key,
+      color
+    );
+  }
+
+  return color;
+}
+
 function createRandomGenerator(
   seed: number
 ) {
@@ -1537,10 +1605,11 @@ export function updateAndDrawParticles(
       );
 
     context.fillStyle =
-      `hsl(${(
-        hue +
-        360
-      ) % 360}, ${saturation}%, ${lightness}%)`;
+      particleColor(
+        hue,
+        saturation,
+        lightness
+      );
 
     context.beginPath();
 

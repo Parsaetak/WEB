@@ -25,6 +25,7 @@ import SceneUrlSync from "@/components/SceneUrlSync";
 import SiteFooter from "@/components/SiteFooter";
 import WorldBackground from "@/components/WorldBackground";
 import RedCursor from "@/components/RedCursor";
+import MotionReveal from "@/components/MotionReveal";
 import {
   pulseWorld,
   setWorldScene
@@ -298,6 +299,12 @@ export default function LivingShell({
 
       <RedCursor />
 
+      {/*
+        * One reveal observer for the world shell — HUD, scenes and
+        * footer all share it. Never mounted per scene.
+        */}
+      <MotionReveal />
+
       <SceneUrlSync
         scene={
           activeScene
@@ -319,6 +326,7 @@ export default function LivingShell({
         className={
           styles.livingShellHud
         }
+        data-reveal="instant"
       >
         <div
           className={

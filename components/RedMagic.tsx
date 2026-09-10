@@ -278,12 +278,6 @@ const CORE_SPRITE_SIZE =
 const NODE_SPRITE_SIZE =
   64;
 
-const HIGH_FPS_TARGET =
-  120;
-
-const HIGH_FPS_FLOOR =
-  105;
-
 const MAX_SHOCKWAVES =
   5;
 
@@ -2070,6 +2064,42 @@ export default function RedMagic({
       0;
 
     let lastQualityChange =
+      0;
+
+    /*
+     * REFRESH-RATE AWARENESS (v2.2).
+     *
+     * The browser does not expose the display's native refresh rate,
+     * but requestAnimationFrame delivers frames at exactly that rate,
+     * so the fastest sustained inter-frame interval IS the native
+     * interval. We track the minimum raw delta per sampling window and
+     * keep the fastest estimate (displays only reveal faster rates,
+     * never slower ones — jank only adds time, never removes it).
+     *
+     * Quality thresholds are then RELATIVE to the measured refresh
+     * rate, so a 60 Hz panel rendering a perfect 60 is never punished
+     * for not reaching 120, while a 120 Hz panel that loses a third of
+     * its frames is demoted even though it still beats 60 fps.
+     */
+    let lastAdaptTimestamp =
+      0;
+
+    let windowMinDelta =
+      0;
+
+    let refreshHzEstimate =
+      0;
+
+    /*
+     * Hysteresis: quality responds to SUSTAINED conditions, not single
+     * bad windows. Demotion needs two consecutive bad windows, and
+     * promotion needs three consecutive good ones — oscillation like
+     * HIGH → LOW → HIGH across neighbouring windows is impossible.
+     */
+    let demoteStreak =
+      0;
+
+    let promoteStreak =
       0;
 
     let membraneGradient:
@@ -5938,6 +5968,41 @@ export default function RedMagic({
           return;
         }
 
+        /*
+         * Collect the raw (unclamped) inter-frame delta for refresh
+         * estimation. The simulation clamps deltas at 32 ms, but the
+         * DISPLAY's native interval lives below that cap under normal
+         * conditions, so the window minimum is a reliable estimator.
+         */
+        if (
+          lastAdaptTimestamp !==
+          0
+        ) {
+          const rawDelta =
+            timestamp -
+            lastAdaptTimestamp;
+
+          if (
+            rawDelta >=
+              3 &&
+            rawDelta <=
+              34
+          ) {
+            if (
+              windowMinDelta ===
+                0 ||
+              rawDelta <
+                windowMinDelta
+            ) {
+              windowMinDelta =
+                rawDelta;
+            }
+          }
+        }
+
+        lastAdaptTimestamp =
+          timestamp;
+
         if (
           performanceSampleTime ===
           0
@@ -5985,6 +6050,37 @@ export default function RedMagic({
         performanceFrames =
           0;
 
+        /*
+         * Refresh estimate: adopt a window only when it is SUSTAINED
+         * faster (3% above the current estimate). Isolated sub-frame
+         * scheduling jitter cannot manufacture a promotion.
+         */
+        if (
+          windowMinDelta >
+          0
+        ) {
+          const windowHz =
+            1000 /
+            windowMinDelta;
+
+          if (
+            refreshHzEstimate ===
+              0 ||
+            windowHz >
+              refreshHzEstimate *
+                1.03
+          ) {
+            refreshHzEstimate =
+              Math.min(
+                240,
+                windowHz
+              );
+          }
+        }
+
+        windowMinDelta =
+          0;
+
         publishRedMagicPerformance({
           fps,
 
@@ -6004,7 +6100,15 @@ export default function RedMagic({
               pointerEnergy *
                 100
             ) /
-            100
+            100,
+
+          refreshHz:
+            refreshHzEstimate >
+            0
+              ? Math.round(
+                  refreshHzEstimate
+                )
+              : undefined
         });
 
         if (
@@ -6015,53 +6119,120 @@ export default function RedMagic({
           return;
         }
 
+        /*
+         * RELATIVE thresholds. With no estimate yet the fallback lines
+         * behave conservatively (48 / 55). On a measured display:
+         *
+         *   60 Hz  → demote below 48, promote above 54
+         *   120 Hz → demote below 86, promote above 108
+         *
+         * A display running at its native rate is never demoted; a
+         * display that lost a third of its frames is, regardless of
+         * how good the absolute numbers look.
+         */
+        const hasEstimate =
+          refreshHzEstimate >
+          40;
+
+        const demoteLine =
+          hasEstimate
+            ? Math.max(
+                48,
+                refreshHzEstimate *
+                  0.72
+              )
+            : 55;
+
+        const promoteLine =
+          hasEstimate
+            ? refreshHzEstimate *
+              0.9
+            : 58;
+
+        let nextQuality:
+          | QualityName
+          | null =
+          null;
+
         if (
           fps <
-            HIGH_FPS_FLOOR &&
-          qualityName ===
-            "high"
+          demoteLine
         ) {
-          setQuality(
-            "medium"
-          );
+          demoteStreak +=
+            1;
 
-          return;
-        }
+          promoteStreak =
+            0;
 
-        if (
-          fps <
-            50 &&
-          qualityName !==
-            "low"
-        ) {
-          setQuality(
-            "low"
-          );
-
-          return;
+          if (
+            demoteStreak >=
+            2
+          ) {
+            if (
+              qualityName ===
+              "high"
+            ) {
+              nextQuality =
+                "medium";
+            } else if (
+              fps <
+                50 &&
+              qualityName ===
+                "medium"
+            ) {
+              nextQuality =
+                "low";
+            }
+          }
+        } else {
+          demoteStreak =
+            0;
         }
 
         if (
           fps >=
-            HIGH_FPS_TARGET &&
-          qualityName ===
-            "medium"
+          promoteLine
         ) {
-          setQuality(
-            "high"
-          );
+          promoteStreak +=
+            1;
 
-          return;
+          if (
+            promoteStreak >=
+            3
+          ) {
+            if (
+              qualityName ===
+              "medium"
+            ) {
+              nextQuality =
+                "high";
+            } else if (
+              qualityName ===
+                "low" &&
+              fps >=
+                58
+            ) {
+              nextQuality =
+                "medium";
+            }
+          }
+        } else {
+          promoteStreak =
+            0;
         }
 
         if (
-          fps >=
-            58 &&
-          qualityName ===
-            "low"
+          nextQuality !==
+          null
         ) {
+          demoteStreak =
+            0;
+
+          promoteStreak =
+            0;
+
           setQuality(
-            "medium"
+            nextQuality
           );
         }
       };

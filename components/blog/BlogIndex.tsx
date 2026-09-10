@@ -271,7 +271,8 @@ export default function BlogIndex({
         <ul className={styles.grid}>
           {filteredPosts.map(
             (
-              post
+              post,
+              index
             ) => (
               <li
                 key={
@@ -284,6 +285,18 @@ export default function BlogIndex({
                   post.featured
                     ? "true"
                     : "false"
+                }
+                /*
+                 * REVEAL STAGGER (v2.2): cards enter with a
+                 * deterministic stagger. Grid position drives the
+                 * delay (capped by the controller); cards that
+                 * survive a filter change keep their revealed state,
+                 * newly matching cards fade in, removed cards leave
+                 * the set without a heavy exit system.
+                 */
+                data-reveal=""
+                data-reveal-order={
+                  index % 6
                 }
               >
                 {post.cover && (
@@ -425,6 +438,7 @@ export default function BlogIndex({
             styles.empty
           }
           role="status"
+          data-reveal="instant"
         >
           <span
             className={

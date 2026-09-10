@@ -1079,3 +1079,164 @@ span {
       0 15px;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Motion tokens (v2.2)                                                       */
+/*                                                                            */
+/* One transition vocabulary for the whole site. Durations are chosen so      */
+/* every band stays inside a comfortable perceptual window and remains        */
+/* compositor-friendly: opacity + transform only, never layout properties.    */
+/* Individual modules may reference these tokens; they must not invent        */
+/* their own one-off durations for the same perceptual band.                  */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  /* MICRO — interaction feedback (hover, press, focus). */
+  --motion-micro: 140ms;
+
+  /* SHORT — item/card/tag reveal. */
+  --motion-short: 240ms;
+
+  /* MEDIUM — panels, filtered lists, scene content settle. */
+  --motion-medium: 420ms;
+
+  /* LONG — organism/environmental transitions. */
+  --motion-long: 900ms;
+
+  /* Easing family — one decelerate curve, one standard curve. */
+  --ease-out-soft:
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    );
+
+  --ease-standard:
+    cubic-bezier(
+      0.4,
+      0,
+      0.2,
+      1
+    );
+
+  /* Stagger unit for grouped reveals (cards, tags, nav items). */
+  --motion-stagger: 45ms;
+
+  /* Reveal travel distance — small by design; cheap to composite. */
+  --reveal-shift: 14px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reveal system (v2.2)                                                       */
+/*                                                                            */
+/* Appearance/disappearance language shared by every appropriate UI surface.  */
+/* Elements opt in with `data-reveal`; a single IntersectionObserver          */
+/* controller (components/MotionReveal.tsx) marks them `data-revealed`.       */
+/*                                                                            */
+/* Safety law: the hidden state exists ONLY under `html.reveal-js`, which is  */
+/* set by an inline pre-paint script in app/layout.tsx. Without JavaScript    */
+/* the class is absent and every element is permanently visible — animation   */
+/* is enhancement, never a gate.                                              */
+/* -------------------------------------------------------------------------- */
+
+.reveal-js [data-reveal] {
+  opacity: 0;
+
+  transform:
+    translate3d(
+      0,
+      var(--reveal-shift),
+      0
+    );
+
+  will-change:
+    opacity,
+    transform;
+}
+
+.reveal-js [data-reveal][data-revealed="true"] {
+  opacity: 1;
+
+  transform:
+    translate3d(
+      0,
+      0,
+      0
+    );
+
+  transition:
+    opacity
+      var(--motion-medium)
+      var(--ease-out-soft),
+    transform
+      var(--motion-medium)
+      var(--ease-out-soft);
+
+  transition-delay:
+    var(
+      --reveal-delay,
+      0ms
+    );
+
+  will-change:
+    auto;
+}
+
+/*
+ * Variant: reveal-from-scale for panels and featured surfaces — same
+ * compositor properties, slightly different character.
+ */
+.reveal-js [data-reveal="scale"] {
+  transform:
+    translate3d(
+      0,
+      calc(var(--reveal-shift) * 0.6),
+      0
+    )
+    scale(0.985);
+}
+
+.reveal-js [data-reveal="scale"][data-revealed="true"] {
+  transform:
+    translate3d(
+      0,
+      0,
+      0
+    )
+    scale(1);
+}
+
+/*
+ * The observer is one-shot: once revealed, an element keeps its state.
+ * `data-reveal="instant"` skips the travel entirely (metadata rows and
+ * other surfaces that should only fade).
+ */
+.reveal-js [data-reveal="instant"] {
+  transform:
+    none;
+}
+
+.reveal-js [data-reveal="instant"][data-revealed="true"] {
+  transform:
+    none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Reduced motion: elements appear with a minimal crossfade and no
+   * travel. Content is never held hostage by an animation.
+   */
+  .reveal-js [data-reveal] {
+    transform:
+      none;
+
+    transition-duration:
+      1ms;
+  }
+
+  .reveal-js [data-reveal][data-revealed="true"] {
+    transition-delay:
+      0ms;
+  }
+}

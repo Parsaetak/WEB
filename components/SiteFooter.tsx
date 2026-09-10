@@ -15,6 +15,7 @@ export default function SiteFooter() {
       className={
         styles.livingShellLegal
       }
+      data-reveal="instant"
     >
       <div
         className={

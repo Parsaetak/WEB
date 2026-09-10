@@ -199,6 +199,15 @@ export default function SceneRegistry({
         transitioning
       }
     >
+      {/*
+        * SCENE TRANSITION MOTION (v2.2).
+        *
+        * The layer handles the outgoing fade (data-transitioning);
+        * the keyed host inside it replays a short settle animation on
+        * every scene mount, so the incoming scene rises into place
+        * while the layer fades back in. One keyframe, transform and
+        * opacity only, reduced-motion aware via CSS.
+        */}
       <div
         className={
           styles.sceneTransitionLayer
@@ -209,7 +218,16 @@ export default function SceneRegistry({
             : "false"
         }
       >
-        <Scene />
+        <div
+          className={
+            styles.sceneEnterHost
+          }
+          key={
+            renderedScene
+          }
+        >
+          <Scene />
+        </div>
       </div>
     </SceneViewport>
   );

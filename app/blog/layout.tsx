@@ -6,6 +6,7 @@ import WorldBackground from "@/components/WorldBackground";
 import RedCursor from "@/components/RedCursor";
 import SiteFooter from "@/components/SiteFooter";
 import BlogHeader from "@/components/blog/BlogHeader";
+import MotionReveal from "@/components/MotionReveal";
 
 import {
   getBlogInfo
@@ -71,6 +72,13 @@ export default function BlogLayout({
       <WorldBackground mood="archive" />
 
       <RedCursor />
+
+      {/*
+        * The single reveal observer for the whole blog route tree:
+        * one IntersectionObserver serves headers, cards, article
+        * metadata and related-article grids everywhere.
+        */}
+      <MotionReveal />
 
       <BlogHeader />
 

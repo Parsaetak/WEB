@@ -1043,6 +1043,26 @@ export default function WorldBackground({
         }
       />
 
+      {/*
+        * RESONANCE (v2.2): two slow energy-scaled rings — the
+        * heartbeat's echo in the shell. Invisible while the organism
+        * is calm, hidden entirely on low quality / reduced motion.
+        */}
+      <div
+        className={
+          styles.organismResonance
+        }
+        aria-hidden="true"
+      >
+        <span
+          className={`${styles.organismResonanceRing} ${styles.organismResonanceRingOne}`}
+        />
+
+        <span
+          className={`${styles.organismResonanceRing} ${styles.organismResonanceRingTwo}`}
+        />
+      </div>
+
       <div
         ref={rippleHostRef}
         className={

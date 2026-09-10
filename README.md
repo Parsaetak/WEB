@@ -4,8 +4,11 @@ Live site: https://parsaetak.github.io/WEB/
 
 Repository: https://github.com/Parsaetak/WEB
 
-Version: 2.1.0 — memory lifecycle, data pipeline throughput, loading
-orchestration, and the living organism upgrade.
+Version: 2.2.0 — the high-refresh smoothness upgrade: 120 Hz-class
+frame pacing, refresh-rate-aware adaptive quality, a site-wide
+fade/reveal motion language, an evolved living organism, and the
+2026 AI + Will + Systems blog edition (all articles dated
+September 10, 2026).
 
 ## Stack
 
@@ -13,6 +16,50 @@ orchestration, and the living organism upgrade.
 - React 19, TypeScript
 - GitHub Pages deployment (no server, no runtime backend)
 - Zero runtime content dependencies — the data layer is custom and typed
+
+## High-refresh strategy (2.2)
+
+The target is 120 Hz-class smoothness **where the display supports
+it** — never a guaranteed frame-rate claim:
+
+- **Delta-time simulation.** Every animated system advances by frame
+  timestamps, never per-frame constants; extreme deltas are capped
+  after tab switches. Motion is near-identical at 60/90/120/144 Hz.
+- **Refresh-rate estimation.** `RedMagic` derives the display's native
+  rate from its fastest sustained `requestAnimationFrame` interval and
+  judges itself relative to it — a 60 Hz panel holding 60 keeps full
+  quality; a 120 Hz panel losing a third of its frames is demoted.
+- **Hysteresis.** Quality changes require sustained windows (2 bad to
+  demote, 3 clean to promote) plus a cooldown, so tiers never
+  oscillate.
+- **Frame-budget hygiene.** Zero steady-state allocation in hot loops
+  (cached sprites/gradients, quantised bounded colour-string cache),
+  RAF-coalesced pointer input, CSS-first animation everywhere else.
+- **Honest telemetry.** The RED MAGIC console reports measured frame
+  rate against the measured refresh rate and the active quality tier.
+  It never claims "120 FPS achieved".
+
+## Motion system (2.2)
+
+One transition vocabulary, defined as CSS custom properties in
+`app/globals.css` (MICRO/SHORT/MEDIUM/LONG durations + easings +
+stagger unit):
+
+- **Reveal system.** Elements opt in with `data-reveal`; a single
+  IntersectionObserver controller (`components/MotionReveal.tsx`,
+  mounted once per route tree) marks them revealed with deterministic
+  grid-position stagger. One-shot, self-draining, zero rAF loops.
+- **No-JS safety.** The hidden state exists only under a pre-paint
+  `reveal-js` class; without JavaScript nothing is ever hidden.
+- **Scene transitions.** Outgoing scenes fade through the transition
+  layer; incoming scenes settle with a keyed one-shot animation; the
+  organism pulses once per scene change.
+- **Blog filtering.** Cards enter with grid-position stagger; cards
+  that survive a filter keep their state; new matches fade in via the
+  same observer (no exit-animation framework).
+- **Reduced motion.** Every reveal and transition degrades to a
+  minimal crossfade with no travel; the organism keeps only its
+  slowest breathing layers.
 
 ## Architecture
 
@@ -29,14 +76,16 @@ routing inside `components/LivingShell.tsx`:
 - `SceneLoadingScreen` exposes honest load phases
   (`INITIALIZING / LOADING / PREPARING / READY / ERROR`) and never
   fakes progress percentages
-- `WorldBackground` (CSS ambient) and `RedCursor` (native CSS cursor)
-  are mounted once from the shell
+- `WorldBackground` (CSS ambient), `RedCursor` (native CSS cursor),
+  and `MotionReveal` (the one reveal observer) are mounted once from
+  the shell
 
 ### Blog (routes)
 
 `/blog/` and `/blog/<slug>/` are real statically exported routes:
 
-- `app/blog/layout.tsx` — shared shell (background, cursor, header, footer)
+- `app/blog/layout.tsx` — shared shell (background, cursor, reveal
+  controller, header, footer)
 - `app/blog/page.tsx` — index: featured article + search/tag island
 - `app/blog/[slug]/page.tsx` — article pages with full metadata,
   Open Graph/Twitter cards, JSON-LD `BlogPosting`, prev/next and
@@ -44,6 +93,10 @@ routing inside `components/LivingShell.tsx`:
 - `components/blog/BlogIndex.tsx` — the only client island on the
   index; it receives article **metadata only** (no HTML bodies)
 - RSS feed: `/blog/feed.xml`, generated from the same content index
+
+Ordering law: posts are sorted date-descending with **slug-ascending
+as the deterministic tiebreak**, so the September 10, 2026 edition
+(all articles share one date) can never reorder randomly.
 
 ### Data pipeline
 
@@ -117,15 +170,17 @@ The global background is ONE continuous living system with layered
 looped timescales — all compositor-friendly CSS animation:
 
 - MICRO — particles / sparks (6–17 s, per-element phase offsets)
-- SHORT — energy wisps (31–61 s, alternating directions)
-- MEDIUM — orbital rings (34–82 s, mixed directions)
+- SHORT — energy wisps (31–61 s, alternating directions, phase-shifted)
+- MEDIUM — orbital rings (34–82 s, mixed directions, phase-shifted)
 - LONG — atmospheric masses + aura (28–57 s)
 - HEART — core + nucleus breathing (8.5–19 s)
 - EVENT — transition pulse + click ripples (controller-triggered)
+- RESONANCE (2.2) — two energy-scaled heartbeat-echo rings; invisible
+  while calm, hidden on low quality and reduced motion
 
 Coherence and state flow through one attribute set on the root
 (`data-scene` mood, `data-quality` tier, `data-hidden`, `data-reduced`)
-plus three shared CSS variables (`--organism-energy`,
+plus shared CSS variables (`--organism-energy`,
 `--organism-pointer-x/y`) written by a single self-suspending rAF
 controller in `lib/worldSignals.ts` + `WorldBackground.tsx`. The
 controller writes CSS custom properties only (transform/opacity
@@ -134,11 +189,14 @@ organism settles — a calm organism costs zero JavaScript per frame.
 
 Scene moods (home balanced / about calmer / systems structured / magic
 high energy / work focused / library + blog archival) are static
-attribute selectors — no remount, no per-frame cost. Hidden tabs pause
-the whole organism; `prefers-reduced-motion` keeps the slowest
-breathing layers at reduced amplitude and disables interaction layers
-(calm, not dead). Quality tiers (low / medium / high) trim peripheral
-layers on constrained devices while preserving identity.
+attribute selectors — no remount, no per-frame cost. Layer groups
+declare their mood base through `--mood-opacity`, and the shared
+energy modulates the whole field around that base, so interaction
+visibly wakes the organism as ONE system. Hidden tabs pause the whole
+organism; `prefers-reduced-motion` keeps the slowest breathing layers
+at reduced amplitude and disables interaction layers (calm, not dead).
+Quality tiers (low / medium / high) trim peripheral layers on
+constrained devices while preserving identity.
 
 ### Loading priorities
 
@@ -153,6 +211,19 @@ Defined in `lib/loadPhase.ts`:
 
 Background preloading is bounded, skips hidden tabs, and respects
 `save-data` / 2G connections.
+
+## Blog content policy (2026 edition)
+
+All four articles are the September 10, 2026 edition — `date` and
+`updated` set to `2026-09-10` — written around one thesis: **AI
+supplies capability, Will supplies direction, Systems convert the two
+into execution.** Each article has a distinct purpose (reasoning
+frameworks / living-interface philosophy / time architecture /
+constraint-first system building), draws its factual claims about the
+2026 AI landscape from attributed public sources, and separates FACT
+from ANALYSIS from POSITION in the text. Claims about this site are
+backed by this repository; no achievement is claimed beyond what the
+code demonstrates.
 
 ## Writing an article
 

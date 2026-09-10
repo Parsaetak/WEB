@@ -83,6 +83,22 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net"
           crossOrigin="anonymous"
         />
+
+        {/*
+          * MOTION GATE — runs before first paint.
+          *
+          * The fade-in/reveal system hides `data-reveal` elements ONLY
+          * when this class is present, so content stays fully visible
+          * when JavaScript is disabled or fails. With the class set
+          * pre-paint, there is no flash of visible-then-hidden content
+          * and no flash of hidden-then-revealed content on hydration.
+          */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'document.documentElement.classList.add("reveal-js");'
+          }}
+        />
       </head>
       <body>
         {children}

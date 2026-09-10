@@ -13,6 +13,14 @@ export type RedMagicPerformanceSample = {
    * publishers stay type-compatible.
    */
   pointerEnergy?: number;
+
+  /*
+   * Display refresh-rate estimate in Hz, derived from the fastest
+   * sustained requestAnimationFrame interval (v2.2). Optional so older
+   * publishers stay type-compatible. Never presented as a guarantee —
+   * it is a measurement of the display the engine observed.
+   */
+  refreshHz?: number;
 };
 
 type Listener =

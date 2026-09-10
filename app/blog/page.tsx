@@ -48,7 +48,7 @@ export default function BlogPage() {
         className={`section ${styles.blogHero}`}
       >
         <div className="page-container">
-          <header className={styles.blogHeroHeader}>
+          <header className={styles.blogHeroHeader} data-reveal="instant">
             <div className={styles.blogHeroCopy}>
               <p className="kicker">
                 07 / BLOG
@@ -97,6 +97,7 @@ export default function BlogPage() {
           <div className="page-container">
             <div
               className={styles.blogFeaturedCard}
+              data-reveal="scale"
             >
               {featured.cover && (
                 <Link

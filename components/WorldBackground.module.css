@@ -346,10 +346,17 @@
   width: 34%;
   height: 21%;
 
+  /*
+   * Negative delays de-synchronise the MEDIUM loops from t=0: on
+   * first paint every layer is already mid-flight at its own phase
+   * instead of starting in lockstep (spec: phases must never be
+   * synchronised).
+   */
   animation:
     red-magic-cloud-ring-one
     34s
     linear
+    -7s
     infinite;
 }
 
@@ -361,6 +368,7 @@
     red-magic-cloud-ring-two
     41s
     linear
+    -13s
     infinite
     reverse;
 }
@@ -373,6 +381,7 @@
     red-magic-cloud-ring-three
     53s
     linear
+    -21s
     infinite;
 }
 
@@ -392,6 +401,7 @@
     red-magic-cloud-ring-four
     67s
     linear
+    -29s
     infinite
     reverse;
 }
@@ -412,6 +422,7 @@
     red-magic-cloud-ring-five
     82s
     linear
+    -37s
     infinite;
 }
 
@@ -460,6 +471,7 @@
   animation:
     red-magic-cloud-wisp-one
     31s
+    -9s
     ease-in-out
     infinite
     alternate;
@@ -480,6 +492,7 @@
   animation:
     red-magic-cloud-wisp-two
     37s
+    -16s
     ease-in-out
     infinite
     alternate;
@@ -500,6 +513,7 @@
   animation:
     red-magic-cloud-wisp-three
     43s
+    -24s
     ease-in-out
     infinite
     alternate;
@@ -520,6 +534,7 @@
   animation:
     red-magic-cloud-wisp-four
     49s
+    -31s
     ease-in-out
     infinite
     alternate;
@@ -540,6 +555,7 @@
   animation:
     red-magic-cloud-wisp-five
     56s
+    -40s
     ease-in-out
     infinite
     alternate;
@@ -560,6 +576,7 @@
   animation:
     red-magic-cloud-wisp-six
     61s
+    -47s
     ease-in-out
     infinite
     alternate;
@@ -581,6 +598,7 @@
   animation:
     red-magic-cloud-wisp-seven
     47s
+    -19s
     ease-in-out
     infinite
     alternate;
@@ -1469,6 +1487,7 @@
 
   .organismPointerField,
   .organismRipples,
+  .organismResonance,
   .organismPulse {
     display: none;
   }
@@ -1647,8 +1666,155 @@
 }
 
 /*
+ * ENERGY COUPLING (v2.2) — the shared organism energy modulates the
+ * whole layered field around each scene's resting level. Moving
+ * through the world slightly brightens rings, wisps, particles and
+ * sparks together; the organism visibly wakes as ONE system instead
+ * of only the pointer field reacting. Zero JavaScript beyond the
+ * existing --organism-energy writer; opacity is compositor-only.
+ *
+ * Scene moods above set the base (`--mood-opacity`); this rule scales
+ * it by 0.92 at rest up to 1.0 at full energy.
+ */
+.redMagicCloudRings,
+.redMagicCloudWisps,
+.redMagicCloudParticles,
+.redMagicCloudSparks {
+  opacity: calc(
+    var(--mood-opacity, 1) *
+    (
+      0.92 +
+      var(--organism-energy, 0) * 0.08
+    )
+  );
+
+  transition: opacity 1.6s ease;
+}
+
+/*
+ * RESONANCE LAYER (v2.2) — the heartbeat's echo in the shell.
+ *
+ * Two slow MEDIUM-loop rings expand from the core, their visibility
+ * scaled directly by the shared energy: a calm organism keeps them
+ * invisible (and effectively free), an active one shows the pulse
+ * travelling outward through the field. Pure transform/opacity.
+ */
+.organismResonance {
+  position: absolute;
+
+  left: 50%;
+  top: 47%;
+
+  width: 0;
+  height: 0;
+
+  pointer-events: none;
+}
+
+.organismResonanceRing {
+  position: absolute;
+
+  left: 0;
+  top: 0;
+
+  width: min(
+    58vw,
+    980px
+  );
+
+  height: min(
+    34vw,
+    580px
+  );
+
+  border:
+    1px solid
+    rgba(
+      255,
+      60,
+      44,
+      0.05
+    );
+
+  border-radius: 50%;
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    )
+    scale(0.62);
+
+  opacity: calc(
+    var(--organism-energy, 0) * 0.55
+  );
+
+  will-change:
+    transform,
+    opacity;
+
+  pointer-events: none;
+}
+
+.organismResonanceRingOne {
+  animation:
+    organism-resonance
+    23s
+    ease-in-out
+    -9s
+    infinite;
+}
+
+.organismResonanceRingTwo {
+  animation:
+    organism-resonance
+    31s
+    ease-in-out
+    -19s
+    infinite
+    reverse;
+}
+
+@keyframes organism-resonance {
+  0% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      scale(0.62);
+  }
+
+  55% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      scale(1.12);
+  }
+
+  100% {
+    transform:
+      translate3d(
+        -50%,
+        -50%,
+        0
+      )
+      scale(0.62);
+  }
+}
+
+/*
  * SCENE MOODS — the organism understands the current scene through
  * one attribute. Static attribute selectors: zero runtime cost.
+ *
+ * Layer-group moods declare their base through `--mood-opacity`
+ * instead of `opacity` so the ENERGY COUPLING rule below can modulate
+ * around the scene's resting level without overriding it.
  */
 
 .worldBackground[data-scene="about"] .organismAtmosphere {
@@ -1660,11 +1826,11 @@
 }
 
 .worldBackground[data-scene="systems"] .redMagicCloudWisps {
-  opacity: 0.8;
+  --mood-opacity: 0.8;
 }
 
 .worldBackground[data-scene="systems"] .redMagicCloudParticles {
-  opacity: 0.85;
+  --mood-opacity: 0.85;
 }
 
 .worldBackground[data-scene="magic"] .organismAtmosphere {
@@ -1676,6 +1842,20 @@
 
 .worldBackground[data-scene="magic"] .organismHeart {
   opacity: 1;
+}
+
+/*
+ * MAGIC mood: the resonance layer (energy-scaled heartbeat echo)
+ * runs hotter — the unstable mood shows its pulse in the field.
+ */
+.worldBackground[data-scene="magic"] .organismResonanceRing {
+  border-color:
+    rgba(
+      255,
+      72,
+      48,
+      0.075
+    );
 }
 
 .worldBackground[data-scene="magic"] .organismPulse {
@@ -1693,7 +1873,7 @@
 }
 
 .worldBackground[data-scene="work"] .redMagicCloudSparks {
-  opacity: 0.75;
+  --mood-opacity: 0.75;
 }
 
 .worldBackground[data-scene="library"] .organismAtmosphere,
@@ -1708,12 +1888,12 @@
 
 .worldBackground[data-scene="library"] .redMagicCloudParticles,
 .worldBackground[data-scene="archive"] .redMagicCloudParticles {
-  opacity: 0.6;
+  --mood-opacity: 0.6;
 }
 
 .worldBackground[data-scene="library"] .redMagicCloudSparks,
 .worldBackground[data-scene="archive"] .redMagicCloudSparks {
-  opacity: 0.55;
+  --mood-opacity: 0.55;
 }
 
 /*
@@ -1735,7 +1915,8 @@
 }
 
 .worldBackground[data-quality="low"] .organismPointerField,
-.worldBackground[data-quality="low"] .organismRipples {
+.worldBackground[data-quality="low"] .organismRipples,
+.worldBackground[data-quality="low"] .organismResonance {
   display: none;
 }
 
@@ -1750,6 +1931,7 @@
 
 .worldBackground[data-hidden="true"] .redMagicCloud,
 .worldBackground[data-hidden="true"] .redMagicCloud *,
+.worldBackground[data-hidden="true"] .organismResonance span,
 .worldBackground[data-hidden="true"] .organismPulse {
   animation-play-state: paused !important;
 }

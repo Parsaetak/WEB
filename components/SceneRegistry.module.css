@@ -1,3 +1,11 @@
+/*
+ * SCENE TRANSITION MOTION (v2.2).
+ *
+ * Timing bands come from the global motion tokens (globals.css) so the
+ * scene vocabulary matches every other fade on the site. All animated
+ * properties are compositor-only (opacity / transform / filter).
+ */
+
 .sceneTransitionLayer {
   position: relative;
 
@@ -22,13 +30,9 @@
 
   transition:
     opacity 180ms ease,
-    transform 260ms
-      cubic-bezier(
-        0.22,
-        1,
-        0.36,
-        1
-      ),
+    transform
+      var(--motion-medium)
+      var(--ease-out-soft),
     filter 220ms ease;
 }
 
@@ -48,6 +52,43 @@
   pointer-events: none;
 }
 
+/*
+ * Incoming settle: plays once per scene mount (the host is keyed by
+ * rendered scene). Short enough to never gate interaction — the layer
+ * itself fades in over 180 ms while content rises the last few pixels.
+ */
+.sceneEnterHost {
+  animation:
+    scene-enter-settle
+    420ms
+    var(--ease-out-soft)
+    both;
+}
+
+@keyframes scene-enter-settle {
+  from {
+    opacity: 0;
+
+    transform:
+      translate3d(
+        0,
+        10px,
+        0
+      );
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translate3d(
+        0,
+        0,
+        0
+      );
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sceneTransitionLayer {
     transition:
@@ -58,5 +99,9 @@
     transform: none;
 
     filter: none;
+  }
+
+  .sceneEnterHost {
+    animation-duration: 1ms;
   }
 }

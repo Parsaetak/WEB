@@ -93,29 +93,78 @@ function writeSoundPreference(
   }
 }
 
+/*
+ * Vitality is judged RELATIVE to the display the engine measured, not
+ * against an absolute marketing number. A 60 Hz panel sustaining 60 is
+ * native-rate smooth; a 120 Hz panel sustaining 75 is degraded. The
+ * label stays honest: nothing here claims a guaranteed frame rate.
+ */
 function vitalityLabel(
-  fps: number
+  fps: number,
+  refreshHz?: number
 ) {
   if (
-    fps >= 120
+    refreshHz !==
+      undefined &&
+    refreshHz >=
+      40
+  ) {
+    if (
+      fps >=
+      refreshHz *
+        0.9
+    ) {
+      return refreshHz >=
+        118
+        ? "120 HZ"
+        : `${Math.round(
+            refreshHz
+          )} HZ`;
+    }
+
+    if (
+      fps >=
+      refreshHz *
+        0.72
+    ) {
+      return "STABLE";
+    }
+
+    if (
+      fps >=
+      refreshHz *
+        0.5
+    ) {
+      return "DEGRADED";
+    }
+
+    return "CONSERVING";
+  }
+
+  if (
+    fps >=
+    120
   ) {
     return "120 HZ";
   }
 
   if (
-    fps >= 105
+    fps >=
+    105
   ) {
     return "SMOOTH";
   }
 
   if (
-    fps >= 90
+    fps >=
+    90
   ) {
     return "STABLE";
   }
 
   if (
-    fps >= 60
+    fps >=
+    60
   ) {
     return "DEGRADED";
   }
@@ -242,7 +291,8 @@ export default function MagicConsole() {
   const vitality =
     sample
       ? vitalityLabel(
-          sample.fps
+          sample.fps,
+          sample.refreshHz
         )
       : "—";
 
