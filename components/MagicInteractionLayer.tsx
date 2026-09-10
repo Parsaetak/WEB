@@ -133,6 +133,16 @@ export default function MagicInteractionLayer({
   const reducedMotionRef =
     useRef(false);
 
+  /*
+   * The leave-transition timer is retained so it can be cancelled on
+   * unmount (and superseded by later interactions) instead of firing
+   * against a detached element.
+   */
+  const interactionIdleTimeoutRef =
+    useRef<number | null>(
+      null
+    );
+
   const pendingPointerRef =
     useRef<Point | null>(
       null
@@ -1026,13 +1036,26 @@ export default function MagicInteractionLayer({
           "0"
         );
 
-        window.setTimeout(
-          () => {
-            root.dataset.interaction =
-              "idle";
-          },
-          260
-        );
+        if (
+          interactionIdleTimeoutRef.current !==
+          null
+        ) {
+          window.clearTimeout(
+            interactionIdleTimeoutRef.current
+          );
+        }
+
+        interactionIdleTimeoutRef.current =
+          window.setTimeout(
+            () => {
+              root.dataset.interaction =
+                "idle";
+
+              interactionIdleTimeoutRef.current =
+                null;
+            },
+            260
+          );
       }
     };
 
@@ -1110,6 +1133,18 @@ export default function MagicInteractionLayer({
         );
 
         pointerFrameRef.current =
+          null;
+      }
+
+      if (
+        interactionIdleTimeoutRef.current !==
+        null
+      ) {
+        window.clearTimeout(
+          interactionIdleTimeoutRef.current
+        );
+
+        interactionIdleTimeoutRef.current =
           null;
       }
 

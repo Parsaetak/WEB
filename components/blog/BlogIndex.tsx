@@ -9,27 +9,27 @@ import Link from "next/link";
 
 import type {
   BlogPostMeta
-} from "@/lib/blog";
+} from "@/lib/blogFormat";
 
 import {
   formatBlogDateShort
-} from "@/lib/blog";
+} from "@/lib/blogFormat";
 
 import styles from "./BlogIndex.module.css";
 
 /*
  * Blog index island — the only client component on the blog index.
  *
- * Receives article metadata (no HTML bodies). Search and tag
- * filtering are in-memory scans of a small array — precomputed
- * indexes are unnecessary at this size, and the array is memoized
- * so typing re-filters without re-deriving anything.
+ * IMPORTANT BOUNDARY: this component imports from lib/blogFormat.ts
+ * ONLY. lib/blog.ts imports the full generated content file, so a
+ * single value import from it would pull every article body into this
+ * page's client bundle. Metadata arrives as serialized props from the
+ * server-rendered index instead.
+ *
+ * Search is a scan over the precomputed `search` haystack emitted at
+ * build time — typing re-filters without joining strings per post.
+ * The runtime fallback covers data generated before v2.1.
  */
-
-type BlogIndexProps = {
-  posts: readonly BlogPostMeta[];
-  tags: readonly string[];
-};
 
 function matchesQuery(
   post: BlogPostMeta,
@@ -39,16 +39,18 @@ function matchesQuery(
     return true;
   }
 
-  const haystack = [
-    post.title,
-    post.subtitle ?? "",
-    post.excerpt,
-    post.category,
-    post.author,
-    ...post.tags
-  ]
-    .join(" ")
-    .toLowerCase();
+  const haystack =
+    post.search ??
+    [
+      post.title,
+      post.subtitle ?? "",
+      post.excerpt,
+      post.category,
+      post.author,
+      ...post.tags
+    ]
+      .join(" ")
+      .toLowerCase();
 
   return query
     .toLowerCase()
@@ -58,6 +60,11 @@ function matchesQuery(
       haystack.includes(term)
     );
 }
+
+type BlogIndexProps = {
+  posts: readonly BlogPostMeta[];
+  tags: readonly string[];
+};
 
 export default function BlogIndex({
   posts,

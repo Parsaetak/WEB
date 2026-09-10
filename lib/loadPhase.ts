@@ -46,15 +46,17 @@ export const LOAD_PHASES: readonly LoadPhase[] = [
 export type LoadPriority = "P0" | "P1" | "P2" | "P3" | "P4";
 
 /*
- * Background preload budget: the maximum number of scene chunks the
- * preloader will fetch without user intent. Keeps background work
- * bounded on slow networks.
+ * Background preload scope: the preloader considers at most two scene
+ * chunks per active scene (P1 predicted primary + P2 secondary
+ * prediction). Actual execution is owned by the unified background
+ * scheduler (lib/backgroundScheduler.ts), which orders, deduplicates,
+ * cancels, and defers all queued work.
  */
 export const BACKGROUND_PRELOAD_BUDGET = 2;
 
 /*
- * Background work is scheduled through the shared idle scheduler with
- * a deliberately longer timeout than interactive work.
+ * Background work runs through the unified scheduler's single idle
+ * pump with this timeout.
  */
 export const BACKGROUND_IDLE_TIMEOUT_MS = 1800;
 

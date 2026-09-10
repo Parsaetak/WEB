@@ -1,7 +1,8 @@
 "use client";
 
 import {
-  useEffect
+  useEffect,
+  useRef
 } from "react";
 
 import type {
@@ -15,8 +16,7 @@ type SceneUrlSyncProps = {
   ) => void;
 };
 
-const VALID_SCENES:
-  readonly SceneId[] =
+const VALID_SCENES: readonly SceneId[] =
   [
     "home",
     "about",
@@ -81,6 +81,29 @@ export default function SceneUrlSync({
   scene,
   onSceneChange
 }: SceneUrlSyncProps) {
+  /*
+   * Scene and handler live in refs so the browser listeners below are
+   * registered exactly once per mount. The previous shape depended on
+   * [scene, onSceneChange] and resubscribed both window listeners on
+   * every scene change — correct, but needless teardown/setup churn
+   * (and one more retained closure per swap) on a permanently-mounted
+   * shell component.
+   */
+  const sceneRef =
+    useRef(scene);
+
+  const onSceneChangeRef =
+    useRef(onSceneChange);
+
+  useEffect(() => {
+    sceneRef.current = scene;
+  }, [scene]);
+
+  useEffect(() => {
+    onSceneChangeRef.current =
+      onSceneChange;
+  }, [onSceneChange]);
+
   useEffect(() => {
     const initialScene =
       readSceneFromHash();
@@ -91,9 +114,9 @@ export default function SceneUrlSync({
 
     if (
       nextScene !==
-      scene
+      sceneRef.current
     ) {
-      onSceneChange(
+      onSceneChangeRef.current(
         nextScene
       );
     }
@@ -101,10 +124,7 @@ export default function SceneUrlSync({
     normalizeHash(
       nextScene
     );
-  }, [
-    onSceneChange,
-    scene
-  ]);
+  }, []);
 
   useEffect(() => {
     const handleNavigation =
@@ -115,14 +135,15 @@ export default function SceneUrlSync({
         if (
           nextScene
         ) {
-          onSceneChange(
+          onSceneChangeRef.current(
             nextScene
           );
+
           return;
         }
 
         normalizeHash(
-          scene
+          sceneRef.current
         );
       };
 
@@ -147,10 +168,7 @@ export default function SceneUrlSync({
         handleNavigation
       );
     };
-  }, [
-    onSceneChange,
-    scene
-  ]);
+  }, []);
 
   return null;
 }

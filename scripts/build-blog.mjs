@@ -47,6 +47,25 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const WORDS_PER_MINUTE = 200;
 const MAX_RELATED = 2;
 
+/*
+ * Search metadata is composed ONCE here instead of being re-derived
+ * in the browser on every keystroke. The client island only lowercases
+ * the query and checks inclusion against this precomputed haystack.
+ */
+function buildSearchHaystack(record) {
+  return [
+    record.title,
+    record.subtitle,
+    record.excerpt,
+    record.category,
+    record.author,
+    ...(Array.isArray(record.tags) ? record.tags : [])
+  ]
+    .filter((part) => typeof part === "string" && part.length > 0)
+    .join(" ")
+    .toLowerCase();
+}
+
 const failures = [];
 
 function fail(file, reason) {
@@ -699,6 +718,7 @@ async function main() {
 
     posts.push({
       slug,
+      search: buildSearchHaystack(record),
       title: String(record.title).trim(),
       subtitle:
         typeof record.subtitle === "string" && record.subtitle.trim() !== ""

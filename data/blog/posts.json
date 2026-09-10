@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-09-10T00:22:10.063Z",
+  "generatedAt": "2026-09-10T02:14:09.503Z",
   "basePath": "",
   "siteUrl": "https://parsaetak.github.io/WEB",
   "siteName": "Parsa Tak",
@@ -8,6 +8,7 @@
   "posts": [
     {
       "slug": "why-the-website-is-a-living-system",
+      "search": "why this website is a living system red magic is not a decoration layer. it is a position on what interfaces should be. most websites behave like printed pages that occasionally blink. this one is built as an organism — and the choice is engineering, not aesthetics. engineering parsa tak red magic interfaces systems performance",
       "title": "Why This Website Is a Living System",
       "subtitle": "RED MAGIC is not a decoration layer. It is a position on what interfaces should be.",
       "excerpt": "Most websites behave like printed pages that occasionally blink. This one is built as an organism — and the choice is engineering, not aesthetics.",
@@ -53,6 +54,7 @@
     },
     {
       "slug": "the-anatomy-of-a-fast-static-site",
+      "search": "the anatomy of a fast static site what loads, when it loads, and why the loading screen never lies to you. a tour of the loading architecture behind this website: priorities, deduplication, idle-time preloading, and the rule that banned fake progress bars. engineering parsa tak performance architecture loading static export",
       "title": "The Anatomy of a Fast Static Site",
       "subtitle": "What loads, when it loads, and why the loading screen never lies to you.",
       "excerpt": "A tour of the loading architecture behind this website: priorities, deduplication, idle-time preloading, and the rule that banned fake progress bars.",
@@ -108,6 +110,7 @@
     },
     {
       "slug": "reasoning-is-a-system-property",
+      "search": "reasoning is a system property why the model is the smallest part of an intelligent system. ai instructions, rep, and usef — three connected frameworks built on one claim: intelligence lives in the system around the model, not only inside it. research parsa tak ai reasoning systems rep usef",
       "title": "Reasoning Is a System Property",
       "subtitle": "Why the model is the smallest part of an intelligent system.",
       "excerpt": "AI Instructions, REP, and USEF — three connected frameworks built on one claim: intelligence lives in the system around the model, not only inside it.",
@@ -159,6 +162,7 @@
     },
     {
       "slug": "building-under-constraints",
+      "search": "building under constraints what a no-server, static-only deployment teaches about architecture. github pages cannot run a backend, resize an image, or render on demand. those limits are not obstacles — they are the design. systems parsa tak architecture static export content pipeline github pages",
       "title": "Building Under Constraints",
       "subtitle": "What a no-server, static-only deployment teaches about architecture.",
       "excerpt": "GitHub Pages cannot run a backend, resize an image, or render on demand. Those limits are not obstacles — they are the design.",

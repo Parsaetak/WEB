@@ -1,7 +1,8 @@
 "use client";
 
 import {
-  useEffect
+  useEffect,
+  useRef
 } from "react";
 
 import type {
@@ -9,20 +10,20 @@ import type {
 } from "react";
 
 import {
-  BACKGROUND_IDLE_TIMEOUT_MS,
-  BACKGROUND_PRELOAD_BUDGET
-} from "@/lib/loadPhase";
+  BACKGROUND_PRIORITY
+} from "@/lib/backgroundScheduler";
 
 import {
-  scheduleIdle
-} from "@/lib/idleScheduler";
+  cancelBackgroundTasksByOwner,
+  enqueueBackgroundTask
+} from "@/lib/backgroundScheduler";
 
 import type {
   SceneId
 } from "@/components/LivingShell";
 
 /*
- * SCENE PRELOADER
+ * SCENE PRELOADER — THIRD GENERATION
  *
  * Owns every dynamic import() of a scene module. There is exactly one
  * import site per scene in the whole application — this file. Bundler
@@ -30,18 +31,36 @@ import type {
  * structurally impossible because SceneRegistry's dynamic() components
  * resolve through the same loader map below.
  *
- * Priorities (see lib/loadPhase.ts):
- * - P0 the active scene is loaded by SceneRegistry on demand
- * - P1 the next scene in navigation order loads once the main thread
- *      is idle and background work is allowed
- * - P2 the previous scene loads after a second idle gap
- * - Background work is bounded to BACKGROUND_PRELOAD_BUDGET chunks,
- *   skips while the tab is hidden, and respects save-data / 2g.
- * - P4 media never preloads here — heavy media stays user-triggered.
+ * Orchestration model (RESOURCE → PRIORITY → STATE → OWNER → LIFETIME):
+ * - P0  the active scene: loaded by SceneRegistry the moment the user
+ *       asks for it. Always immediate; never queued.
+ * - P1  predicted primary destination: enqueued at NEAR_TERM priority
+ *       through the unified background scheduler.
+ * - P2  secondary prediction: enqueued at PREDICTIVE priority, so it
+ *       can never compete with P1 (the scheduler is strictly ordered).
+ * - P4  heavy media never preloads here — user-triggered only.
+ *
+ * Speculation yields to intent: every scene change first cancels all
+ * queued tasks owned by this preloader, so background work that was
+ * useful for the previous scene can never delay the scene the user
+ * actually requested. Hover/focus warming in SceneNavigator bypasses
+ * the queue entirely — explicit intent loads immediately.
+ *
+ * Prediction is a small deterministic frequency heuristic over recent
+ * navigation transitions (bounded map, no machine learning): the most
+ * frequent recorded successor of the current scene wins when the
+ * history has a signal; otherwise the next scene in navigation order
+ * is predicted. Prediction hit/miss counters are exposed for
+ * verification via getScenePredictionStats().
+ *
+ * Network / memory degradation is delegated to the scheduler: save-data,
+ * 2G, and constrained devices drop PREDICTIVE+ tasks at enqueue time.
+ * The loader cache below retains cheap resolved scene CODE (intentional
+ * — module chunks are tiny relative to their re-instantiation cost),
+ * while every expensive runtime resource is owned by its scene.
  */
 
-const SCENE_ORDER:
-  readonly SceneId[] =
+const SCENE_ORDER: readonly SceneId[] =
   [
     "home",
     "about",
@@ -50,6 +69,13 @@ const SCENE_ORDER:
     "work",
     "library"
   ];
+
+const PRELOADER_OWNER =
+  "scene-preloader";
+
+const TRANSITION_HISTORY_LIMIT = 36;
+
+const MIN_CONFIDENT_TRANSITIONS = 2;
 
 type SceneModule = {
   default: ComponentType;
@@ -90,113 +116,130 @@ const preloaders: Record<
     )
 };
 
+/*
+ * Resolved scene chunk cache. Cheap, reusable, intentional: dynamic
+ * import() results are module references, not runtime state. Evicting
+ * them would save trivial memory and force re-downloads.
+ */
 const preloadCache =
   new Map<
     SceneId,
     Promise<SceneModule>
   >();
 
-type ConnectionState = {
-  saveData?: boolean;
-  effectiveType?: string;
+/* -------------------------------------------------------------------------- */
+/* Prediction history                                                         */
+/* -------------------------------------------------------------------------- */
+
+const transitionCounts =
+  new Map<
+    SceneId,
+    Map<SceneId, number>
+  >();
+
+const predictionStats = {
+  hits: 0,
+  misses: 0,
+  recorded: 0
 };
 
-function getConnectionState():
-  ConnectionState | null {
-  if (
-    typeof navigator ===
-    "undefined"
-  ) {
+/*
+ * The prediction made for the most recent scene, used to score the
+ * next navigation as a hit or a miss. Bounded to a single entry.
+ */
+let lastPredictedPrimary: SceneId | null = null;
+
+function recordSceneTransition(
+  from: SceneId,
+  to: SceneId
+) {
+  if (from === to) {
+    return;
+  }
+
+  predictionStats.recorded += 1;
+
+  let successors =
+    transitionCounts.get(from);
+
+  if (!successors) {
+    successors = new Map();
+
+    transitionCounts.set(
+      from,
+      successors
+    );
+  }
+
+  successors.set(
+    to,
+    (successors.get(to) ?? 0) + 1
+  );
+
+  /*
+   * Bounded history: when the map outgrows its budget, halve the
+   * weakest signals instead of growing without limit.
+   */
+  if (transitionCounts.size > TRANSITION_HISTORY_LIMIT) {
+    for (const [scene, map] of transitionCounts) {
+      if (transitionCounts.size <= TRANSITION_HISTORY_LIMIT / 2) {
+        break;
+      }
+
+      const weakest = [...map.values()].reduce(
+        (sum, count) => sum + count,
+        0
+      );
+
+      if (weakest <= MIN_CONFIDENT_TRANSITIONS) {
+        transitionCounts.delete(scene);
+      }
+    }
+  }
+}
+
+function getFrequentSuccessor(
+  scene: SceneId
+): SceneId | null {
+  const successors =
+    transitionCounts.get(scene);
+
+  if (!successors) {
     return null;
   }
 
-  const navigatorWithConnection =
-    navigator as Navigator & {
-      connection?: ConnectionState;
-    };
+  let bestScene: SceneId | null =
+    null;
 
-  return (
-    navigatorWithConnection.connection ??
-    null
-  );
-}
+  let bestCount =
+    MIN_CONFIDENT_TRANSITIONS;
 
-function shouldPreloadInBackground() {
-  const connection =
-    getConnectionState();
-
-  if (!connection) {
-    return true;
+  for (const [
+    successor,
+    count
+  ] of successors) {
+    if (
+      count > bestCount ||
+      (count === bestCount &&
+        bestScene !== null &&
+        SCENE_ORDER.indexOf(successor) <
+          SCENE_ORDER.indexOf(bestScene))
+    ) {
+      bestScene = successor;
+      bestCount = count;
+    }
   }
 
-  if (
-    connection.saveData
-  ) {
-    return false;
-  }
-
-  if (
-    connection.effectiveType ===
-      "slow-2g" ||
-    connection.effectiveType ===
-      "2g"
-  ) {
-    return false;
-  }
-
-  return true;
+  return bestScene;
 }
 
-function isPageVisible() {
-  return (
-    typeof document ===
-      "undefined" ||
-    document.visibilityState ===
-      "visible"
-  );
+export function getScenePredictionStats() {
+  return { ...predictionStats };
 }
 
-function getAdjacentScenes(
-  scene: SceneId
-): readonly SceneId[] {
-  const index =
-    SCENE_ORDER.indexOf(
-      scene
-    );
-
-  if (
-    index < 0
-  ) {
-    return [
-      "home",
-      "about"
-    ];
-  }
-
-  const previous =
-    SCENE_ORDER[
-      (
-        index -
-        1 +
-        SCENE_ORDER.length
-      ) %
-        SCENE_ORDER.length
-    ];
-
-  const next =
-    SCENE_ORDER[
-      (
-        index +
-        1
-      ) %
-        SCENE_ORDER.length
-    ];
-
-  return [
-    next,
-    previous
-  ];
-}
+/* -------------------------------------------------------------------------- */
+/* Scene chunk loading (single import site)                                   */
+/* -------------------------------------------------------------------------- */
 
 /*
  * The single entry point for scene chunk loading. Concurrent callers
@@ -260,105 +303,76 @@ export function loadSceneModule(
   );
 }
 
-/*
- * Scene preloading deliberately uses a longer idle timeout than
- * other background work because these chunks are low priority.
- */
-function waitForIdle(): Promise<void> {
-  return new Promise(
-    (
-      resolve
-    ) => {
-      scheduleIdle(
-        resolve,
-        BACKGROUND_IDLE_TIMEOUT_MS
-      );
-    }
-  );
-}
+/* -------------------------------------------------------------------------- */
+/* Prediction                                                                 */
+/* -------------------------------------------------------------------------- */
 
-export async function preloadAdjacentScenes(
-  scene: SceneId,
-  isCancelled: () => boolean = () => false
-): Promise<void> {
-  if (
-    isCancelled()
-  ) {
-    return;
-  }
-
-  if (
-    !shouldPreloadInBackground()
-  ) {
-    return;
-  }
-
-  if (
-    !isPageVisible()
-  ) {
-    return;
-  }
-
-  const [
-    nextScene,
-    previousScene
-  ] =
-    getAdjacentScenes(
+function getAdjacentScenes(
+  scene: SceneId
+): readonly SceneId[] {
+  const index =
+    SCENE_ORDER.indexOf(
       scene
     );
 
-  let loaded = 0;
-
-  /*
-   * P1 — the next scene is the highest-value prediction, so load it
-   * immediately once background preloading is allowed.
-   */
-  await preloadScene(
-    nextScene
-  );
-
-  loaded += 1;
-
   if (
-    isCancelled() ||
-    loaded >=
-      BACKGROUND_PRELOAD_BUDGET
+    index < 0
   ) {
-    return;
+    return [
+      "home",
+      "about"
+    ];
   }
 
-  /*
-   * Give the browser another idle opportunity before loading the
-   * lower-priority previous scene.
-   */
-  await waitForIdle();
+  const previous =
+    SCENE_ORDER[
+      (
+        index -
+        1 +
+        SCENE_ORDER.length
+      ) %
+        SCENE_ORDER.length
+    ];
 
-  if (
-    isCancelled()
-  ) {
-    return;
+  const next =
+    SCENE_ORDER[
+      (
+        index +
+        1
+      ) %
+        SCENE_ORDER.length
+    ];
+
+  return [
+    next,
+    previous
+  ];
+}
+
+/*
+ * Decide the two scenes worth warming for `scene`:
+ * primary — the adaptive prediction (history-weighted, falling back to
+ *           the next scene in navigation order);
+ * secondary — the previous scene in navigation order, unless it is the
+ *           same as the primary.
+ */
+function getPredictionPair(
+  scene: SceneId
+): readonly [
+  SceneId,
+  SceneId | null
+] {
+  const [next, previous] =
+    getAdjacentScenes(scene);
+
+  const predicted =
+    getFrequentSuccessor(scene) ?? next;
+
+  if (predicted === previous) {
+    return [predicted, null];
   }
 
-  if (
-    nextScene ===
-    previousScene
-  ) {
-    return;
-  }
-
-  if (
-    !shouldPreloadInBackground() ||
-    !isPageVisible()
-  ) {
-    return;
-  }
-
-  /*
-   * P2 — the previous scene in navigation order.
-   */
-  await preloadScene(
-    previousScene
-  );
+  return [predicted, previous];
 }
 
 type ScenePreloaderProps = {
@@ -368,60 +382,78 @@ type ScenePreloaderProps = {
 export default function ScenePreloader({
   scene
 }: ScenePreloaderProps) {
-  useEffect(() => {
-    let cancelled =
-      false;
-
-    const beginPreload =
-      () => {
-        if (
-          cancelled ||
-          !shouldPreloadInBackground() ||
-          !isPageVisible()
-        ) {
-          return;
-        }
-
-        void preloadAdjacentScenes(
-          scene,
-          () => cancelled
-        );
-      };
-
-    /*
-     * Hidden tabs do no background work. When the page becomes
-     * visible the preload decision is re-evaluated.
-     */
-    const handleVisibility =
-      () => {
-        if (
-          isPageVisible()
-        ) {
-          beginPreload();
-        }
-      };
-
-    const cancelIdle =
-      scheduleIdle(
-        beginPreload,
-        BACKGROUND_IDLE_TIMEOUT_MS
-      );
-
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibility,
-      { passive: true }
+  const previousSceneRef =
+    useRef<SceneId | null>(
+      null
     );
 
+  useEffect(() => {
+    /*
+     * USER INTENT WINS: the previous scene's speculative queue is
+     * cancelled before anything new is considered. The requested
+     * scene itself is loaded by SceneRegistry at P0, immediately.
+     */
+    cancelBackgroundTasksByOwner(
+      PRELOADER_OWNER
+    );
+
+    /*
+     * Score the previous prediction against the scene the user
+     * actually navigated to, then record the observed transition so
+     * future predictions adapt to real navigation patterns.
+     */
+    const previousScene =
+      previousSceneRef.current;
+
+    if (previousScene && previousScene !== scene) {
+      if (
+        lastPredictedPrimary ===
+        scene
+      ) {
+        predictionStats.hits += 1;
+      } else {
+        predictionStats.misses += 1;
+      }
+
+      recordSceneTransition(
+        previousScene,
+        scene
+      );
+    }
+
+    previousSceneRef.current = scene;
+
+    const [
+      primary,
+      secondary
+    ] =
+      getPredictionPair(scene);
+
+    lastPredictedPrimary = primary;
+
+    enqueueBackgroundTask({
+      id: `scene-chunk:${primary}`,
+      priority:
+        BACKGROUND_PRIORITY.NEAR_TERM,
+      owner: PRELOADER_OWNER,
+      run: () =>
+        preloadScene(primary)
+    });
+
+    if (secondary) {
+      enqueueBackgroundTask({
+        id: `scene-chunk:${secondary}`,
+        priority:
+          BACKGROUND_PRIORITY.PREDICTIVE,
+        owner: PRELOADER_OWNER,
+        run: () =>
+          preloadScene(secondary)
+      });
+    }
+
     return () => {
-      cancelled =
-        true;
-
-      cancelIdle();
-
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibility
+      cancelBackgroundTasksByOwner(
+        PRELOADER_OWNER
       );
     };
   }, [

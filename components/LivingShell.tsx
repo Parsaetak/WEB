@@ -25,6 +25,10 @@ import SceneUrlSync from "@/components/SceneUrlSync";
 import SiteFooter from "@/components/SiteFooter";
 import WorldBackground from "@/components/WorldBackground";
 import RedCursor from "@/components/RedCursor";
+import {
+  pulseWorld,
+  setWorldScene
+} from "@/lib/worldSignals";
 import { GITHUB_LINK } from "@/lib/links";
 
 export type SceneId =
@@ -173,6 +177,32 @@ export default function LivingShell({
       true
     );
   }, []);
+
+  /*
+   * Connect the global organism to the active scene. The first run
+   * establishes the initial mood; every later scene change fires a
+   * coordinated organism pulse. These are module-level signals — no
+   * React re-render is caused beyond the scene switch itself.
+   */
+  const organismInitializedRef =
+    useRef(false);
+
+  useEffect(() => {
+    setWorldScene(
+      activeScene
+    );
+
+    if (
+      !organismInitializedRef.current
+    ) {
+      organismInitializedRef.current =
+        true;
+
+      return;
+    }
+
+    pulseWorld();
+  }, [activeScene]);
 
   const changeScene = useCallback(
     (

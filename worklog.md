@@ -52,7 +52,7 @@ Top-level routed areas:
 /blog/ — blog index (static route)
 /blog/<slug>/ — article pages (static routes)
 
-Current version: 2.0.0
+Current version: 2.1.0
 
 ---
 
@@ -313,7 +313,6 @@ static DOM structure
 Avoid:
 
 per-frame React state
-requestAnimationFrame for decorative background motion
 layout-triggering properties
 continuous getBoundingClientRect calls
 per-frame style recalculation
@@ -323,6 +322,53 @@ unbounded DOM particle counts
 Do not introduce a second canvas solely for the global background.
 
 The dedicated RedMagic.tsx engine already owns the interactive simulation.
+
+10-b. Living Organism Law (v2.1)
+
+WorldBackground is ONE continuous living system, not a collection of
+independent decorations. It is mounted exactly once per route tree
+(shell and blog layout) and never remounted for scene changes.
+
+Looped timescales are layered and must remain non-synchronized
+(particles/sparks micro loops, wisps short loops, rings medium loops,
+aura/masses long loops, core/nucleus heartbeat, event pulse/ripples).
+Every element keeps its own duration and phase offset.
+
+Shared organism state is expressed through:
+
+- root attributes: data-scene (mood), data-quality, data-hidden,
+  data-reduced, data-pulse
+- shared CSS variables: --organism-energy, --organism-pointer-x/y
+
+The single controller (WorldBackground.tsx + lib/worldSignals.ts):
+
+- writes ONLY custom properties and attributes on its own subtree;
+  consumers are transform/opacity-only (compositor-friendly)
+- allocates nothing per frame; all mutable state lives once per mount
+- runs ONE rAF loop that SELF-SUSPENDS when the organism settles
+  (zero JavaScript cost while calm)
+- listens passively; pointer movement is coalesced through the loop,
+  never processed expensively per event
+
+Scene connection happens through data-scene mood selectors — static
+attribute CSS, no React state, no per-frame cost.
+
+Lifecycle law:
+
+- hidden tab → data-hidden pauses ALL organism animation and stops
+  the controller loop
+- prefers-reduced-motion → calmer organism, not dead organism: the
+  slowest breathing layers survive at reduced amplitude; particles,
+  sparks, ring rotation, wisp flow, interaction layers stop
+- quality tiers (data-quality: low/medium/high) trim peripheral
+  layers on coarse-pointer, small, or memory-constrained devices;
+  the visual identity must survive every tier
+
+Do not feed pointer movement or organism state through React state,
+context, or any state-management library; use worldSignals.
+
+Do not add a second organism runtime, a second canvas, or per-scene
+background mounts.
 
 VII. INTERACTIVE RED MAGIC
 11. Dedicated Engine
@@ -728,11 +774,22 @@ An empty content directory is an explicit empty state, not a failure.
 
 39. Blog Data Access
 
-The single access layer is lib/blog.ts.
+The single access layer is lib/blog.ts (SERVER SIDE — it imports the
+generated data/blog/posts.json).
 
-UI components never parse markdown at runtime.
-Article HTML is produced at build time only.
-List views receive metadata only — no article HTML bodies.
+Client components import from lib/blogFormat.ts exclusively: shared
+types plus pure date formatters, zero generated data. A single value
+import of lib/blog.ts from a client component would pull every
+article body into that page's client bundle — this is a forbidden
+regression.
+
+Article metadata reaches client islands as serialized props from
+server components; article HTML is rendered into static HTML at build
+time.
+
+Search metadata (post.search) is precomputed at build time by
+scripts/build-blog.mjs; the client island never re-derives haystacks
+per keystroke.
 
 40. Blog SEO
 
@@ -763,17 +820,58 @@ race protection (abort-aware entry dropping)
 stale protection (staleAfter re-fetch)
 explicit invalidation
 
+Explicit memory policy (v2.1):
+
+- Every entry declares a lifetime class: immutable (default),
+  short-lived, or transient. short-lived/transient REQUIRE staleAfter.
+- Settled values are bounded by RESOURCE_STORE_MAX_ENTRIES; eviction
+  is least-recently-USED, never in-flight.
+- Expired short-lived/transient entries are swept lazily on load and
+  via sweepResourceStore().
+- releaseSettledResources() sheds all retained values for graceful
+  degradation under memory pressure; in-flight results still resolve.
+- getResourceStoreStats() exposes bounded counters (hits, misses,
+  evictions, expiries, depths) for verification — never a public UI
+  feature, never networked.
+
 Components must not invent their own fetch/dedup layers.
+
+Static build content that needs no async loading (the Library
+manifest) is derived once at module scope instead of passing through
+the store; the store exists for genuinely asynchronous or
+expirable resources.
 
 43. Cache Policy
 
 IMMUTABLE (default): build-stamped content, content-addressed assets
-SHORT-LIVED (staleAfter): remote manifests that may change
+SHORT-LIVED (staleAfter): remote/derived metadata that may change
+  (for example Library media probes, TTL ten minutes)
+TRANSIENT (staleAfter): prediction/preload scratch data
 SESSION: lightweight navigation state (not the store)
 PERSISTENT: reading position and preferences (localStorage)
+HEAVY MEDIA: never retained after its viewer is destroyed; only
+  metadata about it may be cached, under a TTL
 
 Do not cache data forever when it is expected to change.
 Do not disable normal browser caching without reason.
+
+43-b. Background Work Scheduler
+
+lib/backgroundScheduler.ts is the ONE background work queue. Do not
+spawn competing idle loops, chained setTimeout queues, or ad-hoc
+"schedule when idle" helpers for background work.
+
+- Tasks carry id (deduplicated), priority (USER_NAVIGATION,
+  NEAR_TERM, PREDICTIVE, BACKGROUND), and owner.
+- The single pump executes at most one task per idle gap, then yields.
+- cancelBackgroundTasksByOwner(owner) must be called when the state
+  that made speculation useful changes (scene switches, unmount).
+- Hidden tab suspends the pump; visibility resumes it.
+- save-data / 2G / deviceMemory ≤ 2 drop PREDICTIVE-and-lower tasks
+  at enqueue time. Core and user-triggered work is never dropped.
+- Scene chunk imports remain owned by ScenePreloader (single import
+  site law). Resolved scene modules are cached intentionally: they
+  are cheap code, not runtime state.
 
 XIV-D. LOADING ARCHITECTURE CONSTITUTION
 
@@ -821,6 +919,13 @@ duplicate cursor runtime
 duplicate dedicated RedMagic canvas
 reintroduced cursor glow/shadow filters
 per-frame radial-gradient allocation in RedMagic
+per-frame allocation anywhere in a steady-state render loop
+client components importing lib/blog.ts (article bodies in the bundle)
+a second background work queue outside lib/backgroundScheduler.ts
+a second WorldBackground runtime or per-scene background mounts
+organism state propagated through React state/context
+background animation left running in hidden tabs
+reduced-motion reduced to a dead background
 manual duplicate library manifest
 production manifest sourced from Contents/main
 automatic heavy media loading
@@ -862,6 +967,37 @@ and verify that it matches the commit being evaluated.
 Never use a successful older run to declare a newer commit healthy.
 
 XVII. CURRENT BASELINE
+
+Version 2.1.0 — memory lifecycle, pipeline throughput, loading
+orchestration, and the living organism upgrade:
+
+- Resource store memory policy: lifetime classes (immutable /
+  short-lived / transient), TTL expiry, LRU bounding, eviction,
+  releaseSettledResources(), bounded telemetry counters
+  (lib/resourceStore.ts)
+- Library manifest normalization moved to module scope (one pass,
+  no promise machinery)
+- Blog client boundary: lib/blogFormat.ts (client-safe) vs
+  lib/blog.ts (server-only). Article bodies no longer ship in ANY
+  client chunk. Search haystacks precomputed at build time.
+  Measured: blog index JS 185.5 → 179.7 KB gzip; static export
+  2059.8 → 1895.9 KB (article data no longer duplicated into six
+  page bundles)
+- Unified background scheduler (lib/backgroundScheduler.ts):
+  single idle pump, priority/dedup/owner-cancellation, hidden-tab
+  suspension, save-data/2G/memory-aware speculative gating
+- Scene prediction: deterministic frequency heuristic over bounded
+  transition history, hit/miss counters, speculation yields to user
+  intent (ScenePreloader v3)
+- RedMagic: nucleus radial gradient cached once per mount (per-frame
+  createRadialGradient eliminated); canvas backing store released on
+  unmount; MagicInteractionLayer leave-timer cleaned up
+- Living organism: worldSignals module store; self-suspending
+  controller writing CSS variables/attributes only; layered looped
+  timescales; scene moods via data-scene; click ripples (pooled);
+  transition pulse; hidden-tab suspension; reduced-motion calm-not-
+  dead tiers; data-quality perceptual scaling
+- SceneUrlSync listeners registered once per mount (ref-stable)
 
 Version 2.0.0 — performance architecture, data pipeline, and blog upgrade:
 

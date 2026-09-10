@@ -2076,6 +2076,46 @@ export default function RedMagic({
       CanvasGradient | null =
       null;
 
+    /*
+     * NUCLEUS GRADIENT — allocated ONCE per engine mount, never per
+     * frame. CanvasGradient objects are reusable across frames; the
+     * per-frame size variation is applied through the canvas transform
+     * (gradient coordinates are resolved in user space at fill time),
+     * so the rendered result is identical to the previous per-frame
+     * createRadialGradient call while allocating zero garbage. This
+     * closes the last known per-frame allocation in the core draw
+     * path (a forbidden regression under the performance law).
+     */
+    const nucleusGradient =
+      context.createRadialGradient(
+        -0.18,
+        -0.2,
+        0.05,
+        0,
+        0,
+        1
+      );
+
+    nucleusGradient.addColorStop(
+      0,
+      "rgba(255, 214, 108, 0.98)"
+    );
+
+    nucleusGradient.addColorStop(
+      0.28,
+      "rgba(255, 153, 52, 0.96)"
+    );
+
+    nucleusGradient.addColorStop(
+      0.62,
+      "rgba(255, 74, 24, 0.94)"
+    );
+
+    nucleusGradient.addColorStop(
+      1,
+      "rgba(185, 16, 10, 0.72)"
+    );
+
     let profile =
       MODE_PROFILES[
         modeRef.current
@@ -5742,39 +5782,25 @@ export default function RedMagic({
               0.05
         );
 
-        const nucleusGradient =
-          context.createRadialGradient(
-            centerX -
-              nucleusRadius *
-                0.18,
-            centerY -
-              nucleusRadius *
-                0.2,
-            nucleusRadius *
-              0.05,
-            centerX,
-            centerY,
-            nucleusRadius
-          );
+        /*
+         * Fill the nucleus through the cached gradient. The transform
+         * maps one unit of user space onto nucleusRadius device
+         * pixels, reproducing the original per-frame gradient geometry
+         * exactly:
+         *   gradient inner center  (−0.18r, −0.2r), inner radius 0.05r
+         *   gradient outer center  (0, 0),        outer radius r
+         *   fill arc center        (−0.08r, −0.1r), radius (0.9+me·0.3)r
+         */
+        context.save();
 
-        nucleusGradient.addColorStop(
-          0,
-          "rgba(255, 214, 108, 0.98)"
+        context.translate(
+          centerX,
+          centerY
         );
 
-        nucleusGradient.addColorStop(
-          0.28,
-          "rgba(255, 153, 52, 0.96)"
-        );
-
-        nucleusGradient.addColorStop(
-          0.62,
-          "rgba(255, 74, 24, 0.94)"
-        );
-
-        nucleusGradient.addColorStop(
-          1,
-          "rgba(185, 16, 10, 0.72)"
+        context.scale(
+          nucleusRadius,
+          nucleusRadius
         );
 
         context.fillStyle =
@@ -5792,23 +5818,18 @@ export default function RedMagic({
         context.beginPath();
 
         context.arc(
-          centerX -
-            nucleusRadius *
-              0.08,
-          centerY -
-            nucleusRadius *
-              0.1,
-          nucleusRadius *
-            (
-              0.9 +
-              movementEnergy *
-                0.3
-            ),
+          -0.08,
+          -0.1,
+          0.9 +
+            movementEnergy *
+              0.3,
           0,
           TAU
         );
 
         context.fill();
+
+        context.restore();
 
         context.globalAlpha =
           1;
@@ -6453,6 +6474,24 @@ export default function RedMagic({
       resizeObserver?.disconnect();
 
       intersectionObserver?.disconnect();
+
+      /*
+       * Memory lifecycle: release the canvas backing store
+       * deterministically instead of waiting for GC. Resizing to zero
+       * drops the bitmap allocation for this context immediately; the
+       * sprites and typed arrays are reachable only from this closure
+       * and are collected with it.
+       */
+      context.clearRect(
+        0,
+        0,
+        width,
+        height
+      );
+
+      canvas.width = 0;
+
+      canvas.height = 0;
     };
   }, []);
 

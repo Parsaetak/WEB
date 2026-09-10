@@ -4,6 +4,9 @@ Live site: https://parsaetak.github.io/WEB/
 
 Repository: https://github.com/Parsaetak/WEB
 
+Version: 2.1.0 — memory lifecycle, data pipeline throughput, loading
+orchestration, and the living organism upgrade.
+
 ## Stack
 
 - Next.js 16 (App Router, `output: "export"`, static only)
@@ -52,16 +55,90 @@ content/blog/*.md  (source of truth)
     → RENDER markdown → HTML (escaped, subset)
     → NORMALIZE (reading time, covers, basePath-aware URLs)
     → INDEX (tags, categories, related, prev/next)
+    → PRECOMPUTE (per-post search haystack for the client island)
     → EMIT data/blog/posts.json + public/blog/feed.xml
-  lib/blog.ts (typed access layer, runtime validation, memoized indexes)
-    → app/blog/* pages
+  lib/blog.ts (server-side typed access layer — imports posts.json)
+    → app/blog/* pages (metadata as serialized props, article HTML
+      rendered into static HTML at build time)
+  lib/blogFormat.ts (client-safe: types + formatters, imports nothing)
+    → components/blog/BlogIndex.tsx
 ```
 
-The Library follows the same shape: the manifest is synced from
-[Parsaetak/Contents](https://github.com/Parsaetak/Contents) (branch
-`Projects`) during CI, validated in the workflow, normalized once at
-runtime through `lib/contentRepository.ts`, and deduplicated through
-`lib/resourceStore.ts` (in-flight promise sharing, failure cleanup).
+**Client boundary law:** `data/blog/posts.json` is server-side only.
+Client blog components import from `lib/blogFormat.ts` exclusively, so
+no article body ever ships in a client bundle. The island filters
+against the build-time `search` haystack instead of re-deriving it per
+keystroke.
+
+The Library follows the same build-once shape: the manifest is synced
+from [Parsaetak/Contents](https://github.com/Parsaetak/Contents)
+(branch `Projects`) during CI, validated in the workflow, and
+normalized exactly once at module scope in `lib/contentRepository.ts`.
+
+### Resource store and memory policy
+
+`lib/resourceStore.ts` is the single async resource manager with an
+explicit lifetime policy:
+
+- `immutable` (default) — build-stamped data; retained until LRU eviction
+- `short-lived` — refreshable metadata; requires `staleAfter` TTL
+- `transient` — prediction/preload scratch; requires `staleAfter`
+
+Guarantees: in-flight deduplication, failure cleanup with safe retry,
+abort-aware entry dropping, TTL expiry sweeps, LRU bounding
+(`RESOURCE_STORE_MAX_ENTRIES`), explicit invalidation, and
+`releaseSettledResources()` for memory-pressure degradation.
+Observability via `getResourceStoreStats()` (hits / misses / evictions
+/ expiries, bounded counters only).
+
+### Background scheduler
+
+`lib/backgroundScheduler.ts` is the ONE coherent queue for all
+non-urgent work (scene preload prediction lives there today):
+
+- tasks carry `id` (dedup), `priority` (USER_NAVIGATION / NEAR_TERM /
+  PREDICTIVE / BACKGROUND), and `owner` (wholesale cancellation)
+- one idle pump executes at most one task per idle gap, then yields
+- hidden tab → pump suspended; visible → resumed automatically
+- save-data / 2G / constrained device memory drop speculative tasks
+  at enqueue time — core work is never degraded
+- user intent always wins: scene changes cancel the previous owner's
+  speculative queue before anything new is considered
+
+Scene prediction (`components/ScenePreloader.tsx`) is a small
+deterministic frequency heuristic over recent transitions with
+hit/miss counters (`getScenePredictionStats()`). Scene chunks are
+code-split exactly once and cached intentionally (cheap code, not
+runtime state).
+
+### Living organism (WorldBackground)
+
+The global background is ONE continuous living system with layered
+looped timescales — all compositor-friendly CSS animation:
+
+- MICRO — particles / sparks (6–17 s, per-element phase offsets)
+- SHORT — energy wisps (31–61 s, alternating directions)
+- MEDIUM — orbital rings (34–82 s, mixed directions)
+- LONG — atmospheric masses + aura (28–57 s)
+- HEART — core + nucleus breathing (8.5–19 s)
+- EVENT — transition pulse + click ripples (controller-triggered)
+
+Coherence and state flow through one attribute set on the root
+(`data-scene` mood, `data-quality` tier, `data-hidden`, `data-reduced`)
+plus three shared CSS variables (`--organism-energy`,
+`--organism-pointer-x/y`) written by a single self-suspending rAF
+controller in `lib/worldSignals.ts` + `WorldBackground.tsx`. The
+controller writes CSS custom properties only (transform/opacity
+consumers), allocates nothing per frame, and stops entirely when the
+organism settles — a calm organism costs zero JavaScript per frame.
+
+Scene moods (home balanced / about calmer / systems structured / magic
+high energy / work focused / library + blog archival) are static
+attribute selectors — no remount, no per-frame cost. Hidden tabs pause
+the whole organism; `prefers-reduced-motion` keeps the slowest
+breathing layers at reduced amplitude and disables interaction layers
+(calm, not dead). Quality tiers (low / medium / high) trim peripheral
+layers on constrained devices while preserving identity.
 
 ### Loading priorities
 

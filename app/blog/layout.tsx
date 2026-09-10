@@ -63,7 +63,12 @@ export default function BlogLayout({
 }>) {
   return (
     <div className={styles.blogShell}>
-      <WorldBackground />
+      {/*
+        * The organism persists across the blog route tree with a
+        * quiet archival mood — same single global background
+        * runtime, no remount between blog pages.
+        */}
+      <WorldBackground mood="archive" />
 
       <RedCursor />
 

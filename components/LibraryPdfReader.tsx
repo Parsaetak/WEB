@@ -295,6 +295,12 @@ export default function LibraryPdfReader({
      * the same source) reuses one in-flight inspection instead of
      * firing duplicate HEAD + range requests. The underlying fetch
      * still honors the per-mount AbortSignal for unmount cleanup.
+     *
+     * Memory policy: probe metadata is SHORT-LIVED. A TTL of ten
+     * minutes means a reopened document re-verifies size/range
+     * support against the CDN instead of trusting a possibly stale
+     * result, and the tiny record cannot accumulate across a long
+     * browsing session.
      */
     void loadResource(
       `pdf-resource-probe:${src}`,
@@ -302,7 +308,11 @@ export default function LibraryPdfReader({
         inspectPdfResource(
           src,
           controller.signal
-        )
+        ),
+      {
+        lifetime: "short-lived",
+        staleAfter: 10 * 60 * 1000
+      }
     )
       .then(
         (

@@ -1425,9 +1425,437 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .redMagicCloud *,
-  .redMagicCloud {
+  /*
+   * Reduced motion = calmer organism, not dead organism.
+   *
+   * High-frequency loops (particles, sparks, ring rotation, wisp flow)
+   * freeze into still atmospheric structure; the slowest breathing
+   * layers survive at greatly extended durations and reduced
+   * amplitude. Interaction layers (pointer field, ripples, pulse) are
+   * disabled by the controller as well.
+   */
+
+  .redMagicCloudParticle,
+  .redMagicCloudSpark,
+  .redMagicCloudRing,
+  .redMagicCloudWisp {
+    animation: none !important;
+  }
+
+  .redMagicCloudAura {
     animation:
-      none !important;
+      red-magic-cloud-reduced-breathe
+      58s
+      ease-in-out
+      infinite
+      alternate;
+  }
+
+  .redMagicCloudCore {
+    animation:
+      red-magic-cloud-reduced-core
+      38s
+      ease-in-out
+      infinite;
+  }
+
+  .redMagicCloudNucleus {
+    animation:
+      red-magic-cloud-reduced-nucleus
+      29s
+      ease-in-out
+      infinite;
+  }
+
+  .organismPointerField,
+  .organismRipples,
+  .organismPulse {
+    display: none;
+  }
+}
+
+/*
+ * ------------------------------------------------------------------
+ * LIVING ORGANISM — shared state, interaction, and event layers
+ * (v2.1). The controller writes ONLY these custom properties and the
+ * data attributes consumed below; every animation on this page
+ * remains transform/opacity-only and compositor-friendly.
+ * ------------------------------------------------------------------
+ */
+
+/* Group wrappers: mood and quality modulation targets. They are
+ * never animated themselves, so their opacity/transform can be
+ * modulated without fighting child keyframes. */
+
+.organismAtmosphere {
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+
+  transition: opacity 1.6s ease;
+}
+
+.organismHeart {
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+
+  transition: opacity 1.6s ease;
+}
+
+/* Pointer field: the nearby-field distortion. Follows the smoothed
+ * pointer through transform (compositor-only), scaled and brightened
+ * by the shared energy level. Hidden off-screen until first move. */
+
+.organismPointerField {
+  position: absolute;
+
+  left: 0;
+  top: 0;
+
+  width: 52vw;
+  height: 52vw;
+
+  margin:
+    -26vw
+    0
+    0
+    -26vw;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 62, 42, 0.075) 0%,
+      rgba(255, 30, 20, 0.04) 36%,
+      transparent 68%
+    );
+
+  transform:
+    translate3d(
+      var(--organism-pointer-x, -120vw),
+      var(--organism-pointer-y, -120vh),
+      0
+    )
+    scale(
+      calc(
+        1 +
+        var(--organism-energy, 0) * 0.4
+      )
+    );
+
+  opacity: calc(
+    0.3 +
+    var(--organism-energy, 0) * 0.7
+  );
+
+  will-change:
+    transform,
+    opacity;
+
+  pointer-events: none;
+}
+
+/* Click ripples: six pooled elements, restarted by class toggle. */
+
+.organismRipples {
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+}
+
+.organismRipple {
+  position: absolute;
+
+  left: 0;
+  top: 0;
+
+  width: var(--ripple-size, 90px);
+  height: var(--ripple-size, 90px);
+
+  margin:
+    calc(var(--ripple-size, 90px) / -2)
+    0
+    0
+    calc(var(--ripple-size, 90px) / -2);
+
+  border-radius: 50%;
+
+  border:
+    1px solid
+    rgba(255, 82, 58, 0.42);
+
+  box-shadow:
+    inset 0 0 18px rgba(255, 40, 24, 0.14);
+
+  opacity: 0;
+
+  transform:
+    translate3d(
+      var(--ripple-x, -120vw),
+      var(--ripple-y, -120vh),
+      0
+    )
+    scale(0.35);
+
+  pointer-events: none;
+}
+
+.organismRipple.isRippling {
+  animation:
+    organism-ripple
+    680ms
+    ease-out;
+}
+
+/* Scene-transition pulse: one coordinated flash for the whole
+ * organism, played on the [data-pulse] attribute. */
+
+.organismPulse {
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 50% 47%,
+      rgba(255, 88, 60, 0.14) 0%,
+      rgba(255, 32, 18, 0.06) 30%,
+      transparent 62%
+    );
+
+  opacity: 0;
+
+  transform:
+    scale(0.965);
+
+  pointer-events: none;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.worldBackground[data-pulse="true"] .organismPulse {
+  animation:
+    organism-pulse
+    1.05s
+    ease-out;
+}
+
+/*
+ * SCENE MOODS — the organism understands the current scene through
+ * one attribute. Static attribute selectors: zero runtime cost.
+ */
+
+.worldBackground[data-scene="about"] .organismAtmosphere {
+  opacity: 0.82;
+}
+
+.worldBackground[data-scene="about"] .organismHeart {
+  opacity: 0.88;
+}
+
+.worldBackground[data-scene="systems"] .redMagicCloudWisps {
+  opacity: 0.8;
+}
+
+.worldBackground[data-scene="systems"] .redMagicCloudParticles {
+  opacity: 0.85;
+}
+
+.worldBackground[data-scene="magic"] .organismAtmosphere {
+  opacity: 1;
+
+  transform:
+    scale(1.045);
+}
+
+.worldBackground[data-scene="magic"] .organismHeart {
+  opacity: 1;
+}
+
+.worldBackground[data-scene="magic"] .organismPulse {
+  background:
+    radial-gradient(
+      circle at 50% 47%,
+      rgba(255, 96, 64, 0.18) 0%,
+      rgba(255, 34, 18, 0.08) 30%,
+      transparent 62%
+    );
+}
+
+.worldBackground[data-scene="work"] .organismAtmosphere {
+  opacity: 0.9;
+}
+
+.worldBackground[data-scene="work"] .redMagicCloudSparks {
+  opacity: 0.75;
+}
+
+.worldBackground[data-scene="library"] .organismAtmosphere,
+.worldBackground[data-scene="archive"] .organismAtmosphere {
+  opacity: 0.72;
+}
+
+.worldBackground[data-scene="library"] .organismHeart,
+.worldBackground[data-scene="archive"] .organismHeart {
+  opacity: 0.7;
+}
+
+.worldBackground[data-scene="library"] .redMagicCloudParticles,
+.worldBackground[data-scene="archive"] .redMagicCloudParticles {
+  opacity: 0.6;
+}
+
+.worldBackground[data-scene="library"] .redMagicCloudSparks,
+.worldBackground[data-scene="archive"] .redMagicCloudSparks {
+  opacity: 0.55;
+}
+
+/*
+ * QUALITY TIERS — perceptual scaling that preserves identity.
+ * LOW trims peripheral layers; MEDIUM is the full baseline; HIGH
+ * keeps everything and lets the interaction field breathe wider.
+ */
+
+.worldBackground[data-quality="low"] .redMagicCloudRing4,
+.worldBackground[data-quality="low"] .redMagicCloudRing5,
+.worldBackground[data-quality="low"] .redMagicCloudWisp5,
+.worldBackground[data-quality="low"] .redMagicCloudWisp6,
+.worldBackground[data-quality="low"] .redMagicCloudWisp7 {
+  display: none;
+}
+
+.worldBackground[data-quality="low"] .redMagicCloudParticle:nth-child(n + 13) {
+  display: none;
+}
+
+.worldBackground[data-quality="low"] .organismPointerField,
+.worldBackground[data-quality="low"] .organismRipples {
+  display: none;
+}
+
+.worldBackground[data-quality="high"] .organismPointerField {
+  opacity: calc(
+    0.42 +
+    var(--organism-energy, 0) * 0.58
+  );
+}
+
+/* Hidden tab: suspend the entire organism explicitly. */
+
+.worldBackground[data-hidden="true"] .redMagicCloud,
+.worldBackground[data-hidden="true"] .redMagicCloud *,
+.worldBackground[data-hidden="true"] .organismPulse {
+  animation-play-state: paused !important;
+}
+
+/* Reduced-motion breathing keyframes: same visual language, long
+ * durations, low amplitude. */
+
+@keyframes red-magic-cloud-reduced-breathe {
+  0% {
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(0.99);
+
+    opacity: 0.7;
+  }
+
+  100% {
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(1.01);
+
+    opacity: 0.8;
+  }
+}
+
+@keyframes red-magic-cloud-reduced-core {
+  0%, 100% {
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(0.985);
+
+    opacity: 0.66;
+  }
+
+  50% {
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(1.015);
+
+    opacity: 0.78;
+  }
+}
+
+@keyframes red-magic-cloud-reduced-nucleus {
+  0%, 100% {
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(0.96);
+
+    opacity: 0.5;
+  }
+
+  50% {
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(1.05);
+
+    opacity: 0.66;
+  }
+}
+
+@keyframes organism-ripple {
+  0% {
+    opacity: 0.5;
+
+    transform:
+      translate3d(
+        var(--ripple-x, -120vw),
+        var(--ripple-y, -120vh),
+        0
+      )
+      scale(0.35);
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate3d(
+        var(--ripple-x, -120vw),
+        var(--ripple-y, -120vh),
+        0
+      )
+      scale(1.55);
+  }
+}
+
+@keyframes organism-pulse {
+  0% {
+    opacity: 0;
+
+    transform:
+      scale(0.955);
+  }
+
+  20% {
+    opacity: 0.9;
+
+    transform:
+      scale(1.01);
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      scale(1.045);
   }
 }

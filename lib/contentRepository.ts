@@ -1,9 +1,5 @@
 import libraryManifest from "@/data/library.json";
 
-import {
-  loadResource
-} from "@/lib/resourceStore";
-
 export type ContentKind =
   | "pdf"
   | "mp3"
@@ -75,19 +71,23 @@ const MIME_EXTENSIONS: Record<
   gif: true
 };
 
-const LIBRARY_RESOURCE_KEY =
-  "library-manifest:content-items";
-
 /*
  * Data flow (see worklog.md — Data Pipeline):
  * source manifest (synced + validated at build time by deploy.yml)
  * → runtime normalization (validate each record)
- * → derived ContentItem list (cached once, shared by every consumer)
+ * → derived ContentItem list (derived ONCE at module scope)
  * → UI
  *
  * The build-time validation is the authoritative gate. The runtime
  * check below is defense in depth: one malformed optional record is
  * filtered out instead of crashing the whole catalogue.
+ *
+ * Memory policy: the manifest is immutable build content. Deriving it
+ * synchronously at module scope gives exactly one normalization pass
+ * per process with no promise machinery and no cache retention
+ * question — the derived list is the only copy that will ever exist.
+ * (Previously this went through lib/resourceStore, which kept a
+ * settled promise alive for identical retention with more overhead.)
  */
 
 function isNonEmptyString(
@@ -259,29 +259,25 @@ const LIBRARY_MANIFEST =
   libraryManifest as unknown as LibraryManifest;
 
 /*
- * Normalization + indexing happens exactly once and is shared across
- * every scene mount. loadResource guarantees that concurrent callers
- * (multiple components mounting in the same tick) join one
- * normalization pass instead of racing separate derivations.
+ * Normalization + indexing happens exactly once, at module scope.
+ * Every consumer across every scene mount reads the same derived
+ * array — concurrent callers cannot race separate derivations because
+ * there is only one.
  */
-function buildContentItems():
-  Promise<ContentItem[]> {
-  return Promise.resolve(
-    LIBRARY_MANIFEST.items
-      .filter(
-        isValidLibraryItem
-      )
-      .map(
-        createContentItem
-      )
-      .filter(
-        (
-          item
-        ): item is ContentItem =>
-          item !== null
-      )
-  );
-}
+const CONTENT_ITEMS: ContentItem[] =
+  LIBRARY_MANIFEST.items
+    .filter(
+      isValidLibraryItem
+    )
+    .map(
+      createContentItem
+    )
+    .filter(
+      (
+        item
+      ): item is ContentItem =>
+        item !== null
+    );
 
 export async function loadLibraryManifest(): Promise<
   LibraryManifest
@@ -292,10 +288,7 @@ export async function loadLibraryManifest(): Promise<
 export async function listContent(): Promise<
   ContentItem[]
 > {
-  return loadResource(
-    LIBRARY_RESOURCE_KEY,
-    buildContentItems
-  );
+  return CONTENT_ITEMS;
 }
 
 export function getContentKindLabel(
