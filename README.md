@@ -4,11 +4,11 @@ Live site: https://parsaetak.github.io/WEB/
 
 Repository: https://github.com/Parsaetak/WEB
 
-Version: 2.2.0 — the high-refresh smoothness upgrade: 120 Hz-class
-frame pacing, refresh-rate-aware adaptive quality, a site-wide
-fade/reveal motion language, an evolved living organism, and the
-2026 AI + Will + Systems blog edition (all articles dated
-September 10, 2026).
+Version: 2.3.0 — the technical SEO + AI Instructions edition:
+standards-based search-machine correctness (canonicals, sitemap,
+robots, JSON-LD entity graph, social previews) that is invisible to
+the normal user, plus the AI Instructions architecture article
+(all articles dated September 10, 2026).
 
 ## Stack
 
@@ -61,6 +61,99 @@ stagger unit):
   minimal crossfade with no travel; the organism keeps only its
   slowest breathing layers.
 
+## SEO architecture (2.3)
+
+Principle: **technical SEO improves machine understanding without
+damaging human understanding.** No keyword walls, no hidden text, no
+SEO-only sections — every signal corresponds to real content, and
+all of it is generated at build time into static HTML (no client
+SEO framework, no backend).
+
+### Canonical strategy
+
+- One canonical base for the whole site: `metadataBase =
+  https://parsaetak.github.io/WEB/` (absolute, HTTPS, stable,
+  `/WEB`-aware).
+- Every indexable route emits exactly one canonical URL: `/`,
+  `/blog/`, and each `/blog/<slug>/` — absolute, trailing-slash,
+  production host. Hash scenes are interaction states of `/`, never
+  separate documents; concepts that deserve indexing get real
+  `/blog/<slug>/` routes instead.
+- Root-relative metadata URLs resolve against `metadataBase`; only
+  article-page `<img>` srcs are basePath-prefixed (by the blog
+  pipeline, which mirrors `next.config.ts`).
+
+### Entity identity (lib/seo.tsx)
+
+One coherent entity model for the whole site, emitted once in the
+root layout as a `@graph` of `Person` + `WebSite`:
+
+- `Person` @id `…/WEB/#person` — name, URL, description, `sameAs`
+  (selected from `lib/links.ts` profile URLs only — nothing
+  invented; contact channels are deliberately excluded).
+- `WebSite` @id `…/WEB/#website` — references the Person as
+  author/publisher.
+- Route-specific objects interlock through these @id anchors
+  instead of redefining entities: home adds `WebPage`, `/blog/` adds
+  `Blog` (with `BlogPosting` stubs whose @ids match the article
+  graphs), articles add `BlogPosting` + `BreadcrumbList`.
+- Article `BlogPosting` carries headline, description, url, real
+  `datePublished`/`dateModified` (from the content model — ISO
+dates, never manufactured), author/publisher (Person @id + name),
+  cover image, keywords, wordCount, articleSection, inLanguage.
+  `BreadcrumbList` mirrors the real navigation: Home → Blog →
+  article.
+
+### Sitemap + robots + feed
+
+All three are generated from the SAME content index that produces
+the routes (`scripts/build-blog.mjs`) — there is no separately
+maintained URL list:
+
+- `public/sitemap.xml`: `/`, `/blog/`, every `/blog/<slug>/`.
+  `lastmod` is the article's own `updated ?? date` (the blog index
+  reflects the newest article date); the home route omits `lastmod`
+  rather than fake freshness. No priority/changefreq speculation.
+- `public/robots.txt`: standard directives only (`User-agent: *`,
+  `Allow: /`, `Sitemap:` absolute production URL). CSS/JS/images
+  stay crawlable.
+- `public/blog/feed.xml` (RSS 2.0) with autodiscovery
+  `<link rel="alternate">` on `/blog/` (emitted by the page, not
+  just the layout — Next shallow-merges `alternates`, so the page
+  must repeat `types`).
+
+Generated SEO files are committed (like posts.json/feed.xml) and
+regenerated on every build; the workflow validates them after the
+export.
+
+### Social previews
+
+- Every route emits `og:image` + `twitter:card` metadata. Articles
+  use their cover; home and blog index use `public/og-default.png`
+  (1200×630).
+- Cover convention: each `public/blog/images/<name>.svg` cover has
+  a PNG twin at the same path (1200×630) — social crawlers render
+  PNG, not SVG. The build validates the twin exists and fails
+  loudly otherwise; the twin path is exposed as `cover.ogSrc`
+  (root-relative, metadata-only) in posts.json.
+- Image URLs in metadata are production-absolute under
+  `metadataBase`; JSON-LD images are explicitly absolute.
+
+### Verification
+
+`npm run verify:seo` (scripts/verify-seo.mjs, zero dependencies)
+inspects the EXPORTED artifacts after `next build`: exactly one
+`<title>` per route, meta descriptions, canonical/og URLs
+(production HTTPS, `/WEB`-aware), JSON-LD parses with expected
+types, article dates/author match the content index, sitemap URL
+set equals the exported route set, robots references the sitemap,
+feed contains every article, and no `localhost` / `/blog/undefined`
+anywhere. CI runs it on every deploy.
+
+The site is Search-Console-ready (sitemap submission, URL
+inspection, rich-results testing), but indexing itself is a
+ crawler-side decision that happens after deployment.
+
 ## Architecture
 
 ### World shell (scenes)
@@ -110,6 +203,7 @@ content/blog/*.md  (source of truth)
     → INDEX (tags, categories, related, prev/next)
     → PRECOMPUTE (per-post search haystack for the client island)
     → EMIT data/blog/posts.json + public/blog/feed.xml
+              + public/sitemap.xml (from the same route source)
   lib/blog.ts (server-side typed access layer — imports posts.json)
     → app/blog/* pages (metadata as serialized props, article HTML
       rendered into static HTML at build time)
@@ -214,16 +308,20 @@ Background preloading is bounded, skips hidden tabs, and respects
 
 ## Blog content policy (2026 edition)
 
-All four articles are the September 10, 2026 edition — `date` and
+All five articles are the September 10, 2026 edition — `date` and
 `updated` set to `2026-09-10` — written around one thesis: **AI
 supplies capability, Will supplies direction, Systems convert the two
 into execution.** Each article has a distinct purpose (reasoning
-frameworks / living-interface philosophy / time architecture /
-constraint-first system building), draws its factual claims about the
-2026 AI landscape from attributed public sources, and separates FACT
-from ANALYSIS from POSITION in the text. Claims about this site are
-backed by this repository; no achievement is claimed beyond what the
-code demonstrates.
+frameworks / AI Instructions architecture / living-interface
+philosophy / time architecture / constraint-first system building),
+draws its factual claims about the 2026 AI landscape from attributed
+public sources, and separates FACT from ANALYSIS from POSITION in
+the text. The AI Instructions article summarises the canonical
+source `Parsaetak/Contents@AI-frameworks/Ai-instructions-Sep2026.md`
+and links to it; further project articles (REP, USEF, and others)
+will follow the same convention as research completes. Claims about
+this site are backed by this repository; no achievement is claimed
+beyond what the code demonstrates.
 
 ## Writing an article
 
@@ -232,17 +330,27 @@ code demonstrates.
    `author`, `category` (kebab-case), and optionally `subtitle`,
    `description`, `updated`, `tags`, `featured`, `cover`
    (`src` under `/blog/images/`, `alt`, `width`, `height`).
-3. Markdown subset supported: `##`–`####` headings, paragraphs,
+3. If the cover is an SVG, commit a 1200×630 PNG twin at the same
+   path (`<name>.png`) — the build fails without it because
+   `og:image` needs a crawler-renderable format. The twin is used
+   for social metadata only; the visible page keeps the SVG.
+4. Markdown subset supported: `##`–`####` headings, paragraphs,
    **bold**, *italic*, `` `code` ``, fenced code blocks, links,
    images, blockquotes, lists, `---` rules.
-4. Run `npm run build` (or `npm run blog`). A malformed article fails
+5. Internal links point at real routes (`/blog/<slug>/`, `/`,
+   `/#systems` for scenes) with descriptive anchors — the build
+   validates `/blog/…` links against known slugs and fails on
+   unknown ones.
+6. Run `npm run build` (or `npm run blog`). A malformed article fails
    the build with the file and reason.
-5. Commit both the article and the regenerated
-   `data/blog/posts.json` / `public/blog/feed.xml`.
+7. Commit the article and the regenerated
+   `data/blog/posts.json` / `public/blog/feed.xml` /
+   `public/sitemap.xml`.
 
-Generated files (`data/blog/posts.json`, `public/blog/feed.xml`) are
-committed so a fresh clone works immediately; CI regenerates them on
-every build, so production never serves a stale hand-edited copy.
+Generated files (`data/blog/posts.json`, `public/blog/feed.xml`,
+`public/sitemap.xml`) are committed so a fresh clone works
+immediately; CI regenerates them on every build, so production never
+serves a stale hand-edited copy.
 
 ## Development
 
@@ -262,9 +370,11 @@ The deployment environment is detected via `GITHUB_ACTIONS=true`
 
 `.github/workflows/deploy.yml`: checkout → Node 22 + caches →
 `npm ci` → Pages setup → Library manifest sync + validation →
-blog content validation → Next.js build → static-export verification
-(blog routes + feed present) → deployment manifest → Pages artifact →
-deploy → deployed-revision verification.
+blog content validation (posts.json + feed + sitemap) → Next.js
+build → static SEO verification (`verify-seo.mjs`) → export
+verification (blog routes, feed, sitemap, robots, og image present;
+ sitemap URL count matches article count) → deployment manifest →
+Pages artifact → deploy → deployed-revision verification.
 
 ## Verification
 
@@ -272,5 +382,6 @@ deploy → deployed-revision verification.
 npm ci
 npm run lint
 npm run build
-ls out/blog/ out/blog/<any-slug>/
+npm run verify:seo   # static SEO checks against out/
+ls out/blog/ out/blog/<any-slug>/ out/sitemap.xml out/robots.txt
 ```

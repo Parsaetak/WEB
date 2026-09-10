@@ -125,14 +125,22 @@ jobs:
 
           test -f data/blog/posts.json
           test -f public/blog/feed.xml
+          test -f public/sitemap.xml
 
           echo "Blog data pipeline valid."
 
       - name: Build Next.js site
         run: npm run build
 
+      # Programmatic SEO verification against the exported artifacts:
+      # titles, descriptions, canonicals, JSON-LD validity, sitemap/
+      # robots/feed contents, and production URL correctness.
+      - name: Verify static SEO output
+        run: node scripts/verify-seo.mjs
+
       # Artifact-level validation: the export must actually contain
-      # the blog routes and the feed before anything is uploaded.
+      # the blog routes, the feed, and the SEO assets before anything
+      # is uploaded.
       - name: Verify static export output
         run: |
           set -euo pipefail
@@ -140,18 +148,31 @@ jobs:
           test -f out/index.html
           test -f out/blog/index.html
           test -f out/blog/feed.xml
+          test -f out/sitemap.xml
+          test -f out/robots.txt
+          test -f out/og-default.png
 
+          grep -q "https://parsaetak.github.io/WEB/sitemap.xml" out/robots.txt
+
+          sitemap_urls="$(grep -c "<loc>" out/sitemap.xml)"
           article_count="$(
             find out/blog -mindepth 1 -maxdepth 1 -type d \
               ! -name images | wc -l
           )"
+
+          # Every article must appear in the sitemap (plus home and
+          # the blog index).
+          if [ "${sitemap_urls}" -ne $((article_count + 2)) ]; then
+            echo "Sitemap/.route mismatch: ${sitemap_urls} sitemap URLs for ${article_count} article(s)." >&2
+            exit 1
+          fi
 
           if [ "${article_count}" -eq 0 ]; then
             echo "No blog article pages were exported." >&2
             exit 1
           fi
 
-          echo "Static export verified: blog index, feed, and ${article_count} article route(s) present."
+          echo "Static export verified: blog index, feed, sitemap, robots, and ${article_count} article route(s) present."
 
       # This file is deliberately added after the Next.js export.
       # It lets the deploy job verify that GitHub Pages is serving

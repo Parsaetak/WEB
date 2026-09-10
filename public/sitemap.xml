@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://parsaetak.github.io/WEB/</loc>
+  </url>
+  <url>
+    <loc>https://parsaetak.github.io/WEB/blog/</loc>
+    <lastmod>2026-09-10</lastmod>
+  </url>
+  <url>
+    <loc>https://parsaetak.github.io/WEB/blog/ai-instructions/</loc>
+    <lastmod>2026-09-10</lastmod>
+  </url>
+  <url>
+    <loc>https://parsaetak.github.io/WEB/blog/building-under-constraints/</loc>
+    <lastmod>2026-09-10</lastmod>
+  </url>
+  <url>
+    <loc>https://parsaetak.github.io/WEB/blog/reasoning-is-a-system-property/</loc>
+    <lastmod>2026-09-10</lastmod>
+  </url>
+  <url>
+    <loc>https://parsaetak.github.io/WEB/blog/the-anatomy-of-a-fast-static-site/</loc>
+    <lastmod>2026-09-10</lastmod>
+  </url>
+  <url>
+    <loc>https://parsaetak.github.io/WEB/blog/why-the-website-is-a-living-system/</loc>
+    <lastmod>2026-09-10</lastmod>
+  </url>
+</urlset>

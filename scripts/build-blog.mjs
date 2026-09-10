@@ -9,6 +9,14 @@
  *   → NORMALIZE (reading time, cover URLs, link basePath)
  *   → INDEX (tags, categories, related, prev/next)
  *   → EMIT data/blog/posts.json + public/blog/feed.xml
+ *         + public/sitemap.xml
+ *
+ * SEO emission law: the sitemap is generated from the SAME content
+ * index that produces the site routes — site configuration + blog
+ * slugs + real static routes. There is no separately maintained
+ * URL list, so the sitemap can never disagree with the site.
+ * lastmod values are the articles' own updated/date fields — never
+ * "today" — so freshness is never faked.
  *
  * Zero runtime dependencies. Runs before `next dev` and `next build`
  * (see package.json scripts) and inside the deployment workflow.
@@ -41,6 +49,15 @@ const BASE_PATH = IS_GITHUB_ACTIONS ? "/WEB" : "";
 
 const BLOG_PATH = `${BASE_PATH}/blog`;
 const FEED_URL = `${SITE_URL}/blog/feed.xml`;
+
+/*
+ * Root-relative site OG image. Validated below so a missing social
+ * image fails the build instead of shipping broken og:image URLs.
+ * Root-relative on purpose: og metadata is resolved against the
+ * metadataBase (which already contains /WEB), never basePath-prefixed.
+ */
+const SITE_OG_IMAGE_PATH = "/og-default.png";
+const SITE_OG_IMAGE_FILE = path.join(ROOT, "public", "og-default.png");
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -418,7 +435,37 @@ function renderMarkdown(source) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Validation                                                                 */
+/* Social image twins                                                          */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * og:image twin path for a cover: same file, extension swapped to
+ * .png. Covers committed as PNG/JPG already serve as their own
+ * social image. The twin's EXISTENCE is validated alongside the
+ * cover itself — a missing twin fails the build with the expected
+ * path instead of shipping an og:image URL that 404s on social
+ * platforms.
+ */
+function coverOgSrc(coverSrc) {
+  if (/\.(png|jpe?g|webp)$/i.test(coverSrc)) {
+    return coverSrc;
+  }
+  return coverSrc.replace(/\.svg$/i, ".png");
+}
+
+function validateCoverTwin(coverSrc, file) {
+  const ogSrc = coverOgSrc(coverSrc);
+  const ogFile = path.join(ROOT, "public", ogSrc.replace(/^\//, ""));
+  if (!existsSync(ogFile)) {
+    fail(
+      file,
+      `cover social-image twin not found: ${ogSrc} (og:image requires a PNG twin of every SVG cover)`
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Validation                                                                  */
 /* -------------------------------------------------------------------------- */
 
 function isValidDateString(value) {
@@ -505,6 +552,7 @@ function validatePost(record, file) {
         if (!existsSync(coverFile)) {
           problems.push(`cover file not found: ${record.cover.src}`);
         }
+        validateCoverTwin(record.cover.src, file);
       }
       if (
         typeof record.cover.alt !== "string" ||
@@ -613,6 +661,59 @@ function toRfc822(dateString) {
   return new Date(`${dateString}T12:00:00Z`).toUTCString();
 }
 
+/* -------------------------------------------------------------------------- */
+/* Sitemap                                                                     */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Sitemap source of truth: site configuration (SITE_URL) + the blog
+ * content index + the real static routes of the site. Only genuinely
+ * indexable, canonical URLs are listed — no hash scenes, no filter
+ * states, no search results, no asset URLs.
+ *
+ * lastmod policy (sitemap freshness):
+ * - articles: the article's own `updated` date, falling back to `date`
+ * - /blog/: the newest article modification the index reflects
+ * - /: omitted — the world shell has no dated content model, and
+ *   inventing a date would fake freshness.
+ * priority/changefreq are deliberately omitted: search engines
+ * ignore them and they would be speculative signals.
+ */
+/* Total sitemap URL count: home + blog index + every article. */
+function sitemapUrlCount(postCount) {
+  return 2 + postCount;
+}
+
+function buildSitemap(posts) {
+  const urls = [
+    `  <url>\n    <loc>${SITE_URL}/</loc>\n  </url>`,
+  ];
+
+  if (posts.length > 0) {
+    const blogLastMod = posts
+      .map((post) => post.updated ?? post.date)
+      .sort()
+      .at(-1);
+
+    urls.push(
+      `  <url>\n    <loc>${SITE_URL}/blog/</loc>\n    <lastmod>${blogLastMod}</lastmod>\n  </url>`
+    );
+  } else {
+    urls.push(`  <url>\n    <loc>${SITE_URL}/blog/</loc>\n  </url>`);
+  }
+
+  for (const post of posts) {
+    const lastMod = post.updated ?? post.date;
+    urls.push(
+      `  <url>\n    <loc>${SITE_URL}/blog/${post.slug}/</loc>\n    <lastmod>${lastMod}</lastmod>\n  </url>`
+    );
+  }
+
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${
+    urls.join("\n")
+  }\n</urlset>\n`;
+}
+
 function buildFeed(posts, generatedAt) {
   const items = posts
     .map((post) => {
@@ -712,7 +813,18 @@ async function main() {
             src: `${BASE_PATH}${record.cover.src}`,
             alt: String(record.cover.alt),
             width: record.cover.width,
-            height: record.cover.height
+            height: record.cover.height,
+
+            /*
+             * Social-image twin (og:image / twitter:image). SVG covers
+             * are crisp on the page but poorly rendered by social
+             * crawlers, so each cover carries a PNG twin at the same
+             * path with the extension swapped. ROOT-RELATIVE and
+             * deliberately NOT basePath-prefixed: this value is used
+             * for metadata only, where Next resolves URLs against the
+             * production metadataBase.
+             */
+            ogSrc: coverOgSrc(record.cover.src)
           }
         : null;
 
@@ -761,6 +873,18 @@ async function main() {
       String(rawBodies.get(post.slug) ?? ""),
       validSlugs,
       `${post.slug}.md`
+    );
+  }
+
+  /*
+   * SEO asset validation: the site-level social image must exist
+   * before any page can claim an og:image. Fails loudly with the
+   * expected path.
+   */
+  if (!existsSync(SITE_OG_IMAGE_FILE)) {
+    fail(
+      "public/og-default.png",
+      `site social image not found: ${SITE_OG_IMAGE_PATH} (og:image for home and blog routes requires it)`
     );
   }
 
@@ -814,6 +938,13 @@ async function main() {
   await mkdir(PUBLIC_BLOG_DIR, { recursive: true });
   await writeFile(path.join(PUBLIC_BLOG_DIR, "feed.xml"), feed, "utf8");
 
+  const sitemap = buildSitemap(posts);
+  await writeFile(
+    path.join(ROOT, "public", "sitemap.xml"),
+    sitemap,
+    "utf8"
+  );
+
   const featuredCount = posts.filter((post) => post.featured).length;
   const tagCount = Object.keys(tagIndex).length;
   const categoryCount = Object.keys(categoryIndex).length;
@@ -823,6 +954,9 @@ async function main() {
   );
   console.log(`[blog] wrote data/blog/posts.json (${posts.length} posts)`);
   console.log("[blog] wrote public/blog/feed.xml (RSS 2.0)");
+  console.log(
+    `[blog] wrote public/sitemap.xml (${sitemapUrlCount(posts.length)} URL(s))`
+  );
   console.log(`[blog] basePath: "${BASE_PATH}" (GITHUB_ACTIONS=${IS_GITHUB_ACTIONS})`);
 
   if (posts.length === 0) {

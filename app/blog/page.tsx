@@ -14,6 +14,14 @@ import {
   getAllTags
 } from "@/lib/blog";
 
+import {
+  JsonLd,
+  PERSON_ID,
+  SITE_IN_LANGUAGE,
+  SITE_URL,
+  WEBSITE_ID
+} from "@/lib/seo";
+
 import styles from "./page.module.css";
 
 /*
@@ -22,17 +30,69 @@ import styles from "./page.module.css";
  * The featured article and page shell render at build time. The
  * interactive island below receives article METADATA ONLY (no HTML
  * bodies) so filtering is an in-memory scan of a tiny array.
+ *
+ * SEO: this page emits the Blog entity — one object describing the
+ * /blog/ collection, with BlogPosting stubs whose @id values match
+ * the full article graphs emitted on /blog/<slug>/ routes. The
+ * collection object and the article objects interlock instead of
+ * duplicating each other.
  */
 
 export function generateMetadata(): Metadata {
   const info = getBlogInfo();
 
   return {
-    title: "Blog",
+    /*
+     * absolute: the layout's "%s — Parsa Tak" template only applies
+     * to DEEPER segments (article pages), not to this same-segment
+     * index page — so the full title is spelled out exactly once
+     * here, matching the site's title convention.
+     */
+    title: {
+      absolute: "Blog — Parsa Tak"
+    },
     description: info.siteDescription,
+
+    /*
+     * RSS autodiscovery lives HERE, not only in the layout: Next
+     * shallow-merges metadata per key, so this page's `alternates`
+     * replaces the layout's — without repeating `types`, the feed
+     * <link rel="alternate"> would never be emitted on any route.
+     */
     alternates: {
-      canonical: "/blog/"
+      canonical: "/blog/",
+      types: {
+        "application/rss+xml": [
+          {
+            url: "/blog/feed.xml",
+            title: `${info.siteName} — Blog RSS`
+          }
+        ]
+      }
     }
+  };
+}
+
+function blogEntity(info: {
+  siteName: string;
+  siteDescription: string;
+}, posts: readonly { slug: string; title: string }[]) {
+  return {
+    "@type": "Blog",
+    "@id": `${SITE_URL}/blog/#blog`,
+    url: `${SITE_URL}/blog/`,
+    name: `Blog — ${info.siteName}`,
+    description: info.siteDescription,
+    inLanguage: SITE_IN_LANGUAGE,
+    isPartOf: { "@id": WEBSITE_ID },
+    author: { "@id": PERSON_ID },
+    publisher: { "@id": PERSON_ID },
+    blogPost: posts.map((post) => ({
+      "@type": "BlogPosting",
+      "@id": `${SITE_URL}/blog/${post.slug}/#article`,
+      url: `${SITE_URL}/blog/${post.slug}/`,
+      headline: post.title
+    }))
   };
 }
 
@@ -44,6 +104,13 @@ export default function BlogPage() {
 
   return (
     <div className={styles.blogPage}>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [blogEntity(info, posts)]
+        }}
+      />
+
       <section
         className={`section ${styles.blogHero}`}
       >

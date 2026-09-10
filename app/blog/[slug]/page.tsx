@@ -15,6 +15,17 @@ import {
   getRelatedPosts
 } from "@/lib/blog";
 
+import {
+  JsonLd,
+  PERSON_ID,
+  PERSON_NAME,
+  SITE_IN_LANGUAGE,
+  SITE_OG_IMAGE_HEIGHT,
+  SITE_OG_IMAGE_PATH,
+  SITE_OG_IMAGE_WIDTH,
+  SITE_URL
+} from "@/lib/seo";
+
 import styles from "./article.module.css";
 
 /*
@@ -24,6 +35,12 @@ import styles from "./article.module.css";
  * content index. The article body is build-time HTML from the
  * validated markdown source; no markdown is parsed in the browser
  * and no client component hydrates on this route beyond the cursor.
+ *
+ * SEO: one JSON-LD graph per article — BreadcrumbList + BlogPosting —
+ * describing exactly what the page shows (real headline, real dates,
+ * real cover, real navigation hierarchy Home → Blog → article).
+ * Author/publisher reference the site-wide Person @id so the
+ * article plugs into the same entity graph as every other route.
  */
 
 type ArticlePageProps = {
@@ -52,6 +69,32 @@ function resolvePost(
   return post;
 }
 
+/*
+ * Social image for an article: the cover's PNG twin when the
+ * article has one, otherwise the site-level default. Root-relative
+ * paths — Next resolves og/twitter image URLs against the
+ * production metadataBase.
+ */
+function socialImage(post: NonNullable<ReturnType<typeof getPost>>) {
+  const cover = post.cover;
+
+  if (cover && cover.ogSrc) {
+    return {
+      url: cover.ogSrc,
+      alt: cover.alt,
+      width: cover.width,
+      height: cover.height
+    };
+  }
+
+  return {
+    url: SITE_OG_IMAGE_PATH,
+    alt: `${post.title} — Parsa Tak`,
+    width: SITE_OG_IMAGE_WIDTH,
+    height: SITE_OG_IMAGE_HEIGHT
+  };
+}
+
 export async function generateMetadata({
   params
 }: ArticlePageProps): Promise<Metadata> {
@@ -64,6 +107,8 @@ export async function generateMetadata({
       title: "Article not found"
     };
   }
+
+  const image = socialImage(post);
 
   return {
     title: post.title,
@@ -82,13 +127,22 @@ export async function generateMetadata({
       modifiedTime:
         post.updated ?? post.date,
       authors: [post.author],
-      tags: post.tags
+      tags: post.tags,
+      images: [
+        {
+          url: image.url,
+          width: image.width,
+          height: image.height,
+          alt: image.alt
+        }
+      ]
     },
 
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: post.title,
-      description: post.description
+      description: post.description,
+      images: [image.url]
     },
 
     robots: {
@@ -129,68 +183,114 @@ export default async function ArticlePage({
         )
       : null;
 
-  const jsonLd = {
-    "@context":
-      "https://schema.org",
+  /*
+   * Article structured data. The image field is absolute (JSON-LD
+   * is not resolved against metadataBase the way Next metadata is)
+   * and present exactly when a cover actually exists.
+   */
+  const jsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
 
-    "@type": "BlogPosting",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
 
-    headline:
-      post.title,
+        "@id": `${SITE_URL}/blog/${post.slug}/#breadcrumb`,
 
-    description:
-      post.description,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: `${SITE_URL}/`
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Blog",
+            item: `${SITE_URL}/blog/`
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: post.title
+          }
+        ]
+      },
 
-    datePublished:
-      post.date,
+      {
+        "@type": "BlogPosting",
 
-    dateModified:
-      post.updated ??
-      post.date,
+        "@id": `${SITE_URL}/blog/${post.slug}/#article`,
 
-    author: {
-      "@type": "Person",
-      name: post.author,
-      url: "https://github.com/Parsaetak"
-    },
+        headline:
+          post.title,
 
-    publisher: {
-      "@type": "Person",
-      name: "Parsa Tak"
-    },
+        description:
+          post.description,
 
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id":
-        "https://parsaetak.github.io/WEB/blog/" +
-        `${post.slug}/`
-    },
+        url:
+          `${SITE_URL}/blog/${post.slug}/`,
 
-    keywords:
-      post.tags.join(", "),
+        datePublished:
+          post.date,
 
-    wordCount:
-      post.wordCount,
+        dateModified:
+          post.updated ??
+          post.date,
 
-    articleSection:
-      post.category,
+        author: {
+          "@type": "Person",
+          "@id": PERSON_ID,
+          name: post.author
+        },
 
-    inLanguage: "en"
+        publisher: {
+          "@type": "Person",
+          "@id": PERSON_ID,
+          name: PERSON_NAME
+        },
+
+        isPartOf: {
+          "@id": `${SITE_URL}/blog/#blog`
+        },
+
+        breadcrumb: {
+          "@id": `${SITE_URL}/blog/${post.slug}/#breadcrumb`
+        },
+
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id":
+            `${SITE_URL}/blog/${post.slug}/`
+        },
+
+        image: [
+          `${SITE_URL}${
+            post.cover?.ogSrc ??
+            SITE_OG_IMAGE_PATH
+          }`
+        ],
+
+        keywords:
+          post.tags.join(", "),
+
+        wordCount:
+          post.wordCount,
+
+        articleSection:
+          post.category,
+
+        inLanguage: SITE_IN_LANGUAGE
+      }
+    ]
   };
 
   return (
     <article
       className={styles.article}
     >
-      <script
-        type="application/ld+json"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            jsonLd
-          )
-        }}
-      />
+      <JsonLd data={jsonLd} />
 
       <div className="page-container">
         <header

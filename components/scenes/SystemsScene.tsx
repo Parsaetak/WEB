@@ -1,5 +1,13 @@
+import Link from "next/link";
+
 import styles from "./SystemsScene.module.css";
 
+/*
+ * Module cards are static data. `article` marks a module that has a
+ * dedicated deep-dive on the blog — a real crawlable /blog/<slug>/
+ * route, not a hash URL. Only AI Instructions has one today; REP
+ * and USEF links appear when those articles exist.
+ */
 const systems = [
   {
     number: "01",
@@ -8,7 +16,9 @@ const systems = [
     role: "GOVERN",
     title: "Defines the environment",
     copy:
-      "Sets the rules for how an intelligent system operates: instruction hierarchy, evidence handling, tools, context, security, memory, and self-governance."
+      "Sets the rules for how an intelligent system operates: instruction hierarchy, evidence handling, tools, context, security, memory, and self-governance.",
+    article: "/blog/ai-instructions/",
+    articleLabel: "Read the article"
   },
   {
     number: "02",
@@ -145,6 +155,20 @@ export default function SystemsScene() {
                   <p className={styles.systemsModuleCopy}>
                     {system.copy}
                   </p>
+
+                  {system.article && (
+                    <Link
+                      className={styles.systemsModuleLink}
+                      href={system.article}
+                      prefetch={false}
+                    >
+                      {system.articleLabel}
+
+                      <span aria-hidden="true">
+                        →
+                      </span>
+                    </Link>
+                  )}
 
                   <div className={styles.systemsModuleLine}>
                     <span />

@@ -19,6 +19,15 @@ export type BlogPostCover = {
   alt: string;
   width: number;
   height: number;
+
+  /*
+   * Social-image twin for og:image / twitter:image (a PNG at the
+   * same path as the SVG cover). ROOT-RELATIVE and never
+   * basePath-prefixed: it is metadata-only, resolved against the
+   * production metadataBase. Optional for backward compatibility
+   * with older generated data.
+   */
+  ogSrc?: string;
 };
 
 export type BlogPostMeta = {

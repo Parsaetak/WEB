@@ -1,0 +1,13 @@
+# robots.txt — Parsa Tak (WEB)
+#
+# Production site: https://parsaetak.github.io/WEB/
+#
+# All public routes (/, /blog/, /blog/<slug>/) are crawlable.
+# Only standard, universally supported directives are used:
+# User-agent / Allow / Sitemap. CSS, JS, and images stay crawlable
+# so renderers can see the page as users do.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://parsaetak.github.io/WEB/sitemap.xml

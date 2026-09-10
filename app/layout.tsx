@@ -5,8 +5,32 @@ import type {
 
 import "./globals.css";
 
+import {
+  HOME_TITLE,
+  JsonLd,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_OG_IMAGE_HEIGHT,
+  SITE_OG_IMAGE_PATH,
+  SITE_OG_IMAGE_WIDTH,
+  personEntity,
+  websiteEntity
+} from "@/lib/seo";
+
+/*
+ * THE site identity graph. Emitted exactly once, here in the root
+ * layout, so every route shares one coherent Person + WebSite
+ * entity model. Route-specific objects (WebPage, Blog, BlogPosting,
+ * BreadcrumbList) reference these @id anchors instead of defining
+ * their own copies — the site never emits conflicting entities.
+ */
+const SITE_ENTITY_GRAPH = {
+  "@context": "https://schema.org",
+  "@graph": [personEntity(), websiteEntity()]
+};
+
 export const metadata: Metadata = {
-  title: "Parsa Tak",
+  title: HOME_TITLE,
   description:
     "Parsa Tak — an evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.",
   applicationName: "Parsa Tak",
@@ -40,16 +64,23 @@ export const metadata: Metadata = {
     type: "website",
     url:
       "https://parsaetak.github.io/WEB/",
-    title: "Parsa Tak",
-    description:
-      "An evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.",
-    siteName: "Parsa Tak"
+    title: HOME_TITLE,
+    description: SITE_DESCRIPTION,
+    siteName: SITE_NAME,
+    images: [
+      {
+        url: SITE_OG_IMAGE_PATH,
+        width: SITE_OG_IMAGE_WIDTH,
+        height: SITE_OG_IMAGE_HEIGHT,
+        alt: "Parsa Tak — AI systems, reasoning, and RED MAGIC"
+      }
+    ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Parsa Tak",
-    description:
-      "An evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC."
+    title: HOME_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [SITE_OG_IMAGE_PATH]
   },
   robots: {
     index: true,
@@ -101,6 +132,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <JsonLd data={SITE_ENTITY_GRAPH} />
         {children}
       </body>
     </html>

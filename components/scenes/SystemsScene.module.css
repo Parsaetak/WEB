@@ -790,6 +790,68 @@
     break-word;
 }
 
+/*
+ * Deep-dive link inside a module card. Present only on modules that
+ * have a real /blog/<slug>/ article. Same quiet mono-link language
+ * as the work scene's archive links.
+ */
+.systemsModuleLink {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    10px;
+
+  margin-top:
+    18px;
+
+  color:
+    var(--red);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    9px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+
+  text-transform:
+    uppercase;
+
+  transition:
+    color
+      180ms ease,
+    gap
+      180ms ease;
+}
+
+@media (hover: hover) {
+  .systemsModuleLink:hover {
+    color:
+      var(--text);
+
+    gap:
+      16px;
+  }
+}
+
+.systemsModuleLink:focus-visible {
+  outline:
+    1px solid
+    var(--red);
+
+  outline-offset:
+    4px;
+}
+
 .systemsModuleLine {
   position:
     relative;

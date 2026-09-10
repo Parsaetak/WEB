@@ -1,13 +1,14 @@
 {
   "name": "parsaetak-web",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "scripts": {
     "dev": "node scripts/build-blog.mjs && next dev",
     "build": "node scripts/build-blog.mjs && next build",
     "start": "next start",
     "lint": "eslint",
-    "blog": "node scripts/build-blog.mjs"
+    "blog": "node scripts/build-blog.mjs",
+    "verify:seo": "node scripts/verify-seo.mjs"
   },
   "dependencies": {
     "next": "16.3.3",

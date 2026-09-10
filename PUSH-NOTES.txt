@@ -1,72 +1,96 @@
-Parsa Tak WEB — v2.0.0 upgrade package (2026-09-10)
-================================================
+Parsa Tak WEB — v2.3.0 SEO + AI Instructions package (2026-09-10)
+=================================================================
 
 WHAT THIS IS
-The complete final repository state after the performance,
-data-pipeline, and blog upgrade. Copy the WEB-UPGRADE/ folder
-contents over your repository root (or replace the repository
-contents with them), then commit and push. Paths are
-repo-relative.
+The complete final repository state after the technical SEO upgrade
+and the AI Instructions article. Replace the repository contents
+with these files (or copy them over your repository root), then
+commit and push. Paths are repo-relative.
 
 HIGHLIGHTS
-  - Scene chunk deduplication: every scene has exactly one
-    dynamic import site (ScenePreloader). Deployed JS drops
-    from 27 chunks / ~968 KB to ~20 chunks / ~753 KB, and each
-    scene navigation downloads its chunk once instead of twice.
-  - Loading architecture: five honest load phases (no fake
-    percentages), P0–P4 priority ladder, idle-gated background
-    preloading that skips hidden tabs and save-data/2G, and a
-    scene overlay that never flashes for preloaded transitions.
-  - Data layer: lib/resourceStore.ts (request deduplication,
-    failure cleanup, abort awareness), runtime validation in
-    lib/contentRepository.ts, typed blog access in lib/blog.ts.
-  - BLOG: /blog/ index (featured article, search + tag filter),
-    /blog/<slug>/ article pages (SEO, Open Graph, JSON-LD,
-    prev/next, related posts), RSS at /blog/feed.xml — all
-    statically exported from content/blog/*.md through
-    scripts/build-blog.mjs (zero dependencies).
-  - Toolchain repaired: npm run lint now actually passes
-    (eslint realigned to 9.x; the previous eslint@10 stack
-    crashed on every run — CI never ran lint, so it was silent).
-  - not-found redirect fixed to stay inside /WEB.
+  - Technical SEO, invisibly: canonical URLs on every indexable
+    route (/, /blog/, /blog/<slug>/ — absolute HTTPS, /WEB-aware),
+    public/robots.txt (standard directives + sitemap reference),
+    and public/sitemap.xml generated from the SAME content index
+    that produces the routes (no hand-maintained URL list;
+    lastmod from real article dates, never "today").
+  - Entity identity: lib/seo.tsx owns one coherent Person +
+    WebSite graph, emitted once in the root layout; route-level
+    structured data interlocks through stable @id anchors —
+    WebPage on /, Blog on /blog/, BlogPosting + BreadcrumbList
+    (Home -> Blog -> article) on every article. sameAs lists only
+    real public profiles already linked by the site.
+  - Social previews: og:image + twitter:card on every route.
+    Every SVG cover now has a validated 1200x630 PNG twin
+    (public/blog/images/<name>.png) because social crawlers do
+    not render SVG; public/og-default.png is the site-level card.
+  - New article: content/blog/ai-instructions.md — "AI
+    Instructions: A Constitutional Operating Framework for AI
+    Systems" — summarising the canonical source
+    Parsaetak/Contents@AI-frameworks/Ai-instructions-Sep2026.md
+    (blob SHA f6952faf0bc173408f50b0e46d4f94fb7a34ba36): five-tier
+    topology, MCD vs HRR (prompts are not sandboxes), the
+    UNDERSTAND->EVALUATE sequence, governance kernel, effective
+    intelligence as architecture, human agency as an optimization
+    target, and verified 2026 context (Forrester agentic-AI
+    adoption, OWASP LLM Top 10, MCP standardisation).
+  - Internal link graph: the Systems scene's AI INSTRUCTIONS card
+    links to /blog/ai-instructions/ ("READ THE ARTICLE"); the
+    article links back to the systems scene, the blog index, two
+    sibling articles, and the GitHub source.
+  - Fixed: RSS autodiscovery <link rel="alternate"> was dead
+    config (Next shallow-merges `alternates`, so layout types
+    never reached any page) — now emitted on /blog/. Home and
+    blog index titles are explicit and descriptive (layout title
+    templates only apply to deeper segments).
+  - New verification: scripts/verify-seo.mjs (npm run verify:seo,
+    zero dependencies) checks the EXPORTED artifacts — unique
+    titles, descriptions, canonicals, JSON-LD validity and types,
+    article dates/author, sitemap/route-set equality, robots,
+    feed completeness, no localhost / /blog/undefined — and runs
+    as a dedicated CI step in deploy.yml.
 
 HOW TO APPLY
-  1. Copy the WEB-UPGRADE/ contents over your repository root
-     (allow overwrites). All files are complete replacements —
-     no patches to merge.
-  2. Install dependencies (devDependencies changed: eslint
-     realigned): npm ci --legacy-peer-deps
-  3. Commit: git add -A && git commit -m "v2.0.0: loading
-     architecture, data pipeline, deduplication, and blog"
+  1. Replace your repository contents with these files (allow
+     overwrites). All files are complete replacements — no
+     patches to merge.
+  2. Install dependencies: npm ci (devDependencies unchanged
+     from 2.2; no new dependencies at all).
+  3. Commit: git add -A && git commit -m "v2.3.0: technical SEO
+     architecture + AI Instructions article"
   4. Push: git push origin main
-  5. Watch the newest GitHub Actions run (must be green), then
-     hard-refresh https://parsaetak.github.io/WEB/
+  5. Watch the newest GitHub Actions run (must be green — it now
+     includes the SEO verification step), then hard-refresh
+     https://parsaetak.github.io/WEB/
 
-VERIFY AFTER PUSH (90 seconds)
-  - Home: organism animates; all six scenes open; hover a scene
-    button then click it — the transition shows no full-screen
-    loader flash when the chunk was preloaded
-  - HUD: "Blog ↗" button opens /WEB/blog/
-  - Blog: featured card, search box (try "constraints"), tag
-    chips (try "performance" -> 2 cards), article links,
-    prev/next navigation, related posts, "Back to the world"
-  - Blog header scene links (e.g. MAGIC) return to /WEB/#magic
-  - /WEB/blog/invalid-slug/ redirects to /WEB/blog/
-  - /WEB/blog/feed.xml serves valid RSS
-  - Phone width (~390px): blog index and articles show no
-    horizontal overflow; article text stays readable
+VERIFY AFTER PUSH (2 minutes)
+  - /WEB/robots.txt serves the robots file with the sitemap line
+  - /WEB/sitemap.xml serves 7 URLs (/, /blog/, five articles),
+    all on https://parsaetak.github.io/WEB
+  - /WEB/blog/ai-instructions/ renders the new article; sharing
+    that URL unfurls a large image card (PNG cover twin)
+  - Systems scene: the AI INSTRUCTIONS module shows "READ THE
+    ARTICLE" and opens the article
+  - Blog: article count is now 5; search finds "instructions";
+    the ai-instructions article appears in sitemap + RSS
+  - Home / blog / article titles in the browser tab match the
+    new wording
+  - Phone width (~390px): no horizontal overflow anywhere
   - No console errors
 
 NOTES
-  - npm ci is REQUIRED once (package-lock.json changed with the
-    eslint realignment). No runtime dependencies were added:
-    the markdown pipeline, RSS generation, data layer, and
-    search are all custom, zero-dependency code.
-  - data/blog/posts.json and public/blog/feed.xml are
-    GENERATED by scripts/build-blog.mjs on every build. They
-    are committed so a fresh clone works immediately; never
-    hand-edit them.
-  - Adding an article: drop a markdown file into content/blog/
-    and run npm run build (or npm run blog). The build fails
-    loudly if the frontmatter is malformed.
+  - The normal user experience is intentionally unchanged: SEO
+    lives in build-time metadata and static files. The only
+    visible additions are the Systems scene's article link and
+    the (more descriptive) tab titles.
+  - data/blog/posts.json, public/blog/feed.xml, and
+    public/sitemap.xml are GENERATED by scripts/build-blog.mjs
+    on every build. They are committed so a fresh clone works
+    immediately; never hand-edit them.
+  - Adding an article with an SVG cover now also requires a
+    1200x630 PNG twin at the same path (og:image requirement) —
+    the build fails loudly when the twin is missing.
   - Do NOT hand-edit data/library.json (synced at build time).
+  - Search Console: submit https://parsaetak.github.io/WEB/
+    sitemap.xml after the first deploy; indexing happens on the
+    crawler's schedule, not at push time.

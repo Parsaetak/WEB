@@ -12,6 +12,13 @@ import {
   getBlogInfo
 } from "@/lib/blog";
 
+import {
+  SITE_DESCRIPTION as FALLBACK_DESCRIPTION,
+  SITE_OG_IMAGE_HEIGHT,
+  SITE_OG_IMAGE_PATH,
+  SITE_OG_IMAGE_WIDTH
+} from "@/lib/seo";
+
 import styles from "./layout.module.css";
 
 /*
@@ -47,12 +54,22 @@ export function generateMetadata(): Metadata {
       type: "website",
       title: "Blog — Parsa Tak",
       description: info.siteDescription,
-      url: "/blog/"
+      url: "/blog/",
+      images: [
+        {
+          url: SITE_OG_IMAGE_PATH,
+          width: SITE_OG_IMAGE_WIDTH,
+          height: SITE_OG_IMAGE_HEIGHT,
+          alt: "Parsa Tak — writing from the laboratory"
+        }
+      ]
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: "Blog — Parsa Tak",
-      description: info.siteDescription
+      description:
+        info.siteDescription || FALLBACK_DESCRIPTION,
+      images: [SITE_OG_IMAGE_PATH]
     }
   };
 }
