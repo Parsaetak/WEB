@@ -4,8 +4,11 @@ import dynamic from "next/dynamic";
 import {
   useEffect,
   useRef,
-  useState,
-  type ComponentType
+  useState
+} from "react";
+
+import type {
+  ComponentType
 } from "react";
 
 import type {
@@ -13,62 +16,69 @@ import type {
 } from "@/components/LivingShell";
 
 import {
-  preloadScene
+  loadSceneModule
 } from "@/components/ScenePreloader";
 
 import SceneViewport from "@/components/SceneViewport";
 
 import styles from "@/components/SceneRegistry.module.css";
 
-type SceneComponent =
-  ComponentType;
+/*
+ * Scene registry.
+ *
+ * Every scene component resolves through loadSceneModule(), the single
+ * import site owned by ScenePreloader. The dynamic() wrappers below
+ * exist only to integrate React.lazy-compatible rendering with
+ * Suspense — they never produce their own import graphs, so the
+ * bundler emits exactly one chunk per scene.
+ */
 
 const HomeScene = dynamic(
   () =>
-    import(
-      "@/components/scenes/HomeScene"
+    loadSceneModule(
+      "home"
     )
 );
 
 const AboutScene = dynamic(
   () =>
-    import(
-      "@/components/scenes/AboutScene"
+    loadSceneModule(
+      "about"
     )
 );
 
 const SystemsScene = dynamic(
   () =>
-    import(
-      "@/components/scenes/SystemsScene"
+    loadSceneModule(
+      "systems"
     )
 );
 
 const RedMagicScene = dynamic(
   () =>
-    import(
-      "@/components/scenes/RedMagicScene"
+    loadSceneModule(
+      "magic"
     )
 );
 
 const WorkScene = dynamic(
   () =>
-    import(
-      "@/components/scenes/WorkScene"
+    loadSceneModule(
+      "work"
     )
 );
 
 const LibraryScene = dynamic(
   () =>
-    import(
-      "@/components/scenes/LibraryScene"
+    loadSceneModule(
+      "library"
     )
 );
 
 const SCENE_COMPONENTS:
   Record<
     SceneId,
-    SceneComponent
+    ComponentType
   > = {
   home: HomeScene,
   about: AboutScene,
@@ -108,13 +118,16 @@ export default function SceneRegistry({
     scene
   );
 
-  const [
-    transitioning,
-    setTransitioning
-  ] = useState(false);
-
   const transitionId =
     useRef(0);
+
+  /*
+   * Transition state is derived, not stored: while the requested
+   * scene differs from the rendered one, a transition is in
+   * flight. This removes a synchronous setState inside the effect.
+   */
+  const transitioning =
+    scene !== renderedScene;
 
   useEffect(() => {
     if (
@@ -128,12 +141,12 @@ export default function SceneRegistry({
 
     let cancelled = false;
 
-    setTransitioning(
-      true
-    );
-
+    /*
+     * P0 — the scene the user asked for. preloadScene deduplicates
+     * with any warming request already in flight.
+     */
     const loadScene =
-      preloadScene(
+      loadSceneModule(
         scene
       );
 
@@ -157,10 +170,6 @@ export default function SceneRegistry({
       setRenderedScene(
         scene
       );
-
-      setTransitioning(
-        false
-      );
     });
 
     return () => {
@@ -180,6 +189,11 @@ export default function SceneRegistry({
     <SceneViewport
       scene={
         renderedScene
+      }
+      pendingScene={
+        transitioning
+          ? scene
+          : undefined
       }
       loading={
         transitioning

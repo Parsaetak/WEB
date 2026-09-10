@@ -15,14 +15,22 @@ import styles from "@/components/SceneViewport.module.css";
 
 type SceneLoaderProps = {
   scene: SceneId;
+  pendingScene?: SceneId;
   loading?: boolean;
   children: ReactNode;
 };
 
-function SceneFallback() {
+function SceneFallback({
+  scene
+}: {
+  scene: SceneId;
+}) {
   return (
     <SceneLoadingScreen
       visible={true}
+      variant="scene"
+      phase="LOADING"
+      label={scene.toUpperCase()}
     />
   );
 }
@@ -48,6 +56,7 @@ function SceneErrorState() {
 
 export default function SceneViewport({
   scene,
+  pendingScene,
   loading = false,
   children
 }: SceneLoaderProps) {
@@ -63,7 +72,9 @@ export default function SceneViewport({
     >
       <Suspense
         fallback={
-          <SceneFallback />
+          <SceneFallback
+            scene={scene}
+          />
         }
       >
         <div
@@ -78,6 +89,13 @@ export default function SceneViewport({
       <SceneLoadingScreen
         visible={
           loading
+        }
+        variant="scene"
+        phase="LOADING"
+        label={
+          pendingScene
+            ? pendingScene.toUpperCase()
+            : scene.toUpperCase()
         }
       />
 

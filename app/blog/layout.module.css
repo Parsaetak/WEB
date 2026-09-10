@@ -1,0 +1,40 @@
+.blogShell {
+  position: relative;
+
+  min-height:
+    100vh;
+
+  display: flex;
+
+  flex-direction: column;
+
+  overflow-x: clip;
+}
+
+.blogMain {
+  position: relative;
+
+  z-index: 1;
+
+  flex: 1;
+
+  width: 100%;
+
+  padding-top:
+    calc(
+      var(--shell-header) + 46px
+    );
+
+  padding-bottom: 96px;
+}
+
+@media (max-width: 760px) {
+  .blogMain {
+    padding-top:
+      calc(
+        68px + 38px
+      );
+
+    padding-bottom: 72px;
+  }
+}

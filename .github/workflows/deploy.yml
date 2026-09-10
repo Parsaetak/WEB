@@ -112,8 +112,46 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-
 
+      # The blog content pipeline validates every article (required
+      # fields, slug format, dates, cover files, internal links)
+      # before the site exists. A malformed article fails the build
+      # with the file and the reason instead of silently shipping
+      # corrupted content. `npm run build` re-runs the script itself;
+      # this step exists to surface content failures with a clear
+      # dedicated job step.
+      - name: Validate blog content and data pipeline
+        run: |
+          node scripts/build-blog.mjs
+
+          test -f data/blog/posts.json
+          test -f public/blog/feed.xml
+
+          echo "Blog data pipeline valid."
+
       - name: Build Next.js site
         run: npm run build
+
+      # Artifact-level validation: the export must actually contain
+      # the blog routes and the feed before anything is uploaded.
+      - name: Verify static export output
+        run: |
+          set -euo pipefail
+
+          test -f out/index.html
+          test -f out/blog/index.html
+          test -f out/blog/feed.xml
+
+          article_count="$(
+            find out/blog -mindepth 1 -maxdepth 1 -type d \
+              ! -name images | wc -l
+          )"
+
+          if [ "${article_count}" -eq 0 ]; then
+            echo "No blog article pages were exported." >&2
+            exit 1
+          fi
+
+          echo "Static export verified: blog index, feed, and ${article_count} article route(s) present."
 
       # This file is deliberately added after the Next.js export.
       # It lets the deploy job verify that GitHub Pages is serving

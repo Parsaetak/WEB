@@ -7,9 +7,13 @@ import {
   useState
 } from "react";
 
+import Link from "next/link";
+import {
+  useRouter
+} from "next/navigation";
+
 import styles from "@/components/LivingShell.module.css";
 
-import FooterLinks from "@/components/FooterLinks";
 import RedEye from "@/components/RedEye";
 import SceneLoadingScreen from "@/components/SceneLoadingScreen";
 import SceneNavigator, {
@@ -18,6 +22,7 @@ import SceneNavigator, {
 import ScenePreloader from "@/components/ScenePreloader";
 import SceneRegistry from "@/components/SceneRegistry";
 import SceneUrlSync from "@/components/SceneUrlSync";
+import SiteFooter from "@/components/SiteFooter";
 import WorldBackground from "@/components/WorldBackground";
 import RedCursor from "@/components/RedCursor";
 import { GITHUB_LINK } from "@/lib/links";
@@ -231,6 +236,25 @@ export default function LivingShell({
 
   const github = GITHUB_LINK;
 
+  /*
+   * BLOG is a real route, not a scene. The link stays inert until
+   * pointer or focus intent, and only then prefetches the blog
+   * payload — aggressive auto-prefetch of route targets is
+   * deliberately avoided.
+   */
+  const router =
+    useRouter();
+
+  const warmBlogRoute =
+    useCallback(
+      () => {
+        router.prefetch(
+          "/blog/"
+        );
+      },
+      [router]
+    );
+
   return (
     <div
       className={
@@ -339,20 +363,44 @@ export default function LivingShell({
             }
           />
 
-          {github && (
-            <a
+          <div
+            className={
+              styles.livingShellHudActions
+            }
+          >
+            {github && (
+              <a
+                className={
+                  styles.livingShellGithub
+                }
+                href={
+                  github.href
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
+                GitHub ↗
+              </a>
+            )}
+
+            <Link
               className={
-                styles.livingShellGithub
+                styles.livingShellBlog
               }
-              href={
-                github.href
+              href="/blog/"
+              prefetch={
+                false
               }
-              target="_blank"
-              rel="noreferrer"
+              onPointerEnter={
+                warmBlogRoute
+              }
+              onFocus={
+                warmBlogRoute
+              }
             >
-              GitHub ↗
-            </a>
-          )}
+              Blog ↗
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -374,82 +422,14 @@ export default function LivingShell({
         )}
       </main>
 
-      <footer
-        className={
-          styles.livingShellLegal
-        }
-      >
-        <div
-          className={
-            styles.livingShellLegalInner
-          }
-        >
-          <div
-            className={
-              styles.livingShellFooterMain
-            }
-          >
-            <div
-              className={
-                styles.livingShellLegalPrimary
-              }
-            >
-              <strong>
-                © 2026 Parsa Tak. All rights reserved.
-              </strong>
-
-              <span>
-                Parsa Tak™
-              </span>
-            </div>
-
-            <FooterLinks />
-          </div>
-
-          <div
-            className={
-              styles.livingShellLegalBottom
-            }
-          >
-            <p>
-              Original website design, visual identity,
-              writing, artwork, and other original creative
-              materials presented on this website are the
-              work of Parsa Tak and may not be reproduced,
-              redistributed, modified, or commercially
-              exploited without prior written permission,
-              except where a specific material states otherwise.
-            </p>
-
-            <div
-              className={
-                styles.livingShellLegalLinks
-              }
-            >
-              <a
-                href="https://github.com/Parsaetak/WEB/blob/main/LICENSE.md"
-                target="_blank"
-                rel="noreferrer"
-              >
-                LICENSE
-              </a>
-
-              <a
-                href="https://github.com/Parsaetak/WEB/blob/main/TRADEMARKS.md"
-                target="_blank"
-                rel="noreferrer"
-              >
-                TRADEMARKS
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
       <SceneLoadingScreen
         visible={
           !urlReady
         }
+        phase="INITIALIZING"
+        label="LIVE WORLD"
       />
     </div>
   );

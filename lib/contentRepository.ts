@@ -1,5 +1,9 @@
 import libraryManifest from "@/data/library.json";
 
+import {
+  loadResource
+} from "@/lib/resourceStore";
+
 export type ContentKind =
   | "pdf"
   | "mp3"
@@ -49,7 +53,7 @@ export type ContentItem =
     rawUrl: string;
     githubUrl: string;
     coverUrl?: string;
-  };
+};
 
 const OWNER =
   "Parsaetak";
@@ -71,8 +75,61 @@ const MIME_EXTENSIONS: Record<
   gif: true
 };
 
-const LIBRARY_MANIFEST =
-  libraryManifest as unknown as LibraryManifest;
+const LIBRARY_RESOURCE_KEY =
+  "library-manifest:content-items";
+
+/*
+ * Data flow (see worklog.md — Data Pipeline):
+ * source manifest (synced + validated at build time by deploy.yml)
+ * → runtime normalization (validate each record)
+ * → derived ContentItem list (cached once, shared by every consumer)
+ * → UI
+ *
+ * The build-time validation is the authoritative gate. The runtime
+ * check below is defense in depth: one malformed optional record is
+ * filtered out instead of crashing the whole catalogue.
+ */
+
+function isNonEmptyString(
+  value: unknown
+): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0
+  );
+}
+
+function isValidLibraryItem(
+  value: unknown
+): value is LibraryMetadata {
+  if (
+    typeof value !== "object" ||
+    value === null
+  ) {
+    return false;
+  }
+
+  const candidate =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  return (
+    isNonEmptyString(
+      candidate.branch
+    ) &&
+    isNonEmptyString(
+      candidate.source
+    ) &&
+    isNonEmptyString(
+      candidate.title
+    ) &&
+    isNonEmptyString(
+      candidate.type
+    )
+  );
+}
 
 function getContentKind(
   path: string
@@ -198,30 +255,22 @@ function createContentItem(
   };
 }
 
-let contentCache: ContentItem[] | null = null;
-
-export async function loadLibraryManifest(): Promise<
-  LibraryManifest
-> {
-  return LIBRARY_MANIFEST;
-}
+const LIBRARY_MANIFEST =
+  libraryManifest as unknown as LibraryManifest;
 
 /*
- * The manifest is static at runtime, so the derived ContentItem list is
- * built exactly once and reused across scene mounts instead of
- * re-mapping every item object on each call.
+ * Normalization + indexing happens exactly once and is shared across
+ * every scene mount. loadResource guarantees that concurrent callers
+ * (multiple components mounting in the same tick) join one
+ * normalization pass instead of racing separate derivations.
  */
-export async function listContent(): Promise<
-  ContentItem[]
-> {
-  if (
-    contentCache
-  ) {
-    return contentCache;
-  }
-
-  contentCache =
+function buildContentItems():
+  Promise<ContentItem[]> {
+  return Promise.resolve(
     LIBRARY_MANIFEST.items
+      .filter(
+        isValidLibraryItem
+      )
       .map(
         createContentItem
       )
@@ -230,9 +279,23 @@ export async function listContent(): Promise<
           item
         ): item is ContentItem =>
           item !== null
-      );
+      )
+  );
+}
 
-  return contentCache;
+export async function loadLibraryManifest(): Promise<
+  LibraryManifest
+> {
+  return LIBRARY_MANIFEST;
+}
+
+export async function listContent(): Promise<
+  ContentItem[]
+> {
+  return loadResource(
+    LIBRARY_RESOURCE_KEY,
+    buildContentItems
+  );
 }
 
 export function getContentKindLabel(

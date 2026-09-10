@@ -1,15 +1,44 @@
 "use client";
 
 import RedEye from "@/components/RedEye";
+
+import type {
+  LoadPhase
+} from "@/lib/loadPhase";
+
 import styles from "@/components/SceneLoadingScreen.module.css";
+
+/*
+ * Shared loading surface.
+ *
+ * Honest state contract:
+ * - the title is one of the five load phases from lib/loadPhase.ts
+ * - the progress treatment is indeterminate — it never claims a
+ *   percentage that does not correspond to a measurable process
+ * - `boot` variant: full-screen gate used once while the application
+ *   becomes interactive
+ * - `scene` variant: overlay inside the scene viewport. It fades in
+ *   only after SCENE_OVERLAY_DELAY_MS, so preloaded (cached) scene
+ *   chunks — which transition inside the minimum window — never flash
+ *   a loader, and it never blocks pointer interaction
+ */
 
 type SceneLoadingScreenProps = {
   visible?: boolean;
+  phase?: LoadPhase;
+  label?: string;
+  variant?: "boot" | "scene";
 };
 
 export default function SceneLoadingScreen({
-  visible = true
+  visible = true,
+  phase = "INITIALIZING",
+  label,
+  variant = "boot"
 }: SceneLoadingScreenProps) {
+  const isError =
+    phase === "ERROR";
+
   return (
     <div
       className={
@@ -20,9 +49,19 @@ export default function SceneLoadingScreen({
           ? "true"
           : "false"
       }
+      data-variant={
+        variant
+      }
+      data-phase={
+        phase
+      }
       role="status"
       aria-live="polite"
-      aria-label="Loading"
+      aria-label={
+        isError
+          ? "Loading error"
+          : `Loading — ${phase.toLowerCase()}`
+      }
       aria-hidden={
         visible
           ? "false"
@@ -44,6 +83,11 @@ export default function SceneLoadingScreen({
         <div
           className={
             styles.eye
+          }
+          data-error={
+            isError
+              ? "true"
+              : "false"
           }
           aria-hidden="true"
         >
@@ -70,7 +114,7 @@ export default function SceneLoadingScreen({
               styles.title
             }
           >
-            INITIALIZING
+            {phase}
           </span>
         </div>
 
@@ -89,11 +133,15 @@ export default function SceneLoadingScreen({
           }
         >
           <span>
-            LIVE WORLD
+            {label ?? "LIVE WORLD"}
           </span>
 
           <span>
-            SYNC
+            {
+              isError
+                ? "RETRY AVAILABLE"
+                : "SYNC"
+            }
           </span>
         </div>
       </div>

@@ -232,6 +232,58 @@
   color: var(--text);
 }
 
+/*
+ * Blog entry — a real route rather than a scene, so it carries a
+ * subtle red accent to distinguish it from the muted external link.
+ */
+.livingShellHudActions {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 16px;
+
+  min-width: max-content;
+}
+
+.livingShellBlog {
+  color: var(--red-hot);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+
+  text-transform: uppercase;
+
+  white-space: nowrap;
+
+  border: 1px solid
+    rgba(255, 32, 32, 0.22);
+
+  border-radius: 3px;
+
+  padding: 6px 10px;
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.livingShellBlog:hover {
+  color: #ffffff;
+
+  border-color:
+    rgba(255, 64, 54, 0.55);
+
+  background:
+    rgba(255, 32, 32, 0.1);
+}
+
 .livingShellLegal {
   width: 100%;
 

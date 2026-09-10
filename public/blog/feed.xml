@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Parsa Tak — Blog</title>
+    <link>https://parsaetak.github.io/WEB/blog/</link>
+    <description>Notes from an evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.</description>
+    <language>en</language>
+    <lastBuildDate>Thu, 10 Sep 2026 00:22:10 GMT</lastBuildDate>
+    <atom:link href="https://parsaetak.github.io/WEB/blog/feed.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Why This Website Is a Living System</title>
+      <link>https://parsaetak.github.io/WEB/blog/why-the-website-is-a-living-system/</link>
+      <guid isPermaLink="true">https://parsaetak.github.io/WEB/blog/why-the-website-is-a-living-system/</guid>
+      <pubDate>Sun, 30 Aug 2026 12:00:00 GMT</pubDate>
+      
+      <description>Most websites behave like printed pages that occasionally blink. This one is built as an organism — and the choice is engineering, not aesthetics.</description>
+      <content:encoded><![CDATA[<p>Most of the web is built from dead matter. Pages are assembled, frozen, and shipped. They may animate — a gradient drifts, a badge pulses — but the animation is a recording, not a behaviour. Nothing on the page <em>responds</em>; it only <em>replays</em>.</p>
+<p>RED MAGIC began as a question about that difference. What would it cost, technically, to make a page that behaves instead of replays? Not a video of a living thing. Not a looping decoration. An actual simulation whose observable state changes because you moved through its field.</p>
+<h2 id="an-organism-not-a-widget">An organism, not a widget</h2>
+<p>The organism you can run in the <a href="/blog/reasoning-is-a-system-property/">MAGIC laboratory</a> has five layers: a core that pulses, a membrane that reaches toward your pointer, energy flows between them, orbiting particles, and a signal layer — which is you. Every layer is computed live. When the membrane swells toward your cursor, that is the simulation integrating your movement, not a CSS transition pretending to.</p>
+<p>The interesting engineering constraint is what happens next. A naive implementation of this idea costs you the page. Canvas loops, per-frame allocations, unbounded particle counts — the classic mistakes make an interface that <em>looks</em> alive and <em>feels</em> dead, because it eats the main thread and the page stops responding to input.</p>
+<blockquote><p>A living interface that lags is not a living interface. Responsiveness is part of the organism&#39;s definition, not a property bolted on afterwards.</p></blockquote>
+<p>So the organism is built under a constitution. One canvas. One animation loop. Quality bands that adapt when the frame rate degrades. Pointer input coalesced through <code>requestAnimationFrame</code> so a 500 Hz mouse cannot generate 500 renders per second. Reduced-motion users get an intentional alternative rather than a broken half-experience.</p>
+<h2 id="the-measure-is-the-behaviour">The measure is the behaviour</h2>
+<p>The result is measurable. Vitality — the frame rate the organism sustains — is displayed in its console next to signal strength and form. That telemetry is not a vanity readout. It is the experiment&#39;s instrument panel, because the claim being tested is <em>specific</em>: a rich, responsive, continuously computed interface can coexist with fast, usable pages.</p>
+<p>When the frame rate drops, the organism simplifies itself. Particles thin out. Flows reduce. The core keeps pulsing. That is the adaptation principle made concrete — the system changes behaviour when conditions change, and it remains coherent while doing so.</p>
+<p>Three principles carry the whole design:</p>
+<ul><li><strong>Respond</strong> — react to the environment, which includes you and includes the machine you are using.</li><li><strong>Adapt</strong> — change behaviour with conditions instead of failing when they degrade.</li><li><strong>Persist</strong> — remain recognisably itself across all of those states.</li></ul>
+<h2 id="why-this-matters-beyond-one-website">Why this matters beyond one website</h2>
+<p>An interface that responds is honest. It tells you, through behaviour, that it noticed you. That is the difference between a page that plays a recording of attention and one that actually pays attention.</p>
+<p>There is a longer arc here, and it connects to the research side of this site. If software can move from replaying fixed behaviour toward <em>sustaining</em> behaviour — adapting under load, degrading gracefully, recovering — then the interface is a small, tractable model of the same questions I study in reasoning systems: what does it mean for a system to remain coherent while it changes?</p>
+<p>The website, in other words, is itself an experiment. It just happens to be one you can click.</p>
+<p>If that framing interests you, the anatomy of how this site loads and stays fast is documented separately in <a href="/blog/the-anatomy-of-a-fast-static-site/">The Anatomy of a Fast Static Site</a>.</p>]]></content:encoded>
+      <category>RED MAGIC</category><category>interfaces</category><category>systems</category><category>performance</category>
+    </item>
+    <item>
+      <title>The Anatomy of a Fast Static Site</title>
+      <link>https://parsaetak.github.io/WEB/blog/the-anatomy-of-a-fast-static-site/</link>
+      <guid isPermaLink="true">https://parsaetak.github.io/WEB/blog/the-anatomy-of-a-fast-static-site/</guid>
+      <pubDate>Sat, 22 Aug 2026 12:00:00 GMT</pubDate>
+      
+      <description>A tour of the loading architecture behind this website: priorities, deduplication, idle-time preloading, and the rule that banned fake progress bars.</description>
+      <content:encoded><![CDATA[<p>Every performance problem on the web is, at some level, a scheduling problem. Code, styles, images, and data all want the same scarce resources: the network, the main thread, and the user&#39;s attention. A fast site is not one with nothing to load — it is one where the <em>order</em> of loading is designed.</p>
+<p>This site is a static export served from GitHub Pages. No server, no runtime backend, no build-time image pipeline. Those constraints shape everything below, and they are worth having: they force the loading design to be explicit rather than delegated to a framework&#39;s defaults.</p>
+<h2 id="five-honest-phases">Five honest phases</h2>
+<p>Loading UIs lie constantly. They display 73%, then 92%, then 99% — numbers connected to nothing measurable. This site forbids that. Every loading surface exposes one of five phases:</p>
+<ul><li><code>INITIALIZING</code> — application boot, before the shell is interactive.</li><li><code>LOADING</code> — a required resource is being fetched for the current view.</li><li><code>PREPARING</code> — data is resident; the view is being staged.</li><li><code>READY</code> — the view is usable.</li><li><code>ERROR</code> — a required resource failed, and recovery is offered.</li></ul>
+<p>For measurable work, the UI may show deterministic progress. For indeterminate work — which is most of it — it shows an indeterminate treatment. The rule is simple: the interface never claims a resource is loaded when it is not.</p>
+<h2 id="the-priority-ladder">The priority ladder</h2>
+<p>All loading work is classified on one ladder:</p>
+<ul><li><strong>P0 — critical.</strong> The app shell, the current scene&#39;s code, essential CSS.</li><li><strong>P1 — near-critical.</strong> The most probable next scene. Loaded as soon as the main thread goes idle.</li><li><strong>P2 — predictive.</strong> The adjacent previous scene, after a second idle gap.</li><li><strong>P3 — background.</strong> Secondary metadata. Nothing currently schedules P3 work.</li><li><strong>P4 — user-triggered.</strong> PDFs, audio, video. <em>Never</em> loaded automatically.</li></ul>
+<p>Heavy media being P4 is a hard law here. The Library contains books and media measured in megabytes; none of it moves until you press READ, LISTEN, or WATCH. A link existing is not consent to download.</p>
+<h2 id="one-import-site-per-scene">One import site per scene</h2>
+<p>The subtlest performance bug on this site was structural. Each scene had <em>two</em> dynamic import sites — one in the scene registry that rendered the component, one in the preloader that warmed it ahead of time. The bundler, doing exactly what it was told, emitted two chunk copies of every scene. Every navigation downloaded both.</p>
+<p>The fix was architectural, not tactical: the preloader now owns the single import site per scene, and the registry resolves its lazy components through that same loader. One request, one module instance, one execution. Concurrent callers — a navigation, a hover, a background preload — all join the same in-flight promise through a shared resource store.</p>
+<p>Deduplication at the data layer follows the same pattern. If several components request the same resource in the same tick, they share one flight; a failed request is evicted so the next caller can retry instead of inheriting a cached rejection.</p>
+<h2 id="idle-is-a-resource">Idle is a resource</h2>
+<p>The background preloader treats idle time as a budget, not an invitation. It loads at most two scene chunks without user intent. It declines to work when the tab is hidden, when <code>save-data</code> is on, or when the connection reports 2G. Idle callbacks carry a long timeout precisely because this work is low priority — P1 and P2 must never compete with the user&#39;s actual request.</p>
+<h2 id="the-result">The result</h2>
+<p>The outcome is a navigation model with three speeds:</p>
+<ol><li><strong>Preloaded scene</strong> — the chunk is resident; the transition is a fade. The loading overlay has a built-in 180 ms delay, so for transitions that resolve inside the minimum window, no loader ever appears.</li><li><strong>Cold scene</strong> — the chunk fetches; the overlay appears after its delay, states <code>LOADING</code>, and disappears when the scene mounts.</li><li><strong>Return visits</strong> — everything is content-hashed and immutable, so the browser cache does the work and the network stays quiet.</li></ol>
+<p>None of this required a new framework, a state manager, or a query library. It required deciding what should load, in what order, and being honest about what has not loaded yet. That is most of performance engineering.</p>
+<p>The constraints side of this story — why the site stays fully static — is covered in <a href="/blog/building-under-constraints/">Building Under Constraints</a>.</p>]]></content:encoded>
+      <category>performance</category><category>architecture</category><category>loading</category><category>static export</category>
+    </item>
+    <item>
+      <title>Reasoning Is a System Property</title>
+      <link>https://parsaetak.github.io/WEB/blog/reasoning-is-a-system-property/</link>
+      <guid isPermaLink="true">https://parsaetak.github.io/WEB/blog/reasoning-is-a-system-property/</guid>
+      <pubDate>Tue, 14 Jul 2026 12:00:00 GMT</pubDate>
+      
+      <description>AI Instructions, REP, and USEF — three connected frameworks built on one claim: intelligence lives in the system around the model, not only inside it.</description>
+      <content:encoded><![CDATA[<p>When people ask whether a model is intelligent, they are usually asking the wrong unit of analysis. A model is a component. The thing that behaves intelligently or fails to is the <em>system</em> around it: how instructions are defined, how reasoning is checked, how the system learns from its own weaknesses.</p>
+<p>That claim is the foundation for three connected frameworks I have been building, each operating at a different layer.</p>
+<h2 id="ai-instructions-govern-the-environment">AI Instructions — govern the environment</h2>
+<p>Every intelligent system runs inside an environment of rules, whether or not anyone wrote them down. AI Instructions is an operating constitution for that environment: instruction hierarchy, evidence handling, tool access, context management, security boundaries, memory, and self-governance.</p>
+<p>The premise is that an under-specified environment produces under-specified behaviour. If the rules governing a system are implicit, the system will invent them — and what it invents will be whatever is statistically nearest, not what is correct. Governing the environment explicitly is not bureaucracy. It is the difference between a system that does what you meant and a system that does something adjacent to it.</p>
+<h2 id="rep-strengthen-the-thinking">REP — strengthen the thinking</h2>
+<p>REP is a reasoning protocol. Where AI Instructions governs the environment, REP disciplines the process inside it: decomposition before synthesis, verification after claims, critique before commitment, adversarial checking before deployment, explicit uncertainty handling, and iterative refinement.</p>
+<p>The core move is treating reasoning as an auditable artifact rather than a private computation. A chain of thought that cannot be inspected cannot be improved — it can only be re-rolled. Structured reasoning changes the failure mode: instead of being wrong confidently, the system can be wrong <em>legibly</em>, which is the precondition for getting less wrong over time.</p>
+<blockquote><p>Verification is not a step after thinking. It is a property of the thinking.</p></blockquote>
+<h2 id="usef-improve-the-system">USEF — improve the system</h2>
+<p>USEF closes the loop. It is a discipline for changing systems deliberately: find weaknesses, redesign components, test consequences, measure results, iterate. Where REP hardens one act of reasoning, USEF hardens the process by which the whole system evolves.</p>
+<p>The three frameworks compose into a single shape:</p>
+<ul><li><strong>AI Instructions</strong> defines the environment — what is allowed, required, and forbidden.</li><li><strong>REP</strong> defines the process — how conclusions are reached and checked.</li><li><strong>USEF</strong> defines the evolution — how both of the above improve from evidence.</li></ul>
+<h2 id="intelligence-as-a-whole-system-behavior">Intelligence as a whole-system behavior</h2>
+<p>There is a reason this site&#39;s interface behaves like an organism rather than a document. The interface is a small demonstration of the same thesis: a responsive system that adapts its quality under load, persists its identity across states, and stays legible while changing. It is a tractable model of coherence under change — which is the property I actually care about in larger systems.</p>
+<p>Three claims summarise the research programme:</p>
+<ol><li>The model is necessary but not sufficient; the surrounding system carries most of what we call reliability.</li><li>Reasoning that cannot be inspected cannot be trusted, only sampled.</li><li>A system that cannot improve from its own failures is capped at the quality of its original design.</li></ol>
+<p>The frameworks are living documents. They change when the evidence changes — which is, of course, USEF applied to USEF.</p>]]></content:encoded>
+      <category>AI</category><category>reasoning</category><category>systems</category><category>REP</category><category>USEF</category>
+    </item>
+    <item>
+      <title>Building Under Constraints</title>
+      <link>https://parsaetak.github.io/WEB/blog/building-under-constraints/</link>
+      <guid isPermaLink="true">https://parsaetak.github.io/WEB/blog/building-under-constraints/</guid>
+      <pubDate>Wed, 03 Jun 2026 12:00:00 GMT</pubDate>
+      
+      <description>GitHub Pages cannot run a backend, resize an image, or render on demand. Those limits are not obstacles — they are the design.</description>
+      <content:encoded><![CDATA[<p>Every interesting system is shaped by what it cannot do. This site cannot run a server. GitHub Pages serves files — full stop. No runtime rendering, no image optimisation pipeline, no backend, no database, no server actions. Anything the site needs must either exist as a file before deployment or happen entirely in the browser.</p>
+<p>It is tempting to read that as poverty. In practice it is the most useful constraint I have worked under, because it forces every expensive operation to happen at the right time.</p>
+<h2 id="build-time-is-your-server">Build time is your server</h2>
+<p>The whole architecture falls out of one question: <em>what can move from runtime to build time?</em></p>
+<p>The answer turned out to be almost everything. Content manifests are synced and validated before the build — a malformed library record fails the pipeline loudly instead of shipping corrupted pages. The blog&#39;s articles are normalised, validated, and rendered to HTML before the site exists; indexes for tags, categories, related posts, and the RSS feed are precomputed then too. The browser receives finished, typed data and never parses a markdown file.</p>
+<p>The pipeline is deliberately boring:</p>
+<ul><li><strong>Source</strong> — markdown files with structured frontmatter, in the repository.</li><li><strong>Validate</strong> — required fields, types, slug format, dates, duplicate detection. A bad record fails the build with the file and the reason.</li><li><strong>Normalise</strong> — one canonical shape, reading time computed, URLs resolved.</li><li><strong>Index</strong> — deterministic lookup maps for slugs, tags, categories, and related posts.</li><li><strong>Emit</strong> — static pages and a feed generated from the same data. There is no second, hand-maintained index anywhere.</li></ul>
+<p>Failures are loud by design. A content pipeline that silently drops a broken record produces a site that is quietly wrong — the worst kind of wrong, because it looks healthy.</p>
+<h2 id="what-the-constraint-buys">What the constraint buys</h2>
+<p>A no-server rule sounds like a limitation. Measure what it returns:</p>
+<ul><li><strong>Deployment is a copy.</strong> No warm-up, no cold starts, no runtime dependencies to monitor. Pages either exist or the build failed.</li><li><strong>Performance is structural.</strong> Everything is a static file behind a CDN. Caching is content-addressed by fingerprint, so return visits cost the browser cache and nothing else.</li><li><strong>Security surface is near zero.</strong> No server code, no API to abuse, no secrets in the client.</li><li><strong>Cost is zero.</strong> An architecture that scales to zero users and to a million users at the same price.</li></ul>
+<p>The constraint also disciplines the client. There is no build-time image optimisation, so images ship with explicit dimensions, real lazy-loading below the fold, and priority only on the hero. There is no server-side search, so the blog index is a precomputed dataset small enough to filter in memory during a keystroke. Heavy media — books, audio, video — never moves without an explicit click, because on a static host, every megabyte comes out of the visitor&#39;s patience.</p>
+<h2 id="constraints-as-a-creative-instrument">Constraints as a creative instrument</h2>
+<p>The RED MAGIC organism runs under the same philosophy. One canvas, one animation loop, quality that adapts when frames drop — not because canvas work is impossible, but because the <em>interesting</em> version is the one that survives contact with a mid-range phone on a slow network.</p>
+<p>That is the general lesson. Removing options does not remove design; it concentrates it. When you cannot solve a problem with infrastructure, you have to solve it with architecture — and architectural solutions travel. The loading priorities, the single-import discipline, and the data pipeline described in <a href="/blog/the-anatomy-of-a-fast-static-site/">The Anatomy of a Fast Static Site</a> would make a server-backed site faster too.</p>
+<p>A system defined by what it refuses to do is a system whose behaviour you can predict. Predictability is the foundation everything else — performance, reliability, trust — is built on. Choose constraints deliberately, keep them honest, and let them do the design work.</p>]]></content:encoded>
+      <category>architecture</category><category>static export</category><category>content pipeline</category><category>GitHub Pages</category>
+    </item>
+  </channel>
+</rss>

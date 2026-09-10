@@ -5,12 +5,40 @@ import {
 } from "react";
 
 import type {
-  SceneId
-} from "@/components/LivingShell";
+  ComponentType
+} from "react";
+
+import {
+  BACKGROUND_IDLE_TIMEOUT_MS,
+  BACKGROUND_PRELOAD_BUDGET
+} from "@/lib/loadPhase";
 
 import {
   scheduleIdle
 } from "@/lib/idleScheduler";
+
+import type {
+  SceneId
+} from "@/components/LivingShell";
+
+/*
+ * SCENE PRELOADER
+ *
+ * Owns every dynamic import() of a scene module. There is exactly one
+ * import site per scene in the whole application — this file. Bundler
+ * chunk duplication and double downloads during navigation are
+ * structurally impossible because SceneRegistry's dynamic() components
+ * resolve through the same loader map below.
+ *
+ * Priorities (see lib/loadPhase.ts):
+ * - P0 the active scene is loaded by SceneRegistry on demand
+ * - P1 the next scene in navigation order loads once the main thread
+ *      is idle and background work is allowed
+ * - P2 the previous scene loads after a second idle gap
+ * - Background work is bounded to BACKGROUND_PRELOAD_BUDGET chunks,
+ *   skips while the tab is hidden, and respects save-data / 2g.
+ * - P4 media never preloads here — heavy media stays user-triggered.
+ */
 
 const SCENE_ORDER:
   readonly SceneId[] =
@@ -23,9 +51,13 @@ const SCENE_ORDER:
     "library"
   ];
 
+type SceneModule = {
+  default: ComponentType;
+};
+
 const preloaders: Record<
   SceneId,
-  () => Promise<unknown>
+  () => Promise<SceneModule>
 > = {
   home: () =>
     import(
@@ -61,7 +93,7 @@ const preloaders: Record<
 const preloadCache =
   new Map<
     SceneId,
-    Promise<unknown>
+    Promise<SceneModule>
   >();
 
 type ConnectionState = {
@@ -115,6 +147,15 @@ function shouldPreloadInBackground() {
   return true;
 }
 
+function isPageVisible() {
+  return (
+    typeof document ===
+      "undefined" ||
+    document.visibilityState ===
+      "visible"
+  );
+}
+
 function getAdjacentScenes(
   scene: SceneId
 ): readonly SceneId[] {
@@ -157,9 +198,15 @@ function getAdjacentScenes(
   ];
 }
 
+/*
+ * The single entry point for scene chunk loading. Concurrent callers
+ * (SceneRegistry transition, navigator hover warming, background
+ * preloading) all receive the same cached promise — one network
+ * request, one module instance, one execution.
+ */
 export function preloadScene(
   scene: SceneId
-): Promise<unknown> {
+): Promise<SceneModule> {
   const cached =
     preloadCache.get(
       scene
@@ -173,7 +220,9 @@ export function preloadScene(
     preloaders[scene];
 
   if (!preload) {
-    return Promise.resolve();
+    return Promise.resolve({
+      default: () => null
+    });
   }
 
   const promise =
@@ -184,6 +233,10 @@ export function preloadScene(
     promise
   );
 
+  /*
+   * Failed imports are evicted so a later attempt can retry —
+   * a network hiccup once must not disable a scene forever.
+   */
   promise.catch(
     () => {
       preloadCache.delete(
@@ -193,6 +246,18 @@ export function preloadScene(
   );
 
   return promise;
+}
+
+/*
+ * Alias used by SceneRegistry's dynamic() components so the registry
+ * and the preloader share one import graph.
+ */
+export function loadSceneModule(
+  scene: SceneId
+): Promise<SceneModule> {
+  return preloadScene(
+    scene
+  );
 }
 
 /*
@@ -206,7 +271,7 @@ function waitForIdle(): Promise<void> {
     ) => {
       scheduleIdle(
         resolve,
-        1800
+        BACKGROUND_IDLE_TIMEOUT_MS
       );
     }
   );
@@ -228,6 +293,12 @@ export async function preloadAdjacentScenes(
     return;
   }
 
+  if (
+    !isPageVisible()
+  ) {
+    return;
+  }
+
   const [
     nextScene,
     previousScene
@@ -236,16 +307,22 @@ export async function preloadAdjacentScenes(
       scene
     );
 
+  let loaded = 0;
+
   /*
-   * The next scene is the highest-value prediction, so load it
+   * P1 — the next scene is the highest-value prediction, so load it
    * immediately once background preloading is allowed.
    */
   await preloadScene(
     nextScene
   );
 
+  loaded += 1;
+
   if (
-    isCancelled()
+    isCancelled() ||
+    loaded >=
+      BACKGROUND_PRELOAD_BUDGET
   ) {
     return;
   }
@@ -270,11 +347,15 @@ export async function preloadAdjacentScenes(
   }
 
   if (
-    !shouldPreloadInBackground()
+    !shouldPreloadInBackground() ||
+    !isPageVisible()
   ) {
     return;
   }
 
+  /*
+   * P2 — the previous scene in navigation order.
+   */
   await preloadScene(
     previousScene
   );
@@ -291,28 +372,57 @@ export default function ScenePreloader({
     let cancelled =
       false;
 
+    const beginPreload =
+      () => {
+        if (
+          cancelled ||
+          !shouldPreloadInBackground() ||
+          !isPageVisible()
+        ) {
+          return;
+        }
+
+        void preloadAdjacentScenes(
+          scene,
+          () => cancelled
+        );
+      };
+
+    /*
+     * Hidden tabs do no background work. When the page becomes
+     * visible the preload decision is re-evaluated.
+     */
+    const handleVisibility =
+      () => {
+        if (
+          isPageVisible()
+        ) {
+          beginPreload();
+        }
+      };
+
     const cancelIdle =
       scheduleIdle(
-        () => {
-          if (
-            cancelled ||
-            !shouldPreloadInBackground()
-          ) {
-            return;
-          }
-
-          void preloadAdjacentScenes(
-            scene,
-            () => cancelled
-          );
-        }
+        beginPreload,
+        BACKGROUND_IDLE_TIMEOUT_MS
       );
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility,
+      { passive: true }
+    );
 
     return () => {
       cancelled =
         true;
 
       cancelIdle();
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility
+      );
     };
   }, [
     scene

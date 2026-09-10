@@ -40,6 +40,109 @@
   pointer-events: none;
 }
 
+/*
+ * Scene variant: an overlay inside the viewport that never blocks
+ * interaction and never flashes for fast (preloaded) transitions.
+ * The fade-in is delayed so cached scene chunks — which resolve
+ * inside the minimum transition window — complete before the
+ * overlay becomes visible.
+ */
+.sceneLoadingScreen[data-variant="scene"] {
+  position: absolute;
+
+  z-index: 40;
+
+  pointer-events: none;
+
+  background:
+    rgba(
+      5,
+      5,
+      6,
+      0.88
+    );
+
+  opacity: 0;
+
+  transition:
+    opacity 160ms ease
+      180ms,
+    visibility 160ms ease
+      180ms;
+
+  visibility: hidden;
+}
+
+.sceneLoadingScreen[data-variant="scene"][data-visible="true"] {
+  opacity: 1;
+
+  visibility: visible;
+}
+
+.sceneLoadingScreen[data-variant="scene"][data-visible="false"] {
+  transition:
+    opacity 120ms ease,
+    visibility 120ms ease;
+
+  opacity: 0;
+
+  visibility: hidden;
+}
+
+/*
+ * Error phase: the system stays honest about failed loads.
+ */
+.sceneLoadingScreen[data-phase="ERROR"] .title {
+  color: var(--red-hot);
+
+  text-shadow:
+    0 0 22px
+      rgba(
+        255,
+        70,
+        56,
+        0.3
+      );
+}
+
+.sceneLoadingScreen[data-phase="ERROR"] .progress span {
+  animation: none;
+
+  transform:
+    translate3d(
+      0,
+      0,
+      0
+    );
+
+  width: 100%;
+
+  background:
+    var(--red-deep);
+}
+
+.sceneLoadingScreen[data-variant="scene"] .inner {
+  animation: none;
+}
+
+.sceneLoadingScreen[data-variant="scene"] .eye {
+  width: 54px;
+
+  height: 54px;
+
+  margin: 0 0 14px;
+}
+
+.sceneLoadingScreen[data-variant="scene"] .meta {
+  justify-content: center;
+
+  gap: 14px;
+}
+
+.sceneLoadingScreen[data-variant="scene"] .progress {
+  margin: 20px 0 12px;
+}
+
 .backdrop {
   position: absolute;
 
@@ -452,5 +555,38 @@
         0,
         0
       );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sceneLoadingScreen {
+    transition: none;
+  }
+
+  .sceneLoadingScreen[data-variant="scene"] {
+    transition: opacity 1ms linear;
+  }
+
+  .inner {
+    animation: none;
+  }
+
+  .eye {
+    animation: none;
+  }
+
+  .progress span {
+    animation: none;
+
+    transform:
+      translate3d(
+        0,
+        0,
+        0
+      );
+
+    width: 100%;
+
+    opacity: 0.65;
   }
 }

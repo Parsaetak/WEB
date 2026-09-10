@@ -5,6 +5,10 @@ import {
   useState
 } from "react";
 
+import {
+  loadResource
+} from "@/lib/resourceStore";
+
 import styles from "@/components/LibraryPdfReader.module.css";
 
 type PdfResourceInfo = {
@@ -285,9 +289,20 @@ export default function LibraryPdfReader({
       null
     );
 
-    void inspectPdfResource(
-      src,
-      controller.signal
+    /*
+     * The probe is deduplicated through the shared resource store:
+     * reopening the same document (or two components asking about
+     * the same source) reuses one in-flight inspection instead of
+     * firing duplicate HEAD + range requests. The underlying fetch
+     * still honors the per-mount AbortSignal for unmount cleanup.
+     */
+    void loadResource(
+      `pdf-resource-probe:${src}`,
+      () =>
+        inspectPdfResource(
+          src,
+          controller.signal
+        )
     )
       .then(
         (
