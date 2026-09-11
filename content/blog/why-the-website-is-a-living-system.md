@@ -4,10 +4,10 @@ subtitle: "AI is the leverage. The will behind it is what makes the software beh
 excerpt: "Most websites behave like printed pages that occasionally blink. This one is built as an organism — and in 2026 that choice is the demonstration, not the decoration."
 description: "The RED MAGIC interface philosophy, updated for the v2.2 high-refresh upgrade: what it costs to make a page that behaves instead of replays, and why AI-assisted building made the difference between wanting it and shipping it."
 date: "2026-09-10"
-updated: "2026-09-10"
+updated: "2026-09-11"
 author: "Parsa Tak"
 category: "engineering"
-tags: ["RED MAGIC", "interfaces", "systems", "performance", "AI-assisted engineering", "2026"]
+tags: ["RED MAGIC", "Red illuminati", "interfaces", "systems", "performance", "AI-assisted engineering", "2026"]
 featured: true
 cover:
   src: "/blog/images/living-system.svg"
@@ -22,7 +22,7 @@ RED MAGIC began as a question about that difference. What would it cost, technic
 
 ## An organism, not a widget
 
-The organism you can run in the [MAGIC laboratory](/blog/reasoning-is-a-system-property/) has five layers: a core that pulses, a membrane that reaches toward your pointer, energy flows between them, orbiting particles, and a signal layer — which is you. Every layer is computed live. When the membrane swells toward your cursor, that is the simulation integrating your movement, not a CSS transition pretending to.
+The organism you can run in the [MAGIC laboratory](/#magic) has five layers: a core that pulses, a membrane that reaches toward your pointer, energy flows between them, orbiting particles, and a signal layer — which is you. Every layer is computed live. When the membrane swells toward your cursor, that is the simulation integrating your movement, not a CSS transition pretending to.
 
 The same principle runs at ambient scale through the whole site: one continuous background organism with layered timescales — particles and sparks on micro loops, wisps and rings on short and medium loops, atmospheric masses on long loops, and a heartbeat underneath. As of this upgrade the layers are phase-de-synchronised (no layer starts at zero on load), coupled to a shared energy signal, and echoed by a resonance ring that only becomes visible when the organism is awake. Move, and the entire field brightens as one system. Stop, and it settles to silence at zero JavaScript cost.
 

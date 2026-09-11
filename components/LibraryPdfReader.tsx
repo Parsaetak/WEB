@@ -493,7 +493,7 @@ export default function LibraryPdfReader({
             </span>
 
             <h3>
-              Open the document directly.
+              Open the document directly
             </h3>
 
             <p>

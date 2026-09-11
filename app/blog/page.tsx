@@ -126,7 +126,7 @@ export default function BlogPage() {
               >
                 Writing from
                 <br />
-                the laboratory.
+                the laboratory
               </h1>
 
               <p

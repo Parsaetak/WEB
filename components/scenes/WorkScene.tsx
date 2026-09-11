@@ -4,6 +4,13 @@ import {
 
 import styles from "./WorkScene.module.css";
 
+/*
+ * Project cards are informational by default. Only the RED MAGIC
+ * project carries a live destination on this site — the Magic scene
+ * runs the actual organism — so only that card is navigable
+ * (data-linked). Hover affordances are scoped to it in CSS so no
+ * inert card ever looks clickable.
+ */
 const projects = [
   {
     number: "01",
@@ -19,7 +26,8 @@ const projects = [
     tags: [
       "INTELLIGENCE",
       "ASSESSMENT"
-    ]
+    ],
+    href: null as string | null
   },
   {
     number: "02",
@@ -35,7 +43,8 @@ const projects = [
     tags: [
       "SIMULATION",
       "EVOLUTION"
-    ]
+    ],
+    href: null as string | null
   },
   {
     number: "03",
@@ -51,7 +60,8 @@ const projects = [
     tags: [
       "CANVAS",
       "ADAPTATION"
-    ]
+    ],
+    href: "#magic"
   },
   {
     number: "04",
@@ -67,9 +77,114 @@ const projects = [
     tags: [
       "AI",
       "SYSTEMS"
-    ]
+    ],
+    href: null as string | null
   }
 ];
+
+/*
+ * Shared card body so the linked (RED MAGIC) and informational
+ * variants render identically.
+ */
+function ProjectBody({
+  project
+}: {
+  project: (typeof projects)[number];
+}) {
+  return (
+    <>
+      <div
+        className={
+          styles.workProjectNumber
+        }
+      >
+        {
+          project.number
+        }
+      </div>
+
+      <div
+        className={
+          styles.workProjectMain
+        }
+      >
+        <div
+          className={
+            styles.workProjectMeta
+          }
+        >
+          <span
+            className={
+              styles.workProjectCode
+            }
+          >
+            {
+              project.code
+            }
+          </span>
+
+          <span
+            className={
+              styles.workProjectType
+            }
+          >
+            {
+              project.type
+            }
+          </span>
+        </div>
+
+        <h2>
+          {
+            project.title
+          }
+        </h2>
+
+        <p
+          className={
+            styles.workProjectCopy
+          }
+        >
+          {
+            project.copy
+          }
+        </p>
+
+        <div
+          className={
+            styles.workProjectTags
+          }
+        >
+          {project.tags.map(
+            (tag) => (
+              <span
+                key={tag}
+              >
+                {tag}
+              </span>
+            )
+          )}
+        </div>
+      </div>
+
+      <div
+        className={
+          styles.workProjectState
+        }
+      >
+        <span>
+          {
+            project.status
+          }
+        </span>
+
+        <i
+          aria-hidden="true"
+        />
+      </div>
+    </>
+  );
+}
 
 export default function WorkScene() {
   const github =
@@ -123,7 +238,7 @@ export default function WorkScene() {
               <h1
                 className={`section-title ${styles.workTitle}`}
               >
-                What I am building.
+                What I am building
               </h1>
 
               <p
@@ -186,107 +301,44 @@ export default function WorkScene() {
               className={styles.workProjectList}
             >
               {projects.map(
-                (project) => (
-                  <article
-                    className={styles.workProject}
-                    key={
-                      project.number
-                    }
-                    data-status={
-                      project.status.toLowerCase()
-                    }
-                  >
-                    <div
+                (project) =>
+                  project.href !== null ? (
+                    <a
                       className={
-                        styles.workProjectNumber
+                        styles.workProject
                       }
-                    >
-                      {
+                      key={
                         project.number
                       }
-                    </div>
-
-                    <div
-                      className={
-                        styles.workProjectMain
+                      data-status={
+                        project.status.toLowerCase()
                       }
+                      data-linked="true"
+                      href={project.href}
+                      aria-label={`Open the ${project.code} experiment in the Magic scene`}
                     >
-                      <div
-                        className={
-                          styles.workProjectMeta
-                        }
-                      >
-                        <span
-                          className={
-                            styles.workProjectCode
-                          }
-                        >
-                          {
-                            project.code
-                          }
-                        </span>
-
-                        <span
-                          className={
-                            styles.workProjectType
-                          }
-                        >
-                          {
-                            project.type
-                          }
-                        </span>
-                      </div>
-
-                      <h2>
-                        {
-                          project.title
-                        }
-                      </h2>
-
-                      <p
-                        className={
-                          styles.workProjectCopy
-                        }
-                      >
-                        {
-                          project.copy
-                        }
-                      </p>
-
-                      <div
-                        className={
-                          styles.workProjectTags
-                        }
-                      >
-                        {project.tags.map(
-                          (tag) => (
-                            <span
-                              key={tag}
-                            >
-                              {tag}
-                            </span>
-                          )
-                        )}
-                      </div>
-                    </div>
-
-                    <div
-                      className={
-                        styles.workProjectState
-                      }
-                    >
-                      <span>
-                        {
-                          project.status
-                        }
-                      </span>
-
-                      <i
-                        aria-hidden="true"
+                      <ProjectBody
+                        project={project}
                       />
-                    </div>
-                  </article>
-                )
+                    </a>
+                  ) : (
+                    <article
+                      className={
+                        styles.workProject
+                      }
+                      key={
+                        project.number
+                      }
+                      data-status={
+                        project.status.toLowerCase()
+                      }
+                      data-linked="false"
+                    >
+                      <ProjectBody
+                        project={project}
+                      />
+                    </article>
+                  )
               )}
             </div>
           </div>

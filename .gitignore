@@ -16,3 +16,6 @@ out/
 .DS_Store
 .idea/
 .vscode/
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo

@@ -139,7 +139,7 @@ export default function SceneLoadingScreen({
           <span>
             {
               isError
-                ? "RETRY AVAILABLE"
+                ? "RELOAD TO RETRY"
                 : "SYNC"
             }
           </span>

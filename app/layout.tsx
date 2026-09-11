@@ -42,6 +42,13 @@ export const metadata: Metadata = {
   ],
   creator: "Parsa Tak",
   publisher: "Parsa Tak",
+  /*
+   * Keyword discipline: every term names something the site actually
+   * presents or owns. SHEYTAN and Red illuminati are claimed
+   * brand/artistic identity terms (see TRADEMARKS.md and the RED
+   * MAGIC article) — each appears exactly once, in visible-backed
+   * metadata, never in hidden text.
+   */
   keywords: [
     "Parsa Tak",
     "AI",
@@ -51,7 +58,9 @@ export const metadata: Metadata = {
     "creative technology",
     "system architecture",
     "RED MAGIC",
-    "RED THEORY"
+    "RED THEORY",
+    "SHEYTAN",
+    "Red illuminati"
   ],
   metadataBase:
     new URL(

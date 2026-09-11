@@ -6,7 +6,10 @@ import styles from "./SystemsScene.module.css";
  * Module cards are static data. `article` marks a module that has a
  * dedicated deep-dive on the blog — a real crawlable /blog/<slug>/
  * route, not a hash URL. Only AI Instructions has one today; REP
- * and USEF links appear when those articles exist.
+ * and USEF links appear when those articles exist. Modules WITH an
+ * article render as one full-card link; modules without one are
+ * informational panels with no hover affordance (nothing inert may
+ * look clickable).
  */
 const systems = [
   {
@@ -39,6 +42,75 @@ const systems = [
       "Provides a discipline for finding weaknesses, redesigning components, testing consequences, measuring results, and iterating."
   }
 ];
+
+/*
+ * Shared module body so the linked (AI INSTRUCTIONS) and
+ * informational (REP, USEF) variants render identically. The
+ * article label is a plain emphasis inside the linked card — a
+ * nested <a> inside a card link would be invalid HTML.
+ */
+function ModuleBody({
+  system
+}: {
+  system: (typeof systems)[number];
+}) {
+  return (
+    <div className={styles.systemsModuleFrame}>
+      <div
+        className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerTl}`}
+      />
+      <div
+        className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerTr}`}
+      />
+      <div
+        className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerBl}`}
+      />
+      <div
+        className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerBr}`}
+      />
+
+      <div className={styles.systemsModuleIndex}>
+        {system.number}
+      </div>
+
+      <div className={styles.systemsModuleRole}>
+        {system.role}
+      </div>
+
+      <div className={styles.systemsModuleCore}>
+        <span className={styles.systemsModuleCode}>
+          {system.code}
+        </span>
+
+        <span className={styles.systemsModuleLayer}>
+          {system.layer}
+        </span>
+
+        <h2>
+          {system.title}
+        </h2>
+      </div>
+
+      <p className={styles.systemsModuleCopy}>
+        {system.copy}
+      </p>
+
+      {system.article && (
+        <span className={styles.systemsModuleLink}>
+          {system.articleLabel}
+
+          <span aria-hidden="true">
+            →
+          </span>
+        </span>
+      )}
+
+      <div className={styles.systemsModuleLine}>
+        <span />
+      </div>
+    </div>
+  );
+}
 
 export default function SystemsScene() {
   return (
@@ -110,72 +182,30 @@ export default function SystemsScene() {
           </header>
 
           <div className={styles.systemsModules}>
-            {systems.map((system) => (
-              <article
-                className={styles.systemsModule}
-                key={system.number}
-                data-module={system.number}
-              >
-                <div className={styles.systemsModuleFrame}>
-                  <div
-                    className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerTl}`}
-                  />
-                  <div
-                    className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerTr}`}
-                  />
-                  <div
-                    className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerBl}`}
-                  />
-                  <div
-                    className={`${styles.systemsModuleCorner} ${styles.systemsModuleCornerBr}`}
-                  />
-
-                  <div className={styles.systemsModuleIndex}>
-                    {system.number}
-                  </div>
-
-                  <div className={styles.systemsModuleRole}>
-                    {system.role}
-                  </div>
-
-                  <div className={styles.systemsModuleCore}>
-                    <span className={styles.systemsModuleCode}>
-                      {system.code}
-                    </span>
-
-                    <span className={styles.systemsModuleLayer}>
-                      {system.layer}
-                    </span>
-
-                    <h2>
-                      {system.title}
-                    </h2>
-                  </div>
-
-                  <p className={styles.systemsModuleCopy}>
-                    {system.copy}
-                  </p>
-
-                  {system.article && (
-                    <Link
-                      className={styles.systemsModuleLink}
-                      href={system.article}
-                      prefetch={false}
-                    >
-                      {system.articleLabel}
-
-                      <span aria-hidden="true">
-                        →
-                      </span>
-                    </Link>
-                  )}
-
-                  <div className={styles.systemsModuleLine}>
-                    <span />
-                  </div>
-                </div>
-              </article>
-            ))}
+            {systems.map((system) =>
+              system.article ? (
+                <Link
+                  className={styles.systemsModule}
+                  key={system.number}
+                  data-module={system.number}
+                  data-article="true"
+                  href={system.article}
+                  prefetch={false}
+                  aria-label={`Read the ${system.code} article`}
+                >
+                  <ModuleBody system={system} />
+                </Link>
+              ) : (
+                <article
+                  className={styles.systemsModule}
+                  key={system.number}
+                  data-module={system.number}
+                  data-article="false"
+                >
+                  <ModuleBody system={system} />
+                </article>
+              )
+            )}
           </div>
 
           <section className={styles.systemsPrinciple}>

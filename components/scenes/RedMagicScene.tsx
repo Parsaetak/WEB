@@ -133,7 +133,7 @@ export default function RedMagicScene() {
               <h2 className="section-title">
                 Run the
                 <br />
-                experiment.
+                experiment
               </h2>
             </div>
 
@@ -158,9 +158,9 @@ export default function RedMagicScene() {
               </p>
 
               <h2 className="section-title">
-                Not decoration.
+                Not decoration
                 <br />
-                An experiment.
+                An experiment
               </h2>
             </div>
 
@@ -184,7 +184,7 @@ export default function RedMagicScene() {
                 <h2 className="section-title">
                   One organism,
                   <br />
-                  five layers.
+                  five layers
                 </h2>
               </div>
 
@@ -234,7 +234,7 @@ export default function RedMagicScene() {
                 </p>
 
                 <h2 className="section-title">
-                  Living behaviour.
+                  Living behaviour
                 </h2>
               </div>
 
@@ -283,7 +283,7 @@ export default function RedMagicScene() {
               <h2 className="section-title">
                 Toward living
                 <br />
-                digital systems.
+                digital systems
               </h2>
             </div>
 

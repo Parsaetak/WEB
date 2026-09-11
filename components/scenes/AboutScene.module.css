@@ -814,12 +814,10 @@
       180ms ease;
 }
 
-.aboutPrinciple:hover {
-  transform:
-    translateY(
-      -4px
-    );
-}
+/*
+ * Principles are static information panels, not controls, so they
+ * carry no hover lift (an inert card must not look clickable).
+ */
 
 .aboutPrincipleTop {
   display:

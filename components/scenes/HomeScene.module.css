@@ -977,6 +977,25 @@
     );
 }
 
+/*
+ * Keyboard focus for the system overview link and the system-row
+ * links: the same quiet outline language as the scene navigator.
+ */
+.homeSystemsOverviewLink:focus-visible,
+.homeSystemItem:focus-visible {
+  outline:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.55
+    );
+
+  outline-offset:
+    -1px;
+}
+
 .homeSystemsOverviewLink {
   position:
     relative;
@@ -1484,29 +1503,11 @@ strong i {
       160ms ease;
 }
 
-.homeDirectionStage:hover
-.homeDirectionStageArrow {
-  border-color:
-    rgba(
-      255,
-      32,
-      32,
-      0.3
-    );
-
-  background:
-    rgba(
-      255,
-      32,
-      32,
-      0.045
-    );
-
-  transform:
-    translateX(
-      2px
-    );
-}
+/*
+ * Direction stages are informational steps, not controls: the
+ * arrow glyph is a decorative flow indicator (aria-hidden), so no
+ * hover affordance is applied to the stage itself.
+ */
 
 /* -------------------------------------------------------------------------- */
 /* Home final                                                                 */

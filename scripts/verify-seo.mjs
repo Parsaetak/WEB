@@ -21,6 +21,14 @@
  *   URL set equals the actual exported route set
  * - robots.txt: references the production sitemap
  * - feed.xml: contains every article link
+ * - interaction audit (v2.4): every exported page is free of dead
+ *   anchor targets (href="#", empty href, javascript: URLs), and
+ *   every root-relative internal href resolves to an exported file
+ *   or a known in-page anchor — no dead navigation ships
+ * - text QA (v2.4): uppercase label-style text (kickers, buttons,
+ *   nav, status chips) never ends in a terminal "." — the site's
+ *   editorial rule is short labels without punctuation, full prose
+ *   sentences with it
  */
 
 import { readFile, readdir } from "node:fs/promises";
@@ -33,6 +41,13 @@ const ROOT = path.resolve(SCRIPT_DIR, "..");
 const OUT_DIR = path.join(ROOT, "out");
 
 const SITE_ORIGIN = "https://parsaetak.github.io/WEB";
+
+/*
+ * Mirror next.config.ts / build-blog.mjs: exported hrefs carry the
+ * deployment basePath in CI, but the out/ tree itself is NOT
+ * basePath-prefixed — strip it before resolving hrefs to files.
+ */
+const BASE_PATH = process.env.GITHUB_ACTIONS === "true" ? "/WEB" : "";
 
 const failures = [];
 const checks = [];
@@ -244,6 +259,128 @@ async function collectArticleRoutes() {
     .sort();
 }
 
+/* -------------------------------------------------------------------------- */
+/* Interaction audit (v2.4)                                                    */
+/* -------------------------------------------------------------------------- */
+
+async function collectHtmlFiles(dir, base = dir) {
+  const entries = await readdir(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await collectHtmlFiles(full, base)));
+    } else if (entry.isFile() && entry.name.endsWith(".html")) {
+      files.push(path.relative(base, full));
+    }
+  }
+  return files.sort();
+}
+
+/*
+ * Interaction audit (v2.4).
+ *
+ * Hash scene hrefs (#magic, #systems, …) are interaction states of
+ * the home route — legal hrefs, never sitemap entries. In-page
+ * anchors (#top) are likewise legal. Everything else must resolve.
+ */
+async function verifyInteractivity() {
+  const htmlFiles = await collectHtmlFiles(OUT_DIR);
+  if (htmlFiles.length === 0) {
+    fail("interaction: no exported HTML files found");
+    return;
+  }
+
+  let hrefsChecked = 0;
+  let labelIssues = 0;
+
+  for (const file of htmlFiles) {
+    const html = await readFile(path.join(OUT_DIR, file), "utf8");
+    const label = file;
+
+    /* Dead anchor targets */
+    if (/\shref="#["\s>]/.test(html)) {
+      fail(`${label}: dead href="#" found (placeholder destination)`);
+    }
+    if (/\shref="["\s>]/.test(html)) {
+      fail(`${label}: empty href found`);
+    }
+    if (/href="javascript:/i.test(html)) {
+      fail(`${label}: javascript: URL found`);
+    }
+
+    /* Every href must be absolute-external or resolvable-internal */
+    const hrefs = [...html.matchAll(/\shref="([^"]*)"/g)].map((match) =>
+      decodeEntities(match[1])
+    );
+    for (const href of hrefs) {
+      hrefsChecked += 1;
+
+      if (
+        /^https?:\/\//i.test(href) ||
+        /^mailto:/i.test(href) ||
+        href.startsWith("#")
+      ) {
+        continue;
+      }
+
+      /*
+       * Root-relative path. Strip the deployment basePath first (CI
+       * hrefs are /WEB/… while out/ holds the un-prefixed tree),
+       * then drop any fragment/query before resolving to a file.
+       */
+      const unbased = BASE_PATH !== "" && href.startsWith(BASE_PATH)
+        ? href.slice(BASE_PATH.length)
+        : href;
+      const clean = unbased.split("#")[0].split("?")[0];
+      if (clean === "" || clean === "/") {
+        continue;
+      }
+
+      const target = path.join(OUT_DIR, clean.replace(/^\//, ""));
+      const targetDir = `${target}${target.endsWith("/") ? "" : "/"}`;
+      const indexCandidates = [
+        target.endsWith("/") ? `${target}index.html` : target,
+        targetDir.length > 0 ? `${targetDir}index.html` : null,
+        target
+      ].filter(Boolean);
+
+      if (!indexCandidates.some((candidate) => existsSync(candidate))) {
+        fail(`${label}: internal href does not resolve to an exported route: "${href}"`);
+      }
+    }
+
+    /* Uppercase label-style text must not end with a terminal "." */
+    const labelMatches = html.match(
+      />([^<>{}]*[A-Z]{2,}[^<>{}]*?)\.+</g
+    );
+    if (labelMatches) {
+      for (const match of labelMatches) {
+        const text = match.slice(1, -2).trim();
+        /*
+         * Only flag text that is essentially label-case: letters,
+         * digits, spaces, and separators, dominated by uppercase
+         * words (prose sentences are sentence-case and never match).
+         */
+        if (
+          /^[A-Z0-9][A-Z0-9 ·,/&—–-]*(?:\s+[A-Z0-9][A-Z0-9 ·,/&—–-]*)*$/.test(
+            text
+          ) &&
+          (text.match(/[A-Z]/g) ?? []).length >
+            (text.match(/[a-z]/g) ?? []).length
+        ) {
+          fail(`${label}: uppercase label ends with a terminal period: "${text}."`);
+          labelIssues += 1;
+        }
+      }
+    }
+  }
+
+  pass(
+    `interaction: ${htmlFiles.length} page(s), ${hrefsChecked} href(s) audited — no dead anchors${labelIssues === 0 ? ", no label punctuation violations" : ""}`
+  );
+}
+
 async function verifySitemap(articleRoutes) {
   if (!existsSync(path.join(OUT_DIR, "sitemap.xml"))) {
     fail("sitemap.xml: missing from export");
@@ -422,6 +559,7 @@ async function main() {
   await verifySitemap(articleRoutes);
   await verifyRobots();
   await verifyFeed(articleRoutes);
+  await verifyInteractivity();
 
   /* Icon asset */
   if (!existsSync(path.join(OUT_DIR, "icon.svg"))) {

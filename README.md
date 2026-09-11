@@ -4,11 +4,13 @@ Live site: https://parsaetak.github.io/WEB/
 
 Repository: https://github.com/Parsaetak/WEB
 
-Version: 2.3.0 — the technical SEO + AI Instructions edition:
-standards-based search-machine correctness (canonicals, sitemap,
-robots, JSON-LD entity graph, social previews) that is invisible to
-the normal user, plus the AI Instructions architecture article
-(all articles dated September 10, 2026).
+Version: 2.4.0 — the full regression / UI-cleanup / SEO-hardening
+edition: dead interactive affordances repaired (every control that
+promises an action now performs it, and inert cards no longer look
+clickable), incorrect internal links fixed, the short-label
+punctuation rule enforced site-wide, and the identity terms SHEYTAN
+and Red illuminati integrated truthfully (visible metadata, one
+mention each — never hidden keyword text).
 
 ## Stack
 
@@ -60,6 +62,41 @@ stagger unit):
 - **Reduced motion.** Every reveal and transition degrades to a
   minimal crossfade with no travel; the organism keeps only its
   slowest breathing layers.
+
+## Interaction law (2.4)
+
+Every visible affordance must tell the truth:
+
+- **Buttons act, links navigate.** A `<button>` performs a UI action
+  (state change, modal, filter); navigation destinations are real
+  `<a>`/`<Link>` elements. No clickable `<div>`s where a semantic
+  button or link exists.
+- **No dead affordances.** An element with hover motion, an arrow
+  glyph, or a "link" shape must navigate somewhere real. Cards
+  without destinations are informational panels and carry no
+  hover-lift/arrow affordance (see `data-linked` / `data-article`
+  scoping in the Work and Systems scenes).
+- **Full-card links.** Where a card's summary and its destination
+  coincide, the whole card is one link (no nested `<a>` inside
+  `<a>`) — Home system rows, the Systems AI-INSTRUCTIONS module,
+  and the Work RED MAGIC project.
+- **No untruthful status text.** Loading/error surfaces only claim
+  what the code actually offers (the ERROR phase suggests a reload
+  because that is the real recovery path).
+- **Keyboard parity.** Every newly-linked card has a
+  `:focus-visible` outline in the site's quiet outline language.
+
+## Text style rule (2.4)
+
+One editorial rule, applied site-wide and enforced by
+`verify-seo.mjs` on the exported HTML:
+
+- **Short UI / labels** (kickers, buttons, nav, status chips,
+  uppercase metadata, stacked display headings): no terminal `.`.
+- **Full prose sentences** (body copy, article text): normal
+  punctuation.
+- **Technical values / versions / statuses**: the component's
+  intended format.
 
 ## SEO architecture (2.3)
 
@@ -139,6 +176,25 @@ export.
 - Image URLs in metadata are production-absolute under
   `metadataBase`; JSON-LD images are explicitly absolute.
 
+### Identity keywords (2.4)
+
+SHEYTAN and "Red illuminati" are legitimate identity terms for this
+project (claimed marks / artistic labels). They are integrated
+truthfully and sparsely:
+
+- **SHEYTAN** — one mention in the site `<meta name="keywords">`,
+  one in the `Person` entity description (as part of the real
+  framework/experiment family). It corresponds to a mark claimed in
+  `TRADEMARKS.md`.
+- **Red illuminati** — one mention in the site keywords and one
+  visible tag on the RED MAGIC article (which the term actually
+  labels). It appears in the article's visible tag list, JSON-LD
+  `keywords`, Open Graph `article:tag`, and the RSS category — all
+  generated from the same single source of truth.
+- **Never** as hidden text, off-screen text, opacity-0 keyword
+  blocks, or repeated dozens of times. Every term names something
+  the site actually presents.
+
 ### Verification
 
 `npm run verify:seo` (scripts/verify-seo.mjs, zero dependencies)
@@ -147,8 +203,12 @@ inspects the EXPORTED artifacts after `next build`: exactly one
 (production HTTPS, `/WEB`-aware), JSON-LD parses with expected
 types, article dates/author match the content index, sitemap URL
 set equals the exported route set, robots references the sitemap,
-feed contains every article, and no `localhost` / `/blog/undefined`
-anywhere. CI runs it on every deploy.
+feed contains every article, no `localhost` / `/blog/undefined`
+anywhere — plus, since 2.4, an **interaction audit** (no `href="#"`,
+no empty `href`, no `javascript:` URLs, and every root-relative
+href resolves to an exported route) and a **text-QA audit** (no
+uppercase label-style text ending in a terminal period). CI runs it
+on every deploy.
 
 The site is Search-Console-ready (sitemap submission, URL
 inspection, rich-results testing), but indexing itself is a

@@ -35,25 +35,6 @@ function SceneFallback({
   );
 }
 
-function SceneErrorState() {
-  return (
-    <div
-      className={styles.sceneError}
-      role="status"
-    >
-      <p className="kicker">
-        SCENE UNAVAILABLE
-      </p>
-
-      <p className="body">
-        This part of the system could not be
-        rendered. The surrounding world remains
-        active.
-      </p>
-    </div>
-  );
-}
-
 export default function SceneViewport({
   scene,
   pendingScene,
@@ -130,6 +111,5 @@ export default function SceneViewport({
 }
 
 export {
-  SceneFallback,
-  SceneErrorState
+  SceneFallback
 };

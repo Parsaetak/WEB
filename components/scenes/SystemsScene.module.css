@@ -457,7 +457,12 @@
       180ms ease;
 }
 
-.systemsModule:hover
+/*
+ * Hover affordance exists ONLY on modules with a real article
+ * destination (the whole card is a Link). REP and USEF are
+ * informational panels and must not look clickable.
+ */
+.systemsModule[data-article="true"]:hover
 .systemsModuleFrame {
   transform:
     translateY(
@@ -791,9 +796,9 @@
 }
 
 /*
- * Deep-dive link inside a module card. Present only on modules that
- * have a real /blog/<slug>/ article. Same quiet mono-link language
- * as the work scene's archive links.
+ * Article hint inside the module card. The card itself is the link
+ * (see .systemsModule), so this is emphasis text — its hover
+ * transition is kept as part of the card's interactive language.
  */
 .systemsModuleLink {
   display:
@@ -834,7 +839,8 @@
 }
 
 @media (hover: hover) {
-  .systemsModuleLink:hover {
+  .systemsModule[data-article="true"]:hover
+  .systemsModuleLink {
     color:
       var(--text);
 
@@ -843,10 +849,19 @@
   }
 }
 
-.systemsModuleLink:focus-visible {
+/*
+ * Keyboard focus on the card link itself: the module is the
+ * interactive element, so the focus ring belongs on the card.
+ */
+.systemsModule:focus-visible {
   outline:
     1px solid
-    var(--red);
+    rgba(
+      255,
+      157,
+      50,
+      0.6
+    );
 
   outline-offset:
     4px;

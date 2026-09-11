@@ -664,14 +664,19 @@
       180ms ease;
 }
 
-.workProject:hover {
+/*
+ * Hover affordance exists ONLY on cards that actually navigate
+ * (data-linked="true": the RED MAGIC project opens the Magic
+ * scene). Informational cards never promise clickability.
+ */
+.workProject[data-linked="true"]:hover {
   transform:
     translateY(
       -2px
     );
 }
 
-.workProject:hover::before {
+.workProject[data-linked="true"]:hover::before {
   opacity:
     1;
 
@@ -687,6 +692,20 @@
       255,
       0.08
     );
+}
+
+.workProject[data-linked="true"]:focus-visible {
+  outline:
+    2px solid
+    rgba(
+      77,
+      182,
+      255,
+      0.55
+    );
+
+  outline-offset:
+    4px;
 }
 
 .workProjectNumber {

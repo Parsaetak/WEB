@@ -4,7 +4,7 @@ subtitle: "AI supplies capability. Will supplies direction. Systems convert the 
 excerpt: "Three connected frameworks — AI Instructions, REP, USEF — built on one claim: intelligence lives in the system around the model, and the model has never been the smallest part of the problem."
 description: "Why capability is not direction: an overview of the three reasoning frameworks at the core of this research, updated for 2026 — where agentic systems are mainstream and verification has become the bottleneck."
 date: "2026-09-10"
-updated: "2026-09-10"
+updated: "2026-09-11"
 author: "Parsa Tak"
 category: "research"
 tags: ["AI", "reasoning", "systems", "REP", "USEF", "human will", "2026"]
@@ -58,7 +58,7 @@ The three compose into one shape:
 
 ## Why this website takes a side
 
-This site is not a neutral portfolio; it is the smallest system I know that demonstrates the thesis end to end. The organism in the [MAGIC laboratory](/blog/why-the-website-is-a-living-system/) adapts its quality under load and stays legible while changing — coherence under change, the exact property the frameworks pursue at larger scale. The [static architecture](/blog/building-under-constraints/) is *will* made structural: constraints I chose, enforced by validation that fails loudly, so the system cannot quietly drift away from the intention. The [loading and motion design](/blog/the-anatomy-of-a-fast-static-site/) is measurement before decoration. Human idea, structured content, verification, build, static delivery — that pipeline is AI + Will + Systems with the rhetoric stripped off.
+This site is not a neutral portfolio; it is the smallest system I know that demonstrates the thesis end to end. The organism in the [MAGIC laboratory](/#magic) adapts its quality under load and stays legible while changing — [coherence under change](/blog/why-the-website-is-a-living-system/), the exact property the frameworks pursue at larger scale. The [static architecture](/blog/building-under-constraints/) is *will* made structural: constraints I chose, enforced by validation that fails loudly, so the system cannot quietly drift away from the intention. The [loading and motion design](/blog/the-anatomy-of-a-fast-static-site/) is measurement before decoration. Human idea, structured content, verification, build, static delivery — that pipeline is AI + Will + Systems with the rhetoric stripped off.
 
 Three claims, then, as the current state of the programme:
 

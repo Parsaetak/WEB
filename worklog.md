@@ -52,7 +52,7 @@ Top-level routed areas:
 /blog/ — blog index (static route)
 /blog/<slug>/ — article pages (static routes)
 
-Current version: 2.3.0
+Current version: 2.4.0
 
 ---
 
@@ -1173,7 +1173,90 @@ autodiscovery types must be repeated on the page that needs them.
 A layout title template applies only to DEEPER segments: the
 same-segment page must use an absolute title.
 
+56. Interaction Truth Law (2.4)
+
+Every visible affordance must tell the truth.
+
+A control with hover motion, an arrow glyph, or a link shape must
+navigate or act. Informational cards carry no hover-lift affordance.
+
+Where a card's summary and destination coincide, the whole card is
+ONE link (never a nested <a> inside an <a>): Home system rows,
+the Systems AI-INSTRUCTIONS module, the Work RED MAGIC project.
+
+Scoping is done with data attributes (data-linked on Work project
+cards, data-article on Systems modules) so CSS affordances exist
+only on elements that actually navigate.
+
+Loading/error surfaces may only claim recovery paths that exist:
+the ERROR phase suggests a reload because a reload is the real
+recovery; no UI may promise a retry control that is not wired.
+
+Every newly-linked card must carry a :focus-visible outline.
+
+57. Text Style Law (2.4)
+
+Short UI text (kickers, buttons, nav labels, status chips,
+uppercase metadata, stacked display headings) never ends with a
+terminal period.
+
+Full prose sentences keep normal punctuation. Technical values,
+versions, and statuses follow their component's intended format.
+
+scripts/verify-seo.mjs enforces the label case on the exported
+HTML (uppercase label-style text ending in "." fails verification).
+
+58. Identity Keyword Law (2.4)
+
+SHEYTAN and "Red illuminati" are legitimate identity terms. They
+appear exactly once each in site-level keywords; SHEYTAN additionally
+appears once in the Person entity description; Red illuminati
+additionally appears as one visible tag on the RED MAGIC article.
+
+They must never appear as hidden text, off-screen text, opacity-0
+blocks, user-agent-specific content, or repeated keyword stuffing.
+Every identity term must correspond to something the site actually
+presents or claims (TRADEMARKS.md is the claim source).
+
 XVII. CURRENT BASELINE
+
+Version 2.4.0 — the full regression / UI-cleanup / SEO-hardening
+edition:
+
+- Interaction Truth Law (56): Home systems overview block and
+  system rows are real links (overview + REP/USEF → #systems,
+  AI INSTRUCTIONS → /blog/ai-instructions/); the Systems
+  AI-INSTRUCTIONS module is one full-card link; the Work RED MAGIC
+  project card links to #magic; About principle panels and Home
+  direction stages lost their inert hover affordances; the loading
+  ERROR phase no longer claims a nonexistent retry control
+  ("RELOAD TO RETRY")
+- Text Style Law (57): all stacked display headings and short
+  headings lost terminal periods (Home "Research / Build / Repeat",
+  Work, Library, Magic, Blog hero, PDF reader fallback); prose
+  punctuation untouched
+- Link correctness: both "MAGIC laboratory" article links now
+  point to /#magic (the actual scene) instead of unrelated articles;
+  reasoning-is-a-system-property gained a natural related-article
+  link to the living-system article
+- Identity Keyword Law (58): SHEYTAN (keywords + Person
+  description) and Red illuminati (keywords + one visible RED MAGIC
+  article tag) integrated truthfully — visible, single-mention,
+  never hidden
+- verify-seo.mjs now audits the exported HTML for interaction
+  truth (no href="#"/empty href/javascript: URLs; every
+  root-relative href resolves against the export, basePath-aware)
+  and label punctuation; wired into the same npm run verify:seo
+- Articles genuinely edited in this release carry updated:
+  2026-09-11 (reasoning-is-a-system-property, why-the-website-
+  is-a-living-system); all other article dates unchanged
+- Dead code removed: SceneErrorState component + .sceneError CSS
+  (never rendered anywhere)
+- Scroll-offset fix (found in browser QA): both shells now set
+  scroll-padding-top so keyboard-focused / anchor-scrolled
+  elements clear the fixed HUD and blog header instead of landing
+  beneath them (the blog tag filter was literally unclickable at
+  its scroll-in position)
 
 Version 2.3.0 — the technical SEO + AI Instructions edition:
 

@@ -1,96 +1,93 @@
-Parsa Tak WEB — v2.3.0 SEO + AI Instructions package (2026-09-10)
+Parsa Tak WEB — v2.4.0 full regression + UI cleanup + SEO hardening
+(2026-09-11)
 =================================================================
 
 WHAT THIS IS
-The complete final repository state after the technical SEO upgrade
-and the AI Instructions article. Replace the repository contents
-with these files (or copy them over your repository root), then
-commit and push. Paths are repo-relative.
+The complete final repository state after the v2.4 quality pass.
+Replace the repository contents with these files (or copy them over
+your repository root), then commit and push. Paths are repo-relative.
 
 HIGHLIGHTS
-  - Technical SEO, invisibly: canonical URLs on every indexable
-    route (/, /blog/, /blog/<slug>/ — absolute HTTPS, /WEB-aware),
-    public/robots.txt (standard directives + sitemap reference),
-    and public/sitemap.xml generated from the SAME content index
-    that produces the routes (no hand-maintained URL list;
-    lastmod from real article dates, never "today").
-  - Entity identity: lib/seo.tsx owns one coherent Person +
-    WebSite graph, emitted once in the root layout; route-level
-    structured data interlocks through stable @id anchors —
-    WebPage on /, Blog on /blog/, BlogPosting + BreadcrumbList
-    (Home -> Blog -> article) on every article. sameAs lists only
-    real public profiles already linked by the site.
-  - Social previews: og:image + twitter:card on every route.
-    Every SVG cover now has a validated 1200x630 PNG twin
-    (public/blog/images/<name>.png) because social crawlers do
-    not render SVG; public/og-default.png is the site-level card.
-  - New article: content/blog/ai-instructions.md — "AI
-    Instructions: A Constitutional Operating Framework for AI
-    Systems" — summarising the canonical source
-    Parsaetak/Contents@AI-frameworks/Ai-instructions-Sep2026.md
-    (blob SHA f6952faf0bc173408f50b0e46d4f94fb7a34ba36): five-tier
-    topology, MCD vs HRR (prompts are not sandboxes), the
-    UNDERSTAND->EVALUATE sequence, governance kernel, effective
-    intelligence as architecture, human agency as an optimization
-    target, and verified 2026 context (Forrester agentic-AI
-    adoption, OWASP LLM Top 10, MCP standardisation).
-  - Internal link graph: the Systems scene's AI INSTRUCTIONS card
-    links to /blog/ai-instructions/ ("READ THE ARTICLE"); the
-    article links back to the systems scene, the blog index, two
-    sibling articles, and the GitHub source.
-  - Fixed: RSS autodiscovery <link rel="alternate"> was dead
-    config (Next shallow-merges `alternates`, so layout types
-    never reached any page) — now emitted on /blog/. Home and
-    blog index titles are explicit and descriptive (layout title
-    templates only apply to deeper segments).
-  - New verification: scripts/verify-seo.mjs (npm run verify:seo,
-    zero dependencies) checks the EXPORTED artifacts — unique
-    titles, descriptions, canonicals, JSON-LD validity and types,
-    article dates/author, sitemap/route-set equality, robots,
-    feed completeness, no localhost / /blog/undefined — and runs
-    as a dedicated CI step in deploy.yml.
+  - Interaction truth: every control that promises an action now
+    performs it. The Home "systems overview" block and the three
+    system rows are real links (overview and REP/USEF open the
+    Systems scene; AI INSTRUCTIONS opens its article). The Systems
+    AI-INSTRUCTIONS module card is one full-card link to its
+    article. The Work RED MAGIC project card opens the Magic scene.
+    Inert cards (About principles, Home direction stages, REP/USEF
+    modules, non-linked Work projects) no longer carry hover-lift
+    affordances — nothing looks clickable unless it is.
+  - Truthful status text: the loading ERROR phase now says
+    "RELOAD TO RETRY" (a reload is the actual recovery path)
+    instead of promising a retry control that never existed.
+  - Text style rule: short UI text and display headings no longer
+    end with a terminal period ("Research / Build / Repeat",
+    "What I am building", "The works / Read, watch / listen",
+    "Run the experiment", "Writing from the laboratory", and the
+    PDF reader fallback). Full prose keeps normal punctuation.
+  - Link correctness: both "MAGIC laboratory" links inside blog
+    articles now open the Magic scene (/#magic) instead of
+    unrelated articles; a natural related-article link was added
+    to keep the living-system article connected.
+  - SEO hardening (no spam): SHEYTAN appears once in site
+    keywords and once in the Person entity description; "Red
+    illuminati" appears once in site keywords and as one visible
+    tag on the RED MAGIC article. No hidden text, no keyword
+    walls, no manufactured entities — every term names something
+    the site actually presents.
+  - Honest dates: only the two articles genuinely edited in this
+    release carry updated 2026-09-11; all other article dates and
+    the publication history are untouched.
+  - New automated checks: npm run verify:seo now audits the
+    exported HTML for dead interactions (href="#", empty href,
+    javascript: URLs, unresolvable internal links — basePath
+    aware) and label punctuation (no uppercase label-style text
+    ending in "."). CI runs it on every deploy.
+  - Dead code removed: SceneErrorState component and .sceneError
+    CSS (never rendered anywhere).
 
 HOW TO APPLY
   1. Replace your repository contents with these files (allow
      overwrites). All files are complete replacements — no
      patches to merge.
-  2. Install dependencies: npm ci (devDependencies unchanged
-     from 2.2; no new dependencies at all).
-  3. Commit: git add -A && git commit -m "v2.3.0: technical SEO
-     architecture + AI Instructions article"
+  2. Install dependencies: npm ci (dependencies unchanged from
+     2.3; no new dependencies at all).
+  3. Commit: git add -A && git commit -m "v2.4.0: full regression
+     audit — interaction truth, text style rule, link fixes, SEO
+     hardening"
   4. Push: git push origin main
-  5. Watch the newest GitHub Actions run (must be green — it now
-     includes the SEO verification step), then hard-refresh
+  5. Watch the newest GitHub Actions run (must be green — it
+     includes the extended SEO verification step), then hard-refresh
      https://parsaetak.github.io/WEB/
 
-VERIFY AFTER PUSH (2 minutes)
-  - /WEB/robots.txt serves the robots file with the sitemap line
-  - /WEB/sitemap.xml serves 7 URLs (/, /blog/, five articles),
-    all on https://parsaetak.github.io/WEB
-  - /WEB/blog/ai-instructions/ renders the new article; sharing
-    that URL unfurls a large image card (PNG cover twin)
-  - Systems scene: the AI INSTRUCTIONS module shows "READ THE
-    ARTICLE" and opens the article
-  - Blog: article count is now 5; search finds "instructions";
-    the ai-instructions article appears in sitemap + RSS
-  - Home / blog / article titles in the browser tab match the
-    new wording
+VERIFY AFTER PUSH (3 minutes)
+  - Home: the "SYSTEMS 03 / AI · REASONING · SYSTEMS" block and
+    the three system rows respond to clicks (Systems scene opens;
+    the AI INSTRUCTIONS row opens the article)
+  - Systems scene: the AI INSTRUCTIONS module card opens the
+    article from anywhere on the card; REP/USEF cards show no
+    hover motion
+  - Work scene: the RED MAGIC project card opens the Magic scene;
+    the other three project cards show no hover motion
+  - Blog: headings render without terminal periods; the
+    living-system article shows the "Red illuminati" tag visibly;
+    "MAGIC laboratory" links inside articles jump to the Magic
+    scene of the world
+  - /WEB/robots.txt, /WEB/sitemap.xml, /WEB/blog/feed.xml serve
+    correctly (sitemap lastmod reflects the two 2026-09-11
+    article updates)
   - Phone width (~390px): no horizontal overflow anywhere
   - No console errors
 
 NOTES
-  - The normal user experience is intentionally unchanged: SEO
-    lives in build-time metadata and static files. The only
-    visible additions are the Systems scene's article link and
-    the (more descriptive) tab titles.
   - data/blog/posts.json, public/blog/feed.xml, and
     public/sitemap.xml are GENERATED by scripts/build-blog.mjs
     on every build. They are committed so a fresh clone works
     immediately; never hand-edit them.
-  - Adding an article with an SVG cover now also requires a
-    1200x630 PNG twin at the same path (og:image requirement) —
-    the build fails loudly when the twin is missing.
-  - Do NOT hand-edit data/library.json (synced at build time).
-  - Search Console: submit https://parsaetak.github.io/WEB/
-    sitemap.xml after the first deploy; indexing happens on the
-    crawler's schedule, not at push time.
+  - Do NOT hand-edit data/library.json (synced at build time
+    from Parsaetak/Contents@Projects).
+  - The normal user experience is intentionally close to 2.3:
+    the visible changes are the now-working controls, the
+    punctuation cleanup, and the one new visible tag.
+  - Indexing remains a crawler-side decision that happens after
+    deployment; no ranking or indexing outcome is claimed.

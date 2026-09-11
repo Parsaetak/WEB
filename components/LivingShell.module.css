@@ -4,6 +4,16 @@
   min-height: 100vh;
 
   isolation: isolate;
+
+  /*
+   * Keyboard focus and anchor scrolling must clear the fixed HUD:
+   * without this, tab-focused elements land underneath it when
+   * scrolled into view.
+   */
+  scroll-padding-top:
+    calc(
+      var(--shell-header) + 20px
+    );
 }
 
 .livingShellHud {

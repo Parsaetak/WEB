@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import PublicLinks from "@/components/PublicLinks";
 import RedMagic from "@/components/RedMagic";
 import { GITHUB_LINK } from "@/lib/links";
@@ -12,24 +14,36 @@ const fields = [
   "CREATIVE TECHNOLOGY"
 ] as const;
 
+/*
+ * Each system row links somewhere real: AI INSTRUCTIONS has a
+ * dedicated deep-dive article (mirroring the Systems scene's
+ * convention); REP and USEF point to the Systems scene, which is
+ * where their full presentation lives today.
+ */
 const systems = [
   {
     number: "01",
     title: "AI INSTRUCTIONS",
     copy:
-      "A framework for governing intelligent systems."
+      "A framework for governing intelligent systems.",
+    href: "/blog/ai-instructions/",
+    scene: false
   },
   {
     number: "02",
     title: "REP",
     copy:
-      "A framework for stronger reasoning and verification."
+      "A framework for stronger reasoning and verification.",
+    href: "#systems",
+    scene: true
   },
   {
     number: "03",
     title: "USEF",
     copy:
-      "A framework for improving systems over time."
+      "A framework for improving systems over time.",
+    href: "#systems",
+    scene: true
   }
 ] as const;
 
@@ -263,10 +277,17 @@ export default function HomeScene() {
           </div>
 
           <div className={styles.homeSystemsOverview}>
-            <div
+            {/*
+              * A real navigation affordance: the whole overview block
+              * opens the Systems scene (hash navigation is handled by
+              * the shell's SceneUrlSync listener).
+              */}
+            <a
               className={
                 styles.homeSystemsOverviewLink
               }
+              href="#systems"
+              aria-label="Open the Systems scene"
             >
               <div
                 className={
@@ -308,47 +329,84 @@ export default function HomeScene() {
                 className={
                   styles.homeSystemsOverviewArrow
                 }
+                aria-hidden="true"
               >
                 →
               </span>
-            </div>
+            </a>
           </div>
 
           <div className={styles.homeSystemList}>
             {systems.map(
-              (system) => (
-                <article
-                  className={styles.homeSystemItem}
-                  key={system.number}
-                >
-                  <span
-                    className={
-                      styles.homeSystemItemNumber
-                    }
+              (system) =>
+                system.scene ? (
+                  <a
+                    className={styles.homeSystemItem}
+                    key={system.number}
+                    href={system.href}
                   >
-                    {system.number}
-                  </span>
+                    <span
+                      className={
+                        styles.homeSystemItemNumber
+                      }
+                    >
+                      {system.number}
+                    </span>
 
-                  <div>
-                    <h3>
-                      {system.title}
-                    </h3>
+                    <div>
+                      <h3>
+                        {system.title}
+                      </h3>
 
-                    <p>
-                      {system.copy}
-                    </p>
-                  </div>
+                      <p>
+                        {system.copy}
+                      </p>
+                    </div>
 
-                  <span
-                    className={
-                      styles.homeSystemItemArrow
-                    }
-                    aria-hidden="true"
+                    <span
+                      className={
+                        styles.homeSystemItemArrow
+                      }
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
+                  </a>
+                ) : (
+                  <Link
+                    className={styles.homeSystemItem}
+                    key={system.number}
+                    href={system.href}
+                    prefetch={false}
                   >
-                    →
-                  </span>
-                </article>
-              )
+                    <span
+                      className={
+                        styles.homeSystemItemNumber
+                      }
+                    >
+                      {system.number}
+                    </span>
+
+                    <div>
+                      <h3>
+                        {system.title}
+                      </h3>
+
+                      <p>
+                        {system.copy}
+                      </p>
+                    </div>
+
+                    <span
+                      className={
+                        styles.homeSystemItemArrow
+                      }
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
+                  </Link>
+                )
             )}
           </div>
         </div>
@@ -464,11 +522,11 @@ export default function HomeScene() {
               </p>
 
               <h2 className="section-title">
-                Research.
+                Research
                 <br />
-                Build.
+                Build
                 <br />
-                Repeat.
+                Repeat
               </h2>
             </div>
 

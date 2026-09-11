@@ -675,11 +675,11 @@ export default function LibraryScene() {
                 <h1
                   className={`section-title ${styles.libraryTitle}`}
                 >
-                  The works.
+                  The works
                   <br />
                   Read, watch,
                   <br />
-                  listen.
+                  listen
                 </h1>
 
                 <p

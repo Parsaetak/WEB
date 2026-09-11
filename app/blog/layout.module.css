@@ -9,6 +9,17 @@
   flex-direction: column;
 
   overflow-x: clip;
+
+  /*
+   * Keyboard focus and anchor scrolling must clear the fixed blog
+   * header: without this, tab-focused / hash-targeted elements
+   * land underneath it and become unclickable at their scroll-in
+   * position.
+   */
+  scroll-padding-top:
+    calc(
+      var(--shell-header) + 24px
+    );
 }
 
 .blogMain {

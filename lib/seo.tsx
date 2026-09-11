@@ -98,6 +98,11 @@ const PROFILE_URLS: readonly string[] = [
  * Person entity — the author/creator identity of the site.
  * No image field: the site publishes a brand mark, not a photo,
  * and structured data must stay truthful.
+ *
+ * Identity terms (AI Instructions, REP, USEF, SHEYTAN, RED MAGIC)
+ * each appear exactly once and correspond to real marks the site
+ * owner claims in TRADEMARKS.md and to work actually presented on
+ * this site. Nothing here is a keyword list.
  */
 export function personEntity() {
   return {
@@ -106,7 +111,7 @@ export function personEntity() {
     name: "Parsa Tak",
     url: `${SITE_URL}/`,
     description:
-      "Architect of the AI Instructions, REP, and USEF framework family and the RED MAGIC interface experiments.",
+      "Architect of the AI Instructions, REP, and USEF framework family, the SHEYTAN local-agent experiments, and the RED MAGIC interface experiments.",
     sameAs: PROFILE_URLS
   };
 }
