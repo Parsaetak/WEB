@@ -7,6 +7,7 @@ import RedCursor from "@/components/RedCursor";
 import SiteFooter from "@/components/SiteFooter";
 import BlogHeader from "@/components/blog/BlogHeader";
 import MotionReveal from "@/components/MotionReveal";
+import ShortcutsDialog from "@/components/blog/ShortcutsDialog";
 
 import {
   getBlogInfo
@@ -40,15 +41,7 @@ export function generateMetadata(): Metadata {
     },
     description: info.siteDescription,
     alternates: {
-      canonical: "/blog/",
-      types: {
-        "application/rss+xml": [
-          {
-            url: "/blog/feed.xml",
-            title: `${info.siteName} — Blog RSS`
-          }
-        ]
-      }
+      canonical: "/blog/"
     },
     openGraph: {
       type: "website",
@@ -96,6 +89,14 @@ export default function BlogLayout({
         * metadata and related-article grids everywhere.
         */}
       <MotionReveal />
+
+      {/*
+        * KEYBOARD REFERENCE (v2.5.4) — one island per blog page:
+        * the "?" trigger + shortcuts dialog. Client-only by design
+        * (the keys don't work without JS, so no-JS visitors are
+        * never advertised a lie); nothing renders server-side.
+        */}
+      <ShortcutsDialog />
 
       <BlogHeader />
 

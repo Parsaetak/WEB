@@ -25,10 +25,6 @@ const SCENE_LINKS: readonly {
   { label: "LIBRARY", href: "/#library" }
 ];
 
-const FEED_HREF = `${
-  process.env.NEXT_PUBLIC_BASE_PATH ?? ""
-}/blog/feed.xml`;
-
 export default function BlogHeader() {
   const github = GITHUB_LINK;
 
@@ -85,14 +81,6 @@ export default function BlogHeader() {
         </nav>
 
         <div className={styles.headerActions}>
-          <a
-            className={styles.feedLink}
-            href={FEED_HREF}
-            aria-label="Blog RSS feed"
-          >
-            RSS
-          </a>
-
           {github && (
             <a
               className={styles.githubLink}

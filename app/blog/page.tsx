@@ -53,22 +53,8 @@ export function generateMetadata(): Metadata {
     },
     description: info.siteDescription,
 
-    /*
-     * RSS autodiscovery lives HERE, not only in the layout: Next
-     * shallow-merges metadata per key, so this page's `alternates`
-     * replaces the layout's — without repeating `types`, the feed
-     * <link rel="alternate"> would never be emitted on any route.
-     */
     alternates: {
-      canonical: "/blog/",
-      types: {
-        "application/rss+xml": [
-          {
-            url: "/blog/feed.xml",
-            title: `${info.siteName} — Blog RSS`
-          }
-        ]
-      }
+      canonical: "/blog/"
     }
   };
 }
@@ -258,20 +244,6 @@ export default function BlogPage() {
             posts={posts}
             tags={tags}
           />
-        </div>
-      </section>
-
-      <section
-        className={`section-tight ${styles.blogFeedSection}`}
-      >
-        <div className="page-container">
-          <p className={styles.blogFeedCopy}>
-            Prefer a reader? This blog
-            publishes an RSS feed generated
-            from the same content index —
-            there is no second, hand-maintained
-            list.
-          </p>
         </div>
       </section>
     </div>

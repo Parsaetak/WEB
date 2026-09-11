@@ -3,13 +3,20 @@
  * build-blog.mjs — static blog content pipeline.
  *
  * SOURCE (content/blog/*.md)
- *   → PARSE frontmatter
- *   → VALIDATE records (fail loudly: file + reason)
- *   → RENDER markdown to HTML (small trusted subset, fully escaped)
+ *   → PARSE frontmatter (incl. optional related/project/topics)
+ *   → VALIDATE records + relationship graph (fail loudly: file + reason)
+ *   → RENDER markdown to HTML (small trusted subset, fully escaped,
+ *     top-level blocks annotated with reveal attributes)
  *   → NORMALIZE (reading time, cover URLs, link basePath)
  *   → INDEX (tags, categories, related, prev/next)
- *   → EMIT data/blog/posts.json + public/blog/feed.xml
- *         + public/sitemap.xml
+ *   → EMIT data/blog/posts.json + public/sitemap.xml
+ *
+ * Related content (v2.5): a deterministic scoring model combines
+ * explicit author relationships (frontmatter `related`) with signal
+ * overlap — shared tags, shared topics, category, project, significant
+ * title/excerpt terms, and a bounded recency tie-break. No ML, no
+ * runtime computation: related sets are computed once here and
+ * validated (no missing slugs, no self-links, no duplicates).
  *
  * SEO emission law: the sitemap is generated from the SAME content
  * index that produces the site routes — site configuration + blog
@@ -37,7 +44,6 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(SCRIPT_DIR, "..");
 const CONTENT_DIR = path.join(ROOT, "content", "blog");
 const DATA_DIR = path.join(ROOT, "data", "blog");
-const PUBLIC_BLOG_DIR = path.join(ROOT, "public", "blog");
 
 const SITE_URL = "https://parsaetak.github.io/WEB";
 const SITE_NAME = "Parsa Tak";
@@ -46,9 +52,6 @@ const SITE_DESCRIPTION =
 
 const IS_GITHUB_ACTIONS = process.env.GITHUB_ACTIONS === "true";
 const BASE_PATH = IS_GITHUB_ACTIONS ? "/WEB" : "";
-
-const BLOG_PATH = `${BASE_PATH}/blog`;
-const FEED_URL = `${SITE_URL}/blog/feed.xml`;
 
 /*
  * Root-relative site OG image. Validated below so a missing social
@@ -62,7 +65,91 @@ const SITE_OG_IMAGE_FILE = path.join(ROOT, "public", "og-default.png");
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const WORDS_PER_MINUTE = 200;
-const MAX_RELATED = 2;
+
+/*
+ * Related-content model (v2.5). Up to six related articles when the
+ * catalogue is large enough; candidates qualify only through a real
+ * relevance signal — never through recency alone.
+ */
+const MAX_RELATED = 6;
+
+const RELATED_WEIGHTS = {
+  SHARED_TAG: 3,
+  SHARED_TOPIC: 2,
+  SAME_CATEGORY: 4,
+  SAME_PROJECT: 3,
+  SHARED_TERM: 1,
+  SHARED_TERM_CAP: 4,
+  RECENCY_SPREAD: 1
+};
+
+/*
+ * Hash scenes of the world shell — the legal targets of `/#scene`
+ * links inside article bodies. When a scene is added to the shell,
+ * this set must grow with it (the build fails loudly otherwise).
+ */
+const KNOWN_SCENES = new Set([
+  "home",
+  "about",
+  "systems",
+  "magic",
+  "work",
+  "library"
+]);
+
+/*
+ * Stopwords for the significant-term overlap signal. Small,
+ * deterministic, and tuned to this site's editorial vocabulary —
+ * generic filler words must never create fake relatedness.
+ */
+const TERM_STOPWORDS = new Set([
+  "about", "above", "after", "again", "against", "because", "been",
+  "before", "being", "below", "between", "both", "cannot", "come",
+  "could", "does", "doing", "down", "during", "each", "every",
+  "from", "further", "have", "here", "into", "just", "like",
+  "made", "make", "more", "most", "never", "only", "other",
+  "over", "said", "same", "should", "some", "still", "such",
+  "take", "than", "that", "their", "theirs", "them", "then",
+  "there", "these", "they", "this", "those", "through", "under",
+  "until", "very", "want", "well", "were", "what", "when",
+  "where", "which", "while", "who", "whom", "will", "with",
+  "within", "without", "would", "your", "yours"
+]);
+
+/*
+ * Significant-term extraction for the subject-similarity signal:
+ * title + subtitle + excerpt + topics + tags, lowercased, tokenised,
+ * stopword- and number-filtered, with light plural folding so
+ * "system" and "systems" match. Deterministic by construction.
+ */
+function significantTerms(record) {
+  const source = [
+    record.title,
+    record.subtitle,
+    record.excerpt,
+    ...(Array.isArray(record.topics) ? record.topics : []),
+    ...(Array.isArray(record.tags) ? record.tags : [])
+  ]
+    .filter((part) => typeof part === "string")
+    .join(" ")
+    .toLowerCase();
+
+  const terms = new Set();
+  for (const token of source.split(/[^a-z0-9]+/)) {
+    if (token.length < 4 || /^\d+$/.test(token)) {
+      continue;
+    }
+    if (TERM_STOPWORDS.has(token)) {
+      continue;
+    }
+    const folded =
+      token.length > 4 && token.endsWith("s") && !token.endsWith("ss")
+        ? token.slice(0, -1)
+        : token;
+    terms.add(folded);
+  }
+  return terms;
+}
 
 /*
  * Search metadata is composed ONCE here instead of being re-derived
@@ -76,7 +163,9 @@ function buildSearchHaystack(record) {
     record.excerpt,
     record.category,
     record.author,
-    ...(Array.isArray(record.tags) ? record.tags : [])
+    record.project,
+    ...(Array.isArray(record.tags) ? record.tags : []),
+    ...(Array.isArray(record.topics) ? record.topics : [])
   ]
     .filter((part) => typeof part === "string" && part.length > 0)
     .join(" ")
@@ -292,9 +381,29 @@ function renderMarkdown(source) {
   let listBuffer = [];
   let quoteBuffer = [];
 
+  /*
+   * READING MOTION (v2.5): top-level blocks are annotated at BUILD
+   * time with reveal attributes so the article unfolds through the
+   * existing one-observer system (MotionReveal). Blocks are grouped
+   * into chunks that restart at every h2: the heading reveals first
+   * (order 0) and its supporting content settles after it (orders
+   * 1–4, capped). Presentation only — without JavaScript the
+   * pre-paint reveal-js class never lands and every block stays
+   * visible, so crawlers and no-JS readers always get the article.
+   */
+  let chunkPosition = 0;
+
+  function revealAttributes(kind) {
+    const order = Math.min(chunkPosition, 4);
+    chunkPosition += 1;
+    return ` data-reveal="${kind}" data-reveal-order="${order}"`;
+  }
+
   function flushParagraph() {
     if (paragraphBuffer.length > 0) {
-      out.push(`<p>${renderInline(paragraphBuffer.join(" "), usedIds)}</p>`);
+      out.push(
+        `<p${revealAttributes("")}>${renderInline(paragraphBuffer.join(" "), usedIds)}</p>`
+      );
       paragraphBuffer = [];
     }
   }
@@ -302,10 +411,11 @@ function renderMarkdown(source) {
   function flushList() {
     if (listType !== null) {
       const tag = listType === "ordered" ? "ol" : "ul";
+      const attrs = revealAttributes("");
       const items = listBuffer
         .map((item) => `<li>${renderInline(item, usedIds)}</li>`)
         .join("");
-      out.push(`<${tag}>${items}</${tag}>`);
+      out.push(`<${tag}${attrs}>${items}</${tag}>`);
       listType = null;
       listBuffer = [];
     }
@@ -314,7 +424,7 @@ function renderMarkdown(source) {
   function flushQuote() {
     if (quoteBuffer.length > 0) {
       out.push(
-        `<blockquote><p>${renderInline(quoteBuffer.join(" "), usedIds)}</p></blockquote>`
+        `<blockquote${revealAttributes("quote")}><p>${renderInline(quoteBuffer.join(" "), usedIds)}</p></blockquote>`
       );
       quoteBuffer = [];
     }
@@ -333,8 +443,16 @@ function renderMarkdown(source) {
     if (trimmed.startsWith("```")) {
       if (inCodeBlock) {
         const escapedCode = escapeHtml(codeBuffer.join("\n"));
+        /*
+         * The fence is wrapped in .code-block (v2.5.2): the box
+         * carries the frame, the language label, and (at runtime)
+         * the COPY button, so that chrome stays PINNED while wide
+         * code scrolls horizontally inside the <pre>. The reveal
+         * attributes live on the wrapper — the motion CSS is
+         * attribute-based and animates the box as one unit.
+         */
         out.push(
-          `<pre data-language="${escapeHtml(codeLanguage)}"><code>${escapedCode}</code></pre>`
+          `<div class="code-block"${revealAttributes("code")} data-language="${escapeHtml(codeLanguage)}"><pre><code>${escapedCode}</code></pre></div>`
         );
         inCodeBlock = false;
         codeBuffer = [];
@@ -361,7 +479,7 @@ function renderMarkdown(source) {
     /* Horizontal rule */
     if (/^-{3,}$/.test(trimmed)) {
       flushAll();
-      out.push("<hr />");
+      out.push(`<hr${revealAttributes("fade")} />`);
       continue;
     }
 
@@ -373,8 +491,26 @@ function renderMarkdown(source) {
       const text = headingMatch[2].trim();
       const id = slugifyHeading(text, usedIds);
       headings.push({ id, text, level });
+
+      /* An h2 opens a new motion chunk; h3/h4 stay in the current one. */
+      if (level === 2) {
+        chunkPosition = 0;
+      }
+
+      /*
+       * HEADING ANCHORS (v2.5.2): every section heading carries a
+       * server-rendered "#" self-link so readers (and other articles,
+       * via the fragment-validated internal links) can deep-link a
+       * section with zero JavaScript. The anchor is omitted when the
+       * heading text itself renders a link — nested <a> is invalid.
+       */
+      const inlineHtml = renderInline(text, usedIds);
+      const anchor = inlineHtml.includes("<a")
+        ? ""
+        : `<a class="h-anchor" href="#${id}" aria-label="Link to this section"><span aria-hidden="true">#</span></a>`;
+
       out.push(
-        `<h${level} id="${id}">${renderInline(text, usedIds)}</h${level}>`
+        `<h${level}${revealAttributes("heading")} id="${id}">${inlineHtml}${anchor}</h${level}>`
       );
       continue;
     }
@@ -418,7 +554,7 @@ function renderMarkdown(source) {
     if (imageMatch && isSafeUrl(imageMatch[2])) {
       flushAll();
       out.push(
-        `<figure><img src="${applyBasePath(imageMatch[2])}" alt="${imageMatch[1]}" loading="lazy" decoding="async" /></figure>`
+        `<figure${revealAttributes("scale")}><img src="${applyBasePath(imageMatch[2])}" alt="${imageMatch[1]}" loading="lazy" decoding="async" /></figure>`
       );
       continue;
     }
@@ -571,6 +707,42 @@ function validatePost(record, file) {
     }
   }
 
+  /*
+   * Optional explicit relationships (v2.5). The graph itself is
+   * validated after every slug is known (see main): unknown targets,
+   * self-links, and duplicate entries fail with the file name.
+   */
+  if (record.related !== undefined) {
+    if (
+      !Array.isArray(record.related) ||
+      record.related.some(
+        (slug) => typeof slug !== "string" || !SLUG_PATTERN.test(slug)
+      )
+    ) {
+      problems.push(
+        "related must be an array of article slugs (lowercase kebab-case)"
+      );
+    }
+  }
+
+  if (
+    record.project !== undefined &&
+    record.project !== null &&
+    (typeof record.project !== "string" || record.project.trim() === "")
+  ) {
+    problems.push("project must be a non-empty string when present");
+  }
+
+  if (
+    record.topics !== undefined &&
+    (!Array.isArray(record.topics) ||
+      record.topics.some(
+        (topic) => typeof topic !== "string" || topic.trim() === ""
+      ))
+  ) {
+    problems.push("topics must be an array of non-empty strings");
+  }
+
   if (typeof record.body !== "string" || record.body.trim() === "") {
     problems.push("article body is empty");
   }
@@ -582,16 +754,101 @@ function validatePost(record, file) {
   return problems.length === 0;
 }
 
-function checkInternalLinks(body, validSlugs, file) {
-  const matches = body.matchAll(/\]\(\/?blog\/([^)/?#\s"']*)/g);
-  for (const match of matches) {
-    const slug = match[1];
-    if (slug === "" || slug === "images" || slug === "feed.xml") {
+/*
+ * Internal link validation (v2.5) — every link in an article body
+ * must resolve to something real:
+ *   - external links use https (never http, never localhost)
+ *   - root-relative links stay free of the deployment basePath
+ *     (content is written root-relative; the pipeline adds the base)
+ *   - /blog/<slug>/[<fragment>] targets must exist, and a fragment
+ *     must match a real heading id of the target article
+ *   - /#<scene> targets must match a real hash scene of the shell
+ *   - anything else fails: no dead internal links ship
+ */
+function checkInternalLinks(body, validSlugs, headingsBySlug, file) {
+  for (const match of body.matchAll(/\[[^\]]+\]\(([^)\s]+)\)/g)) {
+    const href = match[1];
+
+    if (href.startsWith("#") || /^mailto:/i.test(href)) {
       continue;
     }
-    if (!validSlugs.has(slug)) {
-      fail(file, `internal blog link points to unknown slug: ${slug}`);
+
+    if (/^https?:\/\//i.test(href)) {
+      if (/^http:\/\//i.test(href)) {
+        fail(file, `external link must use https: ${href}`);
+      }
+      if (/localhost/i.test(href)) {
+        fail(file, `external link references localhost: ${href}`);
+      }
+      continue;
     }
+
+    if (!href.startsWith("/")) {
+      fail(
+        file,
+        `link must be root-relative or an absolute https URL: ${href}`
+      );
+      continue;
+    }
+
+    if (href.startsWith("//")) {
+      fail(file, `protocol-relative link is ambiguous: ${href}`);
+      continue;
+    }
+
+    if (BASE_PATH !== "" && href.startsWith(`${BASE_PATH}/`)) {
+      fail(
+        file,
+        `link repeats the deployment base path: ${href} (write root-relative links; the pipeline adds "${BASE_PATH}")`
+      );
+      continue;
+    }
+
+    if (/localhost/i.test(href)) {
+      fail(file, `internal link references localhost: ${href}`);
+      continue;
+    }
+
+    const [rawPath, fragment] = href.split("#");
+    const cleanPath = rawPath.split("?")[0];
+
+    if (cleanPath === "/" || cleanPath === "") {
+      if (fragment !== undefined && fragment !== "" && !KNOWN_SCENES.has(fragment)) {
+        fail(
+          file,
+          `home link points to unknown scene "#${fragment}" (known: ${[...KNOWN_SCENES].join(", ")})`
+        );
+      }
+      continue;
+    }
+
+    if (cleanPath === "/blog" || cleanPath === "/blog/") {
+      continue;
+    }
+
+    const blogMatch = cleanPath.match(/^\/blog\/([^/]+)\/?$/);
+    if (blogMatch) {
+      const slug = blogMatch[1];
+      if (slug === "images") {
+        continue;
+      }
+      if (!validSlugs.has(slug)) {
+        fail(file, `internal blog link points to unknown slug: ${slug}`);
+        continue;
+      }
+      if (fragment !== undefined && fragment !== "") {
+        const headingIds = headingsBySlug.get(slug);
+        if (headingIds && !headingIds.has(fragment)) {
+          fail(
+            file,
+            `link fragment "#${fragment}" matches no heading in "${slug}"`
+          );
+        }
+      }
+      continue;
+    }
+
+    fail(file, `internal link does not resolve to a known route: ${href}`);
   }
 }
 
@@ -609,33 +866,115 @@ function countWords(body) {
   return plain === "" ? 0 : plain.split(" ").length;
 }
 
+/*
+ * RELATED CONTENT (v2.5) — deterministic, human-meaningful.
+ *
+ * Signals, in descending authority:
+ *   1. explicit `related` frontmatter (author-guaranteed, always first)
+ *   2. shared tags           (×3 each, capped at three tags)
+ *   3. same category         (×4)
+ *   4. same project          (×3)
+ *   5. shared topics         (×2 each, capped at three)
+ *   6. shared significant terms from title/excerpt/topics (×1, capped)
+ *   7. recency               (bounded tie-break ONLY — never qualifies
+ *                             a candidate on its own)
+ *
+ * A candidate enters the set only with at least one qualifying signal
+ * (tag, topic, category, project, or ≥2 shared terms). The result is
+ * deterministic across runs: no randomness, no ML, no runtime work.
+ */
+function scoreRelatedCandidate(post, other, recencyBonus) {
+  const sharedTags = other.tags.filter((tag) => post.tags.includes(tag));
+  const sharedTopics = other.topics.filter((topic) =>
+    post.topics.includes(topic)
+  );
+  const sharedTerms = other.terms
+    ? [...post.terms].filter((term) => other.terms.has(term)).length
+    : 0;
+  const sameCategory = other.category === post.category;
+  const sameProject =
+    post.project !== null &&
+    other.project !== null &&
+    post.project === other.project;
+
+  let score = 0;
+  score += Math.min(sharedTags.length, 3) * RELATED_WEIGHTS.SHARED_TAG;
+  score += Math.min(sharedTopics.length, 3) * RELATED_WEIGHTS.SHARED_TOPIC;
+  if (sameCategory) {
+    score += RELATED_WEIGHTS.SAME_CATEGORY;
+  }
+  if (sameProject) {
+    score += RELATED_WEIGHTS.SAME_PROJECT;
+  }
+  score +=
+    Math.min(sharedTerms, RELATED_WEIGHTS.SHARED_TERM_CAP) *
+    RELATED_WEIGHTS.SHARED_TERM;
+  score += recencyBonus;
+
+  const qualifies =
+    sharedTags.length > 0 ||
+    sharedTopics.length > 0 ||
+    sameCategory ||
+    sameProject ||
+    sharedTerms >= 2;
+
+  return {
+    slug: other.slug,
+    score: Math.round(score * 100) / 100,
+    qualifies
+  };
+}
+
 function buildRelated(posts) {
   const related = {};
-  for (const post of posts) {
-    const scored = posts
-      .filter((other) => other.slug !== post.slug)
-      .map((other) => {
-        const sharedTags = other.tags.filter((tag) =>
-          post.tags.includes(tag)
-        ).length;
-        const sameCategory = other.category === post.category ? 1 : 0;
-        return {
-          slug: other.slug,
-          score: sharedTags * 2 + sameCategory,
-          date: other.date,
-        };
-      })
-      .filter((candidate) => candidate.score > 0)
-      .sort((a, b) =>
-        b.score - a.score ||
-        (a.date < b.date ? 1 : a.date > b.date ? -1 : 0) ||
-        (a.slug < b.slug ? -1 : 1)
-      )
-      .slice(0, MAX_RELATED)
-      .map((candidate) => candidate.slug);
+  const total = posts.length;
 
-    related[post.slug] = scored;
+  for (const post of posts) {
+    const chosen = [];
+    const chosenSlugs = new Set();
+
+    /*
+     * Explicit relationships first, in the author's order. Validated
+     * separately (see main): unknown slugs, self-links, and duplicates
+     * never reach this point.
+     */
+    for (const slug of post.explicitRelated) {
+      chosen.push({ slug, score: null, explicit: true });
+      chosenSlugs.add(slug);
+    }
+
+    const scored = posts
+      .filter((other) => other.slug !== post.slug && !chosenSlugs.has(other.slug))
+      .map((other) =>
+        scoreRelatedCandidate(
+          post,
+          other,
+          total > 1
+            ? (1 - other.recencyRank / (total - 1)) * RELATED_WEIGHTS.RECENCY_SPREAD
+            : 0
+        )
+      )
+      .filter((candidate) => candidate.qualifies)
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          (a.date < b.date ? 1 : a.date > b.date ? -1 : 0) ||
+          (a.slug < b.slug ? -1 : 1)
+      )
+      .slice(0, MAX_RELATED - chosen.length);
+
+    for (const candidate of scored) {
+      chosen.push({
+        slug: candidate.slug,
+        score: candidate.score,
+        explicit: false
+      });
+      chosenSlugs.add(candidate.slug);
+    }
+
+    related[post.slug] = chosen;
   }
+
   return related;
 }
 
@@ -653,12 +992,47 @@ function buildAdjacent(postsByDateAsc) {
   return adjacent;
 }
 
-/* -------------------------------------------------------------------------- */
-/* RSS                                                                        */
-/* -------------------------------------------------------------------------- */
+/*
+ * REVERSE LINK GRAPH (v2.5.4) — "what links here".
+ *
+ * The forward link graph is the article bodies themselves: every
+ * internal /blog/<slug>/ hyperlink an author writes. This index
+ * inverts it: for each article, WHICH other articles link TO it,
+ * derived by scanning the rendered HTML (so it sees exactly what a
+ * reader sees — prose links only, never navigation chrome, which is
+ * page-level and not part of the body HTML).
+ *
+ * Deterministic: sources are scanned in the posts array order
+ * (date descending, slug ascending), duplicates collapse, self-links
+ * are impossible by construction (a body never links to its own
+ * article page). Slugs with zero inbound links are simply absent.
+ */
+function buildLinksHere(posts) {
+  const articleHrefPattern =
+    /href="[^"]*\/blog\/([a-z0-9][a-z0-9-]*)\/[^"]*"/g;
+  const linksHere = {};
 
-function toRfc822(dateString) {
-  return new Date(`${dateString}T12:00:00Z`).toUTCString();
+  for (const source of posts) {
+    const html = String(source.html ?? "");
+    const targets = new Set();
+    let match;
+
+    articleHrefPattern.lastIndex = 0;
+
+    while ((match = articleHrefPattern.exec(html)) !== null) {
+      const target = match[1];
+
+      if (target !== source.slug && posts.some((p) => p.slug === target)) {
+        targets.add(target);
+      }
+    }
+
+    for (const target of targets) {
+      (linksHere[target] ??= []).push(source.slug);
+    }
+  }
+
+  return linksHere;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -714,45 +1088,6 @@ function buildSitemap(posts) {
   }\n</urlset>\n`;
 }
 
-function buildFeed(posts, generatedAt) {
-  const items = posts
-    .map((post) => {
-      const link = `${SITE_URL}/blog/${post.slug}/`;
-      const categories = post.tags
-        .map((tag) => `<category>${escapeHtml(tag)}</category>`)
-        .join("");
-      const content = post.html.includes("]]>")
-        ? escapeHtml(post.excerpt)
-        : post.html;
-
-      return `    <item>
-      <title>${escapeHtml(post.title)}</title>
-      <link>${link}</link>
-      <guid isPermaLink="true">${link}</guid>
-      <pubDate>${toRfc822(post.date)}</pubDate>
-      ${post.updated ? `<atom:updated>${toRfc822(post.updated)}</atom:updated>` : ""}
-      <description>${escapeHtml(post.excerpt)}</description>
-      <content:encoded><![CDATA[${content}]]></content:encoded>
-      ${categories}
-    </item>`;
-    })
-    .join("\n");
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
-  <channel>
-    <title>${escapeHtml(SITE_NAME)} — Blog</title>
-    <link>${SITE_URL}/blog/</link>
-    <description>${escapeHtml(SITE_DESCRIPTION)}</description>
-    <language>en</language>
-    <lastBuildDate>${generatedAt.toUTCString()}</lastBuildDate>
-    <atom:link href="${FEED_URL}" rel="self" type="application/rss+xml" />
-${items}
-  </channel>
-</rss>
-`;
-}
-
 /* -------------------------------------------------------------------------- */
 /* Main                                                                       */
 /* -------------------------------------------------------------------------- */
@@ -761,6 +1096,7 @@ async function main() {
   const generatedAt = new Date();
   const posts = [];
   const rawBodies = new Map();
+  const headingsBySlug = new Map();
 
   if (!existsSync(CONTENT_DIR)) {
     console.warn(
@@ -848,6 +1184,29 @@ async function main() {
       author: String(record.author).trim(),
       category: record.category,
       tags,
+
+      /*
+       * Optional relationship metadata (v2.5). `explicitRelated` is
+       * author-declared order (validated below); `project` and
+       * `topics` feed the deterministic scoring model. `terms` powers
+       * the subject-similarity signal and is NOT emitted.
+       */
+      explicitRelated: Array.isArray(record.related)
+        ? [...new Set(record.related.map((slug) => String(slug).trim()))]
+        : [],
+      project:
+        typeof record.project === "string" && record.project.trim() !== ""
+          ? record.project.trim()
+          : null,
+      topics: Array.from(
+        new Set(
+          (Array.isArray(record.topics) ? record.topics : [])
+            .map((topic) => String(topic).trim())
+            .filter((topic) => topic.length > 0)
+        )
+      ),
+      terms: significantTerms(record),
+
       readingMinutes,
       readingTime: `${readingMinutes} min read`,
       wordCount,
@@ -858,6 +1217,10 @@ async function main() {
     });
 
     rawBodies.set(slug, body);
+    headingsBySlug.set(
+      slug,
+      new Set(headings.map((heading) => heading.id))
+    );
   }
 
   /* Internal link validation runs after all slugs are known. */
@@ -872,8 +1235,32 @@ async function main() {
     checkInternalLinks(
       String(rawBodies.get(post.slug) ?? ""),
       validSlugs,
+      headingsBySlug,
       `${post.slug}.md`
     );
+  }
+
+  /*
+   * Explicit relationship graph validation (v2.5): every declared
+   * `related` slug must exist, must not be the article itself, and
+   * must not repeat. Failures name the file and the offending slug.
+   */
+  for (const post of posts) {
+    for (const relatedSlug of post.explicitRelated) {
+      if (relatedSlug === post.slug) {
+        fail(
+          `${post.slug}.md`,
+          `related list contains a self-link: ${relatedSlug}`
+        );
+        continue;
+      }
+      if (!validSlugs.has(relatedSlug)) {
+        fail(
+          `${post.slug}.md`,
+          `related list points to unknown article: ${relatedSlug}`
+        );
+      }
+    }
   }
 
   /*
@@ -900,6 +1287,14 @@ async function main() {
     a.date < b.date ? 1 : a.date > b.date ? -1 : a.slug < b.slug ? -1 : 1
   );
 
+  /*
+   * Recency rank for the related tie-break: 0 = newest. Computed
+   * AFTER the deterministic sort so it is stable across runs.
+   */
+  posts.forEach((post, index) => {
+    post.recencyRank = index;
+  });
+
   const chronologicalAsc = [...posts].reverse();
 
   const tagIndex = {};
@@ -912,18 +1307,27 @@ async function main() {
   }
 
   const data = {
-    version: 1,
+    version: 2,
     generatedAt: generatedAt.toISOString(),
     basePath: BASE_PATH,
     siteUrl: SITE_URL,
     siteName: SITE_NAME,
     siteDescription: SITE_DESCRIPTION,
-    posts,
+    posts: posts.map((post) => {
+      const {
+        terms: _terms,
+        recencyRank: _recencyRank,
+        explicitRelated: _explicitRelated,
+        ...emitted
+      } = post;
+      return emitted;
+    }),
     indexes: {
       tags: tagIndex,
       categories: categoryIndex,
       related: buildRelated(posts),
-      adjacent: buildAdjacent(chronologicalAsc)
+      adjacent: buildAdjacent(chronologicalAsc),
+      linksHere: buildLinksHere(posts)
     }
   };
 
@@ -933,10 +1337,6 @@ async function main() {
     `${JSON.stringify(data, null, 2)}\n`,
     "utf8"
   );
-
-  const feed = buildFeed(posts, generatedAt);
-  await mkdir(PUBLIC_BLOG_DIR, { recursive: true });
-  await writeFile(path.join(PUBLIC_BLOG_DIR, "feed.xml"), feed, "utf8");
 
   const sitemap = buildSitemap(posts);
   await writeFile(
@@ -948,12 +1348,25 @@ async function main() {
   const featuredCount = posts.filter((post) => post.featured).length;
   const tagCount = Object.keys(tagIndex).length;
   const categoryCount = Object.keys(categoryIndex).length;
+  const relatedCount = Object.values(data.indexes.related).reduce(
+    (sum, entries) => sum + entries.length,
+    0
+  );
 
   console.log(
     `[blog] ${posts.length} article(s) · ${tagCount} tag(s) · ${categoryCount} category(ies) · ${featuredCount} featured`
   );
   console.log(`[blog] wrote data/blog/posts.json (${posts.length} posts)`);
-  console.log("[blog] wrote public/blog/feed.xml (RSS 2.0)");
+  console.log(
+    `[blog] related graph: ${relatedCount} edge(s) across ${Object.keys(data.indexes.related).length} article(s)`
+  );
+  const linksHereCount = Object.values(data.indexes.linksHere).reduce(
+    (sum, entries) => sum + entries.length,
+    0
+  );
+  console.log(
+    `[blog] links-here graph: ${linksHereCount} inbound edge(s) across ${Object.keys(data.indexes.linksHere).length} article(s)`
+  );
   console.log(
     `[blog] wrote public/sitemap.xml (${sitemapUrlCount(posts.length)} URL(s))`
   );

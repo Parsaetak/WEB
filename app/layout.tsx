@@ -111,7 +111,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    /*
+     * suppressHydrationWarning on <html> is intentional and scoped:
+     * the pre-paint MOTION GATE script below mutates this element's
+     * className (reveal-js) before React hydrates — a deliberate
+     * pre-paint mutation, not a server/client drift. Without the
+     * attribute, React logs a hydration mismatch on every page load.
+     */
+    <html
+      lang="en"
+      suppressHydrationWarning
+    >
       <head>
         {/*
           * All library media and PDF.js come from the jsDelivr CDN.

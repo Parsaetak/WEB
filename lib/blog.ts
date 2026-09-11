@@ -2,7 +2,8 @@ import blogData from "@/data/blog/posts.json";
 
 import type {
   BlogPost,
-  BlogPostMeta
+  BlogPostMeta,
+  RelatedPostEntry
 } from "@/lib/blogFormat";
 
 /*
@@ -31,8 +32,19 @@ import type {
 export type {
   BlogPost,
   BlogPostCover,
-  BlogPostMeta
+  BlogPostMeta,
+  RelatedPostEntry
 } from "@/lib/blogFormat";
+
+/*
+ * A resolved related-article reference: the target's metadata plus
+ * the relationship's provenance (author-explicit vs scored).
+ */
+export type RelatedPost = {
+  post: BlogPostMeta;
+  score: number | null;
+  explicit: boolean;
+};
 
 export {
   formatBlogDate,
@@ -50,8 +62,9 @@ type RawBlogData = {
   indexes: {
     tags: Record<string, string[]>;
     categories: Record<string, string[]>;
-    related: Record<string, string[]>;
+    related: Record<string, RelatedPostEntry[]>;
     adjacent: Record<string, { prev: string | null; next: string | null }>;
+    linksHere?: Record<string, string[]>;
   };
 };
 
@@ -176,14 +189,88 @@ export function getPostsByCategory(
     .map(toMeta);
 }
 
+/*
+ * Related articles for a slug, resolved to metadata and validated at
+ * runtime (defense in depth on top of the build's graph validation):
+ * unknown targets, self-references, and duplicates are dropped, never
+ * rendered. Order comes straight from the deterministic index —
+ * explicit author relationships first, then by descending score.
+ */
 export function getRelatedPosts(
   slug: string
-): readonly BlogPostMeta[] {
-  const slugs = RAW_DATA.indexes?.related?.[slug] ?? [];
-  return slugs
-    .map((relatedSlug) => BY_SLUG.get(relatedSlug))
-    .filter((post): post is BlogPost => post !== undefined)
-    .map(toMeta);
+): RelatedPost[] {
+  const entries =
+    RAW_DATA.indexes?.related?.[slug] ?? [];
+
+  const resolved: RelatedPost[] = [];
+  const seen = new Set<string>([slug]);
+
+  for (const entry of entries) {
+    if (
+      typeof entry?.slug !== "string" ||
+      seen.has(entry.slug)
+    ) {
+      continue;
+    }
+
+    const post = BY_SLUG.get(entry.slug);
+
+    if (!post) {
+      continue;
+    }
+
+    seen.add(entry.slug);
+
+    resolved.push({
+      post: toMeta(post),
+      score:
+        typeof entry.score === "number"
+          ? entry.score
+          : null,
+      explicit: entry.explicit === true
+    });
+  }
+
+  return resolved;
+}
+
+/*
+ * "What links here" (v2.5.4): the inverted body-link graph. For a
+ * slug, every OTHER article whose prose hyperlinks into it, resolved
+ * to metadata and validated at runtime (defense in depth — unknown
+ * targets, self-references, and duplicates are dropped, never
+ * rendered). Order comes straight from the build's deterministic
+ * source scan (date descending, slug ascending).
+ */
+export function getLinksHere(
+  slug: string
+): BlogPostMeta[] {
+  const slugs =
+    RAW_DATA.indexes?.linksHere?.[slug] ?? [];
+
+  const resolved: BlogPostMeta[] = [];
+  const seen = new Set<string>([slug]);
+
+  for (const entry of slugs) {
+    if (
+      typeof entry !== "string" ||
+      seen.has(entry)
+    ) {
+      continue;
+    }
+
+    const post = BY_SLUG.get(entry);
+
+    if (!post) {
+      continue;
+    }
+
+    seen.add(entry);
+
+    resolved.push(toMeta(post));
+  }
+
+  return resolved;
 }
 
 export function getAdjacentPosts(

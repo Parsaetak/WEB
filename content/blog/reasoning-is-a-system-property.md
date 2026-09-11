@@ -9,6 +9,9 @@ author: "Parsa Tak"
 category: "research"
 tags: ["AI", "reasoning", "systems", "REP", "USEF", "human will", "2026"]
 featured: false
+project: "ai-frameworks"
+topics: ["reasoning", "verification", "AI agents", "systems"]
+related: ["ai-instructions", "why-the-website-is-a-living-system"]
 cover:
   src: "/blog/images/reasoning-system.svg"
   alt: "A red schematic of three connected modules forming a reasoning pipeline"

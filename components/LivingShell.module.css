@@ -561,3 +561,10 @@
     gap: 14px;
   }
 }
+
+/* Print (v2.5.1): the legal footer block is screen-only. */
+@media print {
+  .livingShellLegal {
+    display: none !important;
+  }
+}

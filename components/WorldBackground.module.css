@@ -2041,3 +2041,44 @@
       scale(1.045);
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* READING FOCUS (v2.5)                                                        */
+/*                                                                            */
+/* Article pages set `data-reading` on <html> and publish the shared           */
+/* --reading-progress custom property (0..1) via the ReadingProgress           */
+/* controller. The organism answers by QUIETING: peripheral layers pull        */
+/* back below their archive-mood base so the article owns the reader's         */
+/* attention, while the aura warms very slightly with reading progress.        */
+/* Same law as the rest of the organism: one writer, CSS-side consumers,       */
+/* opacity-only, no per-frame JavaScript beyond the progress write. The        */
+/* layers' existing 1.6s opacity transitions smooth both entering and          */
+/* leaving the state; reduced motion keeps the calm state (it is a mood,       */
+/* not an animation) and simply loses the progress-linked aura drift.          */
+/* -------------------------------------------------------------------------- */
+
+:global(html[data-reading="true"]) .redMagicCloudWisps,
+:global(html[data-reading="true"]) .redMagicCloudSparks,
+:global(html[data-reading="true"]) .redMagicCloudParticles {
+  --mood-opacity: 0.4;
+}
+
+:global(html[data-reading="true"]) .organismAtmosphere {
+  opacity: 0.58;
+}
+
+:global(html[data-reading="true"]) .organismHeart {
+  opacity: 0.62;
+}
+
+/*
+ * The aura, rings and heart keep their own looped breathing — reading
+ * focus scales their BASE, it does not fight their animations.
+ */
+
+/* Print (v2.5.1): the organism is screen ambience — paper gets none. */
+@media print {
+  .worldBackground {
+    display: none !important;
+  }
+}

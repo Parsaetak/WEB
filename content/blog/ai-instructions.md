@@ -9,6 +9,9 @@ author: "Parsa Tak"
 category: "research"
 tags: ["AI Instructions", "AI agents", "governance", "verification", "REP", "USEF", "2026"]
 featured: false
+project: "ai-frameworks"
+topics: ["AI agents", "governance", "verification", "reasoning architecture"]
+related: ["reasoning-is-a-system-property", "building-under-constraints"]
 cover:
   src: "/blog/images/ai-instructions.svg"
   alt: "A red layered stack diagram: constitution on top, REP and USEF in the middle, modules and host runtime below"
@@ -16,7 +19,7 @@ cover:
   height: 630
 ---
 
-The most instructive failure mode of modern AI systems is not stupidity. It is unowned competence: a system fluent enough to plan, write, and call tools, with no reliable mechanism telling it what counts as done, what counts as true, and what it is allowed to touch. AI Instructions is the document built against that failure mode. It is the master constitutional layer of the framework family this site's [Systems scene](/#systems) presents — the governing layer above REP's reasoning protocol and USEF's system-enhancement discipline.
+The most instructive failure mode of modern AI systems is not stupidity. It is unowned competence: a system fluent enough to plan, write, and call tools, with no reliable mechanism telling it what counts as done, what counts as true, and what it is allowed to touch. AI Instructions is the document built against that failure mode. It is the master constitutional layer of the framework family this site's [Systems scene](/#systems) presents — the governing layer above [REP's reasoning protocol](/blog/reasoning-is-a-system-property/#rep-strengthen-the-thinking) and [USEF's system-enhancement discipline](/blog/reasoning-is-a-system-property/#usef-improve-the-system).
 
 The canonical source lives in the open: [`Ai-instructions-Sep2026.md`](https://github.com/Parsaetak/Contents/blob/AI-frameworks/Ai-instructions-Sep2026.md) on the [Parsaetak/Contents](https://github.com/Parsaetak/Contents/tree/AI-frameworks) repository, `AI-frameworks` branch. It is roughly 136 KB of operational specification. This article does not reproduce it; it extracts the architecture and explains why the architecture is shaped the way it is.
 
@@ -106,8 +109,8 @@ The constitution's optimization targets include — explicitly — human operato
 The timing is not incidental; the environment grew into this problem:
 
 - Agentic AI went mainstream faster than it went reliable: Forrester's mid-2026 state-of-agentic-AI research reports roughly three-quarters of enterprises adopting agentic AI while comparatively few have scaled it — a capability-everywhere, reliability-scarce pattern. **(Fact — attributed to Forrester's 2026 report.)**
-- Prompt injection is the number-one entry in the OWASP Top 10 for LLM Applications and remains its most actively exploited class — exactly the threat the injection-sanitization kernel and the untrusted-data law exist for. **(Fact — OWASP's 2026 list.)**
-- Tool infrastructure standardized: the Model Context Protocol became the common substrate for connecting agents to tools and data, with millions of monthly SDK downloads — which makes disciplined tool policy and schema sanitization a baseline requirement rather than an exotic one. **(Fact — MCP specification and 2026 adoption reporting.)**
+- Prompt injection is the number-one entry in the [OWASP Top 10 for LLM Applications](https://genai.owasp.org/) and remains its most actively exploited class — exactly the threat the injection-sanitization kernel and the untrusted-data law exist for. **(Fact — OWASP's 2026 list.)**
+- Tool infrastructure standardized: the [Model Context Protocol](https://modelcontextprotocol.io/) became the common substrate for connecting agents to tools and data, with millions of monthly SDK downloads — which makes disciplined tool policy and schema sanitization a baseline requirement rather than an exotic one. **(Fact — MCP specification and 2026 adoption reporting.)**
 
 **(Analysis)** Three trends, one shape: capability and connectivity are compounding faster than governance. The gap is where framework work earns its keep.
 

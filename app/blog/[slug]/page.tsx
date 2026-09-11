@@ -11,8 +11,10 @@ import {
   formatBlogDateShort,
   getAdjacentPosts,
   getBlogMetaList,
+  getLinksHere,
   getPost,
-  getRelatedPosts
+  getRelatedPosts,
+  type RelatedPost
 } from "@/lib/blog";
 
 import {
@@ -25,6 +27,16 @@ import {
   SITE_OG_IMAGE_WIDTH,
   SITE_URL
 } from "@/lib/seo";
+
+import ReadingProgress from "@/components/ReadingProgress";
+
+import ArticleToc from "@/components/blog/ArticleToc";
+
+import ArticleKeys from "@/components/blog/ArticleKeys";
+
+import CodeCopy from "@/components/blog/CodeCopy";
+
+import ShareLink from "@/components/blog/ShareLink";
 
 import styles from "./article.module.css";
 
@@ -152,6 +164,42 @@ export async function generateMetadata({
   };
 }
 
+/*
+ * RELATED CONTENT hierarchy (v2.5).
+ *
+ * The build-time index already orders related articles by relevance.
+ * The page splits them into two readable tiers instead of one wall:
+ * primary = author-explicit relationships and scored matches at or
+ * above PRIMARY_SCORE_THRESHOLD (rich cards with excerpt); everything
+ * else becomes a compact secondary row. Deterministic, no runtime
+ * scoring, no recommendation engine — just the precomputed graph.
+ */
+const RELATED_PRIMARY_COUNT = 3;
+
+const RELATED_PRIMARY_SCORE = 8;
+
+function splitRelated(related: readonly RelatedPost[]): {
+  primary: RelatedPost[];
+  secondary: RelatedPost[];
+} {
+  const primary: RelatedPost[] = [];
+  const secondary: RelatedPost[] = [];
+
+  for (const entry of related) {
+    const isPrimary =
+      entry.explicit ||
+      (entry.score !== null && entry.score >= RELATED_PRIMARY_SCORE);
+
+    if (isPrimary && primary.length < RELATED_PRIMARY_COUNT) {
+      primary.push(entry);
+    } else {
+      secondary.push(entry);
+    }
+  }
+
+  return { primary, secondary };
+}
+
 export default async function ArticlePage({
   params
 }: ArticlePageProps) {
@@ -168,6 +216,20 @@ export default async function ArticlePage({
 
   const related =
     getRelatedPosts(
+      post.slug
+    );
+
+  const { primary: relatedPrimary, secondary: relatedSecondary } =
+    splitRelated(related);
+
+  /*
+   * REVERSE LINK GRAPH (v2.5.4) — the "Referenced by" section.
+   * Articles whose prose links into this one; the same link graph
+   * the build validates, walked backwards. Empty when nothing links
+   * here (the section simply doesn't render).
+   */
+  const linksHere =
+    getLinksHere(
       post.slug
     );
 
@@ -290,11 +352,29 @@ export default async function ArticlePage({
     <article
       className={styles.article}
     >
+      <ReadingProgress />
+
+      <ArticleKeys
+        prevHref={
+          adjacent.prev
+            ? `/blog/${adjacent.prev.slug}/`
+            : null
+        }
+        nextHref={
+          adjacent.next
+            ? `/blog/${adjacent.next.slug}/`
+            : null
+        }
+      />
+
       <JsonLd data={jsonLd} />
 
       <div className="page-container">
         <header
           className={styles.header}
+          data-category={
+            post.category
+          }
           data-reveal="instant"
         >
           <p
@@ -311,7 +391,11 @@ export default async function ArticlePage({
               ← BLOG
             </Link>
 
-            <span>
+            <span
+              className={
+                styles.headerCategory
+              }
+            >
               {post.category}
             </span>
 
@@ -378,6 +462,71 @@ export default async function ArticlePage({
               WORDS
             </span>
           </div>
+
+          {((post.project &&
+            post.project.length >
+              0) ||
+            post.topics.length >
+              0) && (
+            <div
+              className={
+                styles.contextChips
+              }
+              aria-label="Article context"
+              data-reveal="instant"
+            >
+              {post.project && (
+                <Link
+                  className={`${styles.contextChip} ${styles.contextChipProject}`}
+                  href={`/blog/?project=${encodeURIComponent(
+                    post.project
+                  )}`}
+                  title={`More from the ${post.project} project`}
+                >
+                  <span
+                    className={
+                      styles.contextChipLabel
+                    }
+                  >
+                    PROJECT
+                  </span>
+
+                  {
+                    post.project
+                  }
+                </Link>
+              )}
+
+              {post.topics.map(
+                (topic) => (
+                  <Link
+                    key={
+                      topic
+                    }
+                    className={
+                      styles.contextChip
+                    }
+                    href={`/blog/?topic=${encodeURIComponent(
+                      topic
+                    )}`}
+                    title={`More articles on ${topic}`}
+                  >
+                    <span
+                      className={
+                        styles.contextChipLabel
+                      }
+                    >
+                      TOPIC
+                    </span>
+
+                    {
+                      topic
+                    }
+                  </Link>
+                )
+              )}
+            </div>
+          )}
         </header>
 
         {post.cover && (
@@ -407,6 +556,18 @@ export default async function ArticlePage({
           </figure>
         )}
 
+        {/*
+         * ARTICLE TOC (v2.5.1) — inline disclosure (narrow viewports)
+         * + fixed right-rail instrument (≥1280px), sharing the
+         * build-time headings data. Scroll-spy is one
+         * IntersectionObserver; without JS the links still navigate.
+         */}
+        <ArticleToc
+          headings={
+            post.headings
+          }
+        />
+
         <div
           className={
             styles.body
@@ -416,6 +577,13 @@ export default async function ArticlePage({
           }}
         />
 
+        {/*
+         * CODE COPY (v2.5.2) — a silent enhancement island: renders
+         * nothing, gives every code block one COPY affordance after
+         * hydration. Without JS the code stays fully readable.
+         */}
+        <CodeCopy />
+
         {post.tags.length > 0 && (
           <div
             className={
@@ -424,15 +592,35 @@ export default async function ArticlePage({
             aria-label="Article tags"
             data-reveal="instant"
           >
-            {post.tags.map(
-              (tag) => (
-                <span
-                  key={tag}
-                >
-                  {tag}
-                </span>
-              )
-            )}
+            <div
+              className={
+                styles.tagList
+              }
+            >
+              {post.tags.map(
+                (tag) => (
+                  <span
+                    key={tag}
+                  >
+                    {tag}
+                  </span>
+                )
+              )}
+            </div>
+
+            {/**
+              * Actions slot (v2.5.3) — reserved right edge of the
+              * row; the ShareLink island docks a COPY LINK button
+              * here after hydration. Empty without JS.
+              */}
+            <span
+              className={
+                styles.tagsActions
+              }
+              data-article-actions
+            >
+              <ShareLink />
+            </span>
           </div>
         )}
 
@@ -460,6 +648,15 @@ export default async function ArticlePage({
                 }
               >
                 ← PREVIOUS
+
+                <kbd
+                  className={
+                    styles.adjacentKey
+                  }
+                  aria-hidden="true"
+                >
+                  K
+                </kbd>
               </span>
 
               <span
@@ -487,6 +684,15 @@ export default async function ArticlePage({
                 }
               >
                 NEXT →
+
+                <kbd
+                  className={
+                    styles.adjacentKey
+                  }
+                  aria-hidden="true"
+                >
+                  J
+                </kbd>
               </span>
 
               <span
@@ -518,60 +724,249 @@ export default async function ArticlePage({
               RELATED TRANSMISSIONS
             </p>
 
-            <div
+            {relatedPrimary.length > 0 && (
+              <div
+                className={
+                  styles.relatedPrimaryGrid
+                }
+              >
+                {relatedPrimary.map(
+                  (
+                    relatedEntry,
+                    index
+                  ) => (
+                    <Link
+                      key={
+                        relatedEntry.post.slug
+                      }
+                      className={
+                        styles.relatedCard
+                      }
+                      href={`/blog/${relatedEntry.post.slug}/`}
+                      prefetch={
+                        false
+                      }
+                      data-category={
+                        relatedEntry.post.category
+                      }
+                      data-reveal=""
+                      data-reveal-order={
+                        index
+                      }
+                    >
+                      <span
+                        className={
+                          styles.relatedCardCategory
+                        }
+                      >
+                        {
+                          relatedEntry.post.category
+                        }
+                      </span>
+
+                      <strong
+                        className={
+                          styles.relatedCardTitle
+                        }
+                      >
+                        {
+                          relatedEntry.post.title
+                        }
+                      </strong>
+
+                      <span
+                        className={
+                          styles.relatedCardExcerpt
+                        }
+                      >
+                        {
+                          relatedEntry.post.excerpt
+                        }
+                      </span>
+
+                      <span
+                        className={
+                          styles.relatedCardMeta
+                        }
+                      >
+                        {
+                          relatedEntry.post.readingTime
+                        }
+                        {" · "}
+                        {formatBlogDateShort(
+                          relatedEntry.post.date
+                        )}
+                      </span>
+                    </Link>
+                  )
+                )}
+              </div>
+            )}
+
+            {relatedSecondary.length > 0 && (
+              <ul
+                className={
+                  styles.relatedSecondaryList
+                }
+              >
+                {relatedSecondary.map(
+                  (
+                    relatedEntry,
+                    index
+                  ) => (
+                    <li
+                      key={
+                        relatedEntry.post.slug
+                      }
+                      data-category={
+                        relatedEntry.post.category
+                      }
+                      data-reveal="instant"
+                      data-reveal-order={
+                        index
+                      }
+                    >
+                      <Link
+                        className={
+                          styles.relatedRow
+                        }
+                        href={`/blog/${relatedEntry.post.slug}/`}
+                        prefetch={
+                          false
+                        }
+                      >
+                        <span
+                          className={
+                            styles.relatedRowCategory
+                          }
+                        >
+                          {
+                            relatedEntry.post.category
+                          }
+                        </span>
+
+                        <span
+                          className={
+                            styles.relatedRowTitle
+                          }
+                        >
+                          {
+                            relatedEntry.post.title
+                          }
+                        </span>
+
+                        <span
+                          className={
+                            styles.relatedRowMeta
+                          }
+                        >
+                          {
+                            relatedEntry.post.readingTime
+                          }
+                          {" · "}
+                          {formatBlogDateShort(
+                            relatedEntry.post.date
+                          )}
+                        </span>
+                      </Link>
+                    </li>
+                  )
+                )}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {linksHere.length > 0 && (
+          <section
+            className={
+              styles.linksHere
+            }
+            aria-label="Articles that link here"
+            data-reveal=""
+          >
+            <p
               className={
-                styles.relatedGrid
+                styles.relatedKicker
               }
             >
-              {related.map(
+              REFERENCED BY
+            </p>
+
+            <ul
+              className={
+                styles.linksHereList
+              }
+            >
+              {linksHere.map(
                 (
-                  relatedPost
+                  referencingPost
                 ) => (
-                  <Link
+                  <li
                     key={
-                      relatedPost.slug
+                      referencingPost.slug
                     }
-                    className={
-                      styles.relatedCard
+                    data-category={
+                      referencingPost.category
                     }
-                    href={`/blog/${relatedPost.slug}/`}
-                    prefetch={
-                      false
-                    }
+                    data-reveal="instant"
                   >
-                    <span
+                    <Link
                       className={
-                        styles.relatedCardCategory
+                        styles.linksHereRow
+                      }
+                      href={`/blog/${referencingPost.slug}/`}
+                      prefetch={
+                        false
                       }
                     >
-                      {
-                        relatedPost.category
-                      }
-                    </span>
+                      <span
+                        className={
+                          styles.linksHereGlyph
+                        }
+                        aria-hidden="true"
+                      >
+                        ↩
+                      </span>
 
-                    <strong>
-                      {
-                        relatedPost.title
-                      }
-                    </strong>
+                      <span
+                        className={
+                          styles.relatedRowCategory
+                        }
+                      >
+                        {
+                          referencingPost.category
+                        }
+                      </span>
 
-                    <span
-                      className={
-                        styles.relatedCardMeta
-                      }
-                    >
-                      {
-                        relatedPost.readingTime
-                      }
-                      {" · "}
-                      {formatBlogDateShort(
-                        relatedPost.date
-                      )}
-                    </span>
-                  </Link>
+                      <span
+                        className={
+                          styles.linksHereTitle
+                        }
+                      >
+                        {
+                          referencingPost.title
+                        }
+                      </span>
+
+                      <span
+                        className={
+                          styles.relatedRowMeta
+                        }
+                      >
+                        {
+                          referencingPost.readingTime
+                        }
+                        {" · "}
+                        {formatBlogDateShort(
+                          referencingPost.date
+                        )}
+                      </span>
+                    </Link>
+                  </li>
                 )
               )}
-            </div>
+            </ul>
           </section>
         )}
 

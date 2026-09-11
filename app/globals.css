@@ -19,6 +19,18 @@
   --line-soft: rgba(255, 255, 255, 0.045);
   --line-red: rgba(255, 32, 32, 0.22);
 
+  /*
+   * Category accents (v2.5.3) — a deterministic three-color code for
+   * the blog's categories. Systems stays on the site's brand red;
+   * research and engineering get neighbouring hues that hold up on
+   * the dark surface. Purely presentational: applied through
+   * data-category attributes and ::before dots, never as the only
+   * carrier of meaning (the category name is always spelled out).
+   */
+  --cat-systems: var(--red-hot);
+  --cat-research: #ffb03a;
+  --cat-engineering: #35d9a4;
+
   --shadow:
     0 24px 70px
     rgba(0, 0, 0, 0.48);
@@ -274,6 +286,47 @@ p + p {
 
   outline-offset:
     4px;
+}
+
+/*
+ * Keyboard hints (v2.5.3) — bare <kbd> used inside navigation labels
+ * (adjacent-article J/K hints, the "/" search hint) and nowhere else.
+ * Styled as a quiet instrument chip: mono, small, bordered. Hidden
+ * from print and from the reduced-motion override set (opacity-only
+ * styling, nothing animated).
+ */
+kbd {
+  display: inline-block;
+
+  padding: 1px 6px 2px;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.16);
+
+  border-bottom-width: 2px;
+
+  border-radius: 4px;
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  line-height: 1.5;
+
+  letter-spacing: 0.06em;
+
+  text-transform: uppercase;
+
+  vertical-align: 1px;
+
+  white-space: nowrap;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1238,5 +1291,156 @@ span {
   .reveal-js [data-reveal][data-revealed="true"] {
     transition-delay:
       0ms;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reading motion variants (v2.5)                                             */
+/*                                                                            */
+/* The blog pipeline annotates article-body blocks at BUILD time with         */
+/* `data-reveal` + a chunked `data-reveal-order` (restarts at every h2:       */
+/* heading first, supporting content settles after). Each content class       */
+/* gets its own motion character while sharing the one transition             */
+/* vocabulary above — opacity + transform only, one observer, self-draining.  */
+/* Without JavaScript (no reveal-js class) none of this hides content.        */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Headings sharpen into place with slightly shorter travel than body
+ * blocks — the section anchor lands first, its content follows.
+ */
+.reveal-js [data-reveal="heading"] {
+  transform:
+    translate3d(
+      0,
+      calc(var(--reveal-shift) * 0.7),
+      0
+    );
+}
+
+.reveal-js [data-reveal="heading"][data-revealed="true"] {
+  transform:
+    translate3d(
+      0,
+      0,
+      0
+    );
+}
+
+/*
+ * Blockquotes settle laterally — a quiet aside joining the text from
+ * the margin, never travelling the full column height.
+ */
+.reveal-js [data-reveal="quote"] {
+  transform:
+    translate3d(
+      calc(var(--reveal-shift) * -0.8),
+      0,
+      0
+    );
+}
+
+.reveal-js [data-reveal="quote"][data-revealed="true"] {
+  transform:
+    translate3d(
+      0,
+      0,
+      0
+    );
+}
+
+/*
+ * Code blocks fade with a slower opacity ramp (opacity MEDIUM,
+ * transform LONG) — revealing code gradually reads as compiling,
+ * not popping.
+ */
+.reveal-js [data-reveal="code"] {
+  transform:
+    translate3d(
+      0,
+      calc(var(--reveal-shift) * 0.5),
+      0
+    );
+}
+
+.reveal-js [data-reveal="code"][data-revealed="true"] {
+  transform:
+    translate3d(
+      0,
+      0,
+      0
+    );
+
+  transition-duration:
+    var(--motion-medium),
+    var(--motion-long);
+}
+
+/*
+ * Pure fade for horizontal rules — separators carry no travel at all.
+ */
+.reveal-js [data-reveal="fade"] {
+  transform:
+    none;
+}
+
+.reveal-js [data-reveal="fade"][data-revealed="true"] {
+  transform:
+    none;
+}
+
+/*
+ * Mobile: shorter travel everywhere. Small screens get the same
+ * choreography with less movement, never horizontal drift.
+ */
+@media (max-width: 560px) {
+  :root {
+    --reveal-shift: 9px;
+  }
+}
+
+/*
+ * Reduced motion must also strip the variant travel above: these
+ * selectors come after the variant definitions, so they win the
+ * cascade — no travel, instant appearance, content never held back.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-js [data-reveal="heading"],
+  .reveal-js [data-reveal="quote"],
+  .reveal-js [data-reveal="code"],
+  .reveal-js [data-reveal="fade"] {
+    transform:
+      none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Print (v2.5.1)                                                              */
+/*                                                                            */
+/* The article IS the document; everything that is screen furniture            */
+/* (organism, fixed header, progress bar, navigation blocks) steps aside.      */
+/* Content is never hidden from print — only chrome.                          */
+/* -------------------------------------------------------------------------- */
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+
+    color: #111111 !important;
+  }
+
+  /*
+   * Keyboard hints are screen affordances — meaningless on paper.
+   * Category accents drop to neutral ink for contrast.
+   */
+  kbd {
+    display: none;
+  }
+
+  :root {
+    --cat-systems: #111111;
+    --cat-research: #111111;
+    --cat-engineering: #111111;
   }
 }

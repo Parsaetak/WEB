@@ -40,7 +40,23 @@ export default function MotionReveal() {
     const observer =
       new IntersectionObserver(
         (entries) => {
+          /*
+           * Stagger applies only when several elements arrive in the
+           * same batch (cards, tags, filtered grids). A SOLO entry —
+           * a paragraph or heading scrolling into view alone — must
+           * not inherit its data-reveal-order as a delay, or reading
+           * motion would feel laggy instead of settling.
+           */
           let batchIndex = 0;
+
+          let intersectingCount = 0;
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              intersectingCount += 1;
+            }
+          }
+
+          const solo = intersectingCount === 1;
 
           for (const entry of entries) {
             if (!entry.isIntersecting) {
@@ -52,14 +68,16 @@ export default function MotionReveal() {
 
             /*
              * Deterministic order: an explicit `data-reveal-order`
-             * (grid position) wins; otherwise batch position.
+             * (grid position) wins; otherwise batch position. Solo
+             * entries skip the delay entirely.
              */
             const explicit =
               element.dataset.revealOrder;
 
-            const order =
-              explicit !== undefined &&
-              Number.isFinite(Number(explicit))
+            const order = solo
+              ? 0
+              : explicit !== undefined &&
+                  Number.isFinite(Number(explicit))
                 ? Number(explicit)
                 : batchIndex;
 

@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
-  useState
+  useState,
+  useSyncExternalStore
 } from "react";
 
 import Link from "next/link";
@@ -14,6 +16,8 @@ import type {
 import {
   formatBlogDateShort
 } from "@/lib/blogFormat";
+
+import { isTypingTarget } from "@/lib/keyboard";
 
 import styles from "./BlogIndex.module.css";
 
@@ -66,6 +70,157 @@ type BlogIndexProps = {
   tags: readonly string[];
 };
 
+/*
+ * DEEP-LINK FILTERS (v2.5.2): article context chips link here as
+ * /blog/?project=<name> and /blog/?topic=<name>. The URL is the
+ * single source of truth for both dimensions — read through
+ * useSyncExternalStore (no effect-time setState, no hydration
+ * mismatch: the server snapshot is ""), so a chip clear rewrites
+ * the address and the store notifies in one motion. An unknown
+ * value is ignored — the index never renders a broken-looking
+ * state from a stale or hand-edited URL.
+ */
+const URL_FILTER_EVENT = "blogindex:filters";
+
+function readDeepLinkFilters(
+  search: string,
+  posts: readonly BlogPostMeta[]
+): {
+  project: string | null;
+  topic: string | null;
+} {
+  if (search === "") {
+    return {
+      project: null,
+      topic: null
+    };
+  }
+
+  const params =
+    new URLSearchParams(search);
+
+  const project =
+    params.get("project");
+
+  const topic = params.get("topic");
+
+  const validProject =
+    project &&
+    posts.some(
+      (post) =>
+        post.project === project
+    )
+      ? project
+      : null;
+
+  const validTopic =
+    topic &&
+    posts.some((post) =>
+      post.topics.includes(topic)
+    )
+      ? topic
+      : null;
+
+  return {
+    project: validProject,
+    topic: validTopic
+  };
+}
+
+/*
+ * The store: location.search, re-read on popstate AND after the
+ * island's own replaceState writes (history.replaceState fires no
+ * event, so the writer announces itself).
+ */
+function subscribeToUrlFilters(
+  onStoreChange: () => void
+): () => void {
+  window.addEventListener(
+    "popstate",
+    onStoreChange
+  );
+
+  window.addEventListener(
+    URL_FILTER_EVENT,
+    onStoreChange
+  );
+
+  return () => {
+    window.removeEventListener(
+      "popstate",
+      onStoreChange
+    );
+
+    window.removeEventListener(
+      URL_FILTER_EVENT,
+      onStoreChange
+    );
+  };
+}
+
+function getUrlSearchSnapshot(): string {
+  return window.location.search;
+}
+
+function getServerUrlSearchSnapshot(): string {
+  return "";
+}
+
+/*
+ * URL sync for the deep-link dimensions: clearing a filter chip
+ * rewrites the address with replaceState so a shareable URL never
+ * advertises a filter that is no longer active. History is left
+ * alone — filter state is view state, not navigation.
+ */
+function writeDeepLinkFilters(
+  project: string | null,
+  topic: string | null
+) {
+  if (
+    typeof window === "undefined" ||
+    typeof window.history === "undefined"
+  ) {
+    return;
+  }
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  if (project) {
+    params.set(
+      "project",
+      project
+    );
+  } else {
+    params.delete(
+      "project"
+    );
+  }
+
+  if (topic) {
+    params.set("topic", topic);
+  } else {
+    params.delete("topic");
+  }
+
+  const query =
+    params.toString();
+
+  window.history.replaceState(
+    null,
+    "",
+    query
+      ? `/blog/?${query}`
+      : "/blog/"
+  );
+
+  window.dispatchEvent(
+    new Event(URL_FILTER_EVENT)
+  );
+}
+
 export default function BlogIndex({
   posts,
   tags
@@ -80,6 +235,43 @@ export default function BlogIndex({
 
   const [showAllTags, setShowAllTags] =
     useState(false);
+
+  /*
+   * Deep-link dimensions live in the URL (single source of truth).
+   * The store snapshot is "" during SSR and re-read on popstate and
+   * after the island's own replaceState writes — no effect-time
+   * setState anywhere.
+   */
+  const urlSearch =
+    useSyncExternalStore(
+      subscribeToUrlFilters,
+      getUrlSearchSnapshot,
+      getServerUrlSearchSnapshot
+    );
+
+  const { project: activeProject, topic: activeTopic } =
+    useMemo(
+      () =>
+        readDeepLinkFilters(
+          urlSearch,
+          posts
+        ),
+      [urlSearch, posts]
+    );
+
+  const clearProject = () => {
+    writeDeepLinkFilters(
+      null,
+      activeTopic
+    );
+  };
+
+  const clearTopic = () => {
+    writeDeepLinkFilters(
+      activeProject,
+      null
+    );
+  };
 
   const visibleTags =
     useMemo(
@@ -102,23 +294,43 @@ export default function BlogIndex({
             (activeTag === null ||
               post.tags.includes(
                 activeTag
+              )) &&
+            (activeProject ===
+              null ||
+              post.project ===
+                activeProject) &&
+            (activeTopic === null ||
+              post.topics.includes(
+                activeTopic
               ))
         ),
-      [posts, query, activeTag]
+      [
+        posts,
+        query,
+        activeTag,
+        activeProject,
+        activeTopic
+      ]
     );
 
   const hasFilters =
     query !== "" ||
-    activeTag !== null;
+    activeTag !== null ||
+    activeProject !== null ||
+    activeTopic !== null;
 
-  const clearFilters =
-    () => {
-      setQuery("");
+  const clearFilters = () => {
+    setQuery("");
 
-      setActiveTag(
-        null
-      );
-    };
+    setActiveTag(
+      null
+    );
+
+    writeDeepLinkFilters(
+      null,
+      null
+    );
+  };
 
   const toggleTag = (
     tag: string
@@ -130,6 +342,89 @@ export default function BlogIndex({
           : tag
     );
   };
+
+  /*
+   * Search hotkey (v2.5.3): "/" anywhere on the index jumps focus
+   * into the search field; Escape inside it clears and blurs.
+   * Both keys are ignored while the reader is already typing in a
+   * field (lib/keyboard — and modified keystrokes always pass
+   * through untouched). The visible affordance is the aria-hidden
+   * <kbd> hint inside the search wrap — without JS it is inert
+   * chrome, with JS it teaches the shortcut. Reduced motion is
+   * honored for the scroll-into-view.
+   */
+  useEffect(() => {
+    const handleKeyDown = (
+      event: KeyboardEvent
+    ) => {
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      const searchInput =
+        document.getElementById(
+          "blog-search"
+        );
+
+      if (!searchInput) {
+        return;
+      }
+
+      if (
+        event.key === "/" &&
+        !event.shiftKey &&
+        !isTypingTarget(
+          event.target
+        ) &&
+        !event.defaultPrevented
+      ) {
+        event.preventDefault();
+
+        searchInput.scrollIntoView(
+          {
+            block: "nearest",
+
+            behavior:
+              window.matchMedia(
+                "(prefers-reduced-motion: reduce)"
+              ).matches
+                ? "auto"
+                : "smooth"
+          }
+        );
+
+        searchInput.focus();
+
+        return;
+      }
+
+      if (
+        event.key === "Escape" &&
+        event.target ===
+          searchInput
+      ) {
+        setQuery("");
+
+        searchInput.blur();
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, []);
 
   return (
     <div className={styles.blogIndex}>
@@ -163,7 +458,21 @@ export default function BlogIndex({
             placeholder="Title, tag, or topic…"
             autoComplete="off"
             spellCheck={false}
+            aria-keyshortcuts="/"
           />
+
+          {/**
+            * Hotkey hint (v2.5.3) — decorative; the input carries
+            * aria-keyshortcuts for assistive tech.
+            */}
+          <kbd
+            className={
+              styles.searchKey
+            }
+            aria-hidden="true"
+          >
+            /
+          </kbd>
         </div>
 
         {tags.length > 0 && (
@@ -264,6 +573,57 @@ export default function BlogIndex({
             TAGGED · {activeTag}
           </span>
         )}
+
+        {/*
+         * Active deep-link dimensions (v2.5.2): shown as removable
+         * chips so a reader arriving from an article context chip
+         * always sees WHY the list is narrowed — and can undo it.
+         */}
+        {activeProject && (
+          <button
+            type="button"
+            className={
+              styles.deepLinkChip
+            }
+            onClick={
+              clearProject
+            }
+            aria-label={`Remove project filter: ${activeProject}`}
+          >
+            PROJECT ·{" "}
+            {activeProject}
+            <span
+              aria-hidden="true"
+              className={
+                styles.deepLinkChipX
+              }
+            >
+              ×
+            </span>
+          </button>
+        )}
+
+        {activeTopic && (
+          <button
+            type="button"
+            className={
+              styles.deepLinkChip
+            }
+            onClick={clearTopic}
+            aria-label={`Remove topic filter: ${activeTopic}`}
+          >
+            TOPIC ·{" "}
+            {activeTopic}
+            <span
+              aria-hidden="true"
+              className={
+                styles.deepLinkChipX
+              }
+            >
+              ×
+            </span>
+          </button>
+        )}
       </div>
 
       {filteredPosts.length >
@@ -285,6 +645,9 @@ export default function BlogIndex({
                   post.featured
                     ? "true"
                     : "false"
+                }
+                data-category={
+                  post.category
                 }
                 /*
                  * REVEAL STAGGER (v2.2): cards enter with a
@@ -335,7 +698,11 @@ export default function BlogIndex({
                       styles.cardKicker
                     }
                   >
-                    <span>
+                    <span
+                      className={
+                        styles.cardCategory
+                      }
+                    >
                       {
                         post.category
                       }
@@ -495,7 +862,7 @@ export default function BlogIndex({
           </strong>
 
           <p>
-            The feed is live and
+            The index is live and
             waiting for the first
             transmission.
           </p>

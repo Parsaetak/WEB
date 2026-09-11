@@ -88,6 +88,33 @@
   filter: invert(0.6);
 }
 
+/*
+ * Hotkey hint (v2.5.3) — the "/" chip inside the search wrap. The
+ * bare <kbd> is styled globally (globals.css); this wrapper adds
+ * only placement and a pointer (the whole hint is aria-hidden, the
+ * input carries aria-keyshortcuts).
+ */
+.searchKey {
+  flex-shrink: 0;
+
+  margin-left: -4px;
+
+  cursor: pointer;
+
+  user-select: none;
+}
+
+/*
+ * Touch devices have no keyboard to hint at — the chip would be
+ * inert noise, so it leaves the row entirely and the input reclaims
+ * the space.
+ */
+@media (hover: none) {
+  .searchKey {
+    display: none;
+  }
+}
+
 .tagFilter {
   display: flex;
 
@@ -211,8 +238,81 @@
     rgba(255, 32, 32, 0.14);
 }
 
+/*
+ * DEEP-LINK CHIPS (v2.5.2) — the removable PROJECT/TOPIC filter
+ * indicators in the result row. Rendered as real buttons so both
+ * the removal affordance and the sr-only label are one element.
+ * Flex-wrap on the row keeps long topic names from overflowing on
+ * narrow screens.
+ */
+.deepLinkChip {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  min-height: 30px;
+
+  padding: 0 12px;
+
+  border: 1px solid
+    var(--line);
+
+  border-radius: 3px;
+
+  background:
+    rgba(255, 255, 255, 0.015);
+
+  color: var(--text-soft);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.16em;
+
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.deepLinkChip:hover {
+  color: #ffffff;
+
+  border-color:
+    rgba(255, 32, 32, 0.5);
+
+  background:
+    rgba(255, 32, 32, 0.08);
+}
+
+.deepLinkChip:focus-visible {
+  outline: 1px solid
+    var(--red-hot);
+
+  outline-offset: 2px;
+}
+
+.deepLinkChipX {
+  color: var(--red-hot);
+
+  font-size: 12px;
+
+  line-height: 1;
+}
+
 .resultMeta {
   display: flex;
+
+  flex-wrap: wrap;
 
   align-items: center;
 
@@ -360,6 +460,42 @@
 
 .cardKicker span:first-child {
   color: var(--red-hot);
+}
+
+/*
+ * Category accent (v2.5.3) — index cards join the article page's
+ * per-category color code: same three-color system, same ::before
+ * dot, same data-category contract. The red default remains as the
+ * fallback for any future category without an accent.
+ */
+.cardCategory::before {
+  content: "";
+
+  display: inline-block;
+
+  width: 6px;
+
+  height: 6px;
+
+  margin-right: 7px;
+
+  border-radius: 999px;
+
+  background: currentColor;
+
+  vertical-align: 1px;
+}
+
+.card[data-category="research"] .cardCategory {
+  color: var(--cat-research);
+}
+
+.card[data-category="systems"] .cardCategory {
+  color: var(--cat-systems);
+}
+
+.card[data-category="engineering"] .cardCategory {
+  color: var(--cat-engineering);
 }
 
 .cardTitle {

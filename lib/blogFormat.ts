@@ -41,6 +41,15 @@ export type BlogPostMeta = {
   author: string;
   category: string;
   tags: string[];
+
+  /*
+   * Optional relationship metadata (v2.5): the project/system the
+   * article belongs to and the editorial topics it covers. Both feed
+   * the deterministic related-content model at build time; they are
+   * also available to the UI for context.
+   */
+  project: string | null;
+  topics: string[];
   readingMinutes: number;
   readingTime: string;
   featured: boolean;
@@ -53,6 +62,18 @@ export type BlogPostMeta = {
    * per keystroke. Present in generated data from v2.1 onward.
    */
   search?: string;
+};
+
+/*
+ * One entry of the build-time related-content index (v2.5). `explicit`
+ * entries are author-declared relationships from frontmatter (their
+ * score is null — the author's ordering is the authority); scored
+ * entries come from the deterministic signal model.
+ */
+export type RelatedPostEntry = {
+  slug: string;
+  score: number | null;
+  explicit: boolean;
 };
 
 export type BlogPost = BlogPostMeta & {

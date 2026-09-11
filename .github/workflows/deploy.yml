@@ -113,8 +113,9 @@ jobs:
             ${{ runner.os }}-nextjs-
 
       # The blog content pipeline validates every article (required
-      # fields, slug format, dates, cover files, internal links)
-      # before the site exists. A malformed article fails the build
+      # fields, slug format, dates, cover files, internal links, the
+      # related-content graph) before the site exists. A malformed
+      # article fails the build
       # with the file and the reason instead of silently shipping
       # corrupted content. `npm run build` re-runs the script itself;
       # this step exists to surface content failures with a clear
@@ -124,8 +125,13 @@ jobs:
           node scripts/build-blog.mjs
 
           test -f data/blog/posts.json
-          test -f public/blog/feed.xml
           test -f public/sitemap.xml
+
+          # RSS was removed in v2.5 — the pipeline must not emit a feed.
+          if [ -f public/blog/feed.xml ]; then
+            echo "public/blog/feed.xml must not exist (RSS removed in v2.5)." >&2
+            exit 1
+          fi
 
           echo "Blog data pipeline valid."
 
@@ -134,23 +140,27 @@ jobs:
 
       # Programmatic SEO verification against the exported artifacts:
       # titles, descriptions, canonicals, JSON-LD validity, sitemap/
-      # robots/feed contents, and production URL correctness.
+      # robots contents, RSS absence, and production URL correctness.
       - name: Verify static SEO output
         run: node scripts/verify-seo.mjs
 
       # Artifact-level validation: the export must actually contain
-      # the blog routes, the feed, and the SEO assets before anything
-      # is uploaded.
+      # the blog routes and the SEO assets — and must NOT contain the
+      # removed RSS feed — before anything is uploaded.
       - name: Verify static export output
         run: |
           set -euo pipefail
 
           test -f out/index.html
           test -f out/blog/index.html
-          test -f out/blog/feed.xml
           test -f out/sitemap.xml
           test -f out/robots.txt
           test -f out/og-default.png
+
+          if [ -f out/blog/feed.xml ]; then
+            echo "out/blog/feed.xml must not exist (RSS removed in v2.5)." >&2
+            exit 1
+          fi
 
           grep -q "https://parsaetak.github.io/WEB/sitemap.xml" out/robots.txt
 
@@ -172,7 +182,7 @@ jobs:
             exit 1
           fi
 
-          echo "Static export verified: blog index, feed, sitemap, robots, and ${article_count} article route(s) present."
+          echo "Static export verified: blog index, sitemap, robots, and ${article_count} article route(s) present; no feed shipped."
 
       # This file is deliberately added after the Next.js export.
       # It lets the deploy job verify that GitHub Pages is serving

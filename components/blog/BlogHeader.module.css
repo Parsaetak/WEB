@@ -177,26 +177,6 @@
   min-width: max-content;
 }
 
-.feedLink {
-  color: var(--text-muted);
-
-  font-family: var(--font-mono);
-
-  font-size: 10px;
-
-  font-weight: 700;
-
-  letter-spacing: 0.08em;
-
-  text-transform: uppercase;
-
-  transition: color 160ms ease;
-}
-
-.feedLink:hover {
-  color: var(--red-hot);
-}
-
 .githubLink {
   color: var(--text-muted);
 
@@ -246,14 +226,17 @@
   .status {
     display: none;
   }
-
-  .feedLink {
-    display: none;
-  }
 }
 
 @media (max-width: 560px) {
   .brandName {
     display: none;
+  }
+}
+
+/* Print (v2.5.1): the fixed HUD is screen-only navigation. */
+@media print {
+  .blogHeader {
+    display: none !important;
   }
 }

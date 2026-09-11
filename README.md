@@ -4,13 +4,16 @@ Live site: https://parsaetak.github.io/WEB/
 
 Repository: https://github.com/Parsaetak/WEB
 
-Version: 2.4.0 — the full regression / UI-cleanup / SEO-hardening
-edition: dead interactive affordances repaired (every control that
-promises an action now performs it, and inert cards no longer look
-clickable), incorrect internal links fixed, the short-label
-punctuation rule enforced site-wide, and the identity terms SHEYTAN
-and Red illuminati integrated truthfully (visible metadata, one
-mention each — never hidden keyword text).
+Version: 2.5.4 — the reading-flow edition on top of the v2.5
+RSS-removal / related-content / SEO-link-graph / reading-motion base
+and the v2.5.2 reading instruments: J / K keyboard navigation between
+adjacent articles (with visible keycap hints), a copy-link SHARE
+instrument in the tags row, a "/" search hotkey on the blog index,
+and a deterministic per-category accent system (colored dot + label
+color on index cards, related cards, and article headers). New in
+2.5.4: a build-time "Referenced by" reverse link graph rendered on
+every article, and a "?" keyboard-shortcuts dialog covering the
+whole blog.
 
 ## Stack
 
@@ -141,9 +144,9 @@ dates, never manufactured), author/publisher (Person @id + name),
   `BreadcrumbList` mirrors the real navigation: Home → Blog →
   article.
 
-### Sitemap + robots + feed
+### Sitemap + robots
 
-All three are generated from the SAME content index that produces
+Both are generated from the SAME content index that produces
 the routes (`scripts/build-blog.mjs`) — there is no separately
 maintained URL list:
 
@@ -154,12 +157,13 @@ maintained URL list:
 - `public/robots.txt`: standard directives only (`User-agent: *`,
   `Allow: /`, `Sitemap:` absolute production URL). CSS/JS/images
   stay crawlable.
-- `public/blog/feed.xml` (RSS 2.0) with autodiscovery
-  `<link rel="alternate">` on `/blog/` (emitted by the page, not
-  just the layout — Next shallow-merges `alternates`, so the page
-  must repeat `types`).
+- **No RSS.** v2.5 removed the feed from the product and the
+  pipeline entirely — no route, no autodiscovery link, no metadata,
+  no build output. `verify:seo` positively verifies the ABSENCE of
+  any feed artifact or reference. Discovery happens through the
+  sitemap, the internal link graph, and social metadata.
 
-Generated SEO files are committed (like posts.json/feed.xml) and
+Generated SEO files are committed (like posts.json/sitemap.xml) and
 regenerated on every build; the workflow validates them after the
 export.
 
@@ -189,8 +193,8 @@ truthfully and sparsely:
 - **Red illuminati** — one mention in the site keywords and one
   visible tag on the RED MAGIC article (which the term actually
   labels). It appears in the article's visible tag list, JSON-LD
-  `keywords`, Open Graph `article:tag`, and the RSS category — all
-  generated from the same single source of truth.
+  `keywords`, and Open Graph `article:tag` — all generated from the
+  same single source of truth.
 - **Never** as hidden text, off-screen text, opacity-0 keyword
   blocks, or repeated dozens of times. Every term names something
   the site actually presents.
@@ -203,7 +207,8 @@ inspects the EXPORTED artifacts after `next build`: exactly one
 (production HTTPS, `/WEB`-aware), JSON-LD parses with expected
 types, article dates/author match the content index, sitemap URL
 set equals the exported route set, robots references the sitemap,
-feed contains every article, no `localhost` / `/blog/undefined`
+RSS absence everywhere (no feed.xml, no autodiscovery, no
+references), no `localhost` / `/blog/undefined`
 anywhere — plus, since 2.4, an **interaction audit** (no `href="#"`,
 no empty `href`, no `javascript:` URLs, and every root-relative
 href resolves to an exported route) and a **text-QA audit** (no
@@ -242,14 +247,194 @@ routing inside `components/LivingShell.tsx`:
 - `app/blog/page.tsx` — index: featured article + search/tag island
 - `app/blog/[slug]/page.tsx` — article pages with full metadata,
   Open Graph/Twitter cards, JSON-LD `BlogPosting`, prev/next and
-  related posts
+  the tiered related-articles section
 - `components/blog/BlogIndex.tsx` — the only client island on the
   index; it receives article **metadata only** (no HTML bodies)
-- RSS feed: `/blog/feed.xml`, generated from the same content index
+- **Context chips + deep-link filters (2.5.2).** Every article
+  header renders its `project` and `topics` as real links into a
+  pre-filtered index (`/blog/?project=…`, `/blog/?topic=…`). The
+  index reads those parameters as external URL state
+  (`useSyncExternalStore` — no effect-time setState, no hydration
+  mismatch), combines them with search and tag filters under AND
+  semantics, ignores unknown values, and shows the active
+  dimensions as removable chips; clearing rewrites the URL with
+  `replaceState` so shareable links never lie.
+- Related content: a build-time deterministic relationship graph
+  (see "Related content model (2.5)" below) — no runtime scoring
+- Reading motion: build-time reveal choreography on article blocks,
+  a reading-progress instrument, and the organism's reading-focus
+  mood (see "Reading motion system (2.5)" below)
 
 Ordering law: posts are sorted date-descending with **slug-ascending
 as the deterministic tiebreak**, so the September 10, 2026 edition
 (all articles share one date) can never reorder randomly.
+
+### Related content model (2.5)
+
+Related articles are computed ONCE at build time by a deterministic
+scoring model — no ML, no runtime work, no randomness:
+
+1. **Explicit relationships** (frontmatter `related:`) are
+   author-guaranteed and always come first, in the author's order.
+   They are validated: unknown slugs, self-links, and duplicates fail
+   the build with the file and the reason.
+2. **Scored candidates** then fill the set (up to six related
+   articles when the catalogue allows). A candidate qualifies only
+   through a real relevance signal — never recency alone:
+   - shared tags ×3 each (capped at three)
+   - same category ×4
+   - same `project` ×3
+   - shared `topics` ×2 each (capped at three)
+   - shared significant terms from title/subtitle/excerpt/topics
+     (stopword-filtered, plural-folded, ×1 each, capped at four)
+   - recency: a bounded tie-break (≤1 point) that can only reorder
+     already-qualified candidates
+3. The article page splits the set into two readable tiers:
+   **primary** cards (author-explicit or scored ≥ 8, with excerpt,
+   category, date, reading time) and **secondary** compact rows.
+   Nothing is shown that a human would not understand.
+
+Optional frontmatter (all non-mandatory, all build-validated):
+
+- `related: ["slug-a", "slug-b"]` — guaranteed connections
+- `project: "project-name"` — the system the article belongs to
+- `topics: ["topic", "topic"]` — editorial subject tags beyond the
+  public `tags`
+
+### Internal link graph (2.5)
+
+Every internal link in article content is validated at build time:
+
+- `/blog/<slug>/` must exist, and an optional `#fragment` must match
+  a real heading id of the target article
+- `/#<scene>` must match a real hash scene of the world shell
+- external links must use `https://` (never `http`, never localhost)
+- root-relative links must NOT repeat the deployment base path —
+  content is written root-relative; the pipeline adds the base
+
+Anchor text is descriptive ("REP's reasoning protocol", "the OWASP
+Top 10 for LLM Applications") — no "click here", no keyword stuffing:
+links exist where a reader would genuinely want to follow them.
+External links point at primary sources only (official documentation,
+standards bodies, the canonical repository).
+
+The export verifier closes the loop (2.5.2): every in-page
+`href="#section"` on an exported page must match a real `id` in that
+same document — a heading rename that breaks a deep-link is now a
+build failure, not a silent dead anchor.
+
+### Reading motion system (2.5)
+
+Reading is animated through the SAME one-observer philosophy as the
+rest of the site (MotionReveal) — no new observers, no scroll loops:
+
+- **Build-time choreography.** The blog pipeline annotates every
+  top-level article block with `data-reveal` and a chunked
+  `data-reveal-order` that restarts at every h2 — a section enters
+  as heading first, supporting content settling after (orders 1–4,
+  capped). Paragraphs rise, blockquotes settle laterally, code fades
+  with a slower ramp, figures scale in, rules simply fade.
+- **Solo batches skip stagger.** The controller applies stagger only
+  when several elements intersect together; a paragraph scrolling in
+  alone never waits for a delay that was meant for a grid.
+- **Reading progress.** `components/ReadingProgress.tsx` is a 2px
+  fixed bar driven by `transform: scaleX()` — geometry is measured
+  once per layout event (never per frame), the scroll handler is
+  rAF-coalesced and reads only `scrollY`, and the same controller
+  publishes `--reading-progress` + `data-reading` on `<html>`.
+- **Reading focus organism mood.** With `data-reading` set, the
+  WorldBackground pulls wisps/sparks/particles below their archive
+  base — the article owns the reader's attention; leaving article
+  pages restores the ambient mood. Opacity-only, existing 1.6s
+  transitions smooth both directions.
+- **Image parallax.** Figure images drift ±2.2% (±0.8% on small
+  screens) via CSS scroll-linked animation (`animation-timeline:
+  view()`), using the independent `translate` property so it composes
+  with reveal transforms. Browsers without support — and
+  reduced-motion users — simply get static images.
+- **Route settle.** `app/blog/template.tsx` gives every incoming
+  blog page one quiet opacity settle; navigation is never delayed.
+- **Table of contents (2.5.1).** `components/blog/ArticleToc.tsx`
+  turns the build-time `headings` data into a fixed right-rail
+  instrument (≥1280px, geometry chosen so it can never overlap the
+  860px content column) and a native `<details>` disclosure on
+  smaller screens. ONE IntersectionObserver scroll-spies the active
+  section; clicks smooth-scroll (reduced-motion aware); without JS
+  the links remain ordinary anchors.
+- **Print (2.5.1).** A full print stylesheet: screen chrome
+  (organism, header, progress bar, TOC, navigation blocks) steps
+  aside and the article prints as a clean document, with external
+  link URLs surfaced after their anchors.
+- **Heading anchors (2.5.2).** Every h2–h4 renders a server-side
+  `#` self-link (build time, zero JS). It appears on heading
+  hover/focus and stays quietly visible on touch devices; headings
+  that themselves contain a link skip the anchor (no nested `<a>`).
+  All heading levels now carry `scroll-margin-top`, so anchored
+  landings (TOC clicks, off-site section links) clear the fixed
+  header at every level — previously only h4 did.
+- **Code block instruments (2.5.2).** Generated fences are wrapped
+  in `.code-block`: the box carries the frame and a build-time
+  `data-language` label (pure CSS `::after`), while a silent
+  `CodeCopy` island (`components/blog/CodeCopy.tsx`) adds one COPY
+  button per block after hydration — clipboard API with a legacy
+  fallback, "COPIED" feedback, no re-renders. Both instruments pin
+  to the wrapper, so wide code scrolls UNDER them instead of
+  carrying them away; without JS the code is untouched and fully
+  readable.
+- **Back to top (2.5.2).** A circular control fixed to the
+  bottom-right corner (safe-area aware on mobile) appears past 12%
+  reading progress. It reuses the progress controller's rAF tick —
+  visibility is one data-attribute write in the same frame as the
+  bar, no second loop — and its scroll honors
+  `prefers-reduced-motion`.
+- **Keyboard article navigation (2.5.3).** `J` follows the NEXT
+  link, `K` follows PREVIOUS — the same adjacent-article data the
+  visible nav renders, passed as props so the island cannot drift.
+  Keys are ignored while typing and with modifiers held; navigation
+  goes through the App Router (same client-side transition as
+  in-site links). The visible affordance is server-rendered
+  `aria-hidden` keycap hints inside the nav labels; on touch devices
+  the hints leave the labels entirely.
+- **Copy-link instrument (2.5.3).** The article tags row reserves a
+  right-hand actions slot; the `ShareLink` island docks a quiet COPY
+  LINK button into it after hydration (no button exists without JS).
+  It copies the live URL — including any heading hash the reader
+  chose to share — with the same COPIED/FAILED feedback vocabulary
+  as the code-copy instrument. Hidden in print.
+- **Search hotkey (2.5.3).** On the blog index, `/` jumps focus into
+  the search field (scroll-into-view, reduced-motion aware), Escape
+  inside it clears and blurs. The input carries
+  `aria-keyshortcuts="/"`; a decorative keycap chip sits beside it.
+- **Category accents (2.5.3).** The three categories carry a
+  deterministic color code — systems stays on the brand red,
+  research is amber, engineering is teal — applied through
+  `data-category` attributes and `currentColor` dots on index cards,
+  related cards/rows, and the article header. Color is always
+  decorative: the category name is spelled out beside the dot, and
+  print re-points the accents at neutral ink.
+- **"Referenced by" reverse link graph (2.5.4).** The build scans
+  every article's rendered HTML for internal `/blog/<slug>/` links
+  and inverts the graph into a `linksHere` index. Articles with
+  inbound prose links render a REFERENCED BY section — compact rows
+  (red ↩ glyph, accent-dotted category, title, reading time) — so a
+  two-way relationship becomes discoverable in both directions and
+  the internal link graph a search engine walks is also one a reader
+  can walk. Deterministic order, runtime-validated, print-hidden.
+- **Keyboard shortcuts dialog (2.5.4).** A fixed "?" trigger
+  (bottom-left, after hydration only — without JS there is no button
+  and no promise) opens a native `<dialog>` listing the shortcuts
+  that work on the current route: J/K article navigation on articles,
+  `/` search focus on the index, `?` itself, Escape. The platform
+  provides focus trapping, Escape, backdrop dismissal, and focus
+  restoration; the entrance transition is gated behind
+  `prefers-reduced-motion: no-preference`; print hides it. The J/K,
+  `/`, and `?` handlers share one `isTypingTarget` guard
+  (`lib/keyboard.ts`) so no single-key shortcut ever fires while the
+  reader is typing.
+- **Reduced motion / no-JS / SEO.** All hidden states exist only
+  under the pre-paint `reveal-js` class; reduced motion removes
+  travel and stagger; the static HTML always contains the complete
+  article — animations are presentation, never a gate.
 
 ### Data pipeline
 
@@ -260,10 +445,9 @@ content/blog/*.md  (source of truth)
     → VALIDATE (fail loudly: file + reason)
     → RENDER markdown → HTML (escaped, subset)
     → NORMALIZE (reading time, covers, basePath-aware URLs)
-    → INDEX (tags, categories, related, prev/next)
+    → INDEX (tags, categories, related, links-here, prev/next)
     → PRECOMPUTE (per-post search haystack for the client island)
-    → EMIT data/blog/posts.json + public/blog/feed.xml
-              + public/sitemap.xml (from the same route source)
+    → EMIT data/blog/posts.json + public/sitemap.xml (same route source)
   lib/blog.ts (server-side typed access layer — imports posts.json)
     → app/blog/* pages (metadata as serialized props, article HTML
       rendered into static HTML at build time)
@@ -389,7 +573,9 @@ beyond what the code demonstrates.
 2. Frontmatter requires `title`, `excerpt`, `date` (YYYY-MM-DD),
    `author`, `category` (kebab-case), and optionally `subtitle`,
    `description`, `updated`, `tags`, `featured`, `cover`
-   (`src` under `/blog/images/`, `alt`, `width`, `height`).
+   (`src` under `/blog/images/`, `alt`, `width`, `height`), plus the
+   relationship metadata `related`, `project`, and `topics`
+   (see "Related content model (2.5)").
 3. If the cover is an SVG, commit a 1200×630 PNG twin at the same
    path (`<name>.png`) — the build fails without it because
    `og:image` needs a crawler-renderable format. The twin is used
@@ -398,17 +584,17 @@ beyond what the code demonstrates.
    **bold**, *italic*, `` `code` ``, fenced code blocks, links,
    images, blockquotes, lists, `---` rules.
 5. Internal links point at real routes (`/blog/<slug>/`, `/`,
-   `/#systems` for scenes) with descriptive anchors — the build
-   validates `/blog/…` links against known slugs and fails on
-   unknown ones.
+   `/#scenes` for scenes) with descriptive anchors — the build
+   validates `/blog/…` links against known slugs AND heading
+   fragments, `/#…` links against real scenes, and fails on any
+   dead link, http:// external URL, or repeated base path.
 6. Run `npm run build` (or `npm run blog`). A malformed article fails
    the build with the file and reason.
 7. Commit the article and the regenerated
-   `data/blog/posts.json` / `public/blog/feed.xml` /
-   `public/sitemap.xml`.
+   `data/blog/posts.json` / `public/sitemap.xml`.
 
-Generated files (`data/blog/posts.json`, `public/blog/feed.xml`,
-`public/sitemap.xml`) are committed so a fresh clone works
+Generated files (`data/blog/posts.json`, `public/sitemap.xml`) are
+committed so a fresh clone works
 immediately; CI regenerates them on every build, so production never
 serves a stale hand-edited copy.
 
@@ -418,7 +604,7 @@ serves a stale hand-edited copy.
 npm ci                # install
 npm run dev           # blog pipeline + next dev (http://localhost:3000)
 npm run lint          # eslint
-npm run blog          # regenerate blog data + feed only
+npm run blog          # regenerate blog data only
 npm run build         # blog pipeline + static export into out/
 ```
 
@@ -430,11 +616,11 @@ The deployment environment is detected via `GITHUB_ACTIONS=true`
 
 `.github/workflows/deploy.yml`: checkout → Node 22 + caches →
 `npm ci` → Pages setup → Library manifest sync + validation →
-blog content validation (posts.json + feed + sitemap) → Next.js
+blog content validation (posts.json + sitemap + no feed) → Next.js
 build → static SEO verification (`verify-seo.mjs`) → export
-verification (blog routes, feed, sitemap, robots, og image present;
- sitemap URL count matches article count) → deployment manifest →
-Pages artifact → deploy → deployed-revision verification.
+verification (blog routes, sitemap, robots, og image present, feed
+absent; sitemap URL count matches article count) → deployment
+manifest → Pages artifact → deploy → deployed-revision verification.
 
 ## Verification
 

@@ -9,6 +9,9 @@ author: "Parsa Tak"
 category: "engineering"
 tags: ["RED MAGIC", "Red illuminati", "interfaces", "systems", "performance", "AI-assisted engineering", "2026"]
 featured: true
+project: "red-magic"
+topics: ["interfaces", "performance", "living systems", "AI-assisted engineering"]
+related: ["reasoning-is-a-system-property", "the-anatomy-of-a-fast-static-site"]
 cover:
   src: "/blog/images/living-system.svg"
   alt: "A red geometric organism: concentric rings around a dense core with orbiting particles"
@@ -46,7 +49,7 @@ Three principles carry the whole design:
 
 The first time I described an interface like this, the objection was always the same: *who has time to build that?* That objection aged out this year. Agentic coding systems — tools that plan, edit across a repository, run the build, and verify — became ordinary engineering infrastructure in 2026, and the measurement most cited for it is striking: one security vendor's 2026 benchmark measured agent-driven web traffic growing by four orders of magnitude year over year. **(Fact — attributed industry measurement. What it implies is analysis, and this paragraph is analysis.)**
 
-Here is what that did *not* do: it did not make software alive by itself. Every agent that touched this repository worked because there was a constitution to work inside — performance laws, forbidden regressions, a verification protocol that fails the build loudly when content is malformed. The AI supplied leverage; the constraints supplied direction; the loop between idea, implementation, verification, and revision — the discipline I document in [Reasoning Is a System Property](/blog/reasoning-is-a-system-property/) — is what converted the two into a system that actually ships. Capability is cheap now. Direction is the scarce input. The organism on this page is what direction looks like when it compounds.
+Here is what that did *not* do: it did not make software alive by itself. Every agent that touched this repository worked because there was [a constitution to work inside](/blog/ai-instructions/) — performance laws, forbidden regressions, a verification protocol that fails the build loudly when content is malformed. The AI supplied leverage; the constraints supplied direction; the loop between idea, implementation, verification, and revision — the discipline I document in [Reasoning Is a System Property](/blog/reasoning-is-a-system-property/) — is what converted the two into a system that actually ships. Capability is cheap now. Direction is the scarce input. The organism on this page is what direction looks like when it compounds.
 
 An interface that responds is honest — it tells you, through behaviour, that it noticed you. There is a longer arc here: if software can move from replaying fixed behaviour toward *sustaining* behaviour — adapting under load, degrading gracefully, recovering — then the interface is a small, tractable model of what it means for a system to remain coherent while it changes. The website is itself an experiment. It just happens to be one you can click.
 

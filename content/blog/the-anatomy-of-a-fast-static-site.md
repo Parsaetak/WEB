@@ -9,6 +9,9 @@ author: "Parsa Tak"
 category: "engineering"
 tags: ["performance", "architecture", "loading", "120Hz", "frame budget", "static export"]
 featured: false
+project: "web-platform"
+topics: ["performance", "loading", "frame budget", "static export"]
+related: ["building-under-constraints", "why-the-website-is-a-living-system"]
 cover:
   src: "/blog/images/loading-architecture.svg"
   alt: "A dark technical diagram with a red priority ladder from P0 to P4 and a pulsing core"
@@ -18,7 +21,7 @@ cover:
 
 Every performance problem on the web is, at some level, a scheduling problem. Code, styles, images, and data all want the same scarce resources: the network, the main thread, and the user's attention. A fast site is not one with nothing to load — it is one where the *order* of loading is designed. This year that definition expanded for me: a fast site is also one where the *time between frames* is designed. This article documents both halves — the loading architecture, and the new high-refresh strategy that rides on top of it.
 
-One fact frames everything below: MDN states it plainly — `requestAnimationFrame` synchronises with the display's refresh cycle, and the common rate is 60 Hz, but displays at 90, 120, and 144 Hz are now ordinary. **(Fact.)** The browser will happily drive your animation at the panel's native rate — if your code lets it. That single sentence reorganises how animation code has to be written.
+One fact frames everything below: [MDN states it plainly](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame) — `requestAnimationFrame` synchronises with the display's refresh cycle, and the common rate is 60 Hz, but displays at 90, 120, and 144 Hz are now ordinary. **(Fact.)** The browser will happily drive your animation at the panel's native rate — if your code lets it. That single sentence reorganises how animation code has to be written.
 
 ## Five honest phases
 
@@ -34,7 +37,7 @@ All loading work is classified on one ladder:
 - **P3 — background.** Secondary metadata. Nothing currently schedules P3 work.
 - **P4 — user-triggered.** PDFs, audio, video. *Never* loaded automatically.
 
-Heavy media being P4 is a hard law. The Library contains books and media measured in megabytes; none of it moves until you press READ, LISTEN, or WATCH. A link existing is not consent to download.
+Heavy media being P4 is a hard law. The [Library](/#library) contains books and media measured in megabytes; none of it moves until you press READ, LISTEN, or WATCH. A link existing is not consent to download.
 
 ## The frame budget nobody told you about
 

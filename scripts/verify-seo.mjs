@@ -20,7 +20,9 @@
  * - sitemap.xml: parses, every <loc> is production HTTPS, and the
  *   URL set equals the actual exported route set
  * - robots.txt: references the production sitemap
- * - feed.xml: contains every article link
+ * - RSS absence (v2.5): no feed.xml in the export, no RSS
+ *   autodiscovery link, and no feed.xml reference anywhere — the
+ *   blog deliberately has no feed, and nothing may half-reference it
  * - interaction audit (v2.4): every exported page is free of dead
  *   anchor targets (href="#", empty href, javascript: URLs), and
  *   every root-relative internal href resolves to an exported file
@@ -111,14 +113,15 @@ async function verifyPage(route, file, expectations) {
 
   const html = await readText(file);
 
-  /* RSS autodiscovery (blog index only) */
-  if (expectations.rssAlternate) {
-    const link = `<link rel="alternate" type="application/rss+xml" href="${SITE_ORIGIN}/blog/feed.xml"`;
-    if (!html.includes(link)) {
-      fail(`${route}: RSS autodiscovery <link rel="alternate"> missing`);
-    } else {
-      pass(`${route}: RSS autodiscovery link present`);
-    }
+  /*
+   * RSS must not exist anywhere (v2.5). The blog deliberately has no
+   * feed: no autodiscovery <link>, no feed.xml href, nothing.
+   */
+  if (html.includes("application/rss+xml")) {
+    fail(`${route}: RSS autodiscovery found (RSS was removed in v2.5)`);
+  }
+  if (html.includes("feed.xml")) {
+    fail(`${route}: reference to feed.xml found (RSS was removed in v2.5)`);
   }
 
   /* Exactly one <title> */
@@ -292,6 +295,7 @@ async function verifyInteractivity() {
   }
 
   let hrefsChecked = 0;
+  let fragmentsChecked = 0;
   let labelIssues = 0;
 
   for (const file of htmlFiles) {
@@ -313,6 +317,30 @@ async function verifyInteractivity() {
     const hrefs = [...html.matchAll(/\shref="([^"]*)"/g)].map((match) =>
       decodeEntities(match[1])
     );
+
+    /*
+     * SAME-PAGE FRAGMENT VALIDATION (v2.5.2): every in-document
+     * anchor (`href="#section"` — TOC links, heading self-links)
+     * must point at a REAL id in the same document. A heading rename
+     * that breaks a deep-link is now a build failure, not a silent
+     * dead anchor. (Bare `href="#"` placeholders are already
+     * rejected above.)
+     */
+    const documentIds = new Set(
+      [...html.matchAll(/\sid="([^"]+)"/g)].map((match) =>
+        decodeEntities(match[1])
+      )
+    );
+
+    for (const href of hrefs) {
+      if (href.startsWith("#") && href.length > 1) {
+        fragmentsChecked += 1;
+        if (!documentIds.has(href.slice(1))) {
+          fail(`${label}: in-page href "${href}" matches no id in the document`);
+        }
+      }
+    }
+
     for (const href of hrefs) {
       hrefsChecked += 1;
 
@@ -377,7 +405,7 @@ async function verifyInteractivity() {
   }
 
   pass(
-    `interaction: ${htmlFiles.length} page(s), ${hrefsChecked} href(s) audited — no dead anchors${labelIssues === 0 ? ", no label punctuation violations" : ""}`
+    `interaction: ${htmlFiles.length} page(s), ${hrefsChecked} href(s) audited, ${fragmentsChecked} in-page fragment(s) resolved — no dead anchors${labelIssues === 0 ? ", no label punctuation violations" : ""}`
   );
 }
 
@@ -446,22 +474,45 @@ async function verifyRobots() {
     pass("robots.txt: crawlable, sitemap identified");
 }
 
-async function verifyFeed(articleRoutes) {
-  if (!existsSync(path.join(OUT_DIR, "blog", "feed.xml"))) {
-    fail("blog/feed.xml: missing from export");
-    return;
+async function verifyNoRss() {
+  /*
+   * RSS removal (v2.5) — verified positively: the export contains NO
+   * feed.xml, NO RSS XML, and no residual feed references in any
+   * served artifact (HTML, sitemap, robots, deployment manifest).
+   */
+  if (existsSync(path.join(OUT_DIR, "blog", "feed.xml"))) {
+    fail("blog/feed.xml: still present in export (RSS was removed in v2.5)");
+  } else {
+    pass("blog/feed.xml: absent from export as intended");
   }
 
-  const feed = await readText("blog/feed.xml");
-  let feedOk = true;
-  for (const slug of articleRoutes) {
-    if (!feed.includes(`<link>${SITE_ORIGIN}/blog/${slug}/</link>`)) {
-      fail(`blog/feed.xml: article missing from feed: ${slug}`);
-      feedOk = false;
+  const htmlFiles = await collectHtmlFiles(OUT_DIR);
+  let rssRefs = 0;
+
+  for (const file of htmlFiles) {
+    const html = await readFile(path.join(OUT_DIR, file), "utf8");
+    if (html.includes("application/rss+xml") || html.includes("feed.xml")) {
+      fail(`${file}: residual RSS reference found`);
+      rssRefs += 1;
     }
   }
-  if (feedOk) {
-    pass(`blog/feed.xml: all ${articleRoutes.length} article links present`);
+
+  if (rssRefs === 0) {
+    pass(`RSS: no references in ${htmlFiles.length} exported page(s)`);
+  }
+
+  const sitemap = existsSync(path.join(OUT_DIR, "sitemap.xml"))
+    ? await readText("sitemap.xml")
+    : "";
+  if (sitemap.includes("feed.xml")) {
+    fail("sitemap.xml: feed URL found (RSS was removed in v2.5)");
+  }
+
+  const robots = existsSync(path.join(OUT_DIR, "robots.txt"))
+    ? await readText("robots.txt")
+    : "";
+  if (robots.includes("feed")) {
+    fail("robots.txt: feed reference found (RSS was removed in v2.5)");
   }
 }
 
@@ -494,8 +545,7 @@ async function main() {
   await verifyPage("blog index", path.join("blog", "index.html"), {
     title: "Blog — Parsa Tak",
     canonical: `${SITE_ORIGIN}/blog/`,
-    types: ["WebSite", "Person", "Blog"],
-    rssAlternate: true
+    types: ["WebSite", "Person", "Blog"]
   });
 
   for (const slug of articleRoutes) {
@@ -558,7 +608,7 @@ async function main() {
 
   await verifySitemap(articleRoutes);
   await verifyRobots();
-  await verifyFeed(articleRoutes);
+  await verifyNoRss();
   await verifyInteractivity();
 
   /* Icon asset */
