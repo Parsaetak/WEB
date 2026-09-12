@@ -4,16 +4,24 @@ Live site: https://parsaetak.github.io/WEB/
 
 Repository: https://github.com/Parsaetak/WEB
 
-Version: 2.5.4 — the reading-flow edition on top of the v2.5
-RSS-removal / related-content / SEO-link-graph / reading-motion base
-and the v2.5.2 reading instruments: J / K keyboard navigation between
-adjacent articles (with visible keycap hints), a copy-link SHARE
-instrument in the tags row, a "/" search hotkey on the blog index,
-and a deterministic per-category accent system (colored dot + label
-color on index cards, related cards, and article headers). New in
-2.5.4: a build-time "Referenced by" reverse link graph rendered on
-every article, and a "?" keyboard-shortcuts dialog covering the
-whole blog.
+Version: 2.5.7 — reader comfort on top of the v2.5 RSS-removal /
+related-content / SEO-link-graph / reading-motion base, the v2.5.2
+reading instruments (context chips, heading anchors, code copy,
+back-to-top), the v2.5.3 reading flow (J / K keyboard navigation
+with visible keycap hints, a copy-link SHARE instrument, a "/"
+search hotkey, a deterministic per-category accent system), the
+v2.5.4 link-graph mirror + keyboard reference ("Referenced by"
+reverse graph, "?" shortcuts dialog), the v2.5.5 graph-made-visible
+pass ("↩ N" inbound badges, shared-signal related hints, the
+sr-only fix), and the v2.5.6 wayfinding pass (UPDATED chips,
+click-to-filter card tags, T back-to-top, the inbound-graph Δ
+ledger). New in 2.5.7: the reading column bends to the reader — a
+three-step text-size control (A− / A / A+) docks beside COPY LINK,
+scales the article body and headings through one CSS variable,
+persists the choice in localStorage, and disables itself politely
+at the range ends; and search finishes where it should — Enter in
+the search field opens the top result (an "↵" hint teaches it, the
+"?" reference documents it, IME composition stands down).
 
 ## Stack
 
@@ -420,6 +428,43 @@ rest of the site (MotionReveal) — no new observers, no scroll loops:
   two-way relationship becomes discoverable in both directions and
   the internal link graph a search engine walks is also one a reader
   can walk. Deterministic order, runtime-validated, print-hidden.
+- **Inbound-reference badges (2.5.5).** The same validated graph,
+  surfaced at a glance: every blog-index card shows a quiet
+  "↩ N" badge (red glyph, muted count, tooltip + screen-reader text)
+  next to the reading time, and every article header carries an
+  "↩ N" pill that fragment-links to its REFERENCED BY section
+  (`#referenced-by` — build-verified like every fragment, landing
+  below the fixed header, hidden in print where the section does
+  not exist). Zero JS — the counts ride the server-rendered data.
+- **Shared-signal hints (2.5.5).** Related articles explain WHY they
+  are related: the scorer now emits the strongest concrete overlaps
+  behind each scored entry (project, then tags, then topics, then
+  significant terms — the same authority order as the weights,
+  capped at 3), rendered as one quiet mono hint line on primary
+  cards and compact rows ("↔ verification · systems-thinking").
+  Author-curated frontmatter picks are marked "★ author-curated"
+  instead — provenance, honestly labeled. Plain text, never links.
+- **Reader text-size control (2.5.7).** The reading column bends to
+  the reader: a three-step instrument (A− / A / A+) docks into the
+  article tags row beside COPY LINK (after hydration only — without
+  JS there is no control and no promise). It writes a single CSS
+  custom property (`--reader-scale`, 0.95 … 1.2) that the article
+  body and headings multiply — one variable, nothing else on the
+  site consumes it, so the preference cannot leak outside the
+  article. The choice persists in localStorage (guarded like the
+  audio settings, re-validated on read), the range ends disable
+  their buttons instead of looping, a visually hidden live region
+  announces each step, and the reset button marks the calibrated
+  default. Print hides the whole slot, as before.
+- **Enter-to-open search (2.5.7).** A type-and-go search now ends
+  the way a reader expects: Enter inside the search field opens the
+  top visible result — the keyboard twin of clicking the first
+  card. It rides the index's existing "/" handler (no new listener
+  budget), stands down during IME composition and modified
+  keystrokes, and only fires while focus is genuinely in the field.
+  An "↵" keycap hint joins "/" in the search wrap (both hidden on
+  touch devices), and the "?" reference documents the shortcut on
+  the index route.
 - **Keyboard shortcuts dialog (2.5.4).** A fixed "?" trigger
   (bottom-left, after hydration only — without JS there is no button
   and no promise) opens a native `<dialog>` listing the shortcuts

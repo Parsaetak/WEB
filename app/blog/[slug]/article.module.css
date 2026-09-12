@@ -47,6 +47,46 @@
 }
 
 /*
+ * Inbound authority badge (v2.5.5) — "↩ N" in the header kicker,
+ * an in-page fragment link to the REFERENCED BY section. Same quiet
+ * mono grammar as the kicker; the hairline border is the one
+ * decorative note (it marks this as an instrument, not metadata).
+ */
+.headerRefs {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 4px;
+
+  padding: 3px 8px;
+
+  border: 1px solid rgba(255, 32, 32, 0.28);
+
+  border-radius: 999px;
+
+  color: var(--red-hot);
+
+  letter-spacing: 0.08em;
+
+  transition:
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.headerRefs:hover {
+  border-color: rgba(255, 32, 32, 0.6);
+
+  color: #ffffff;
+}
+
+.headerRefs:focus-visible {
+  outline: 2px solid var(--red-hot);
+
+  outline-offset: 2px;
+}
+
+/*
  * Category accent (v2.5.3) — the header's category span carries a
  * per-category color and a small ::before dot. The color comes from
  * the ancestor [data-category] rules below; the dot inherits it via
@@ -289,11 +329,20 @@
 
   color: var(--text-soft);
 
+  /*
+   * READER SCALE (v2.5.7): the TextSize island writes
+   * --reader-scale on the document root (0.95 … 1.2, fallback 1).
+   * Only the article body and its headings consume it, so the
+   * preference cannot leak anywhere else on the site. Body copy
+   * keeps its clamp; the whole reading column scales together.
+   */
   font-size:
-    clamp(
-      16px,
-      1.4vw,
-      18px
+    calc(
+      clamp(
+        16px,
+        1.4vw,
+        18px
+      ) * var(--reader-scale, 1)
     );
 
   line-height: 1.85;
@@ -326,11 +375,17 @@
   margin:
     2.1em 0 0.7em;
 
+  /*
+   * READER SCALE (v2.5.7): headings ride the same preference as
+   * body copy — every step keeps the hierarchy's proportions.
+   */
   font-size:
-    clamp(
-      24px,
-      3vw,
-      31px
+    calc(
+      clamp(
+        24px,
+        3vw,
+        31px
+      ) * var(--reader-scale, 1)
     );
 
   position: relative;
@@ -376,11 +431,16 @@
   margin:
     1.8em 0 0.6em;
 
+  /*
+   * READER SCALE (v2.5.7): same preference, h3's own clamp.
+   */
   font-size:
-    clamp(
-      19px,
-      2.2vw,
-      23px
+    calc(
+      clamp(
+        19px,
+        2.2vw,
+        23px
+      ) * var(--reader-scale, 1)
     );
 
   scroll-margin-top:
@@ -452,7 +512,13 @@
   margin:
     1.6em 0 0.5em;
 
-  font-size: 17px;
+  /*
+   * READER SCALE (v2.5.7): same preference, h4's fixed size.
+   */
+  font-size:
+    calc(
+      17px * var(--reader-scale, 1)
+    );
 
   color: var(--text-soft);
 }
@@ -750,6 +816,17 @@
 
 .tagsActions {
   display: flex;
+
+  /*
+   * v2.5.7: the slot now docks TWO instruments (COPY LINK + the
+   * text-size group); wrap keeps the row honest on narrow screens
+   * instead of letting the second instrument force the pills to
+   * shrink.
+   */
+
+  flex-wrap: wrap;
+
+  gap: 8px;
 
   flex-shrink: 0;
 }
@@ -1054,6 +1131,38 @@
   margin-top: auto;
 }
 
+/*
+ * WHY-RELATED hint (v2.5.5) — the shared signals behind a primary
+ * card's match ("verification · systems-thinking") or the
+ * author-curated provenance mark. One quiet mono line pinned under
+ * the meta; never a link, never interactive — it explains, it does
+ * not navigate. Lowercase on purpose: the terms ARE identities
+ * (frontmatter topics/tags), uppercasing would shout them.
+ */
+.relatedShared {
+  display: block;
+
+  margin-top: 8px;
+
+  color: var(--text-muted);
+
+  opacity: 0.85;
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  letter-spacing: 0.05em;
+}
+
+.relatedShared::before {
+  content: "↔ ";
+
+  color: var(--red-hot);
+
+  opacity: 0.7;
+}
+
 .relatedSecondaryList {
   list-style: none;
 
@@ -1141,6 +1250,36 @@
 }
 
 /*
+ * WHY-RELATED hint on the compact rows (v2.5.5): same content and
+ * reasoning as the card hint, but it must take its own full-width
+ * flex line so the row's grid (category · title · meta pushed
+ * right) stays intact above it.
+ */
+.relatedRowShared {
+  flex-basis: 100%;
+
+  margin-top: 2px;
+
+  color: var(--text-muted);
+
+  opacity: 0.85;
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  letter-spacing: 0.05em;
+}
+
+.relatedRowShared::before {
+  content: "↔ ";
+
+  color: var(--red-hot);
+
+  opacity: 0.7;
+}
+
+/*
  * REFERENCED BY (v2.5.4) — the reverse link graph, rendered.
  *
  * Visual grammar: same row language as the secondary related rows
@@ -1155,6 +1294,16 @@
   max-width: 860px;
 
   margin: 22px auto 0;
+
+  /*
+   * Fragment landing (v2.5.5): the header "↩ N" badge links here
+   * via #referenced-by — land BELOW the fixed shell header like
+   * every other anchored jump on this page.
+   */
+  scroll-margin-top:
+    calc(
+      var(--shell-header) + 30px
+    );
 }
 
 .linksHereList {
@@ -1328,6 +1477,16 @@
   .linksHere,
   .footerNav,
   .tagsActions {
+    display: none !important;
+  }
+
+  /*
+   * The header badge is not inside .related/.linksHere (it sits in
+   * the kicker and links TO the section), so it needs its own
+   * print rule — on paper the section itself is gone, a link to
+   * it would be a lie.
+   */
+  .headerRefs {
     display: none !important;
   }
 

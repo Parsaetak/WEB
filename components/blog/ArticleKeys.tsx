@@ -22,6 +22,13 @@ import { isTypingTarget } from "@/lib/keyboard";
  *   owns zero content logic and cannot drift from the visible links.
  * - Navigation goes through the App Router, preserving the
  *   client-side transition other in-site links already get.
+ * - T (v2.5.6) scrolls back to the top of the article — the
+ *   keyboard twin of the visible BACK-TO-TOP control the
+ *   ReadingProgress island renders after the first screens. No new
+ *   listener: T rides this island's existing keydown budget. The
+ *   smooth scroll collapses to an instant jump under
+ *   prefers-reduced-motion, matching every other scroll motion on
+ *   the site.
  * - Typing safety: keys are ignored while focus sits in an input,
  *   textarea, select, or contentEditable element (lib/keyboard);
  *   modified keys (Cmd/Ctrl/Alt/Shift) pass through to browser
@@ -42,10 +49,11 @@ export default function ArticleKeys({
   const router = useRouter();
 
   useEffect(() => {
-    if (!prevHref && !nextHref) {
-      return;
-    }
-
+    /*
+     * No early return on missing neighbors: J/K each no-op safely
+     * below when their href is null, and T must keep working even
+     * on the newest/oldest article where a neighbor doesn't exist.
+     */
     const handleKeyDown = (
       event: KeyboardEvent
     ) => {
@@ -67,6 +75,26 @@ export default function ArticleKeys({
       }
 
       let href: string | null = null;
+
+      if (event.key === "t") {
+        /*
+         * T (v2.5.6): keyboard twin of the visible back-to-top
+         * control. Works regardless of neighbors; reduced motion
+         * collapses the scroll to an instant jump.
+         */
+        event.preventDefault();
+
+        window.scrollTo({
+          top: 0,
+          behavior: window.matchMedia(
+            "(prefers-reduced-motion: reduce)"
+          ).matches
+            ? "auto"
+            : "smooth"
+        });
+
+        return;
+      }
 
       if (event.key === "j") {
         href = nextHref;

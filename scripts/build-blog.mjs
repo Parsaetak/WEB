@@ -73,6 +73,18 @@ const WORDS_PER_MINUTE = 200;
  */
 const MAX_RELATED = 6;
 
+/*
+ * Shared-signal hints (v2.5.5): the strongest concrete reasons WHY a
+ * scored candidate is related, emitted alongside the score so the
+ * article can show them as tiny mono hints ("verification ·
+ * systems-thinking"). Capped to keep rows quiet; order inside the
+ * cap: project > tags > topics > significant terms (the same
+ * authority order the scoring weights use). Explicit author
+ * relationships carry no signals — the page renders their
+ * provenance differently ("author-curated").
+ */
+const MAX_SHARED_SIGNALS = 3;
+
 const RELATED_WEIGHTS = {
   SHARED_TAG: 3,
   SHARED_TOPIC: 2,
@@ -888,9 +900,17 @@ function scoreRelatedCandidate(post, other, recencyBonus) {
   const sharedTopics = other.topics.filter((topic) =>
     post.topics.includes(topic)
   );
-  const sharedTerms = other.terms
-    ? [...post.terms].filter((term) => other.terms.has(term)).length
-    : 0;
+  /*
+   * The shared significant terms themselves (v2.5.5) — insertion
+   * order of post.terms is deterministic (built from the record's
+   * own title/subtitle/excerpt/topics/tags in fixed order), so the
+   * emitted hints are stable across runs.
+   */
+  const sharedTermList =
+    other.terms
+      ? [...post.terms].filter((term) => other.terms.has(term))
+      : [];
+  const sharedTerms = sharedTermList.length;
   const sameCategory = other.category === post.category;
   const sameProject =
     post.project !== null &&
@@ -918,10 +938,34 @@ function scoreRelatedCandidate(post, other, recencyBonus) {
     sameProject ||
     sharedTerms >= 2;
 
+  /*
+   * Human-readable shared signals (v2.5.5): concrete overlap names
+   * in authority order, capped at MAX_SHARED_SIGNALS. The category
+   * match is deliberately NOT a hint — the row already shows the
+   * category label with its accent dot.
+   */
+  const shared = [];
+  if (sameProject && post.project) {
+    shared.push(post.project);
+  }
+  for (const tag of sharedTags) {
+    if (shared.length >= MAX_SHARED_SIGNALS) break;
+    shared.push(tag);
+  }
+  for (const topic of sharedTopics) {
+    if (shared.length >= MAX_SHARED_SIGNALS) break;
+    shared.push(topic);
+  }
+  for (const term of sharedTermList) {
+    if (shared.length >= MAX_SHARED_SIGNALS) break;
+    shared.push(term);
+  }
+
   return {
     slug: other.slug,
     score: Math.round(score * 100) / 100,
-    qualifies
+    qualifies,
+    shared
   };
 }
 
@@ -939,7 +983,7 @@ function buildRelated(posts) {
      * never reach this point.
      */
     for (const slug of post.explicitRelated) {
-      chosen.push({ slug, score: null, explicit: true });
+      chosen.push({ slug, score: null, explicit: true, shared: [] });
       chosenSlugs.add(slug);
     }
 
@@ -967,7 +1011,8 @@ function buildRelated(posts) {
       chosen.push({
         slug: candidate.slug,
         score: candidate.score,
-        explicit: false
+        explicit: false,
+        shared: candidate.shared
       });
       chosenSlugs.add(candidate.slug);
     }
@@ -1331,6 +1376,48 @@ async function main() {
     }
   };
 
+  /*
+   * INBOUND GRAPH Δ (v2.5.6) — before the new posts.json overwrites
+   * the previous one, diff this build's reverse-link counts against
+   * the stored graph and surface every change in the build log.
+   *
+   * The inbound badge counts ARE the link graph's public face (index
+   * cards, article header pills), so when an edit adds or removes a
+   * cross-link between articles the effect lands in the UI silently.
+   * This log makes the movement explicit for the author at the exact
+   * moment it happens — the same spirit as the links-here build line,
+   * but as a per-article ledger instead of a single total.
+   *
+   * Deterministic: slugs are visited in sorted order; a slug present
+   * only in the old graph (article deleted) reads as "N → 0"; a slug
+   * present only in the new graph (first links) reads as "0 → N".
+   * The very first build (no previous posts.json) says so and skips
+   * the ledger rather than printing five "0 → N" rows that mean
+   * nothing yet.
+   */
+  const nextInboundCounts = Object.fromEntries(
+    Object.entries(data.indexes.linksHere).map(([slug, sources]) => [
+      slug,
+      sources.length
+    ])
+  );
+
+  let previousInboundCounts = null;
+
+  try {
+    const previousRaw = JSON.parse(
+      await readFile(path.join(DATA_DIR, "posts.json"), "utf8")
+    );
+
+    previousInboundCounts = Object.fromEntries(
+      Object.entries(previousRaw.indexes?.linksHere ?? {}).map(
+        ([slug, sources]) => [slug, sources.length]
+      )
+    );
+  } catch {
+    /* no previous graph — first build on this checkout */
+  }
+
   await mkdir(DATA_DIR, { recursive: true });
   await writeFile(
     path.join(DATA_DIR, "posts.json"),
@@ -1367,6 +1454,33 @@ async function main() {
   console.log(
     `[blog] links-here graph: ${linksHereCount} inbound edge(s) across ${Object.keys(data.indexes.linksHere).length} article(s)`
   );
+
+  /* INBOUND GRAPH Δ (v2.5.6) — the per-article ledger (see above). */
+  if (previousInboundCounts === null) {
+    console.log("[blog] inbound Δ: first build — no previous graph to diff");
+  } else {
+    const deltaSlugs = [
+      ...new Set([
+        ...Object.keys(previousInboundCounts),
+        ...Object.keys(nextInboundCounts)
+      ])
+    ].sort();
+
+    const deltaLines = deltaSlugs
+      .map((slug) => {
+        const before = previousInboundCounts[slug] ?? 0;
+        const after = nextInboundCounts[slug] ?? 0;
+
+        return before === after ? null : `  ${slug}: ${before} → ${after}`;
+      })
+      .filter(Boolean);
+
+    console.log(
+      deltaLines.length > 0
+        ? `[blog] inbound Δ:\n${deltaLines.join("\n")}`
+        : "[blog] inbound Δ: no changes"
+    );
+  }
   console.log(
     `[blog] wrote public/sitemap.xml (${sitemapUrlCount(posts.length)} URL(s))`
   );

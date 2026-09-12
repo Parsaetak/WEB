@@ -38,12 +38,15 @@ export type {
 
 /*
  * A resolved related-article reference: the target's metadata plus
- * the relationship's provenance (author-explicit vs scored).
+ * the relationship's provenance (author-explicit vs scored) and —
+ * for scored entries (v2.5.5) — the strongest concrete overlap
+ * signals the build model found, for the tiny "why related" hints.
  */
 export type RelatedPost = {
   post: BlogPostMeta;
   score: number | null;
   explicit: boolean;
+  shared: readonly string[];
 };
 
 export {
@@ -221,13 +224,29 @@ export function getRelatedPosts(
 
     seen.add(entry.slug);
 
+    /*
+     * Runtime defense for the shared signals (v2.5.5): only strings
+     * survive, capped at 4 — a malformed index entry can never
+     * inject markup-bearing data into the page (rendering is plain
+     * text anyway, but the data stays honest).
+     */
+    const shared = Array.isArray(entry.shared)
+      ? entry.shared
+          .filter(
+            (signal): signal is string =>
+              typeof signal === "string" && signal.length > 0
+          )
+          .slice(0, 4)
+      : [];
+
     resolved.push({
       post: toMeta(post),
       score:
         typeof entry.score === "number"
           ? entry.score
           : null,
-      explicit: entry.explicit === true
+      explicit: entry.explicit === true,
+      shared
     });
   }
 
@@ -271,6 +290,32 @@ export function getLinksHere(
   }
 
   return resolved;
+}
+
+/*
+ * Inbound reference counts (v2.5.5): for every slug with at least
+ * one inbound body link, the number of articles whose prose links
+ * into it. Surfaced as quiet "↩ N" badges on the blog-index cards
+ * and in the article header (linking to the REFERENCED BY section).
+ * Derived from the SAME validated build-time graph getLinksHere
+ * reads — no second source of truth.
+ */
+export function getInboundCounts(): Record<string, number> {
+  const counts: Record<string, number> = {};
+
+  const linksHere = RAW_DATA.indexes?.linksHere;
+
+  if (!linksHere) {
+    return counts;
+  }
+
+  for (const [slug, sources] of Object.entries(linksHere)) {
+    if (Array.isArray(sources) && sources.length > 0) {
+      counts[slug] = sources.length;
+    }
+  }
+
+  return counts;
 }
 
 export function getAdjacentPosts(

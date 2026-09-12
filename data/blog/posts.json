@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generatedAt": "2026-09-11T17:28:53.095Z",
+  "generatedAt": "2026-09-12T00:08:45.870Z",
   "basePath": "",
   "siteUrl": "https://parsaetak.github.io/WEB",
   "siteName": "Parsa Tak",
@@ -465,90 +465,130 @@
         {
           "slug": "reasoning-is-a-system-property",
           "score": null,
-          "explicit": true
+          "explicit": true,
+          "shared": []
         },
         {
           "slug": "building-under-constraints",
           "score": null,
-          "explicit": true
+          "explicit": true,
+          "shared": []
         },
         {
           "slug": "why-the-website-is-a-living-system",
           "score": 5,
-          "explicit": false
+          "explicit": false,
+          "shared": [
+            "2026",
+            "system",
+            "built"
+          ]
         }
       ],
       "building-under-constraints": [
         {
           "slug": "reasoning-is-a-system-property",
           "score": null,
-          "explicit": true
+          "explicit": true,
+          "shared": []
         },
         {
           "slug": "the-anatomy-of-a-fast-static-site",
           "score": null,
-          "explicit": true
+          "explicit": true,
+          "shared": []
         },
         {
           "slug": "why-the-website-is-a-living-system",
           "score": 9,
-          "explicit": false
+          "explicit": false,
+          "shared": [
+            "2026",
+            "AI-assisted engineering",
+            "system"
+          ]
         },
         {
           "slug": "ai-instructions",
           "score": 6,
-          "explicit": false
+          "explicit": false,
+          "shared": [
+            "2026",
+            "system",
+            "architecture"
+          ]
         }
       ],
       "reasoning-is-a-system-property": [
         {
           "slug": "ai-instructions",
           "score": null,
-          "explicit": true
+          "explicit": true,
+          "shared": []
         },
         {
           "slug": "why-the-website-is-a-living-system",
           "score": null,
-          "explicit": true
+          "explicit": true,
+          "shared": []
         },
         {
           "slug": "building-under-constraints",
           "score": 10.75,
-          "explicit": false
+          "explicit": false,
+          "shared": [
+            "human will",
+            "2026",
+            "systems"
+          ]
         }
       ],
       "the-anatomy-of-a-fast-static-site": [
         {
           "slug": "building-under-constraints",
           "score": null,
-          "explicit": true
+          "explicit": true,
+          "shared": []
         },
         {
           "slug": "why-the-website-is-a-living-system",
           "score": null,
-          "explicit": true
+          "explicit": true,
+          "shared": []
         }
       ],
       "why-the-website-is-a-living-system": [
         {
           "slug": "reasoning-is-a-system-property",
           "score": null,
-          "explicit": true
+          "explicit": true,
+          "shared": []
         },
         {
           "slug": "the-anatomy-of-a-fast-static-site",
           "score": null,
-          "explicit": true
+          "explicit": true,
+          "shared": []
         },
         {
           "slug": "building-under-constraints",
           "score": 9.75,
-          "explicit": false
+          "explicit": false,
+          "shared": [
+            "2026",
+            "AI-assisted engineering",
+            "system"
+          ]
         },
         {
           "slug": "ai-instructions",
           "score": 6,
-          "explicit": false
+          "explicit": false,
+          "shared": [
+            "2026",
+            "system",
+            "built"
+          ]
         }
       ]
     },

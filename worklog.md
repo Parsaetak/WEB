@@ -1223,6 +1223,186 @@ presents or claims (TRADEMARKS.md is the claim source).
 
 XVII. CURRENT BASELINE
 
+Version 2.5.7 — reader comfort (cron QA round 9):
+
+QA FIRST: worklog read, sandbox state verified (tree alive at
+v2.5.6, ZIPs byte-identical 8dd2169e… in download/ and public/,
+:3000/:3100 healthy), agent-browser pass on the export (badges
+5/5, UPDATED chips, card tag toggles, T 2500 → 0, REFERENCED BY
+present, heading anchors are real <a.h-anchor> links with ids,
+console clean after a QA-method fix: `agent-browser console
+--clear` is the working syntax — the buffer is GLOBAL across the
+browser session and stale :3000 dev-server HMR logs had survived
+a wrong-syntax clear) and the delivery page — baseline stable →
+feature round.
+
+- READER TEXT-SIZE CONTROL (articles): a three-step instrument
+  (A− / A / A+) docks into the tags row's actions slot beside COPY
+  LINK, following the exact ShareLink/CodeCopy imperative island
+  laws (no markup without JS — the slot stays empty; no state; no
+  hydration mismatch). It writes ONE CSS custom property,
+  --reader-scale (steps 0.95 / 1 / 1.1 / 1.2), on the document
+  root; article.module.css multiplies .body and h2/h3/h4 sizes by
+  it (calc(clamp(…) * var(--reader-scale, 1))) — nothing else
+  consumes the variable, so the preference cannot leak outside
+  articles. Persists to localStorage under web.reader-text-scale
+  (guarded, re-validated integer in range on read); range ends
+  disable their buttons instead of looping; reset (A) marks the
+  default with [data-active] red; a visually hidden aria-live
+  region announces "Text size N%"; coarse pointers get ≥38px hit
+  targets; print already hides the whole slot. Cleanup removes the
+  listeners, the variable, and the group — a later article
+  re-applies the stored step through a fresh mount.
+- ENTER-TO-OPEN SEARCH (index): Enter inside the search field
+  opens the top visible result — the keyboard twin of clicking the
+  first card. It rides the existing "/" keydown handler (still ONE
+  listener on the index), reads the visible list through a ref
+  (the handler is registered once and cannot close over filter
+  state), guards isComposing (IME confirm never navigates) and
+  defaultPrevented, and fires only when focus is genuinely in the
+  field. An "↵" keycap hint joins "/" in the search wrap (both
+  hidden on touch), and the "?" dialog's index rows gain
+  "↵ — Open the top result (from search)". Articles keep their own
+  row set — T/J/K/?/Esc unchanged.
+- Styling details: the actions slot (.tagsActions) now wraps with
+  an 8px gap so two instruments share the row honestly on narrow
+  screens instead of shrinking the pills; the text-size group is a
+  single pill with hairline dividers matching the COPY LINK
+  language (mono glyphs, red hover/focus, reduced-motion collapse).
+- Docs: README header (2.5.7 "reader comfort") + 2 feature
+  bullets; worklog (this entry); package.json → 2.5.7.
+- Verified: lint 0 errors (10 pre-existing warnings, none new);
+  build ✓ (14 edges / 5 articles, Δ: no changes); verify:seo 48/48
+  — 469 hrefs / 96 fragments UNCHANGED (the new instruments are
+  buttons and hints, never links — the audited graph is stable);
+  feed.xml still absent. Browser QA (export): text-size group
+  renders beside COPY LINK, A+ scales body 18 → 19.8px computed,
+  A− returns to 18px, preference survives a reload (localStorage
+  read back), reset marks default, disabled states at both ends,
+  sr-only status present and visually hidden, article header/TOC
+  unaffected; minus disables at the 0.95 floor (stored "0"),
+  plus disables at the 1.2 ceiling (stored "3"); index "/" →
+  type "agent" → Enter lands on the top matching article
+  (ai-instructions, 2 ARTICLES shown); Enter with an EMPTY
+  query likewise opens the top visible card — the rule is
+  deliberately uniform ("Enter opens the top visible result"),
+  never a surprise no-op; J/K/T/? regressions clean; 390px:
+  no horizontal overflow, slot wraps.
+
+Version 2.5.6 — wayfinding and quiet signals (cron QA round 8):
+ — wayfinding and quiet signals (cron QA round 8):
+
+QA FIRST: worklog read, sandbox state verified (tree alive, ZIPs
+byte-identical in download/ and public/, :3000/:3100 healthy, live
+Pages site still serving the owner's v2.5.4 — 71ec72d — so v2.5.5
+remains unshipped upstream), agent-browser pass on the export and
+the delivery page (badges, shared hints, header pill jump, dialog,
+console clean, no 390px overflow) — baseline stable → feature round.
+
+- UPDATED CHIPS (index cards): a card whose frontmatter `updated`
+  date is past its `date` now shows a quiet revision marker in the
+  meta row — "↻ Sep 11, 2026" right beside the publication date,
+  red glyph at reduced opacity (the inbound badge's voice), muted
+  text so the row still reads date-first, title tooltip with the
+  long-form date. Two of five cards qualify today. ISO strings
+  compare lexically — "later" is a plain `>`; no new data, the
+  field has existed in posts.json since v2.4.
+- CLICK-TO-FILTER CARD TAGS: the tag pills on index cards stop
+  being dead text and join the chip bar's toggle system — clicking
+  "architecture" on a card filters the index exactly as if the
+  chip had been pressed (same activeTag state, same CLEAR FILTERS
+  escape, chip bar and card pills highlight together via
+  aria-pressed + data-active). Real buttons: keyboard-reachable,
+  focus-visible ring, 26px min-height (an honest target that still
+  fits the dense meta row, up from the dead pills' 20px).
+- T → BACK TO TOP: the keyboard twin of the visible back-to-top
+  control ReadingProgress has rendered since v2.5.2. Handled in
+  the ArticleKeys island — no new listener, no new island; the
+  smooth scroll collapses to an instant jump under
+  prefers-reduced-motion. The neighborless-article early return
+  was removed so T works on the newest/oldest articles too (J/K
+  already no-op safely on null hrefs). Documented in the "?"
+  READER CONSOLE on article routes ("T — Back to top"); the index
+  list stays honest (T does nothing there, so it is not listed).
+- INBOUND GRAPH Δ (build log): build-blog.mjs now diffs this
+  build's reverse-link counts against the posts.json it is about
+  to overwrite and prints a per-article ledger — "slug: 2 → 3" —
+  or "Δ: no changes" / "Δ: first build". Deterministic (sorted
+  slugs, removed articles read N → 0). The inbound badge counts
+  ARE the graph's public face; now an edit that moves a cross-link
+  announces itself at build time instead of silently shifting UI
+  numbers. Proven by tampering the stored graph and rebuilding
+  ("reasoning-is-a-system-property: 2 → 3"), then clean rebuild
+  ("no changes").
+- Docs: README header (2.5.6 "wayfinding and quiet signals") +
+  worklog (this entry); package.json → 2.5.6.
+- Verified: lint 0 errors (10 pre-existing warnings, none new);
+  build ✓ (14 edges / 5 articles, Δ: no changes); verify:seo 48/48
+  — 469 hrefs / 96 fragments UNCHANGED (the new instruments are
+  buttons and chips, never links — the audited graph is stable);
+  feed.xml still absent. Browser QA (export): UPDATED chip renders
+  with correct tooltip; card-tag click filters 5 → 1 cards with
+  chip bar + pill both active and CLEAR FILTERS visible; clear
+  restores 5; T scrolls 2400 → 0 smoothly; T is ignored while
+  typing in the search field (isTypingTarget); dialog shows the
+  T row on articles only; J/K regression clean; Esc closes;
+  390px: no horizontal overflow.
+
+Version 2.5.5 — the graph made visible (cron QA round 7):
+
+QA FIRST: full suite re-run on the restored tree (lint 0 errors /
+10 pre-existing warnings, build ✓, verify:seo 48/48, 464 hrefs /
+91 fragments) plus an agent-browser pass on the production export —
+baseline stable → feature round.
+
+- INBOUND-REFERENCE BADGES: getInboundCounts() in lib/blog.ts derives
+  slug → inbound-article-count from the SAME validated linksHere
+  graph (no second source of truth). BlogIndex takes an optional
+  `inboundRefs` prop (plain data — the island still never imports
+  lib/blog.ts) and renders a quiet "↩ N" badge in each card's
+  kicker, right-aligned beside the reading time (red glyph, muted
+  count, title tooltip, sr-only sentence; absent when the count is
+  0 or the data is older than v2.5.4). The article header kicker
+  gains an "↩ N" pill — a fragment link to #referenced-by so the
+  badge is an instrument, not just a stat: lands below the fixed
+  header (scroll-margin-top), hover brightens the hairline, hidden
+  in print (the section it points to is print-hidden too — a link
+  to a ghost would be a lie). Verify-seo now audits these 5 new
+  fragment links like every other.
+- SHARED-SIGNAL HINTS ("why related"): scoreRelatedCandidate now
+  also returns the strongest concrete overlaps — same project
+  first, then shared tags, shared topics, then significant terms
+  (insertion order of the deterministic term sets; capped at
+  MAX_SHARED_SIGNALS = 3; the category match is deliberately NOT a
+  hint, the row already shows the category). Emitted as `shared`
+  on scored entries in indexes.related (explicit entries carry []).
+  lib/blog.ts validates at runtime (strings only, cap 4). The
+  article renders one quiet mono line per related card and row:
+  "↔ 2026 · AI-assisted engineering · system" for scored matches,
+  "↔ ★ author-curated" for explicit frontmatter picks — provenance
+  honestly labeled, plain text, never links. .relatedRowShared
+  takes its own full-width flex line so the row grid stays intact.
+- BUG FIXED — sr-only was never defined: ShortcutsDialog (v2.5.4)
+  and the new badges marked up text as className="sr-only" but the
+  utility did not exist anywhere in the project CSS, so
+  screen-reader-only text rendered VISIBLY (the header badge
+  showed its whole sentence; the dialog duplicated every key name).
+  .sr-only is now a real global utility in globals.css (standard
+  visually-hidden pattern: 1px, clip-path, out of flow).
+- Docs: README header + two new bullets (inbound badges, shared
+  hints) + pipeline note; worklog (this entry); package.json →
+  2.5.5.
+- Verified: lint 0 errors (10 pre-existing warnings, none new);
+  build ✓; verify:seo 48/48 — 469 hrefs (+5 header badge fragment
+  links) / 96 in-page fragments, all resolved; feed.xml still
+  absent. Browser QA (export): badges on all 5 index cards
+  (2+3+3+3+3 = 14 edges, matching the build log), header pill
+  "↩ 3" on anatomy, click → #referenced-by lands 347px from top
+  (below the fixed header), hints render on cards AND rows with
+  correct content, dialog key names now properly hidden, sr-only
+  computed style position:absolute / 1px, mobile 390px: kicker
+  wraps cleanly, badge fits, no horizontal overflow.
+
 Version 2.5.4 — link-graph mirror + keyboard reference (cron QA round 5):
 
 QA FIRST: agent-browser pass on the production export and the

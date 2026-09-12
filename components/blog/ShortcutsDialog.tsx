@@ -62,12 +62,14 @@ export default function ShortcutsDialog() {
   const rows: ShortcutRow[] = isIndex
     ? [
         { keys: ["/"], action: "Focus the search field" },
+        { keys: ["↵"], action: "Open the top result (from search)" },
         { keys: ["?"], action: "Open this reference" },
         { keys: ["Esc"], action: "Close or clear" }
       ]
     : [
         { keys: ["J"], action: "Next article" },
         { keys: ["K"], action: "Previous article" },
+        { keys: ["T"], action: "Back to top" },
         { keys: ["?"], action: "Open this reference" },
         { keys: ["Esc"], action: "Close" }
       ];

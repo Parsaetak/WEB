@@ -1415,6 +1415,39 @@ span {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Screen-reader-only utility (v2.5.5 — bug fix)                               */
+/*                                                                            */
+/* The islands have been MARKING UP text as "sr-only" since v2.5.4            */
+/* (the shortcuts dialog's key names, the inbound-reference badges)           */
+/* but the utility itself was never defined — the text rendered               */
+/* visibly. This is the standard visually-hidden pattern: out of              */
+/* sight and out of layout flow for every reader, still read aloud            */
+/* by screen readers, still selectable, still printed if a print              */
+/* stylesheet ever wants it (print uses the same hiding here — the            */
+/* hidden text is auxiliary speech, not content).                            */
+/* -------------------------------------------------------------------------- */
+
+.sr-only {
+  position: absolute;
+
+  width: 1px;
+
+  height: 1px;
+
+  margin: -1px;
+
+  padding: 0;
+
+  border: 0;
+
+  clip-path: inset(50%);
+
+  overflow: hidden;
+
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------------------- */
 /* Print (v2.5.1)                                                              */
 /*                                                                            */
 /* The article IS the document; everything that is screen furniture            */

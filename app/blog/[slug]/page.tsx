@@ -38,6 +38,8 @@ import CodeCopy from "@/components/blog/CodeCopy";
 
 import ShareLink from "@/components/blog/ShareLink";
 
+import TextSize from "@/components/blog/TextSize";
+
 import styles from "./article.module.css";
 
 /*
@@ -404,6 +406,34 @@ export default async function ArticlePage({
                 post.readingTime
               }
             </span>
+
+            {/*
+             * INBOUND AUTHORITY BADGE (v2.5.5): how many other
+             * articles link into this one, from the same validated
+             * build-time graph the REFERENCED BY section renders.
+             * An in-page fragment link — the verifier proves the
+             * target id exists on every page that renders it.
+             */}
+            {linksHere.length > 0 && (
+              <a
+                href="#referenced-by"
+                className={
+                  styles.headerRefs
+                }
+                title={`${linksHere.length} article${linksHere.length === 1 ? "" : "s"} reference this article`}
+              >
+                <span aria-hidden="true">
+                  ↩
+                </span>{" "}
+                {
+                  linksHere.length
+                }
+                <span className="sr-only">
+                  {" "}
+                  articles reference this — jump to the list
+                </span>
+              </a>
+            )}
           </p>
 
           <h1
@@ -611,7 +641,9 @@ export default async function ArticlePage({
             {/**
               * Actions slot (v2.5.3) — reserved right edge of the
               * row; the ShareLink island docks a COPY LINK button
-              * here after hydration. Empty without JS.
+              * here after hydration, and since v2.5.7 the TextSize
+              * island docks a three-step reader text-size control
+              * beside it. Empty without JS.
               */}
             <span
               className={
@@ -620,6 +652,8 @@ export default async function ArticlePage({
               data-article-actions
             >
               <ShareLink />
+
+              <TextSize />
             </span>
           </div>
         )}
@@ -797,6 +831,28 @@ export default async function ArticlePage({
                           relatedEntry.post.date
                         )}
                       </span>
+
+                      {/*
+                       * WHY-RELATED HINT (v2.5.5): the strongest
+                       * concrete overlaps the build model found —
+                       * or the author-curated mark for explicit
+                       * frontmatter relationships. Plain text, one
+                       * quiet mono line, never a link.
+                       */}
+                      {(relatedEntry.explicit ||
+                        relatedEntry.shared.length > 0) && (
+                        <span
+                          className={
+                            styles.relatedShared
+                          }
+                        >
+                          {relatedEntry.explicit
+                            ? "★ author-curated"
+                            : relatedEntry.shared.join(
+                                " · "
+                              )}
+                        </span>
+                      )}
                     </Link>
                   )
                 )}
@@ -868,6 +924,27 @@ export default async function ArticlePage({
                             relatedEntry.post.date
                           )}
                         </span>
+
+                        {/*
+                         * WHY-RELATED HINT on the compact rows
+                         * (v2.5.5): same data as the cards, own
+                         * full-width flex line so the row grid
+                         * (category · title · meta) stays intact.
+                         */}
+                        {(relatedEntry.explicit ||
+                          relatedEntry.shared.length > 0) && (
+                          <span
+                            className={
+                              styles.relatedRowShared
+                            }
+                          >
+                            {relatedEntry.explicit
+                              ? "★ author-curated"
+                              : relatedEntry.shared.join(
+                                  " · "
+                                )}
+                          </span>
+                        )}
                       </Link>
                     </li>
                   )
@@ -879,6 +956,7 @@ export default async function ArticlePage({
 
         {linksHere.length > 0 && (
           <section
+            id="referenced-by"
             className={
               styles.linksHere
             }

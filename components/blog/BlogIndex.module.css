@@ -463,6 +463,35 @@
 }
 
 /*
+ * Right-hand kicker group (v2.5.5): inbound-reference badge beside
+ * the reading time. A wrapper keeps the cardKicker's two-sided
+ * layout (category left, group right) while letting the badge and
+ * the time sit together with their own small gap.
+ */
+.cardKickerRight {
+  display: inline-flex;
+
+  align-items: baseline;
+
+  gap: 10px;
+}
+
+/*
+ * Inbound-reference badge (v2.5.5): "↩ N" — how many other articles
+ * link INTO this one (the reverse graph the article pages render as
+ * REFERENCED BY). Quieter than the category red: the glyph carries
+ * the accent, the number stays muted — authority is metadata, not a
+ * call to action.
+ */
+.cardRefs {
+  color: var(--red-hot);
+
+  opacity: 0.8;
+
+  letter-spacing: 0.08em;
+}
+
+/*
  * Category accent (v2.5.3) — index cards join the article page's
  * per-category color code: same three-color system, same ::before
  * dot, same data-category contract. The red default remains as the
@@ -579,6 +608,94 @@
   letter-spacing: 0.06em;
 
   text-transform: uppercase;
+}
+
+/*
+ * UPDATED CHIP (v2.5.6) — quiet revision marker beside a card's
+ * date, for posts whose frontmatter `updated` is past `date`. The
+ * ↻ glyph carries the red accent at reduced opacity (same voice as
+ * the inbound badge); the text stays muted so a row of cards still
+ * reads date-first. The full date is available via the title
+ * tooltip the component sets.
+ */
+.cardUpdated {
+  color: var(--text-muted);
+
+  white-space: nowrap;
+}
+
+.cardUpdated span[aria-hidden] {
+  color: var(--red-hot);
+
+  opacity: 0.75;
+}
+
+/*
+ * CLICK-TO-FILTER CARD TAGS (v2.5.6) — the card's tag pills become
+ * real toggle buttons in the same system as the chip bar above the
+ * list. Visually they keep the quiet pill look the dead spans had,
+ * but gain an honest hit target (26px min-height — small, but in
+ * line with the dense meta row they live in and larger than the
+ * dead pills were) and the chip bar's contract: hover lifts the
+ * border and text, data-active applies the same red wash, and
+ * keyboard focus gets the shared focus-visible ring.
+ */
+.cardTags .cardTag {
+  display: inline-flex;
+
+  align-items: center;
+
+  min-height: 26px;
+
+  padding: 0 11px;
+
+  border: 1px solid
+    var(--line-soft);
+
+  border-radius: 999px;
+
+  background: transparent;
+
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  letter-spacing: 0.06em;
+
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.cardTags .cardTag:hover {
+  color: var(--text);
+
+  border-color:
+    rgba(255, 255, 255, 0.2);
+}
+
+.cardTags .cardTag[data-active="true"] {
+  color: #ffffff;
+
+  border-color:
+    rgba(255, 64, 54, 0.65);
+
+  background:
+    rgba(255, 32, 32, 0.16);
+}
+
+.cardTags .cardTag:focus-visible {
+  outline: 1px solid
+    var(--red-hot);
+
+  outline-offset: 2px;
 }
 
 .empty {

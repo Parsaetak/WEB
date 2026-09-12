@@ -11,7 +11,8 @@ import {
   getBlogInfo,
   getBlogMetaList,
   getFeaturedPost,
-  getAllTags
+  getAllTags,
+  getInboundCounts
 } from "@/lib/blog";
 
 import {
@@ -87,6 +88,12 @@ export default function BlogPage() {
   const tags = getAllTags();
   const featured = getFeaturedPost();
   const info = getBlogInfo();
+
+  /*
+   * Inbound reference counts (v2.5.5) for the quiet "↩ N" card
+   * badges — straight from the validated build-time link graph.
+   */
+  const inboundRefs = getInboundCounts();
 
   return (
     <div className={styles.blogPage}>
@@ -243,6 +250,7 @@ export default function BlogPage() {
           <BlogIndex
             posts={posts}
             tags={tags}
+            inboundRefs={inboundRefs}
           />
         </div>
       </section>

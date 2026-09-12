@@ -69,11 +69,17 @@ export type BlogPostMeta = {
  * entries are author-declared relationships from frontmatter (their
  * score is null — the author's ordering is the authority); scored
  * entries come from the deterministic signal model.
+ *
+ * `shared` (v2.5.5) carries the strongest concrete overlap signals
+ * behind a scored entry (project / tags / topics / significant terms,
+ * in that authority order, capped at 3 at build time) so the page can
+ * show WHY the match happened. Explicit entries carry an empty array.
  */
 export type RelatedPostEntry = {
   slug: string;
   score: number | null;
   explicit: boolean;
+  shared?: readonly string[];
 };
 
 export type BlogPost = BlogPostMeta & {

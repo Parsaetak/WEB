@@ -3,17 +3,21 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore
 } from "react";
 
 import Link from "next/link";
 
+import { useRouter } from "next/navigation";
+
 import type {
   BlogPostMeta
 } from "@/lib/blogFormat";
 
 import {
+  formatBlogDate,
   formatBlogDateShort
 } from "@/lib/blogFormat";
 
@@ -68,6 +72,13 @@ function matchesQuery(
 type BlogIndexProps = {
   posts: readonly BlogPostMeta[];
   tags: readonly string[];
+  /*
+   * slug → inbound article count (v2.5.5), from the validated
+   * build-time link graph. Optional so the island degrades to
+   * badge-less cards with older generated data. Plain data — the
+   * island itself never imports lib/blog.ts (boundary above).
+   */
+  inboundRefs?: Readonly<Record<string, number>>;
 };
 
 /*
@@ -223,7 +234,8 @@ function writeDeepLinkFilters(
 
 export default function BlogIndex({
   posts,
-  tags
+  tags,
+  inboundRefs
 }: BlogIndexProps) {
   const [query, setQuery] =
     useState("");
@@ -319,6 +331,24 @@ export default function BlogIndex({
     activeProject !== null ||
     activeTopic !== null;
 
+  /*
+   * ENTER-TO-OPEN (v2.5.7): the keydown handler below is registered
+   * once (empty deps) for the "/" hotkey budget, so it cannot close
+   * over fresh filter state. This ref mirrors the currently visible
+   * list — Enter in the search field opens its first card, exactly
+   * what the visible list shows as the top result.
+   */
+  const visibleRef =
+    useRef<BlogPostMeta[]>([]);
+
+  useEffect(() => {
+    visibleRef.current = [
+      ...filteredPosts
+    ];
+  }, [filteredPosts]);
+
+  const router = useRouter();
+
   const clearFilters = () => {
     setQuery("");
 
@@ -345,13 +375,18 @@ export default function BlogIndex({
 
   /*
    * Search hotkey (v2.5.3): "/" anywhere on the index jumps focus
-   * into the search field; Escape inside it clears and blurs.
-   * Both keys are ignored while the reader is already typing in a
-   * field (lib/keyboard — and modified keystrokes always pass
-   * through untouched). The visible affordance is the aria-hidden
-   * <kbd> hint inside the search wrap — without JS it is inert
-   * chrome, with JS it teaches the shortcut. Reduced motion is
-   * honored for the scroll-into-view.
+   * into the search field; Escape inside it clears and blurs; Enter
+   * inside it (v2.5.7) opens the top result — the keyboard twin of
+   * clicking the first visible card, and the natural end of a
+   * type-and-go search. All three ride this ONE handler (no new
+   * listener budget). All keys are ignored while the reader is
+   * already typing in a different field (lib/keyboard — and
+   * modified keystrokes always pass through untouched; Enter also
+   * stands down during IME composition so a confirm keystroke
+   * never navigates mid-word). The visible affordances are the
+   * aria-hidden <kbd> hints inside the search wrap — without JS
+   * they are inert chrome, with JS they teach the shortcuts.
+   * Reduced motion is honored for the scroll-into-view.
    */
   useEffect(() => {
     const handleKeyDown = (
@@ -403,6 +438,27 @@ export default function BlogIndex({
       }
 
       if (
+        event.key === "Enter" &&
+        event.target ===
+          searchInput &&
+        !event.isComposing &&
+        !event.defaultPrevented
+      ) {
+        const first =
+          visibleRef.current[0];
+
+        if (first) {
+          event.preventDefault();
+
+          router.push(
+            `/blog/${first.slug}/`
+          );
+        }
+
+        return;
+      }
+
+      if (
         event.key === "Escape" &&
         event.target ===
           searchInput
@@ -424,7 +480,7 @@ export default function BlogIndex({
         handleKeyDown
       );
     };
-  }, []);
+  }, [router]);
 
   return (
     <div className={styles.blogIndex}>
@@ -462,8 +518,10 @@ export default function BlogIndex({
           />
 
           {/**
-            * Hotkey hint (v2.5.3) — decorative; the input carries
-            * aria-keyshortcuts for assistive tech.
+            * Hotkey hints (v2.5.3 + v2.5.7) — decorative; the input
+            * carries aria-keyshortcuts for assistive tech. The
+            * second hint teaches Enter-to-open, the natural end of
+            * a type-and-go search.
             */}
           <kbd
             className={
@@ -472,6 +530,15 @@ export default function BlogIndex({
             aria-hidden="true"
           >
             /
+          </kbd>
+
+          <kbd
+            className={
+              styles.searchKey
+            }
+            aria-hidden="true"
+          >
+            ↵
           </kbd>
         </div>
 
@@ -708,10 +775,35 @@ export default function BlogIndex({
                       }
                     </span>
 
-                    <span>
-                      {
-                        post.readingTime
-                      }
+                    {/*
+                     * Right-hand group (v2.5.5): the inbound
+                     * reference badge (when the graph knows at
+                     * least one article linking here) beside the
+                     * reading time. Server-rendered data riding
+                     * the island's props — filtering never
+                     * recomputes it.
+                     */}
+                    <span className={styles.cardKickerRight}>
+                      {inboundRefs &&
+                        inboundRefs[post.slug] > 0 && (
+                          <span
+                            className={styles.cardRefs}
+                            title={`${inboundRefs[post.slug]} article${inboundRefs[post.slug] === 1 ? "" : "s"} reference this article`}
+                          >
+                            <span aria-hidden="true">↩ </span>
+                            {inboundRefs[post.slug]}
+                            <span className="sr-only">
+                              {" "}
+                              inbound references
+                            </span>
+                          </span>
+                        )}
+
+                      <span>
+                        {
+                          post.readingTime
+                        }
+                      </span>
                     </span>
                   </p>
 
@@ -754,6 +846,35 @@ export default function BlogIndex({
                       )}
                     </time>
 
+                    {/*
+                     * UPDATED CHIP (v2.5.6): articles whose
+                     * frontmatter carries an `updated` date past
+                     * their original publication show a quiet
+                     * revision marker right beside the date — the
+                     * card tells the truth about recency without
+                     * re-sorting the list. ISO strings compare
+                     * lexically, so "later" is a plain `>`.
+                     */}
+                    {post.updated &&
+                      post.updated >
+                        post.date && (
+                        <span
+                          className={
+                            styles.cardUpdated
+                          }
+                          title={`Updated ${formatBlogDate(post.updated)}`}
+                        >
+                          <span
+                            aria-hidden="true"
+                          >
+                            ↻{" "}
+                          </span>
+                          {formatBlogDateShort(
+                            post.updated
+                          )}
+                        </span>
+                      )}
+
                     <span>
                       {
                         post.author
@@ -768,6 +889,17 @@ export default function BlogIndex({
                         styles.cardTags
                       }
                     >
+                      {/*
+                       * CLICK-TO-FILTER TAGS (v2.5.6): card
+                       * tags stop being dead text and join the
+                       * chip bar's toggle system — one click on
+                       * "seo" on a card filters the index to
+                       * that tag, exactly as if the chip had
+                       * been pressed. Same state, same CLEAR
+                       * FILTERS escape hatch, aria-pressed for
+                       * assistive tech. The first three tags
+                       * per card stay the visible cap.
+                       */}
                       {post.tags
                         .slice(
                           0,
@@ -777,15 +909,32 @@ export default function BlogIndex({
                           (
                             tag
                           ) => (
-                            <span
+                            <button
                               key={
                                 tag
                               }
-                            >
-                              {
+                              type="button"
+                              className={
+                                styles.cardTag
+                              }
+                              data-active={
+                                activeTag ===
+                                tag
+                                  ? "true"
+                                  : "false"
+                              }
+                              aria-pressed={
+                                activeTag ===
                                 tag
                               }
-                            </span>
+                              onClick={() =>
+                                toggleTag(
+                                  tag
+                                )
+                              }
+                            >
+                              {tag}
+                            </button>
                           )
                         )}
                     </div>
