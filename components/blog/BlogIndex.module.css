@@ -458,8 +458,88 @@
   text-transform: uppercase;
 }
 
-.cardKicker span:first-child {
+/*
+ * Left kicker group (v2.7): category + project chip together, so
+ * the space-between layout keeps the left/right split while the
+ * project label sits beside its category.
+ */
+.cardKickerLeft {
+  display: inline-flex;
+
+  align-items: baseline;
+
+  flex-wrap: wrap;
+
+  gap: 0 12px;
+
+  min-width: 0;
+}
+
+.cardKicker .cardCategory {
   color: var(--red-hot);
+}
+
+/*
+ * PROJECT CONNECTION LABEL (v2.7) — visible chip in the card kicker.
+ * Mono, red-tinted on interaction, underline-on-hover so it reads as
+ * a control without stealing the category's colour coding. Rides the
+ * deep-link project filter when pressed.
+ */
+.cardProject {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 8px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.14em;
+
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  text-decoration: underline;
+
+  text-decoration-color: transparent;
+
+  text-underline-offset: 3px;
+
+  transition:
+    color 160ms ease,
+    text-decoration-color 160ms ease;
+}
+
+.cardProject:hover,
+.cardProject:focus-visible {
+  color: var(--red-hot);
+
+  text-decoration-color: currentColor;
+}
+
+.cardProject[data-active="true"] {
+  color: var(--red-hot);
+
+  text-decoration-color: currentColor;
+}
+
+.cardProject:focus-visible {
+  outline:
+    1px solid
+    var(--red-hot);
+
+  outline-offset: 3px;
 }
 
 /*

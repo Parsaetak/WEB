@@ -52,7 +52,7 @@ Top-level routed areas:
 /blog/ — blog index (static route)
 /blog/<slug>/ — article pages (static routes)
 
-Current version: 2.6.1
+Current version: 2.7
 
 ---
 
@@ -1222,6 +1222,142 @@ Every identity term must correspond to something the site actually
 presents or claims (TRADEMARKS.md is the claim source).
 
 XVII. CURRENT BASELINE
+
+Version 2.7 — visible SEO, content hierarchy, work portfolio, blog
+editorial coherence:
+
+QA FIRST: repository cloned at 03f2cc933979c03c9c4a99b46282d5912e
+96e46f (v2.6.1) and inspected end to end; the public GitHub
+ecosystem was re-verified before any content was designed
+(Parsaetak/SHEYTAN-local-agent, Parsaetak/FreeIran, Parsaetak/WEB,
+Parsaetak/Contents branches AI-Tests / AI-frameworks / Books /
+Projects). Baseline: npm ci + build + lint + verify:seo all green
+(10 pre-existing lint warnings unchanged).
+
+59. Home Scene Rendering Law (2.7)
+
+The home route is a single canonical DOCUMENT, so its default
+scene is server-rendered into the static export. LivingShell
+renders SceneRegistry unconditionally: the "home" scene renders
+during prerender (dynamic() SSR), the first client render matches
+the server render (initial scene state is "home" on both), and
+the URL-determined scene correction happens in the mount effect
+behind the loading screen through the normal transition
+machinery. Hash scenes remain interaction states — only the
+default scene is a document.
+
+Law: any content that carries the route's semantic identity
+(h1, capability vocabulary, project names, workflow language,
+repository links) must exist in the exported HTML without
+JavaScript. verify:seo enforces this (home-content pass: exactly
+one h1, the phrase set, the four repository hrefs).
+
+60. Information Priority Law (2.7)
+
+The home scene orders content by the visitor's information need:
+identity + capability (hero) → capabilities ("What I can do") →
+featured projects ("What I have actually built") → method ("How I
+work") → frameworks ("Ideas made concrete") → direction → close.
+Conceptual material never precedes concrete proof. Every
+capability card names work that actually exists in the public
+repository ecosystem; every project card exposes only real
+destinations (repository, field-notes article, live scene, live
+site). The Work scene follows the same law: featured systems
+first, then grouped coverage, thirteen verified entries total —
+no invented capabilities, statuses, or projects.
+
+61. Editorial Column Law (2.7)
+
+An article page has ONE reading column: title, subtitle,
+metadata, context chips, cover, TOC, and body share the same
+centered 720px width. No element of the reading composition may
+declare an independent wider max-width (the pre-2.7 cover used
+980px and the header 780px left-aligned against a centered body
+— three competing axes). Cover images keep intrinsic dimensions
+in markup so reveal motion can never shift layout.
+
+62. Flow Reveal Law (2.7)
+
+data-reveal="flow" is the ONLY reversible reveal: the element
+stays observed for the page's lifetime, entering marks it
+revealed, leaving marks it hidden, CSS transitions both
+directions. Reserved for reading-composition media (the article
+cover). Constraints: transform/opacity only, no layout
+properties, reduced motion degrades to a crossfade with no
+travel, print resolves every reveal state to fully visible (an
+unrevealed cover must never print invisible). Everything else
+remains one-shot (unobserve after reveal) so scroll cost still
+decays to zero.
+
+63. Project Label Law (2.7)
+
+Blog cards whose article carries a project field show a visible
+PROJECT · <name> chip that rides the existing deep-link project
+filter. One click narrows the index; one more restores it; the
+chip bar explains why. No parallel relationship system may be
+created — the frontmatter field, the URL state, and the filter
+machinery are the single source of truth.
+
+- HOME SCENE (components/scenes/HomeScene.tsx + module CSS): hero
+  kicker carries identity (PARSA TAK — RESEARCHER · BUILDER ·
+  PROGRAMMER · WRITER · ARTIST), h1 carries capability (AI
+  systems / Reasoning / Software / Art), lead sentence describes
+  the actual work. New sections: capabilities grid (8 verified
+  capabilities, bordered cells with red index markers),
+  featured projects (SHEYTAN, UHIT, FreeIran, RED MAGIC, WEB —
+  each with category, purpose, tech tags, repository + notes +
+  live links; multi-destination cards are panels of individual
+  links, never nested anchors), workflow grid (9 stages with
+  flow arrows), and a full-portfolio link into #work. Exploration
+  fields row removed (the h1 now carries the vocabulary); the
+  conceptual sections follow the proof.
+- WORK SCENE (components/scenes/WorkScene.tsx + module CSS):
+  four FEATURED SYSTEMS as rich cards (REPOSITORY / SPECS /
+  LIVE / NOTES links row with border-top separator), then four
+  groups (AI + REASONING: AI Instructions / REP / USEF;
+  RESEARCH + EXPERIMENTS: AIST-2026.09 / ASI-100-Elite-2026.09 /
+  RED THEORY; SOFTWARE + ENGINEERING: Contents; CREATIVE
+  TECHNOLOGY: RED MAGIC organism / RED MAGIC books) with group
+  headers (kicker, title, description, count chip). Single-
+  destination cards remain full-card links (data-linked).
+- SEO (lib/seo.tsx, app/layout.tsx): HOME_TITLE adds "Software";
+  SITE_DESCRIPTION names the four flagship projects; keywords add
+  only visibly-presented terms (AI agents, local AI, software
+  engineering, UHIT, FreeIran); homeWebPageEntity gains a
+  description matching the visible lead. verify-seo.mjs: title
+  expectation updated, scene hashes (#home/#about/#systems/
+  #magic/#work/#library) codified as interaction states exempt
+  from in-page anchor resolution, and the home-content pass
+  added (18 phrase checks + 4 repository href checks + h1 count).
+- BLOG (article.module.css, BlogIndex.tsx + CSS, cover
+  frontmatter): cover max-width 980px → 720px margin auto; header
+  max-width 780px → 720px margin auto (one editorial column);
+  TOC→body margin 44px → 38px; cover data-reveal="scale" →
+  "flow"; print rules resolve all reveal states visible; FreeIran
+  article cover wired (freeiran-cores.svg, alt from the SVG's
+  aria-label, 1200×630); PROJECT chips on index cards.
+- MotionReveal.tsx: flow branch — reversible elements never
+  unobserve; still one observer, attribute writes only.
+- Touch targets: homeProjectLink / workProjectLink gain
+  min-height 24px + padding (mono visual size unchanged);
+  workArchiveLink 44px.
+
+Verification (v2.7): npm ci → npm run lint → 0 errors (10
+pre-existing warnings) → npm run build → 14 static pages →
+npm run verify:seo → all checks pass including the new
+home-content pass (one h1; 18 capability/project/workflow
+phrases; SHEYTAN / FreeIran / WEB / AI-Tests hrefs crawlable).
+Responsive matrix: 14 viewports (320–1920px) × 4 pages (home,
+#work, /blog/, article) — 56/56 pass, zero horizontal overflow.
+Browser-verified: home SSR content + hydration (no console
+errors), all six scenes navigate, compact menu open/navigate/
+close, J/K navigation, "/" search + Enter-to-open, TOC links,
+reading progress, text-size, code copy, share link, project chip
+filter on/off, cover enter/exit/return reveal with stable box
+geometry, reduced-motion cover behavior (no travel, 1ms), print
+PDF generation with the cover visible. Article heading audit:
+exactly one h1 per page. Cover audit: all 9 articles carry
+covers with alt text and intrinsic dimensions.
 
 Version 2.6.1 — mobile navigation, blog navigation, project articles:
 

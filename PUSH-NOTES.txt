@@ -1,47 +1,101 @@
-Parsa Tak WEB — v2.6.1 mobile navigation + blog navigation +
-project-connected articles (2026-09-12)
+Parsa Tak WEB — v2.7 visible SEO, content hierarchy,
+and blog editorial coherence (2026-09-13)
 =====================================================================
 
 WHAT THIS IS
-The complete final repository state after the v2.6.1 product-quality
-UX round. Replace the repository contents with these files (or copy
-them over your repository root), then commit and push. Paths are
-repo-relative. Base version: d1889961a78551865cea0bde92f3efc94277d130
-(v2.5.7).
+The complete final repository state after the v2.7 information-
+priority release. Replace the repository contents with these files
+(or copy them over your repository root), then commit and push.
+Paths are repo-relative. Base version: 03f2cc933979c03c9c4a99b46
+282d5912e96e46f (v2.6.1).
 
 HIGHLIGHTS
-  - Compact touch-first navigation (phones + narrow portrait
-    tablets, ≤860px): the horizontal scene track stands down and a
-    shared CompactMenu island appears in the world HUD and the blog
-    header — one 44px MENU trigger opening a red/black panel with
-    HOME, ABOUT, SYSTEMS, MAGIC, WORK, LIBRARY, BLOG and GITHUB.
-    aria-expanded/aria-controls/aria-haspopup on the trigger,
-    aria-current on the active entry, arrow-key/Home/End roving
-    focus, Escape restores the trigger, pointer-down outside
-    closes, selection always closes, no scroll locking, reduced-
-    motion collapse. Desktop (>860px) navigation is unchanged.
-  - Blog header BLOG control fixed at the root: the dead
-    pointer-events-none span is now a real link to /blog/ rendered
-    by a tiny usePathname() island — aria-current="page" on the
-    blog index, "back to the blog index" on article pages; works
-    with mouse, touch, keyboard, and direct navigation; correct
-    links in the static export.
-  - Work scene discoverability: UHIT, RED THEORY and AI SYSTEMS
-    project cards now open their field-notes articles (full-card
-    links, truthful aria-labels, quiet "↳ NOTES" destination line,
-    basePath-aware plain anchors). RED MAGIC keeps its Magic-scene
-    destination.
-  - Four new articles (2026-09-12), each grounded in the actual
-    public GitHub state and wired through the existing related-
-    content system: Measuring Machine Intelligence (UHIT /
-    AIST-2026.09 / ASI-100-Elite-2026.09), Red Theory and the
-    Living Web, SHEYTAN: The Local-First Engineering Laboratory,
-    FreeIran Engineering Notes. No invented metrics, statuses, or
-    claims; covers ship with 1200×630 PNG twins.
-  - Link graph strengthened: related edges 14 → 53 across 9
-    articles; inbound edges 29 across 7 articles; the build-time
-    inbound Δ ledger reports every movement.
-  - Safe-area insets added to both shells' narrow-width headers.
+  - THE HOME SCENE IS NOW SERVER-RENDERED INTO THE STATIC EXPORT.
+    Before v2.7 the entire home scene (h1, capabilities, projects)
+    existed only after client JavaScript ran — crawlers received a
+    shell with zero semantic content. The SceneRegistry mount gate
+    was removed: the default "home" scene renders during prerender
+    (dynamic() SSR), hydrates without mismatch (first client
+    render matches the server render), and the URL-determined
+    scene correction still happens behind the loading screen
+    through the normal transition machinery. The exported
+    index.html now carries exactly one h1, the capability
+    vocabulary, the featured project names, the workflow stages,
+    and crawlable links to every repository destination.
+  - HOME PAGE RESTRUCTURED AROUND INFORMATION PRIORITY. The first
+    viewport now answers WHO I AM and WHAT I DO: the kicker
+    carries the identity (PARSA TAK — RESEARCHER · BUILDER ·
+    PROGRAMMER · WRITER · ARTIST), the h1 carries the capability
+    (AI systems / Reasoning / Software / Art), and the lead
+    sentence describes the actual work. Below the hero, in order:
+    a WHAT I CAN DO capabilities grid (8 capabilities, each with
+    a one-line explanation of what is actually done), WHAT I HAVE
+    ACTUALLY BUILT featured projects (SHEYTAN Local Agent, UHIT,
+    FreeIran, RED MAGIC, this website — each with repository,
+    notes, and live destinations), and HOW I WORK (the nine-stage
+    loop: UNDERSTAND → COMPILE → ASSESS → PLAN → ACT → VERIFY →
+    SYNTHESIZE → DELIVER → EVALUATE, in human language). The
+    conceptual sections (frameworks, direction) follow the proof,
+    not precede it. Visual identity, the RED MAGIC organism, and
+    the existing atmosphere are unchanged.
+  - WORK SCENE REBUILT AS A FULL PORTFOLIO / RESEARCH INDEX.
+    Four FEATURED SYSTEMS (SHEYTAN Local Agent, UHIT, FreeIran,
+    WEB) render as rich multi-destination cards (REPOSITORY ↗ /
+    SPECIFICATIONS ↗ / LIVE ↗ / field-notes links — never nested
+    anchors), followed by four grouped sections covering the rest
+    of the verified ecosystem: AI + REASONING (AI Instructions,
+    REP, USEF), RESEARCH + EXPERIMENTS (AIST-2026.09,
+    ASI-100-Elite-2026.09, RED THEORY), SOFTWARE + ENGINEERING
+    (the Contents content infrastructure), and CREATIVE
+    TECHNOLOGY (the RED MAGIC organism and the RED MAGIC books).
+    Thirteen project entries total, every status and destination
+    verified against the actual public repositories; nothing
+    invented.
+  - ARTICLE COVER ALIGNMENT FIXED. The cover's 980px width is
+    gone: title, subtitle, metadata, context chips, cover, TOC,
+    and body now form one centered 720px editorial column (the
+    header joined the column; the cover margin auto-centers to
+    exactly the body width). The cover image keeps intrinsic
+    1200×630 dimensions in markup, so nothing shifts after load.
+  - COVER ENTER/EXIT MOTION (the flow variant). A new
+    data-reveal="flow" behaviour in the single MotionReveal
+    IntersectionObserver: entering the viewport reveals the
+    cover (restrained opacity + rise + scale settle), leaving it
+    eases the image back toward its quiet state, returning
+    re-reveals it. Transform and opacity only — no layout shift
+    in either direction, no scroll loop, no per-frame React
+    state; prefers-reduced-motion degrades to a crossfade with no
+    travel; print resolves every reveal state to fully visible
+    (an unrevealed cover must never print invisible).
+  - BLOG INDEX: VISIBLE PROJECT CONNECTIONS. Every project-
+    connected article card now carries a clickable PROJECT ·
+    <name> chip in its kicker row that rides the existing
+    deep-link project filter (one click narrows the index, one
+    more restores it, the chip bar shows why). No parallel
+    relationship system — the existing frontmatter field, URL
+    state, and filter machinery do all the work.
+  - The FreeIran article gained its designed cover
+    (freeiran-cores.svg + PNG twin, 1200×630, descriptive alt
+    text) — the assets existed but were never wired into the
+    frontmatter; all nine articles now ship consistent covers.
+  - SEO metadata strengthened, honestly: HOME_TITLE gains
+    "Software" (Parsa Tak — AI Systems, Reasoning, Software &
+    RED MAGIC); the site description names the four flagship
+    projects; keywords add only terms the page visibly presents
+    (local AI, AI agents, software engineering, UHIT, FreeIran);
+    the home WebPage structured data carries a description
+    matching the visible lead. No hidden text, no stuffing, no
+    invented entities, no ranking claims.
+  - verify:seo extended: a HOME CONTENT VERIFICATION pass reads
+    the exported index.html exactly as a crawler receives it and
+    fails the build unless the single h1, 18 capability/project/
+    workflow phrases, and the four repository destinations are
+    present in the visible HTML; scene hashes (#work, #magic,
+    ...) are codified as interaction states exempt from in-page
+    anchor resolution.
+  - Accessibility: project link touch targets expanded to ≥24px
+    (mono links kept their visual size, gained padding), the
+    Work archive link to 44px.
 
 HOW TO APPLY
   1. Replace your repository contents with these files (allow
@@ -49,36 +103,46 @@ HOW TO APPLY
      patches to merge.
   2. Install dependencies: npm ci (dependencies unchanged; no new
      runtime dependencies at all).
-  3. Commit: git add -A && git commit -m "v2.6.1: mobile
-     navigation, blog header navigation fix, project-connected
-     articles"
+  3. Commit: git add -A && git commit -m "v2.7: visible SEO,
+     content hierarchy, work portfolio, blog editorial coherence"
   4. Push: git push origin main
   5. Watch the newest GitHub Actions run (must be green — it runs
-     the blog pipeline and the extended SEO verification), then
-     hard-refresh the live site.
+     the blog pipeline and the extended SEO verification
+     including the new home-content checks), then hard-refresh
+     the live site.
 
 VERIFY AFTER DEPLOY (observed on the export before packaging)
-  - Phone (~390px): MENU trigger opens the panel; every entry
-    navigates; Escape / outside tap / selection close it; no
-    horizontal overflow at 320–430px widths
-  - Blog: the top-right BLOG pill navigates (index: current page;
-    article: returns to /blog/); the MENU trigger serves all areas
-  - Work scene: UHIT / RED THEORY / AI SYSTEMS cards open their
-    articles under /WEB/blog/...; RED MAGIC opens the Magic scene
-  - /WEB/robots.txt and /WEB/sitemap.xml serve correctly (sitemap:
-    11 URLs = home + blog index + 9 articles, article-date
-    lastmods); /WEB/blog/feed.xml must NOT exist (RSS removed in
+  - view-source:/WEB/ shows the home content in the HTML itself:
+    the h1 ("AI systems Reasoning Software Art"), the
+    capabilities grid, the featured project names, the workflow
+    stages, and the GitHub hrefs — no JavaScript required
+  - Every viewport 320–1920px: no horizontal overflow on home,
+    work, blog index, or articles (56-point responsive matrix
+    passed before packaging)
+  - Article: title, cover, TOC, and text share one centered
+    720px column; scrolling past the cover dims it, scrolling
+    back re-reveals it; no layout shift; print preview shows the
+    cover
+  - Work scene: 13 project entries across featured + four
+    groups; every link opens a real destination
+  - Blog: PROJECT chips on cards filter the index; J / K, "/",
+    "?", Enter-to-open, TOC, reading progress, text-size, code
+    copy, share link, and Referenced by all behave as in v2.6.1
+  - Compact menu on phones still opens, navigates, and closes
+  - /WEB/robots.txt and /WEB/sitemap.xml serve correctly (11
+    URLs); /WEB/blog/feed.xml must NOT exist (RSS removed in
     v2.5)
-  - J / K, "/", "?" and Enter-to-open search behave as in v2.5.7
   - No console errors
 
 NOTES
   - data/blog/posts.json and public/sitemap.xml are GENERATED by
-    scripts/build-blog.mjs on every build. They are committed so a
-    fresh clone works immediately; never hand-edit them.
+    scripts/build-blog.mjs on every build. They are committed so
+    a fresh clone works immediately; never hand-edit them.
   - RSS remains removed: no feed.xml is generated, referenced, or
     expected anywhere.
   - Do NOT hand-edit data/library.json (synced at build time from
     Parsaetak/Contents@Projects).
   - Indexing remains a crawler-side decision that happens after
-    deployment; no ranking or indexing outcome is claimed.
+    deployment; no ranking or indexing outcome is claimed or
+    measured. What was measured: the exported HTML now contains
+    the semantic content it did not contain before.

@@ -2,8 +2,18 @@
   width: 100%;
 }
 
+/*
+ * EDITORIAL COLUMN (v2.7): the header joins the same centered
+ * 720px reading column as the body, TOC, cover, and footer
+ * sections. Before v2.7 the header hugged the container's left
+ * edge (780px) while the body floated centered — two competing
+ * axes the cover's old 980px width used to bridge. One column now.
+ */
 .header {
-  max-width: 780px;
+  max-width: 720px;
+
+  margin:
+    0 auto;
 
   display: flex;
 
@@ -299,10 +309,19 @@
   color: #ff6a5e;
 }
 
+/*
+ * COVER ALIGNMENT (v2.7): the article's primary image now shares
+ * the reading column's exact width (720px, centered) — title,
+ * subtitle, metadata, context chips, cover, TOC, and body form one
+ * coherent editorial composition instead of three drifting widths
+ * (780 / 980 / 720). The image keeps its intrinsic aspect ratio
+ * via width/height attributes, so the reveal motion (flow variant)
+ * can never cause layout shift.
+ */
 .cover {
-  margin: 38px 0 0;
+  margin: 36px auto 0;
 
-  max-width: 980px;
+  max-width: 720px;
 }
 
 .cover img {
@@ -325,7 +344,7 @@
 .body {
   max-width: 720px;
 
-  margin: 44px auto 0;
+  margin: 38px auto 0;
 
   color: var(--text-soft);
 

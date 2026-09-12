@@ -278,6 +278,25 @@ export default function BlogIndex({
     );
   };
 
+  /*
+   * PROJECT LABEL FILTER (v2.7): the visible PROJECT chip on each
+   * project-connected card joins the deep-link filter system — one
+   * click narrows the index to that project, one more click (or
+   * the chip bar's ×) restores the full list. Same state, same URL
+   * source of truth, no parallel relationship system.
+   */
+  const toggleProject = (
+    project: string
+  ) => {
+    writeDeepLinkFilters(
+      activeProject ===
+        project
+        ? null
+        : project,
+      activeTopic
+    );
+  };
+
   const clearTopic = () => {
     writeDeepLinkFilters(
       activeProject,
@@ -767,12 +786,54 @@ export default function BlogIndex({
                   >
                     <span
                       className={
-                        styles.cardCategory
+                        styles.cardKickerLeft
                       }
                     >
-                      {
-                        post.category
-                      }
+                      <span
+                        className={
+                          styles.cardCategory
+                        }
+                      >
+                        {
+                          post.category
+                        }
+                      </span>
+
+                      {/*
+                       * PROJECT CONNECTION LABEL (v2.7): cards whose
+                       * article belongs to a project carry a visible,
+                       * clickable PROJECT chip — the index now shows
+                       * which writing is project-connected at a
+                       * glance, and the click rides the existing
+                       * deep-link project filter (no new machinery).
+                       */}
+                      {post.project && (
+                        <button
+                          type="button"
+                          className={
+                            styles.cardProject
+                          }
+                          data-active={
+                            activeProject ===
+                            post.project
+                              ? "true"
+                              : "false"
+                          }
+                          aria-pressed={
+                            activeProject ===
+                            post.project
+                          }
+                          onClick={() =>
+                            toggleProject(
+                              post.project ?? ""
+                            )
+                          }
+                          title={`Show articles from the ${post.project} project`}
+                        >
+                          PROJECT ·{" "}
+                          {post.project}
+                        </button>
+                      )}
                     </span>
 
                     {/*

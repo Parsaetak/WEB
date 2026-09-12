@@ -559,12 +559,21 @@ export default async function ArticlePage({
           )}
         </header>
 
+        {/*
+          * COVER MOTION (v2.7): the reversible flow reveal — the
+          * image enters with a restrained settle (opacity + slight
+          * rise + scale) and eases back toward its quiet state as
+          * it leaves the viewport, sharing the single
+          * IntersectionObserver behind MotionReveal with the rest
+          * of the site. Transform/opacity only: the box never
+          * changes size, so no layout shift in either direction.
+          */}
         {post.cover && (
           <figure
             className={
               styles.cover
             }
-            data-reveal="scale"
+            data-reveal="flow"
           >
             <img
               src={

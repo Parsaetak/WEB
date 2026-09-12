@@ -31,8 +31,7 @@ const SITE_ENTITY_GRAPH = {
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
-  description:
-    "Parsa Tak — an evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.",
+  description: SITE_DESCRIPTION,
   applicationName: "Parsa Tak",
   authors: [
     {
@@ -43,23 +42,30 @@ export const metadata: Metadata = {
   creator: "Parsa Tak",
   publisher: "Parsa Tak",
   /*
-   * Keyword discipline: every term names something the site actually
-   * presents or owns. SHEYTAN and Red illuminati are claimed
-   * brand/artistic identity terms (see TRADEMARKS.md and the RED
-   * MAGIC article) — each appears exactly once, in visible-backed
-   * metadata, never in hidden text.
+   * Keyword discipline (v2.7): every term names something the site
+   * actually presents or owns and is visible in the rendered home
+   * scene. SHEYTAN and Red illuminati are claimed brand/artistic
+   * identity terms (see TRADEMARKS.md and the RED MAGIC article) —
+   * each appears exactly once, in visible-backed metadata, never
+   * in hidden text. The capability terms mirror the visible
+   * capabilities grid and featured projects section.
    */
   keywords: [
     "Parsa Tak",
     "AI",
     "artificial intelligence",
     "AI systems",
+    "AI agents",
+    "local AI",
     "reasoning",
+    "software engineering",
     "creative technology",
     "system architecture",
     "RED MAGIC",
     "RED THEORY",
     "SHEYTAN",
+    "UHIT",
+    "FreeIran",
     "Red illuminati"
   ],
   metadataBase:

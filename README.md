@@ -4,28 +4,31 @@ Live site: https://parsaetak.github.io/WEB/
 
 Repository: https://github.com/Parsaetak/WEB
 
-Version: 2.6.1 — mobile navigation, a working Blog control, and
-project-connected writing, on top of the v2.5 RSS-removal /
-related-content / SEO-link-graph / reading-motion base and the
-v2.5.1–v2.5.7 reading-instrument rounds (TOC, J / K navigation,
-copy-link, "/" search, category accents, "Referenced by" reverse
-graph, "?" shortcuts dialog, inbound badges, shared-signal hints,
-UPDATED chips, click-to-filter card tags, T back-to-top, the
-inbound-graph Δ ledger, the text-size control, and Enter-to-open
-search). New in 2.6.1: phones and narrow portrait tablets get a
-touch-first compact menu in the HUD — one discoverable 44px trigger
-expanding a red/black panel of all scenes plus BLOG and GITHUB, with
-roving arrow-key focus, Escape / outside-click / selection closing,
-no scroll locking, and reduced-motion collapse; the blog header's
-top-right BLOG item stops being a dead span and becomes a real link
-(aria-current="page" on the index, a return-to-index control on
-articles) via a tiny pathname-aware island; and four new articles —
-Measuring Machine Intelligence (UHIT), Red Theory and the Living
-Web, SHEYTAN: The Local-First Engineering Laboratory, and FreeIran
-Engineering Notes — connect the Work projects to the blog through
-the existing related-content machinery, with the Work scene's
-project cards now routing to their field notes where a real
-destination exists.
+Version: 2.7 — visible SEO, content hierarchy, the Work
+portfolio, and blog editorial coherence, on top of the v2.6.1
+mobile-navigation / blog-control / project-connected-articles
+base, the v2.5 RSS-removal / related-content / SEO-link-graph /
+reading-motion base, and the v2.5.1–v2.5.7 reading-instrument
+rounds. New in 2.7: the home scene is server-rendered into the
+static export (one crawlable h1, the capability vocabulary, the
+featured project names, the workflow stages, and repository
+links now exist in index.html instead of appearing only after
+client JavaScript); the home page is restructured around
+information priority — hero (identity + capability) → "What I
+can do" capabilities grid → "What I have actually built" featured
+projects → "How I work" nine-stage workflow → frameworks →
+direction; the Work scene becomes a full portfolio/research
+index (four featured systems plus four grouped sections, 13
+verified project entries, every card carrying real repository /
+notes / live destinations); the article cover joins the reading
+column (720px, centered — the 980px drift is gone) and gains a
+reversible enter/exit scroll reveal (the flow variant in the one
+MotionReveal observer — transform/opacity only, no layout shift,
+reduced-motion and print safe); the blog index cards carry
+clickable PROJECT · name chips that ride the existing deep-link
+project filter; the FreeIran article ships its designed cover;
+and verify:seo grows a home-content pass that reads the exported
+HTML exactly as a crawler receives it.
 
 ## Stack
 

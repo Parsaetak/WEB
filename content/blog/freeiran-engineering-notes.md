@@ -11,6 +11,11 @@ featured: false
 project: "freeiran"
 topics: ["Go", "deterministic testing", "storage", "systems"]
 related: ["building-under-constraints", "sheytan-the-local-first-laboratory"]
+cover:
+  src: "/blog/images/freeiran-cores.svg"
+  alt: "Three protocol cores converging into one abstraction above a checksummed chunk grid"
+  width: 1200
+  height: 630
 ---
 
 FreeIran is the most quietly engineered project in [the public archive](https://github.com/Parsaetak/FreeIran): a free, open-source VPN configuration manager for Windows, built around a shared Go engine for discovering, testing, maintaining, and running publicly available proxy configurations. It exists for environments where ordinary connectivity is heavily restricted — including Iran — and it is local-first in the strict sense: no account, no central backend, no cloud service, no remote telemetry. **(Fact — the repository's own description.)**

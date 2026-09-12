@@ -533,13 +533,23 @@ export default function LivingShell({
           activeScene
         }
       >
-        {urlReady && (
-          <SceneRegistry
-            scene={
-              activeScene
-            }
-          />
-        )}
+        {/*
+          * SCENE REGISTRY (v2.7): rendered on the server and during
+          * hydration with the default scene ("home"), so the home
+          * route's semantic content — the single h1, capabilities,
+          * featured projects, workflow — exists in the exported
+          * static HTML, not only after client JavaScript runs. The
+          * first client render matches the server render (the
+          * initial scene state is "home" on both), so hydration
+          * cannot mismatch; the URL-determined scene correction
+          * happens in the mount effect below, behind the loading
+          * screen, through the normal transition machinery.
+          */}
+        <SceneRegistry
+          scene={
+            activeScene
+          }
+        />
       </main>
 
       <SiteFooter />

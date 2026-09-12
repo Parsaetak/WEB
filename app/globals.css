@@ -1261,6 +1261,49 @@ span {
 }
 
 /*
+ * Variant: flow (v2.7) — reversible reveal for the article cover.
+ * The base transition declared for [data-revealed="true"] above is
+ * what animates the reveal; this block keeps the transition active
+ * in BOTH directions so leaving the viewport eases the cover back
+ * toward its quiet state instead of snapping. Transform and opacity
+ * only — the image's box never changes size, so there is no layout
+ * shift in either direction.
+ */
+.reveal-js [data-reveal="flow"] {
+  transform:
+    translate3d(
+      0,
+      calc(var(--reveal-shift) * 1.6),
+      0
+    )
+    scale(0.988);
+
+  opacity:
+    0.001;
+
+  transition:
+    opacity
+      var(--motion-medium)
+      var(--ease-out-soft),
+    transform
+      var(--motion-medium)
+      var(--ease-out-soft);
+}
+
+.reveal-js [data-reveal="flow"][data-revealed="true"] {
+  transform:
+    translate3d(
+      0,
+      0,
+      0
+    )
+    scale(1);
+
+  opacity:
+    1;
+}
+
+/*
  * The observer is one-shot: once revealed, an element keeps its state.
  * `data-reveal="instant"` skips the travel entirely (metadata rows and
  * other surfaces that should only fade).
@@ -1408,7 +1451,8 @@ span {
   .reveal-js [data-reveal="heading"],
   .reveal-js [data-reveal="quote"],
   .reveal-js [data-reveal="code"],
-  .reveal-js [data-reveal="fade"] {
+  .reveal-js [data-reveal="fade"],
+  .reveal-js [data-reveal="flow"] {
     transform:
       none;
   }
@@ -1461,6 +1505,21 @@ span {
     background: #ffffff !important;
 
     color: #111111 !important;
+  }
+
+  /*
+   * REVEAL SYSTEM ON PAPER (v2.7): print is a non-interactive
+   * medium — every reveal state must resolve to fully visible,
+   * including the reversible flow variant. Without this, an
+   * article cover the reader never scrolled to would print at
+   * opacity 0.001, and print is exactly the medium where a
+   * missing primary image is a content loss, not a motion state.
+   */
+  .reveal-js [data-reveal],
+  .reveal-js [data-reveal][data-revealed] {
+    opacity: 1 !important;
+
+    transform: none !important;
   }
 
   /*

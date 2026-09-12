@@ -51,6 +51,21 @@ const SITE_ORIGIN = "https://parsaetak.github.io/WEB";
  */
 const BASE_PATH = process.env.GITHUB_ACTIONS === "true" ? "/WEB" : "";
 
+/*
+ * Hash scenes of the world shell — interaction states, not
+ * documents (see LivingShell.tsx SCENES). Legal hrefs on the home
+ * route; never sitemap entries; exempt from in-page anchor
+ * resolution because the shell handles them through SceneUrlSync.
+ */
+const SCENE_HASHES = new Set([
+  "home",
+  "about",
+  "systems",
+  "magic",
+  "work",
+  "library"
+]);
+
 const failures = [];
 const checks = [];
 
@@ -334,6 +349,18 @@ async function verifyInteractivity() {
 
     for (const href of hrefs) {
       if (href.startsWith("#") && href.length > 1) {
+        /*
+         * SCENE HASHES (v2.7): #home, #about, #systems, #magic,
+         * #work, #library are interaction states of the world shell
+         * handled by SceneUrlSync — the same-document hash links the
+         * shell's own navigation emits. They are not document
+         * anchors and are exempt from in-page id resolution (they
+         * were invisible to this check before the home scene became
+         * server-rendered in v2.7).
+         */
+        if (SCENE_HASHES.has(href.slice(1))) {
+          continue;
+        }
         fragmentsChecked += 1;
         if (!documentIds.has(href.slice(1))) {
           fail(`${label}: in-page href "${href}" matches no id in the document`);
@@ -516,6 +543,87 @@ async function verifyNoRss() {
   }
 }
 
+/*
+ * HOME CONTENT VERIFICATION (v2.7).
+ *
+ * The home scene is now server-rendered into the static export, so
+ * its semantic content is crawlable. This check proves the
+ * information-priority release actually shipped: one meaningful h1,
+ * the capability vocabulary, the featured project names, the
+ * workflow stages, and crawlable links to the real destinations.
+ * It reads the same exported HTML a search engine receives.
+ */
+async function verifyHomeContent() {
+  const html = await readFile(path.join(OUT_DIR, "index.html"), "utf8");
+
+  /* Strip tags and scripts to the visible text surface. */
+  const visible = html
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<style[\s\S]*?<\/style>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ");
+
+  const h1Matches = html.match(/<h1[^>]*>/g) ?? [];
+  if (h1Matches.length !== 1) {
+    fail(`home: expected exactly one h1, found ${h1Matches.length}`);
+  } else {
+    pass("home: exactly one h1 in exported HTML");
+  }
+
+  const requiredPhrases = [
+    ["identity", "PARSA TAK"],
+    ["identity roles", "RESEARCHER"],
+    ["capability", "AI systems"],
+    ["capability", "Reasoning"],
+    ["capability", "Software"],
+    ["capability section", "What I can do"],
+    ["capability term", "Local AI"],
+    ["capability term", "Creative technology"],
+    ["projects section", "What I have actually built"],
+    ["project name", "SHEYTAN Local Agent"],
+    ["project name", "Universal Human Intelligence Test"],
+    ["project name", "FreeIran"],
+    ["project name", "RED MAGIC"],
+    ["workflow section", "How I work"],
+    ["workflow stage", "UNDERSTAND"],
+    ["workflow stage", "VERIFY"],
+    ["workflow stage", "SYNTHESIZE"],
+    ["workflow stage", "EVALUATE"]
+  ];
+
+  for (const [kind, phrase] of requiredPhrases) {
+    if (!visible.includes(phrase)) {
+      fail(`home: ${kind} phrase missing from visible HTML: "${phrase}"`);
+    }
+  }
+
+  if (!failures.some((entry) => entry.startsWith("home:"))) {
+    pass(
+      `home: ${requiredPhrases.length} capability/project/workflow phrase(s) present in visible HTML`
+    );
+  }
+
+  /* Crawlable destinations from the home scene. */
+  const requiredHrefs = [
+    "https://github.com/Parsaetak/SHEYTAN-local-agent",
+    "https://github.com/Parsaetak/FreeIran",
+    "https://github.com/Parsaetak/WEB",
+    "https://github.com/Parsaetak/Contents/tree/AI-Tests"
+  ];
+
+  for (const href of requiredHrefs) {
+    if (!html.includes(`href="${href}"`)) {
+      fail(`home: crawlable destination missing: ${href}`);
+    }
+  }
+
+  if (!failures.some((entry) => entry.includes("crawlable destination"))) {
+    pass("home: repository destinations crawlable in exported HTML");
+  }
+}
+
 async function main() {
   if (!existsSync(OUT_DIR)) {
     console.error("[seo] out/ does not exist — run `npm run build` first.");
@@ -537,10 +645,12 @@ async function main() {
   }
 
   await verifyPage("home", "index.html", {
-    title: "Parsa Tak — AI Systems, Reasoning & RED MAGIC",
+    title: "Parsa Tak — AI Systems, Reasoning, Software & RED MAGIC",
     canonical: `${SITE_ORIGIN}/`,
     types: ["WebSite", "Person", "WebPage"]
   });
+
+  await verifyHomeContent();
 
   await verifyPage("blog index", path.join("blog", "index.html"), {
     title: "Blog — Parsa Tak",

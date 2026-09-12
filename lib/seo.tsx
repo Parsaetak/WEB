@@ -35,17 +35,19 @@ export const SITE_NAME =
 export const PERSON_NAME = "Parsa Tak";
 
 export const SITE_DESCRIPTION =
-  "An evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.";
+  "An evolving laboratory for AI systems, reasoning architecture, software engineering, and creative technology — home of SHEYTAN, UHIT, FreeIran, and RED MAGIC.";
 
 export const SITE_IN_LANGUAGE = "en";
 
 /*
  * Home route title. One wording, shared by <title>, og:title, and
  * the WebPage structured data, so every representation of the home
- * route names it identically.
+ * route names it identically. "Software" joined the capability set
+ * in v2.7: the hero, the capabilities grid, and the featured
+ * projects all visibly present software engineering work.
  */
 export const HOME_TITLE =
-  "Parsa Tak — AI Systems, Reasoning & RED MAGIC";
+  "Parsa Tak — AI Systems, Reasoning, Software & RED MAGIC";
 
 /*
  * Stable @id anchors. Referenced from structured data emitted on
@@ -137,6 +139,9 @@ export function websiteEntity() {
  * WebPage entity for the home route (the world shell). The home
  * page is a single canonical document — the six hash scenes are an
  * interaction architecture inside it, not separate SEO documents.
+ * Since v2.7 the home scene is server-rendered, so the entity
+ * carries the same description the page visibly leads with, and
+ * names the featured projects the page actually presents.
  */
 export function homeWebPageEntity() {
   return {
@@ -144,6 +149,8 @@ export function homeWebPageEntity() {
     "@id": `${SITE_URL}/#webpage`,
     url: `${SITE_URL}/`,
     name: HOME_TITLE,
+    description:
+      "Parsa Tak — researcher, builder, programmer, writer, and artist working on AI systems, reasoning frameworks, local AI agents, software engineering, and creative technology. Featured systems: SHEYTAN Local Agent, UHIT, FreeIran, and RED MAGIC.",
     isPartOf: { "@id": WEBSITE_ID },
     about: { "@id": PERSON_ID },
     inLanguage: SITE_IN_LANGUAGE

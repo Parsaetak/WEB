@@ -59,12 +59,37 @@ export default function MotionReveal() {
           const solo = intersectingCount === 1;
 
           for (const entry of entries) {
-            if (!entry.isIntersecting) {
+            const element =
+              entry.target as HTMLElement;
+
+            /*
+             * FLOW VARIANT (v2.7): reversible reveal. Elements opted
+             * in with data-reveal="flow" (the article cover) keep
+             * their observation for the life of the page: entering
+             * the viewport marks them revealed, leaving it marks
+             * them hidden again, and CSS transitions both
+             * directions. Still one observer, still attribute
+             * writes only — no rAF loop, no React state. Because
+             * these elements never unobserve, the observer cost is
+             * bounded by the (tiny) number of flow elements; the
+             * one-shot law below continues to drain everything
+             * else.
+             */
+            if (
+              element.dataset.reveal ===
+              "flow"
+            ) {
+              element.dataset.revealed =
+                entry.isIntersecting
+                  ? "true"
+                  : "false";
+
               continue;
             }
 
-            const element =
-              entry.target as HTMLElement;
+            if (!entry.isIntersecting) {
+              continue;
+            }
 
             /*
              * Deterministic order: an explicit `data-reveal-order`

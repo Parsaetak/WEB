@@ -681,9 +681,8 @@
       0.28
     );
 }
-
 /* -------------------------------------------------------------------------- */
-/* Home exploration                                                           */
+/* Home section intro (shared: capabilities, projects, workflow)              */
 /* -------------------------------------------------------------------------- */
 
 .homeCapabilities {
@@ -695,7 +694,25 @@
     var(--line);
 }
 
-.homeIntroBlock {
+.homeProjects {
+  position:
+    relative;
+
+  border-bottom:
+    1px solid
+    var(--line);
+}
+
+.homeWorkflow {
+  position:
+    relative;
+
+  border-bottom:
+    1px solid
+    var(--line);
+}
+
+.homeSectionIntro {
   display:
     grid;
 
@@ -716,7 +733,7 @@
     72px;
 }
 
-.homeIntroCopy {
+.homeSectionLead {
   max-width:
     700px;
 
@@ -733,13 +750,17 @@
     break-word;
 }
 
-.homeExplorationField {
+/* -------------------------------------------------------------------------- */
+/* Home capabilities                                                          */
+/* -------------------------------------------------------------------------- */
+
+.homeCapabilityGrid {
   display:
     grid;
 
   grid-template-columns:
     repeat(
-      5,
+      4,
       minmax(
         0,
         1fr
@@ -758,58 +779,28 @@
     var(--line);
 }
 
-.homeExplorationItem {
+.homeCapability {
   position:
     relative;
 
   min-height:
-    138px;
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
+    178px;
 
   padding:
-    24px 14px;
+    26px 22px 30px;
 
-  color:
-    var(--text-muted);
-
-  font-family:
-    var(--font-mono);
-
-  font-size:
-    9px;
-
-  font-weight:
-    800;
-
-  letter-spacing:
-    0.12em;
-
-  line-height:
-    1.5;
-
-  text-align:
-    center;
-
-  text-transform:
-    uppercase;
-}
-
-.homeExplorationItem
-+ .homeExplorationItem {
   border-left:
     1px solid
     var(--line-soft);
 }
 
-.homeExplorationItem::before {
+.homeCapability:first-child,
+.homeCapability:nth-child(4n + 1) {
+  border-left:
+    0;
+}
+
+.homeCapability::before {
   content:
     "";
 
@@ -817,7 +808,7 @@
     absolute;
 
   left:
-    50%;
+    22px;
 
   top:
     0;
@@ -845,10 +836,639 @@
 
   transform:
     translate(
-      -50%,
+      0,
       -50%
     );
 }
+
+.homeCapabilityNumber {
+  display:
+    block;
+
+  color:
+    rgba(
+      255,
+      32,
+      32,
+      0.48
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+}
+
+.homeCapability h3 {
+  margin:
+    10px 0 0;
+
+  color:
+    var(--text);
+
+  font-size:
+    17px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    -0.015em;
+
+  line-height:
+    1.25;
+
+  overflow-wrap:
+    break-word;
+}
+
+.homeCapability p {
+  margin:
+    9px 0 0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    12.5px;
+
+  line-height:
+    1.7;
+
+  white-space:
+    normal;
+
+  overflow-wrap:
+    break-word;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Home featured projects                                                     */
+/* -------------------------------------------------------------------------- */
+
+.homeProjectList {
+  margin-top:
+    58px;
+
+  border-top:
+    1px solid
+    var(--line);
+}
+
+.homeProject {
+  position:
+    relative;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    76px
+    minmax(
+      0,
+      1fr
+    );
+
+  gap:
+    24px
+    34px;
+
+  padding:
+    30px 0;
+
+  border-bottom:
+    1px solid
+    var(--line-soft);
+}
+
+.homeProject::before {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  left:
+    0;
+
+  bottom:
+    -2px;
+
+  width:
+    0;
+
+  height:
+    1px;
+
+  background:
+    var(--red);
+
+  opacity:
+    0.55;
+
+  transition:
+    width
+    var(--motion-medium)
+    var(--ease-out-soft);
+}
+
+.homeProject:hover::before,
+.homeProject:focus-within::before {
+  width:
+    96px;
+}
+
+.homeProjectMeta {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    8px;
+}
+
+.homeProjectNumber {
+  color:
+    rgba(
+      255,
+      32,
+      32,
+      0.48
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+}
+
+.homeProjectCategory {
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+
+  line-height:
+    1.6;
+}
+
+.homeProjectMain {
+  min-width:
+    0;
+}
+
+.homeProjectTitle {
+  margin:
+    0;
+
+  color:
+    var(--text);
+
+  font-size:
+    clamp(
+      19px,
+      2vw,
+      23px
+    );
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    -0.03em;
+
+  line-height:
+    1.2;
+
+  overflow-wrap:
+    break-word;
+}
+
+.homeProjectCopy {
+  max-width:
+    620px;
+
+  margin:
+    10px 0 0;
+
+  color:
+    var(--text-soft);
+
+  font-size:
+    13.5px;
+
+  line-height:
+    1.75;
+
+  white-space:
+    normal;
+
+  overflow-wrap:
+    break-word;
+}
+
+.homeProjectTags {
+  display:
+    flex;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    7px;
+
+  margin-top:
+    16px;
+}
+
+.homeProjectTags span {
+  padding:
+    3px 9px;
+
+  border:
+    1px solid
+    var(--line);
+
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.12em;
+}
+
+.homeProjectLinks {
+  display:
+    flex;
+
+  flex-wrap:
+    wrap;
+
+  align-items:
+    baseline;
+
+  gap:
+    8px
+    22px;
+
+  margin-top:
+    18px;
+
+  padding-top:
+    16px;
+
+  border-top:
+    1px solid
+    var(--line-soft);
+}
+
+.homeProjectLink {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  min-height:
+    24px;
+
+  padding:
+    6px 2px;
+
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.13em;
+
+  text-decoration:
+    none;
+
+  white-space:
+    nowrap;
+
+  transition:
+    color
+    var(--motion-micro)
+    var(--ease-out-soft);
+}
+
+.homeProjectLink:hover,
+.homeProjectLink:focus-visible {
+  color:
+    var(--red-bright);
+}
+
+.homeProjectArchive {
+  display:
+    grid;
+
+  grid-template-columns:
+    auto
+    minmax(
+      0,
+      1fr
+    );
+
+  align-items:
+    baseline;
+
+  gap:
+    18px;
+
+  margin-top:
+    34px;
+
+  padding:
+    20px 22px;
+
+  border:
+    1px solid
+    var(--line);
+
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    9px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+
+  text-decoration:
+    none;
+
+  transition:
+    border-color
+    var(--motion-micro)
+    var(--ease-out-soft),
+    background
+    var(--motion-micro)
+    var(--ease-out-soft);
+}
+
+.homeProjectArchive strong {
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    11px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.13em;
+}
+
+.homeProjectArchive:hover,
+.homeProjectArchive:focus-visible {
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.38
+    );
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.045
+    );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Home workflow                                                              */
+/* -------------------------------------------------------------------------- */
+
+.homeWorkflowGrid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  margin-top:
+    58px;
+
+  border-top:
+    1px solid
+    var(--line);
+
+  border-bottom:
+    1px solid
+    var(--line);
+}
+
+.homeWorkflowStage {
+  position:
+    relative;
+
+  min-height:
+    124px;
+
+  padding:
+    24px 24px 28px;
+
+  border-left:
+    1px solid
+    var(--line-soft);
+}
+
+.homeWorkflowStage:first-child,
+.homeWorkflowStage:nth-child(3n + 1) {
+  border-left:
+    0;
+}
+
+.homeWorkflowStage::before {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  left:
+    24px;
+
+  top:
+    0;
+
+  width:
+    4px;
+
+  height:
+    4px;
+
+  border-radius:
+    50%;
+
+  background:
+    var(--red);
+
+  box-shadow:
+    0 0 8px
+      rgba(
+        255,
+        32,
+        32,
+        0.42
+      );
+
+  transform:
+    translate(
+      0,
+      -50%
+    );
+}
+
+.homeWorkflowStageHead {
+  display:
+    flex;
+
+  align-items:
+    baseline;
+
+  gap:
+    12px;
+}
+
+.homeWorkflowStageIndex {
+  color:
+    rgba(
+      255,
+      32,
+      32,
+      0.48
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+}
+
+.homeWorkflowStageHead strong {
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10.5px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.13em;
+}
+
+.homeWorkflowStageArrow {
+  margin-left:
+    auto;
+
+  color:
+    rgba(
+      255,
+      32,
+      32,
+      0.4
+    );
+
+  font-size:
+    11px;
+}
+
+.homeWorkflowStageCopy {
+  margin:
+    10px 0 0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    12.5px;
+
+  line-height:
+    1.7;
+
+  white-space:
+    normal;
+
+  overflow-wrap:
+    break-word;
+}
+
 
 /* -------------------------------------------------------------------------- */
 /* Home systems                                                               */
@@ -1574,7 +2194,7 @@ strong i {
       62%;
   }
 
-  .homeIntroBlock,
+  .homeSectionIntro,
   .homeSystemsIntro,
   .homeDirectionGrid,
   .homeFinalFrame {
@@ -1582,7 +2202,7 @@ strong i {
       1fr;
   }
 
-  .homeIntroCopy,
+  .homeSectionLead,
   .homeSystemsCopy,
   .homeDirectionCopy,
   .homeFinalFrame >
@@ -1594,10 +2214,10 @@ strong i {
       760px;
   }
 
-  .homeExplorationField {
+  .homeCapabilityGrid {
     grid-template-columns:
       repeat(
-        3,
+        2,
         minmax(
           0,
           1fr
@@ -1605,15 +2225,69 @@ strong i {
       );
   }
 
-  .homeExplorationItem:nth-child(4),
-  .homeExplorationItem:nth-child(5) {
+  .homeCapability:nth-child(n) {
+    border-left:
+      0;
+
     border-top:
       1px solid
       var(--line-soft);
   }
 
-  .homeExplorationItem:nth-child(4) {
+  .homeCapability:nth-child(even) {
     border-left:
+      1px solid
+      var(--line-soft);
+  }
+
+  .homeCapability:first-child,
+  .homeCapability:nth-child(-n + 2) {
+    border-top:
+      0;
+  }
+
+  .homeProject {
+    grid-template-columns:
+      64px
+      minmax(
+        0,
+        1fr
+      );
+
+    gap:
+      16px
+      22px;
+  }
+
+  .homeWorkflowGrid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(
+          0,
+          1fr
+        )
+      );
+  }
+
+  .homeWorkflowStage:nth-child(n) {
+    border-left:
+      0;
+
+    border-top:
+      1px solid
+      var(--line-soft);
+  }
+
+  .homeWorkflowStage:nth-child(even) {
+    border-left:
+      1px solid
+      var(--line-soft);
+  }
+
+  .homeWorkflowStage:first-child,
+  .homeWorkflowStage:nth-child(2) {
+    border-top:
       0;
   }
 }
@@ -1670,30 +2344,71 @@ strong i {
       none;
   }
 
-  .homeExplorationField {
+  .homeCapabilityGrid {
     grid-template-columns:
-      repeat(
-        2,
-        minmax(
-          0,
-          1fr
-        )
-      );
+      1fr;
   }
 
-  .homeExplorationItem {
+  .homeCapability,
+  .homeCapability:nth-child(n) {
     min-height:
-      100px;
+      0;
+
+    border-left:
+      0;
+
+    border-top:
+      1px solid
+      var(--line-soft);
   }
 
-  .homeExplorationItem:nth-child(3) {
-    border-left:
+  .homeCapability:first-child {
+    border-top:
       0;
   }
 
-  .homeExplorationItem:nth-child(5) {
-    grid-column:
-      1 / -1;
+  .homeProject {
+    grid-template-columns:
+      1fr;
+
+    gap:
+      14px;
+  }
+
+  .homeProjectLinks {
+    padding:
+      14px 0 0;
+  }
+
+  .homeProjectArchive {
+    grid-template-columns:
+      1fr;
+
+    gap:
+      8px;
+  }
+
+  .homeWorkflowGrid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .homeWorkflowStage,
+  .homeWorkflowStage:nth-child(n) {
+    min-height:
+      0;
+
+    border-left:
+      0;
+
+    border-top:
+      1px solid
+      var(--line-soft);
+  }
+
+  .homeWorkflowStage:first-child {
+    border-top:
+      0;
   }
 
   .homeSystemsOverviewLink {
@@ -1801,33 +2516,21 @@ strong i {
       520px;
   }
 
-  .homeExplorationField {
-    grid-template-columns:
-      1fr;
+  .homeCapability,
+  .homeWorkflowStage {
+    padding:
+      20px 16px 24px;
   }
 
-  .homeExplorationItem,
-  .homeExplorationItem:nth-child(4),
-  .homeExplorationItem:nth-child(5) {
-    min-height:
-      76px;
+  .homeProjectLinks {
+    flex-wrap:
+      wrap;
 
-    border-left:
-      0;
+    gap:
+      10px;
 
-    border-top:
-      1px solid
-      var(--line-soft);
-  }
-
-  .homeExplorationItem:first-child {
-    border-top:
-      0;
-  }
-
-  .homeExplorationItem:nth-child(5) {
-    grid-column:
-      auto;
+    padding:
+      14px 0 0;
   }
 
   .homeSystemsOverviewLink {
