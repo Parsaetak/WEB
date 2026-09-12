@@ -917,6 +917,64 @@
     uppercase;
 }
 
+/*
+ * NOTES line (v2.6.1) — the quiet destination label on linked
+ * project cards. It names the article/scene the card opens, so the
+ * affordance stays truthful at rest, not only on hover. It brightens
+ * with the card's existing data-linked hover state; informational
+ * cards never render it.
+ */
+.workProjectNotes {
+  display:
+    flex;
+
+  align-items:
+    baseline;
+
+  gap:
+    2px;
+
+  margin:
+    14px 0 0;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.34
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    7px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+
+  line-height:
+    1.4;
+
+  text-transform:
+    uppercase;
+
+  transition:
+    color
+    180ms
+    ease;
+}
+
+.workProject[data-linked="true"]:hover
+  .workProjectNotes {
+  color:
+    var(--red-hot);
+}
+
 .workProjectState {
   display:
     flex;

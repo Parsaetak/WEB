@@ -256,6 +256,17 @@
   min-width: max-content;
 }
 
+/*
+ * COMPACT MENU (v2.6.1) — the touch-first navigation mode. Hidden on
+ * desktop (the full SceneNavigator owns that space) and revealed by
+ * the ≤860px media query where the scene track stops being honest
+ * touch UI. Viewport capability via media queries only — no
+ * user-agent detection anywhere.
+ */
+.livingShellMenu {
+  display: none;
+}
+
 .livingShellBlog {
   color: var(--red-hot);
 
@@ -450,6 +461,27 @@
   }
 }
 
+/*
+ * COMPACT NAVIGATION MODE (v2.6.1) — ≤860px (phones and narrow
+ * portrait tablets). The full scene track stands down; the HUD
+ * carries brand + Blog chip + the compact menu trigger. The status
+ * label is already hidden at ≤1100px, so the freed grid column is
+ * reassigned: actions take the last column, aligned to the edge.
+ */
+@media (max-width: 860px) {
+  .livingShellHudActions {
+    grid-column: 3;
+
+    justify-self: end;
+
+    gap: 12px;
+  }
+
+  .livingShellMenu {
+    display: inline-flex;
+  }
+}
+
 @media (max-width: 1100px) {
   .livingShellHudInner {
     grid-template-columns:
@@ -477,10 +509,11 @@
 
 @media (max-width: 760px) {
   .livingShellHudInner {
-    width:
-      calc(
-        100% - 20px
-      );
+    width: calc(
+      100% - 20px -
+      env(safe-area-inset-left, 0px) -
+      env(safe-area-inset-right, 0px)
+    );
 
     min-height:
       68px;
@@ -531,6 +564,15 @@
 
   .livingShellBrandEye {
     width: 32px;
+  }
+
+  /*
+   * At phone widths the GitHub link lives inside the compact menu
+   * panel (one discoverable place, zero header crowding); the Blog
+   * chip and the menu trigger keep the HUD sparse and honest.
+   */
+  .livingShellGithub {
+    display: none;
   }
 
   .livingShellLegalInner {

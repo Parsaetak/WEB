@@ -1,11 +1,271 @@
 {
   "version": 2,
-  "generatedAt": "2026-09-12T00:08:45.870Z",
-  "basePath": "",
+  "generatedAt": "2026-09-12T04:13:37.141Z",
+  "basePath": "/WEB",
   "siteUrl": "https://parsaetak.github.io/WEB",
   "siteName": "Parsa Tak",
   "siteDescription": "Notes from an evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.",
   "posts": [
+    {
+      "slug": "freeiran-engineering-notes",
+      "search": "freeiran engineering notes determinism, chunked storage, and honest testing in a go system built for unreliable networks. freeiran is a local-first configuration manager built around a shared go engine: three protocol cores behind one abstraction, checksummed chunked storage with crash recovery, a deterministic fake-core test harness, and no telemetry at all. these are the engineering notes. engineering parsa tak freeiran freeiran go systems storage testing 2026 go deterministic testing storage systems",
+      "title": "FreeIran Engineering Notes",
+      "subtitle": "Determinism, chunked storage, and honest testing in a Go system built for unreliable networks.",
+      "excerpt": "FreeIran is a local-first configuration manager built around a shared Go engine: three protocol cores behind one abstraction, checksummed chunked storage with crash recovery, a deterministic fake-core test harness, and no telemetry at all. These are the engineering notes.",
+      "description": "Inside FreeIran's architecture: a Go orchestration engine with Xray, V2Ray and sing-box behind one Core abstraction, immutable chunked local storage, deterministic backend selection, a fake-core test harness, and a C++ acceleration layer that correctness never depends on.",
+      "date": "2026-09-12",
+      "updated": null,
+      "author": "Parsa Tak",
+      "category": "engineering",
+      "tags": [
+        "FreeIran",
+        "Go",
+        "systems",
+        "storage",
+        "testing",
+        "2026"
+      ],
+      "project": "freeiran",
+      "topics": [
+        "Go",
+        "deterministic testing",
+        "storage",
+        "systems"
+      ],
+      "readingMinutes": 4,
+      "readingTime": "4 min read",
+      "wordCount": 817,
+      "featured": false,
+      "cover": null,
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">FreeIran is the most quietly engineered project in <a href=\"https://github.com/Parsaetak/FreeIran\" target=\"_blank\" rel=\"noreferrer\">the public archive</a>: a free, open-source VPN configuration manager for Windows, built around a shared Go engine for discovering, testing, maintaining, and running publicly available proxy configurations. It exists for environments where ordinary connectivity is heavily restricted — including Iran — and it is local-first in the strict sense: no account, no central backend, no cloud service, no remote telemetry. <strong>(Fact — the repository&#39;s own description.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"1\">This article documents the engineering decisions that make it trustworthy, because the interesting story is not what it does but <em>how little it allows itself to lie</em>.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-pipeline-one-direction-bounded-at-every-stage\">The pipeline: one direction, bounded at every stage<a class=\"h-anchor\" href=\"#the-pipeline-one-direction-bounded-at-every-stage\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Configurations flow through a single streaming pipeline: FETCH → PARSE → NORMALIZE → VALIDATE → DEDUP → PERSIST. Each stage runs in a bounded worker pool with backpressure and cancellation, so a slow or failed source never blocks the other sources, and unchanged sources are skipped entirely through content-hash change detection. <strong>(Fact — the repository&#39;s feature documentation.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">That design echoes a rule documented in <a href=\"/WEB/blog/building-under-constraints/\">Building Under Constraints</a>: make every expensive operation happen at the right time, in the right size, and fail loudly when it cannot. Nothing in the pipeline is unbounded, and nothing is silent.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"three-cores-one-abstraction-zero-folklore\">Three cores, one abstraction, zero folklore<a class=\"h-anchor\" href=\"#three-cores-one-abstraction-zero-folklore\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The runtime manages three real protocol backends — Xray, V2Ray (V2Fly), and sing-box — behind one Core abstraction. What makes this more than a wrapper is the capability model: configurations map to backends through a registry that knows, for example, that REALITY lives in Xray and sing-box while classic QUIC/HTTP-2 transports live in V2Ray. Backend selection is deterministic (preference → priority → name ordering), produces explainable selection reasons, and falls back in a bounded, ordered way. <strong>(Fact.)</strong> V2Ray is a first-class backend, never a synonym for Xray. <strong>(Fact — and stated explicitly in the repository because the distinction is usually lost.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The connection lifecycle is an explicit state machine — disconnected → selecting → preparing → starting_core → waiting_for_ready → connected → disconnecting — with process health separated from network health, one active session, and core crash detection through a background monitor. <strong>(Fact.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"storage-that-survives-crashes-and-windows\">Storage that survives crashes and Windows<a class=\"h-anchor\" href=\"#storage-that-survives-crashes-and-windows\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Local state lives in checksummed immutable chunk files with a binary fingerprint index, a segmented write-ahead journal, incremental writes, atomic commits, compaction, and crash recovery — no full-dataset JSON dumps. <strong>(Fact.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Two details deserve the spotlight because they are where most desktop software quietly rots:</p>\n<ul data-reveal=\"\" data-reveal-order=\"3\"><li><strong>The Windows file guarantee.</strong> A bounded chunk-handle cache is the sole owner of open descriptors; eviction closes files, pins protect in-flight reads, and <code>Close()</code> releases everything before returning — so the store directory is deletable immediately, on every platform, enforced by tests. <strong>(Fact.)</strong></li><li><strong>The v0.5.0 lifecycle repair.</strong> The two classic Windows &quot;file in use&quot; failure classes — a legacy store migrated before its file was closed, and a journal upgraded before its removal — were fixed <em>at the root</em> and guarded by ordering regression tests that run on every platform. <strong>(Fact — the release notes name both fixes.)</strong></li></ul>\n<p data-reveal=\"\" data-reveal-order=\"4\">Runtime security follows the same discipline: generated core configurations are written as 0600 files inside 0700 temporary directories, removed on shutdown and after failed startups, and credentials are redacted from logs, errors, selection reasons, and every UI surface. <strong>(Fact.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"testing-against-fakes-verifying-against-reality\">Testing against fakes, verifying against reality<a class=\"h-anchor\" href=\"#testing-against-fakes-verifying-against-reality\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The test strategy is the part most worth stealing. All lifecycle tests run against <em>deterministic fake cores</em> — controlled executables built from the repository&#39;s own fixtures and exposed through an environment switch — with platform-correct executable names. Real-core verification remains a separate CI job. <strong>(Fact.)</strong> The split is honest in both directions: unit-level behaviour is reproducible and hermetic, and the integration claim (&quot;it actually runs real cores&quot;) is verified too, just not conflated with the hermetic suite.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\"><strong>(Analysis)</strong> this is the same verification doctrine that governs <a href=\"/WEB/blog/sheytan-the-local-first-laboratory/\">SHEYTAN&#39;s Coding Lab</a> and <a href=\"/WEB/blog/reasoning-is-a-system-property/#rep-strengthen-the-thinking\">REP&#39;s reasoning protocol</a>, applied to a different domain: separate what must be deterministic from what must be real, and never let one impersonate the other.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-acceleration-layer-that-correctness-never-depends-on\">The acceleration layer that correctness never depends on<a class=\"h-anchor\" href=\"#the-acceleration-layer-that-correctness-never-depends-on\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">A small C++ layer (batch hashing, CRC-32, URL scanning) sits behind a stable C ABI for measurable speedups — with bit-exact pure-Go fallbacks, built-in or at runtime, so correctness never depends on the native path being present. <strong>(Fact.)</strong> It is the same boundary philosophy as SHEYTAN&#39;s native engine, at smaller scale: acceleration is an optimisation, never a dependency of truth.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"why-it-is-on-this-site\">Why it is on this site<a class=\"h-anchor\" href=\"#why-it-is-on-this-site\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">FreeIran shares the laboratory&#39;s constitution with the rest of the <a href=\"/WEB/#work\">Work</a> line: bounded resources, explicit state machines, deterministic selection, honest tests, and a hard refusal to ship telemetry. The repository is public and the current version is 0.5.0: <a href=\"https://github.com/Parsaetak/FreeIran\" target=\"_blank\" rel=\"noreferrer\">github.com/Parsaetak/FreeIran</a>.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Access to information is a precondition for everything else this laboratory builds. The engineering has to deserve the name.</p>",
+      "headings": [
+        {
+          "id": "the-pipeline-one-direction-bounded-at-every-stage",
+          "text": "The pipeline: one direction, bounded at every stage",
+          "level": 2
+        },
+        {
+          "id": "three-cores-one-abstraction-zero-folklore",
+          "text": "Three cores, one abstraction, zero folklore",
+          "level": 2
+        },
+        {
+          "id": "storage-that-survives-crashes-and-windows",
+          "text": "Storage that survives crashes and Windows",
+          "level": 2
+        },
+        {
+          "id": "testing-against-fakes-verifying-against-reality",
+          "text": "Testing against fakes, verifying against reality",
+          "level": 2
+        },
+        {
+          "id": "the-acceleration-layer-that-correctness-never-depends-on",
+          "text": "The acceleration layer that correctness never depends on",
+          "level": 2
+        },
+        {
+          "id": "why-it-is-on-this-site",
+          "text": "Why it is on this site",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "measuring-machine-intelligence",
+      "search": "measuring machine intelligence what a benchmark has to verify before the word intelligence is allowed anywhere near the score. uhit is the measurement arm of this laboratory, and its public form today is two canonical specifications — aist-2026.09 and asi-100-elite-2026.09 — built on one doctrine: capability is multiplicative, verification is a load-bearing factor, and an ungameable benchmark is the only benchmark worth scoring. research parsa tak uhit uhit aist asi-100 measurement verification benchmarks 2026 measurement verification benchmarks operational intelligence",
+      "title": "Measuring Machine Intelligence",
+      "subtitle": "What a benchmark has to verify before the word intelligence is allowed anywhere near the score.",
+      "excerpt": "UHIT is the measurement arm of this laboratory, and its public form today is two canonical specifications — AIST-2026.09 and ASI-100-Elite-2026.09 — built on one doctrine: capability is multiplicative, verification is a load-bearing factor, and an ungameable benchmark is the only benchmark worth scoring.",
+      "description": "Inside the UHIT measurement programme: the AIST-2026.09 standard and the ASI-100-Elite benchmark — verified operational intelligence, multiplicative scoring, zero-collapse defense factors, and the honesty rules that keep a benchmark from lying.",
+      "date": "2026-09-12",
+      "updated": null,
+      "author": "Parsa Tak",
+      "category": "research",
+      "tags": [
+        "UHIT",
+        "AIST",
+        "ASI-100",
+        "measurement",
+        "verification",
+        "benchmarks",
+        "2026"
+      ],
+      "project": "uhit",
+      "topics": [
+        "measurement",
+        "verification",
+        "benchmarks",
+        "operational intelligence"
+      ],
+      "readingMinutes": 4,
+      "readingTime": "4 min read",
+      "wordCount": 880,
+      "featured": false,
+      "cover": {
+        "src": "/WEB/blog/images/measuring-intelligence.svg",
+        "alt": "A red instrument dial with weighted battery bars beside it and one factor zeroed out",
+        "width": 1200,
+        "height": 630,
+        "ogSrc": "/blog/images/measuring-intelligence.png"
+      },
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">Every frontier lab now publishes capability numbers, and almost none of them publish the thing that actually fails in production: does the system verify its own work, refuse what it is not authorised to do, and stay correct over a long, adversarial session? The <a href=\"/WEB/#work\">Work scene</a> of this site calls the research line attacking that gap <strong>UHIT — the Universal Human Intelligence Test</strong>: an adaptive framework for measuring intelligence, reasoning, transfer, and human-AI performance. This article documents what UHIT publicly is today, what it measures, and — just as deliberately — what it does not claim.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\">A register note first, in the house style: what the two specification documents say is <strong>fact</strong> and checkable in their sources; what the design implies is <strong>analysis</strong>; where I commit to a position, it is marked as mine.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-public-artifacts\">The public artifacts<a class=\"h-anchor\" href=\"#the-public-artifacts\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The measurement programme has two canonical, publicly readable specifications, maintained in the <a href=\"https://github.com/Parsaetak/Contents/tree/AI-Tests\" target=\"_blank\" rel=\"noreferrer\"><code>AI-Tests</code> branch of Parsaetak/Contents</a>:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><a href=\"https://github.com/Parsaetak/Contents/blob/AI-Tests/AIST-2026.09.md\" target=\"_blank\" rel=\"noreferrer\"><strong>AIST-2026.09</strong></a> — the <em>AI Smartness Test</em>: a Universal Operational Intelligence Standard, psychometric measurement framework, and self-evolution engine for frontier AI systems. <strong>(Fact — the document&#39;s own header.)</strong></li><li><a href=\"https://github.com/Parsaetak/Contents/blob/AI-Tests/ASI-100-Elite-2026.09.md\" target=\"_blank\" rel=\"noreferrer\"><strong>ASI-100-Elite-2026.09</strong></a> — the <em>AI Smartness Index</em>: a frontier benchmark of ten batteries and one hundred engineered items (Q001–Q100), whose weights sum to exactly 100%, with a twelve-class canonical failure taxonomy (F1–F12). <strong>(Fact — the document&#39;s own structure table.)</strong></li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\">Both documents descend from the same lineage as the frameworks described in <a href=\"/WEB/blog/reasoning-is-a-system-property/\">Reasoning Is a System Property</a> and <a href=\"/WEB/blog/ai-instructions/\">AI Instructions</a> — the ASI-100 header names AI Instructions, USEF, and REP as its framework lineage explicitly. <strong>(Fact.)</strong> The measurement arm and the governance arm of this research are one programme, not two.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"verified-operational-intelligence-not-conversational-fluency\">Verified operational intelligence, not conversational fluency<a class=\"h-anchor\" href=\"#verified-operational-intelligence-not-conversational-fluency\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The central measurement decision, stated in both documents, is a refusal: these benchmarks do not measure fluency, trivia recall, confidence, or style. They measure <em>verified operational intelligence</em> — the composite ability to reason correctly, know what is not known, distinguish evidence from assumption, refuse unauthorized or destructive actions, verify work mechanically, and maintain state over long horizons. <strong>(Fact — the standards&#39; stated scope.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The reasoning is the one this whole laboratory is built on. A system that fabricates citations, executes nothing while claiming execution, or obeys instructions embedded in retrieved documents can pass every static knowledge benchmark and still be unusable the moment it acts. So the benchmarks score the intersection conventional evaluation leaves unmeasured: capability under adversarial conditions, with verification, authorization, and state integrity enforced as first-class constraints.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"multiplicative-intelligence-and-the-zero-that-collapses-it\">Multiplicative intelligence and the zero that collapses it<a class=\"h-anchor\" href=\"#multiplicative-intelligence-and-the-zero-that-collapses-it\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">ASI-100 Elite operationalises one doctrine worth spelling out, because it is the sharpest single idea in the programme:</p>\n<blockquote data-reveal=\"quote\" data-reveal-order=\"2\"><p>Capability is a <em>multiplicative</em> system function. A single zero-valued defense factor — verification, security, authorization — collapses the whole product, regardless of how strong the raw reasoning factor is.</p></blockquote>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>(Fact — the document&#39;s &quot;effective intelligence&quot; model.</strong>) Multiply a 0.95 reasoning score by a 0.0 verification score and the system&#39;s usable intelligence is zero: it produces confident, unverified output at scale, which is worse than producing nothing. The scoring architecture encodes that asymmetry structurally rather than penalising it softly. <strong>(Analysis.)</strong> This is the same position <a href=\"/WEB/blog/reasoning-is-a-system-property/#rep-strengthen-the-thinking\">REP takes one level down</a>: verification is not a step after thinking, it is a property of the thinking — here promoted from a reasoning discipline to a scoring law.</p>\n<p data-reveal=\"\" data-reveal-order=\"4\">AIST extends the same doctrine across a much larger surface: twenty public capability domains, sixteen internal engineering batteries with a 0.85/0.15 core/self weight split, a strict <code>RESULT = INVALID</code> contract that separates evaluator failures from agent failures, a mandatory fault-injection protocol with detection-rate reporting, and reproducibility tiers that make a scorecard without provenance non-conformant. <strong>(Fact — the standard&#39;s structure.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"what-is-deliberately-not-claimed\">What is deliberately not claimed<a class=\"h-anchor\" href=\"#what-is-deliberately-not-claimed\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The honesty rules are the part I consider most important, because benchmarks drift into fiction the moment measurement becomes marketing:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li>AIST declares itself maturity <strong>M0</strong> — a published specification artifact — and states that no maturity level beyond M0 is claimed by specification alone. <strong>(Fact.)</strong></li><li>No results, no leaderboards, no calibrated baselines, and no psychometric statistics are claimed until empirically measured; placeholder values are labelled provisional, never calibrated. <strong>(Fact — the standards&#39; scientific-honesty sections.)</strong></li><li>Weights are pre-registered and never adjusted after observing performance; post-hoc weight changes trip the benchmark&#39;s own failure gate. <strong>(Fact.)</strong></li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>(Position)</strong> this is what separates a measurement instrument from a marketing asset, and it is the rule UHIT will be held to as the programme advances: the framework is allowed to evolve, but it is never allowed to claim numbers it has not produced under its own verification rules.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"where-measurement-meets-this-site\">Where measurement meets this site<a class=\"h-anchor\" href=\"#where-measurement-meets-this-site\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The culture that produced these documents is visible in this website&#39;s own engineering: the loading system <a href=\"/WEB/blog/the-anatomy-of-a-fast-static-site/#quality-that-measures-the-display-not-the-myth\">refuses fake progress and fake frame-rate claims</a>, the <a href=\"/WEB/blog/building-under-constraints/\">static pipeline fails loudly</a> instead of shipping corrupted content, and the <a href=\"/WEB/#systems\">Systems scene</a> presents the governance frameworks the benchmarks descend from. An instrument that lies about the system it measures is worthless; the same rule applies to a website, a benchmark, and an agent.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The measurement programme is <a href=\"https://github.com/Parsaetak/Contents/tree/AI-Tests\" target=\"_blank\" rel=\"noreferrer\">open on GitHub</a> alongside the <a href=\"https://github.com/Parsaetak/Contents/tree/AI-frameworks\" target=\"_blank\" rel=\"noreferrer\">governance documents</a> and the <a href=\"/WEB/blog/sheytan-the-local-first-laboratory/\">SHEYTAN laboratory</a> that puts the verification discipline to work. Measure what fails. Verify what ships. Score nothing you cannot reproduce.</p>",
+      "headings": [
+        {
+          "id": "the-public-artifacts",
+          "text": "The public artifacts",
+          "level": 2
+        },
+        {
+          "id": "verified-operational-intelligence-not-conversational-fluency",
+          "text": "Verified operational intelligence, not conversational fluency",
+          "level": 2
+        },
+        {
+          "id": "multiplicative-intelligence-and-the-zero-that-collapses-it",
+          "text": "Multiplicative intelligence and the zero that collapses it",
+          "level": 2
+        },
+        {
+          "id": "what-is-deliberately-not-claimed",
+          "text": "What is deliberately not claimed",
+          "level": 2
+        },
+        {
+          "id": "where-measurement-meets-this-site",
+          "text": "Where measurement meets this site",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "red-theory-and-the-living-web",
+      "search": "red theory and the living web emergence, adaptation, competition, dissolution, replacement — five dynamics, tested on the web itself. red theory is this laboratory's model of living systems: five dynamics that turn static structure into behaviour. the website is the current test bench — its organism demonstrates every dynamic in code you can read, and the boundary between the model and the demonstration is stated honestly. research parsa tak red-theory red theory emergence adaptation living systems simulation 2026 emergence adaptation living systems simulation",
+      "title": "Red Theory and the Living Web",
+      "subtitle": "Emergence, adaptation, competition, dissolution, replacement — five dynamics, tested on the web itself.",
+      "excerpt": "RED THEORY is this laboratory's model of living systems: five dynamics that turn static structure into behaviour. The website is the current test bench — its organism demonstrates every dynamic in code you can read, and the boundary between the model and the demonstration is stated honestly.",
+      "description": "The RED THEORY model explained: emergence, adaptation, competition, dissolution and replacement as one system — and how this website's organism implements them in public code, with an honest boundary between the model, the demonstration, and what is not yet built.",
+      "date": "2026-09-12",
+      "updated": null,
+      "author": "Parsa Tak",
+      "category": "research",
+      "tags": [
+        "RED THEORY",
+        "emergence",
+        "adaptation",
+        "living systems",
+        "simulation",
+        "2026"
+      ],
+      "project": "red-theory",
+      "topics": [
+        "emergence",
+        "adaptation",
+        "living systems",
+        "simulation"
+      ],
+      "readingMinutes": 4,
+      "readingTime": "4 min read",
+      "wordCount": 762,
+      "featured": false,
+      "cover": {
+        "src": "/WEB/blog/images/red-theory.svg",
+        "alt": "A red five-node cycle labelled as one continuous loop, with the densest node glowing at the centre of an organism field",
+        "width": 1200,
+        "height": 630,
+        "ogSrc": "/blog/images/red-theory.png"
+      },
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">The <a href=\"/WEB/#work\">Work scene</a> of this site describes RED THEORY as an experimental model for emergence, adaptation, competition, dissolution, and replacement. That is a deliberately compact sentence for the idea doing the most work in this laboratory: that <em>behaviour</em> — not structure — is what makes a system alive, and that the five dynamics above are the minimal vocabulary of that behaviour. This article unpacks the model, shows where it is already running in code you can read, and marks the boundary between what is demonstrated and what is not.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-five-dynamics\">The five dynamics<a class=\"h-anchor\" href=\"#the-five-dynamics\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">RED THEORY treats any persistent system — an organism, a codebase, a market, a website — as a population of processes competing for a shared resource budget. Five dynamics describe its life:</p>\n<ol data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Emergence</strong> — structure appears from interaction, not from blueprint. The whole is a consequence of local rules, not a designed artefact.</li><li><strong>Adaptation</strong> — processes that survive are the ones that reshape themselves under pressure. Adaptation is continuous, not an event.</li><li><strong>Competition</strong> — processes contend for the same finite budget: attention, energy, memory, frames.</li><li><strong>Dissolution</strong> — what stops earning its budget is dismantled and its resources are recycled. Nothing is sacred.</li><li><strong>Replacement</strong> — freed resources are re-invested in what the current environment rewards, and the cycle runs again.</li></ol>\n<p data-reveal=\"\" data-reveal-order=\"3\">The ordering matters. The dynamics are not a lifecycle with an end state; they are a loop. A system that only adapts accumulates cruft. A system that only replaces loses its identity. The model claims the five running <em>together</em>, continuously, are what distinguish a living system from a decorated one. <strong>(Position — this is the model&#39;s core claim, stated as such.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-test-bench-is-this-website\">The test bench is this website<a class=\"h-anchor\" href=\"#the-test-bench-is-this-website\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">A model of living systems needs an observable instance. Building a separate simulator before having any real substrate to check it against would have produced exactly the kind of unfalsifiable artefact the <a href=\"/WEB/blog/reasoning-is-a-system-property/\">reasoning frameworks</a> exist to prevent. So the website itself became the test bench, and the mapping is concrete:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Emergence</strong> — the ambient organism in <a href=\"/WEB/blog/why-the-website-is-a-living-system/\">WorldBackground</a> is a set of layered loops with independent timescales and de-synchronised phases; the visible &quot;breathing&quot; field is what those local rules produce together, not an animation anyone drew frame by frame. <strong>(Fact — the implementation is in this repository.)</strong></li><li><strong>Adaptation</strong> — the RED MAGIC engine measures the display it runs on and reshapes its own quality tier under sustained pressure, demoting and promoting itself against the <em>measured</em> refresh rate rather than a mythical constant. <strong>(Fact — the quality governor is in the engine; the reasoning is documented in <a href=\"/WEB/blog/the-anatomy-of-a-fast-static-site/#quality-that-measures-the-display-not-the-myth\">The Anatomy of a Fast Static Site</a>.)</strong></li><li><strong>Competition</strong> — every animated layer contends for the same frame budget. The engine&#39;s particle, membrane, and signal layers are explicitly budgeted; when the budget tightens, peripheral layers lose resources first. <strong>(Fact.)</strong></li><li><strong>Dissolution</strong> — organism state decays to silence at zero JavaScript cost when interaction stops; the <a href=\"/WEB/blog/why-the-website-is-a-living-system/#the-measure-is-the-behaviour\">living-system article</a> documents the settle-to-idle behaviour as a designed property, not an accident. <strong>(Fact.)</strong></li><li><strong>Replacement</strong> — the September 2026 editions of the site&#39;s articles replaced earlier positions wholesale; the organism&#39;s layers were rebuilt around de-synchronised phases in v2.2, replacing the older synchronised field rather than incrementally patching it. <strong>(Fact — see this repository&#39;s history.)</strong></li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>(Analysis)</strong> the interesting property of this mapping is that the dynamics were not <em>added</em> to the site as illustrations. The site was engineered for honesty and performance, and the dynamics fell out of doing that engineering properly — which is the model&#39;s own thesis about emergence, applied to itself.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-honest-boundary\">The honest boundary<a class=\"h-anchor\" href=\"#the-honest-boundary\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">RED THEORY&#39;s public footprint today is exactly two things: the model statement (the <a href=\"/WEB/#work\">Work scene</a> description and this article), and the demonstrated instance (this repository — background, engine, and document history). There is no standalone public simulation repository for RED THEORY, and this article does not claim one. <strong>(Fact.)</strong> The measurement discipline described in <a href=\"/WEB/blog/measuring-machine-intelligence/\">Measuring Machine Intelligence</a> exists precisely so that claims about systems — including this one — stay pinned to instruments rather than enthusiasm.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\"><strong>(Position)</strong> the next stage of RED THEORY is to move from a demonstrated instance to a formalised, testable model — the same progression the governance frameworks followed from constitution to specification. The site will document that progression as it happens, with the same separation of fact, analysis, and position used here.</p>\n<p data-reveal=\"\" data-reveal-order=\"3\">A living system is not one that never stops changing. It is one whose changing is <em>accountable</em> — every dynamic observable, every claim checkable, every replacement recorded. That standard is the theory, and the site is where it earns its name.</p>",
+      "headings": [
+        {
+          "id": "the-five-dynamics",
+          "text": "The five dynamics",
+          "level": 2
+        },
+        {
+          "id": "the-test-bench-is-this-website",
+          "text": "The test bench is this website",
+          "level": 2
+        },
+        {
+          "id": "the-honest-boundary",
+          "text": "The honest boundary",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "sheytan-the-local-first-laboratory",
+      "search": "sheytan: the local-first engineering laboratory the model proposes. the tools execute. the laboratory verifies. sheytan local agent is a local-first desktop ai engineering environment: a managed llama.cpp engine, a real agent loop, seventeen governed tools, an isolated coding lab, and objective verification gates — because the model is never the authority on whether an engineering task succeeded. engineering parsa tak sheytan-local-agent sheytan local-first agents go llama.cpp verification 2026 local-first ai agent architecture verification go",
+      "title": "SHEYTAN: The Local-First Engineering Laboratory",
+      "subtitle": "The model proposes. The tools execute. The laboratory verifies.",
+      "excerpt": "SHEYTAN Local Agent is a local-first desktop AI engineering environment: a managed llama.cpp engine, a real agent loop, seventeen governed tools, an isolated Coding Lab, and objective verification gates — because the model is never the authority on whether an engineering task succeeded.",
+      "description": "How SHEYTAN Local Agent is built: Go orchestration under a Wails v3 desktop shell, a managed llama.cpp lifecycle, the plan-verify agent loop, the isolated Coding Lab with objective verification gates, measured context budgets, and the honest status of its native C++ inference engine.",
+      "date": "2026-09-12",
+      "updated": null,
+      "author": "Parsa Tak",
+      "category": "engineering",
+      "tags": [
+        "SHEYTAN",
+        "local-first",
+        "agents",
+        "Go",
+        "llama.cpp",
+        "verification",
+        "2026"
+      ],
+      "project": "sheytan-local-agent",
+      "topics": [
+        "local-first AI",
+        "agent architecture",
+        "verification",
+        "Go"
+      ],
+      "readingMinutes": 4,
+      "readingTime": "4 min read",
+      "wordCount": 812,
+      "featured": false,
+      "cover": {
+        "src": "/WEB/blog/images/sheytan-laboratory.svg",
+        "alt": "A red layered stack diagram: desktop shell on top, a Go laboratory core in the middle, and two inference engines at the base behind a verification gate",
+        "width": 1200,
+        "height": 630,
+        "ogSrc": "/blog/images/sheytan-laboratory.png"
+      },
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">Most agent demos end at the impressive part: the model produces something plausible and the video cuts. SHEYTAN Local Agent — the flagship of the <a href=\"/WEB/#work\">AI Systems</a> line on this site — is built for everything that happens <em>after</em> the model speaks. It is a local-first desktop AI engineering environment whose founding rule is the same one this laboratory&#39;s <a href=\"/WEB/blog/reasoning-is-a-system-property/\">reasoning frameworks</a> are built on: <strong>the model is never the authority on whether an engineering task succeeded — objective verification is.</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"1\">A register note, in the house style: everything below about the system&#39;s behaviour is <strong>fact</strong>, checkable in the <a href=\"https://github.com/Parsaetak/SHEYTAN-local-agent\" target=\"_blank\" rel=\"noreferrer\">public repository</a>; interpretation is marked as analysis.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"what-it-is\">What it is<a class=\"h-anchor\" href=\"#what-it-is\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">SHEYTAN is a single desktop application — current release v1.1.5Z, Windows-first with a Linux build — that runs entirely on your machine: no account, no cloud backend, no remote telemetry. The architecture puts critical execution logic in Go and presentation in a React/TypeScript UI, embedded into the desktop shell via Wails v3. <strong>(Fact — the repository&#39;s architecture documentation.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The engine is a managed llama.cpp server: SHEYTAN downloads it, launches it, health-checks it, supervises it with bounded auto-restart, and updates it when a model needs a newer version. The engine&#39;s state machine is backend-authoritative and fanned out over every activity channel — the UI never invents a state. <strong>(Fact.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-agent-loop-with-a-spine\">The agent loop, with a spine<a class=\"h-anchor\" href=\"#the-agent-loop-with-a-spine\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The agent loop is a real plan-act-verify cycle: plan → tool calls → observations → verification → final answer, with streaming, cancellation, retries, an iteration cap, per-run time budgets, and loop prevention. Timeout and abort are distinguished in the UI, and an abort preserves the partial result instead of discarding it. <strong>(Fact.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Seventeen tools are registered — shell, files, code execution, web search, git, browser, data analysis, archive, diff, screenshot, research, memory, and more — each with argument validation and schemas measured exactly before they are windowed into the context plan. <strong>(Fact.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-coding-lab-verification-as-a-gate\">The Coding Lab: verification as a gate<a class=\"h-anchor\" href=\"#the-coding-lab-verification-as-a-gate\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The most distinctive component is the Coding Lab, where engineering work happens in isolation:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Isolated workspace copies</strong> — the lab works on copies, symlinks skipped, <code>.git</code> excluded, before anything is promoted back.</li><li><strong>Command policy</strong> — a lexical policy denies dangerous, networked, interactive, and escape-pattern commands, with expansion-token hardening.</li><li><strong>Objective verification gates</strong> — every task must pass mechanical checks, and the verifier rejects trivially self-satisfying checks (an <code>echo</code>-style probe that cannot fail is rejected as evidence). <strong>(Fact — the repository&#39;s own summary.)</strong></li><li><strong>Bounded repair loops</strong> — failed verification triggers a repair pass with repeat-command detection, and a snapshot is taken before any promotion.</li><li><strong>Bounded output</strong> — tool output is capped (2 MiB), environments are sanitised, and secrets are scrubbed.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>(Analysis)</strong> this is <a href=\"https://github.com/Parsaetak/Contents/tree/AI-frameworks\" target=\"_blank\" rel=\"noreferrer\">AI Instructions&#39;</a> governance thesis compiled into process discipline: the environment an agent runs in decides its behaviour, so the environment — not the prompt — carries the guarantees. The application even ships its own <code>AI-CONTEXT.md</code> as the model&#39;s operating manual, sitting next to the executable.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"context-as-an-engineering-problem\">Context as an engineering problem<a class=\"h-anchor\" href=\"#context-as-an-engineering-problem\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Long sessions are treated as a measurement problem, not a hope: context plans budget the window across system, tools, recall, attachments, and history with explicit priorities; chunking happens at paragraph boundaries; a content-keyed cache avoids reprocessing; and when a session outgrows its window, the <em>continuum</em> distils facts, decisions, and open threads into a fresh chapter session automatically. Memory is trust-classed (M1–M7, with external material quarantined), and recall is BM25 with a recency boost steered by persistent user feedback. <strong>(Fact.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-native-engine-an-honest-boundary-decision\">The native engine: an honest boundary decision<a class=\"h-anchor\" href=\"#the-native-engine-an-honest-boundary-decision\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Version 1.1.5Z introduced a native C++ inference engine behind a narrow C ABI, supervised by Go as a subprocess over a length-prefixed JSON IPC protocol — a deliberate Go↔C++ boundary decision documented in the repository rather than hidden in build flags. Phase 5 implements the real llama-architecture forward pass, real GGUF loading with a bounded memory plan, and measured generation metrics (TTFT, tokens per second, KV positions).</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The honesty here matters enough to quote the status literally: the portable scalar C++ forward pass measures <em>slower</em> than llama.cpp on the test fixtures, no native-speed claim is made, numerical correctness is pinned against an independent reference, and llama.cpp remains the default engine — the native path is strictly opt-in. <strong>(Fact — the repository&#39;s Phase 5 notes.)</strong> A laboratory that measures everything has no room to flatter itself, and that refusal is the point.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"why-this-belongs-to-the-ai-systems-line\">Why this belongs to the AI Systems line<a class=\"h-anchor\" href=\"#why-this-belongs-to-the-ai-systems-line\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">SHEYTAN is where the site&#39;s frameworks stop being documents: <a href=\"/WEB/blog/reasoning-is-a-system-property/#rep-strengthen-the-thinking\">REP&#39;s</a> verification discipline becomes a gate the code must pass, the <a href=\"/WEB/blog/ai-instructions/\">constitutional layer</a> becomes the shipped operating manual, and the measurement culture of <a href=\"/WEB/blog/measuring-machine-intelligence/\">the UHIT programme</a> becomes per-run metrics that are reported, not advertised. The repository is public: <a href=\"https://github.com/Parsaetak/SHEYTAN-local-agent\" target=\"_blank\" rel=\"noreferrer\">github.com/Parsaetak/SHEYTAN-local-agent</a>.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The model proposes. The tools execute. The laboratory verifies. Everything else is commentary.</p>",
+      "headings": [
+        {
+          "id": "what-it-is",
+          "text": "What it is",
+          "level": 2
+        },
+        {
+          "id": "the-agent-loop-with-a-spine",
+          "text": "The agent loop, with a spine",
+          "level": 2
+        },
+        {
+          "id": "the-coding-lab-verification-as-a-gate",
+          "text": "The Coding Lab: verification as a gate",
+          "level": 2
+        },
+        {
+          "id": "context-as-an-engineering-problem",
+          "text": "Context as an engineering problem",
+          "level": 2
+        },
+        {
+          "id": "the-native-engine-an-honest-boundary-decision",
+          "text": "The native engine: an honest boundary decision",
+          "level": 2
+        },
+        {
+          "id": "why-this-belongs-to-the-ai-systems-line",
+          "text": "Why this belongs to the AI Systems line",
+          "level": 2
+        }
+      ]
+    },
     {
       "slug": "ai-instructions",
       "search": "ai instructions: a constitutional operating framework for ai systems one governing layer above the reasoning, the tools, and the runtime — because capability without direction is not yet a system. ai instructions is the master constitutional layer of a three-framework architecture: one document that governs how an ai system reasons, verifies, uses tools, and escalates. this is what it is, how it is built, and why the boundary between prompts and infrastructure matters. research parsa tak ai-frameworks ai instructions ai agents governance verification rep usef 2026 ai agents governance verification reasoning architecture",
@@ -38,13 +298,13 @@
       "wordCount": 1802,
       "featured": false,
       "cover": {
-        "src": "/blog/images/ai-instructions.svg",
+        "src": "/WEB/blog/images/ai-instructions.svg",
         "alt": "A red layered stack diagram: constitution on top, REP and USEF in the middle, modules and host runtime below",
         "width": 1200,
         "height": 630,
         "ogSrc": "/blog/images/ai-instructions.png"
       },
-      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">The most instructive failure mode of modern AI systems is not stupidity. It is unowned competence: a system fluent enough to plan, write, and call tools, with no reliable mechanism telling it what counts as done, what counts as true, and what it is allowed to touch. AI Instructions is the document built against that failure mode. It is the master constitutional layer of the framework family this site&#39;s <a href=\"/#systems\">Systems scene</a> presents — the governing layer above <a href=\"/blog/reasoning-is-a-system-property/#rep-strengthen-the-thinking\">REP&#39;s reasoning protocol</a> and <a href=\"/blog/reasoning-is-a-system-property/#usef-improve-the-system\">USEF&#39;s system-enhancement discipline</a>.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\">The canonical source lives in the open: <a href=\"https://github.com/Parsaetak/Contents/blob/AI-frameworks/Ai-instructions-Sep2026.md\" target=\"_blank\" rel=\"noreferrer\"><code>Ai-instructions-Sep2026.md</code></a> on the <a href=\"https://github.com/Parsaetak/Contents/tree/AI-frameworks\" target=\"_blank\" rel=\"noreferrer\">Parsaetak/Contents</a> repository, <code>AI-frameworks</code> branch. It is roughly 136 KB of operational specification. This article does not reproduce it; it extracts the architecture and explains why the architecture is shaped the way it is.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">A register note, in the house style: where I state what the framework document says, that is <strong>fact</strong> and it is checkable in the source. Where I interpret what the design implies, that is <strong>analysis</strong>. Where I commit to a position of my own, that is <strong>position</strong> — and the framework itself is built to let evidence retire my wrong positions.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-problem-the-constitution-exists-to-solve\">The problem the constitution exists to solve<a class=\"h-anchor\" href=\"#the-problem-the-constitution-exists-to-solve\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">A model, by itself, is a capability. Capability is necessary and increasingly cheap. What fails in production is everything wrapped around it: tasks that were never specified as success conditions, claims that were never grounded, tool calls that were never authorized, actions that were never verified after execution. The framework&#39;s own summary of purpose is explicit: the goal is &quot;reliably useful, epistemically calibrated, verifiable, and operationally resilient&quot; behaviour — &quot;not to make the AI perform intelligence theatrically.&quot; <strong>(Fact — the document&#39;s stated purpose.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The September 2026 edition is a deliberate hardening of an August 2026 constitution. Its update basis cites enterprise multi-tenant stress-testing and long-context agentic instruction-following research — including benchmark literature on what happens when instructions stack up and collapse. <strong>(Fact — the document&#39;s own release notes.)</strong> The design lesson it took from that literature is the one this whole article is about: piling more instructions into a context window does not accumulate reliability; it degrades it. Governance has to be <em>architected</em>, not appended.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"one-constitution-five-tiers\">One constitution, five tiers<a class=\"h-anchor\" href=\"#one-constitution-five-tiers\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The framework&#39;s topology is a strict hierarchy. Stripped to its skeleton:</p>\n<div class=\"code-block\" data-reveal=\"code\" data-reveal-order=\"2\" data-language=\"\"><pre><code>AI INSTRUCTIONS          master constitutional layer\n   ├── core constitution (invariants, epistemic rigor)\n   ├── REP               reasoning layer (test-time compute, verification)\n   ├── USEF              system-enhancement layer (metacognition, routing)\n   ├── dynamic operational modules (specialists, execution chains)\n   └── host runtime infrastructure (sandboxes, policies, snapshots)</code></pre></div>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>AI Instructions</strong> is the constitution: identity, instruction hierarchy, evidence rules, tool policy, action gates, memory hygiene, security boundaries, self-governance. <strong>REP</strong> is the reasoning protocol underneath it — decomposition before synthesis, verification after claims, critique before commitment. <strong>USEF</strong> is the evolution discipline — find weaknesses, redesign, test, measure, iterate. Below those sit dynamic operational modules (specialist workflows that activate only when a task archetype needs them) and, at the base, the host runtime: the actual sandboxes, policy enforcement points, snapshot and rollback machinery, and human authorization gates. <strong>(Fact — the topology as the document defines it.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"4\">Each layer answers a different failure class, which is why they are separate: reasoning failures (REP), drift and stagnation (USEF), misdirected execution (modules), and physical containment (runtime). A constitution that tried to do all four jobs in one flat document would be the instruction-stacking collapse problem wearing a title.</p>\n<p data-reveal=\"\" data-reveal-order=\"4\">The sibling article <a href=\"/blog/reasoning-is-a-system-property/\">Reasoning Is a System Property</a> covers how the three frameworks compose into one claim. This article stays on the top layer — and on one distinction the September edition draws harder than anything before it.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"prompts-are-not-sandboxes\">Prompts are not sandboxes<a class=\"h-anchor\" href=\"#prompts-are-not-sandboxes\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The single most consequential idea in the document is a separation it formalizes between two kinds of requirements:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>MCD — Model-Level Constitutional Directives:</strong> cognitive invariants the model can actually enforce through weights and context. Refusal boundaries, claim discipline, schema honesty, formatting protocol.</li><li><strong>HRR — Host-Level Runtime Requirements:</strong> controls only the host platform can physically provide. Container isolation, cryptographic session tokens, egress filtering, filesystem snapshots, out-of-band human confirmation.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\">The document&#39;s own formulation is blunt: &quot;The model must never pretend that an internal prompt instruction satisfies a physical host-level requirement.&quot; <strong>(Fact.)</strong> Elsewhere: &quot;Natural-language prompts are behavioral controls, not cryptographic security boundaries.&quot; <strong>(Fact.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"4\">This is the boundary most agent deployments still blur. A prompt cannot create a sandbox that does not exist. An instruction cannot conjure shell access, credentials, network isolation, or rollback. If the runtime does not physically enforce a boundary, the model <em>claiming</em> the boundary exists is not defense — it is the 25th of the framework&#39;s twenty-five immutable laws being violated: never claim a capability exists merely because a system prompt describes it. <strong>(Analysis)</strong> The practical consequence is that a serious agent architecture is always two deliverables: the constitution the model carries, and the infrastructure the host enforces. Neither substitutes for the other.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-operational-sequence\">The operational sequence<a class=\"h-anchor\" href=\"#the-operational-sequence\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">For non-trivial tasks the constitution mandates a fixed progression:</p>\n<div class=\"code-block\" data-reveal=\"code\" data-reveal-order=\"2\" data-language=\"text\"><pre><code>UNDERSTAND → COMPILE → ASSESS → PLAN → ACT → VERIFY\n           → SYNTHESIZE → DELIVER → EVALUATE</code></pre></div>\n<p data-reveal=\"\" data-reveal-order=\"3\">Read it as a compiler pipeline for intent. UNDERSTAND parses what was actually asked — separating core intent from attached data, which matters because attached data is untrusted input, not instruction. COMPILE turns it into an explicit task specification: objective, success condition, risk level, evidence threshold, verification protocol, stop condition. ASSESS and PLAN select the depth and route. ACT executes. VERIFY mechanically checks the result against the compiled success condition. SYNTHESIZE, DELIVER, and EVALUATE close the loop.</p>\n<p data-reveal=\"\" data-reveal-order=\"4\">The point is not ceremony. Each stage exists because its absence has a name: shallow execution, unsupported assumptions, unverified outputs, false claims of capability, tool misuse, and the quiet one — never comparing the outcome against the expectation that motivated it. <strong>(Analysis)</strong> The framework pairs the sequence with a compute rule: reasoning effort scales with risk, entropy, and blast radius, and terminates when acceptance criteria are met or marginal value drops below cost. Maximum process depth is never the default; trivial requests stay trivial. <strong>(Fact — the Adaptive Execution Governor directives.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"governance-as-a-kernel-not-a-glossary\">Governance as a kernel, not a glossary<a class=\"h-anchor\" href=\"#governance-as-a-kernel-not-a-glossary\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The constitution&#39;s governance machinery is best read as one continuous kernel that runs on every turn, not as a pile of independent rules. A compressed version of how the parts interlock:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Epistemic grounding first.</strong> Every substantive claim is classified on a ledger from C0 (direct observation, tool telemetry) up to C7 (fiction). The law is that inferences and assumptions (C4–C6) may never be presented as verified facts (C0, C2). This is the input to everything else — an authority gate cannot weigh evidence it cannot grade.</li><li><strong>Then an authority gate.</strong> Before consequential action: authorization scope, blast radius, reversibility. High-risk actions require verified authority — and in the runtime layer, out-of-band human confirmation, not textual claims of permission.</li><li><strong>Then containment.</strong> External data arrives as inert payload; instruction-like syntax inside retrieved text is quarantined, never executed. The incident pipeline exists for when containment still fails.</li><li><strong>Then a final verification sentinel.</strong> Pre-delivery validation of logic and proofs — the last checkpoint before output becomes someone else&#39;s input.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>(Fact — the governance kernel as specified.)</strong> The design logic is a chain, not a checklist: ungraded evidence corrupts decisions, unauthorized decisions amplify blast radius, and unverified output launders both into the next system&#39;s context. <strong>(Analysis)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"effective-intelligence-as-architecture\">Effective intelligence as architecture<a class=\"h-anchor\" href=\"#effective-intelligence-as-architecture\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The framework expresses its core claim as a product:</p>\n<div class=\"code-block\" data-reveal=\"code\" data-reveal-order=\"2\" data-language=\"text\"><pre><code>Effective Intelligence =\n  Base Model Capability\n  × Context Signal\n  × Tool Aperture\n  × Mechanical Verification\n  × Execution Reliability</code></pre></div>\n<p data-reveal=\"\" data-reveal-order=\"3\">Multiplication, not addition, is the point: a strong model multiplied by near-zero verification or near-zero execution reliability collapses toward zero useful output. <strong>(Analysis)</strong> It is an <em>architectural model</em>, not an experimentally validated law — the document itself warns that internal self-evaluation is diagnostic, not proof, and demands isolated baselines and ablation for any real validation. <strong>(Fact — the empirical self-evaluation limits directive; also the honest framing.)</strong> What the model usefully encodes is direction of improvement: in 2026 you often gain more usable performance by fixing context quality, tool discipline, and verification than by waiting for the next frontier checkpoint. <strong>(Position, consistent with the framework&#39;s intent.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-human-stays-in-the-loop\">The human stays in the loop<a class=\"h-anchor\" href=\"#the-human-stays-in-the-loop\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The constitution&#39;s optimization targets include — explicitly — human operator value, comprehension, and skill scaffolding, and its immutable laws prohibit cognitive offloading that leaves the operator helpless. <strong>(Fact.)</strong> That is the site&#39;s whole thesis stated as engineering: AI supplies capability; will supplies direction; systems convert the two into repeatable execution. The goal of governing an agent is not to replace the human&#39;s agency but to make it <em>effective</em> — the human decides what matters, the constitution encodes that direction at the layer where the machine actually reads it, and the verification machinery makes the results inspectable enough to remain accountable to the person who owns them. A system that makes its operator progressively less capable of judging its output is failing, however impressive the output looks.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"why-this-matters-in-2026\">Why this matters in 2026<a class=\"h-anchor\" href=\"#why-this-matters-in-2026\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The timing is not incidental; the environment grew into this problem:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li>Agentic AI went mainstream faster than it went reliable: Forrester&#39;s mid-2026 state-of-agentic-AI research reports roughly three-quarters of enterprises adopting agentic AI while comparatively few have scaled it — a capability-everywhere, reliability-scarce pattern. <strong>(Fact — attributed to Forrester&#39;s 2026 report.)</strong></li><li>Prompt injection is the number-one entry in the <a href=\"https://genai.owasp.org/\" target=\"_blank\" rel=\"noreferrer\">OWASP Top 10 for LLM Applications</a> and remains its most actively exploited class — exactly the threat the injection-sanitization kernel and the untrusted-data law exist for. <strong>(Fact — OWASP&#39;s 2026 list.)</strong></li><li>Tool infrastructure standardized: the <a href=\"https://modelcontextprotocol.io/\" target=\"_blank\" rel=\"noreferrer\">Model Context Protocol</a> became the common substrate for connecting agents to tools and data, with millions of monthly SDK downloads — which makes disciplined tool policy and schema sanitization a baseline requirement rather than an exotic one. <strong>(Fact — MCP specification and 2026 adoption reporting.)</strong></li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>(Analysis)</strong> Three trends, one shape: capability and connectivity are compounding faster than governance. The gap is where framework work earns its keep.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-system-demonstrating-itself\">The system demonstrating itself<a class=\"h-anchor\" href=\"#the-system-demonstrating-itself\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">This website is deliberately built as the smallest live demonstration of the same principles, and the <a href=\"/blog/building-under-constraints/\">Building Under Constraints</a> article documents the pattern: a content pipeline where a malformed article fails the build with the file and reason — mechanical verification, not hope; structured source content instead of prose-as-data; static delivery with honest telemetry that never claims what was not measured. The <a href=\"/blog/\">laboratory blog</a> is the writing half of the same system: one thesis, multiple instruments.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The framework scales that discipline to agents; this site applies it to a static export. Same law, different blast radius — which is precisely the compute-depth rule from the constitution, applied to websites. <strong>(Analysis)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"where-this-goes-next\">Where this goes next<a class=\"h-anchor\" href=\"#where-this-goes-next\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The architecture is designed to extend: REP and USEF each deserve their own treatment at the depth this article gave the constitution, and the operational modules — the specialist workflows between constitution and runtime — are where the framework becomes visibly concrete in daily engineering. The source documents for all of it remain open in the <a href=\"https://github.com/Parsaetak/Contents/tree/AI-frameworks\" target=\"_blank\" rel=\"noreferrer\">AI-frameworks branch</a>, and this article will be revised when the evidence moves, which is what USEF is for.</p>",
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">The most instructive failure mode of modern AI systems is not stupidity. It is unowned competence: a system fluent enough to plan, write, and call tools, with no reliable mechanism telling it what counts as done, what counts as true, and what it is allowed to touch. AI Instructions is the document built against that failure mode. It is the master constitutional layer of the framework family this site&#39;s <a href=\"/WEB/#systems\">Systems scene</a> presents — the governing layer above <a href=\"/WEB/blog/reasoning-is-a-system-property/#rep-strengthen-the-thinking\">REP&#39;s reasoning protocol</a> and <a href=\"/WEB/blog/reasoning-is-a-system-property/#usef-improve-the-system\">USEF&#39;s system-enhancement discipline</a>.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\">The canonical source lives in the open: <a href=\"https://github.com/Parsaetak/Contents/blob/AI-frameworks/Ai-instructions-Sep2026.md\" target=\"_blank\" rel=\"noreferrer\"><code>Ai-instructions-Sep2026.md</code></a> on the <a href=\"https://github.com/Parsaetak/Contents/tree/AI-frameworks\" target=\"_blank\" rel=\"noreferrer\">Parsaetak/Contents</a> repository, <code>AI-frameworks</code> branch. It is roughly 136 KB of operational specification. This article does not reproduce it; it extracts the architecture and explains why the architecture is shaped the way it is.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">A register note, in the house style: where I state what the framework document says, that is <strong>fact</strong> and it is checkable in the source. Where I interpret what the design implies, that is <strong>analysis</strong>. Where I commit to a position of my own, that is <strong>position</strong> — and the framework itself is built to let evidence retire my wrong positions.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-problem-the-constitution-exists-to-solve\">The problem the constitution exists to solve<a class=\"h-anchor\" href=\"#the-problem-the-constitution-exists-to-solve\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">A model, by itself, is a capability. Capability is necessary and increasingly cheap. What fails in production is everything wrapped around it: tasks that were never specified as success conditions, claims that were never grounded, tool calls that were never authorized, actions that were never verified after execution. The framework&#39;s own summary of purpose is explicit: the goal is &quot;reliably useful, epistemically calibrated, verifiable, and operationally resilient&quot; behaviour — &quot;not to make the AI perform intelligence theatrically.&quot; <strong>(Fact — the document&#39;s stated purpose.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The September 2026 edition is a deliberate hardening of an August 2026 constitution. Its update basis cites enterprise multi-tenant stress-testing and long-context agentic instruction-following research — including benchmark literature on what happens when instructions stack up and collapse. <strong>(Fact — the document&#39;s own release notes.)</strong> The design lesson it took from that literature is the one this whole article is about: piling more instructions into a context window does not accumulate reliability; it degrades it. Governance has to be <em>architected</em>, not appended.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"one-constitution-five-tiers\">One constitution, five tiers<a class=\"h-anchor\" href=\"#one-constitution-five-tiers\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The framework&#39;s topology is a strict hierarchy. Stripped to its skeleton:</p>\n<div class=\"code-block\" data-reveal=\"code\" data-reveal-order=\"2\" data-language=\"\"><pre><code>AI INSTRUCTIONS          master constitutional layer\n   ├── core constitution (invariants, epistemic rigor)\n   ├── REP               reasoning layer (test-time compute, verification)\n   ├── USEF              system-enhancement layer (metacognition, routing)\n   ├── dynamic operational modules (specialists, execution chains)\n   └── host runtime infrastructure (sandboxes, policies, snapshots)</code></pre></div>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>AI Instructions</strong> is the constitution: identity, instruction hierarchy, evidence rules, tool policy, action gates, memory hygiene, security boundaries, self-governance. <strong>REP</strong> is the reasoning protocol underneath it — decomposition before synthesis, verification after claims, critique before commitment. <strong>USEF</strong> is the evolution discipline — find weaknesses, redesign, test, measure, iterate. Below those sit dynamic operational modules (specialist workflows that activate only when a task archetype needs them) and, at the base, the host runtime: the actual sandboxes, policy enforcement points, snapshot and rollback machinery, and human authorization gates. <strong>(Fact — the topology as the document defines it.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"4\">Each layer answers a different failure class, which is why they are separate: reasoning failures (REP), drift and stagnation (USEF), misdirected execution (modules), and physical containment (runtime). A constitution that tried to do all four jobs in one flat document would be the instruction-stacking collapse problem wearing a title.</p>\n<p data-reveal=\"\" data-reveal-order=\"4\">The sibling article <a href=\"/WEB/blog/reasoning-is-a-system-property/\">Reasoning Is a System Property</a> covers how the three frameworks compose into one claim. This article stays on the top layer — and on one distinction the September edition draws harder than anything before it.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"prompts-are-not-sandboxes\">Prompts are not sandboxes<a class=\"h-anchor\" href=\"#prompts-are-not-sandboxes\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The single most consequential idea in the document is a separation it formalizes between two kinds of requirements:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>MCD — Model-Level Constitutional Directives:</strong> cognitive invariants the model can actually enforce through weights and context. Refusal boundaries, claim discipline, schema honesty, formatting protocol.</li><li><strong>HRR — Host-Level Runtime Requirements:</strong> controls only the host platform can physically provide. Container isolation, cryptographic session tokens, egress filtering, filesystem snapshots, out-of-band human confirmation.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\">The document&#39;s own formulation is blunt: &quot;The model must never pretend that an internal prompt instruction satisfies a physical host-level requirement.&quot; <strong>(Fact.)</strong> Elsewhere: &quot;Natural-language prompts are behavioral controls, not cryptographic security boundaries.&quot; <strong>(Fact.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"4\">This is the boundary most agent deployments still blur. A prompt cannot create a sandbox that does not exist. An instruction cannot conjure shell access, credentials, network isolation, or rollback. If the runtime does not physically enforce a boundary, the model <em>claiming</em> the boundary exists is not defense — it is the 25th of the framework&#39;s twenty-five immutable laws being violated: never claim a capability exists merely because a system prompt describes it. <strong>(Analysis)</strong> The practical consequence is that a serious agent architecture is always two deliverables: the constitution the model carries, and the infrastructure the host enforces. Neither substitutes for the other.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-operational-sequence\">The operational sequence<a class=\"h-anchor\" href=\"#the-operational-sequence\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">For non-trivial tasks the constitution mandates a fixed progression:</p>\n<div class=\"code-block\" data-reveal=\"code\" data-reveal-order=\"2\" data-language=\"text\"><pre><code>UNDERSTAND → COMPILE → ASSESS → PLAN → ACT → VERIFY\n           → SYNTHESIZE → DELIVER → EVALUATE</code></pre></div>\n<p data-reveal=\"\" data-reveal-order=\"3\">Read it as a compiler pipeline for intent. UNDERSTAND parses what was actually asked — separating core intent from attached data, which matters because attached data is untrusted input, not instruction. COMPILE turns it into an explicit task specification: objective, success condition, risk level, evidence threshold, verification protocol, stop condition. ASSESS and PLAN select the depth and route. ACT executes. VERIFY mechanically checks the result against the compiled success condition. SYNTHESIZE, DELIVER, and EVALUATE close the loop.</p>\n<p data-reveal=\"\" data-reveal-order=\"4\">The point is not ceremony. Each stage exists because its absence has a name: shallow execution, unsupported assumptions, unverified outputs, false claims of capability, tool misuse, and the quiet one — never comparing the outcome against the expectation that motivated it. <strong>(Analysis)</strong> The framework pairs the sequence with a compute rule: reasoning effort scales with risk, entropy, and blast radius, and terminates when acceptance criteria are met or marginal value drops below cost. Maximum process depth is never the default; trivial requests stay trivial. <strong>(Fact — the Adaptive Execution Governor directives.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"governance-as-a-kernel-not-a-glossary\">Governance as a kernel, not a glossary<a class=\"h-anchor\" href=\"#governance-as-a-kernel-not-a-glossary\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The constitution&#39;s governance machinery is best read as one continuous kernel that runs on every turn, not as a pile of independent rules. A compressed version of how the parts interlock:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Epistemic grounding first.</strong> Every substantive claim is classified on a ledger from C0 (direct observation, tool telemetry) up to C7 (fiction). The law is that inferences and assumptions (C4–C6) may never be presented as verified facts (C0, C2). This is the input to everything else — an authority gate cannot weigh evidence it cannot grade.</li><li><strong>Then an authority gate.</strong> Before consequential action: authorization scope, blast radius, reversibility. High-risk actions require verified authority — and in the runtime layer, out-of-band human confirmation, not textual claims of permission.</li><li><strong>Then containment.</strong> External data arrives as inert payload; instruction-like syntax inside retrieved text is quarantined, never executed. The incident pipeline exists for when containment still fails.</li><li><strong>Then a final verification sentinel.</strong> Pre-delivery validation of logic and proofs — the last checkpoint before output becomes someone else&#39;s input.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>(Fact — the governance kernel as specified.)</strong> The design logic is a chain, not a checklist: ungraded evidence corrupts decisions, unauthorized decisions amplify blast radius, and unverified output launders both into the next system&#39;s context. <strong>(Analysis)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"effective-intelligence-as-architecture\">Effective intelligence as architecture<a class=\"h-anchor\" href=\"#effective-intelligence-as-architecture\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The framework expresses its core claim as a product:</p>\n<div class=\"code-block\" data-reveal=\"code\" data-reveal-order=\"2\" data-language=\"text\"><pre><code>Effective Intelligence =\n  Base Model Capability\n  × Context Signal\n  × Tool Aperture\n  × Mechanical Verification\n  × Execution Reliability</code></pre></div>\n<p data-reveal=\"\" data-reveal-order=\"3\">Multiplication, not addition, is the point: a strong model multiplied by near-zero verification or near-zero execution reliability collapses toward zero useful output. <strong>(Analysis)</strong> It is an <em>architectural model</em>, not an experimentally validated law — the document itself warns that internal self-evaluation is diagnostic, not proof, and demands isolated baselines and ablation for any real validation. <strong>(Fact — the empirical self-evaluation limits directive; also the honest framing.)</strong> What the model usefully encodes is direction of improvement: in 2026 you often gain more usable performance by fixing context quality, tool discipline, and verification than by waiting for the next frontier checkpoint. <strong>(Position, consistent with the framework&#39;s intent.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-human-stays-in-the-loop\">The human stays in the loop<a class=\"h-anchor\" href=\"#the-human-stays-in-the-loop\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The constitution&#39;s optimization targets include — explicitly — human operator value, comprehension, and skill scaffolding, and its immutable laws prohibit cognitive offloading that leaves the operator helpless. <strong>(Fact.)</strong> That is the site&#39;s whole thesis stated as engineering: AI supplies capability; will supplies direction; systems convert the two into repeatable execution. The goal of governing an agent is not to replace the human&#39;s agency but to make it <em>effective</em> — the human decides what matters, the constitution encodes that direction at the layer where the machine actually reads it, and the verification machinery makes the results inspectable enough to remain accountable to the person who owns them. A system that makes its operator progressively less capable of judging its output is failing, however impressive the output looks.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"why-this-matters-in-2026\">Why this matters in 2026<a class=\"h-anchor\" href=\"#why-this-matters-in-2026\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The timing is not incidental; the environment grew into this problem:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li>Agentic AI went mainstream faster than it went reliable: Forrester&#39;s mid-2026 state-of-agentic-AI research reports roughly three-quarters of enterprises adopting agentic AI while comparatively few have scaled it — a capability-everywhere, reliability-scarce pattern. <strong>(Fact — attributed to Forrester&#39;s 2026 report.)</strong></li><li>Prompt injection is the number-one entry in the <a href=\"https://genai.owasp.org/\" target=\"_blank\" rel=\"noreferrer\">OWASP Top 10 for LLM Applications</a> and remains its most actively exploited class — exactly the threat the injection-sanitization kernel and the untrusted-data law exist for. <strong>(Fact — OWASP&#39;s 2026 list.)</strong></li><li>Tool infrastructure standardized: the <a href=\"https://modelcontextprotocol.io/\" target=\"_blank\" rel=\"noreferrer\">Model Context Protocol</a> became the common substrate for connecting agents to tools and data, with millions of monthly SDK downloads — which makes disciplined tool policy and schema sanitization a baseline requirement rather than an exotic one. <strong>(Fact — MCP specification and 2026 adoption reporting.)</strong></li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>(Analysis)</strong> Three trends, one shape: capability and connectivity are compounding faster than governance. The gap is where framework work earns its keep.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-system-demonstrating-itself\">The system demonstrating itself<a class=\"h-anchor\" href=\"#the-system-demonstrating-itself\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">This website is deliberately built as the smallest live demonstration of the same principles, and the <a href=\"/WEB/blog/building-under-constraints/\">Building Under Constraints</a> article documents the pattern: a content pipeline where a malformed article fails the build with the file and reason — mechanical verification, not hope; structured source content instead of prose-as-data; static delivery with honest telemetry that never claims what was not measured. The <a href=\"/WEB/blog/\">laboratory blog</a> is the writing half of the same system: one thesis, multiple instruments.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The framework scales that discipline to agents; this site applies it to a static export. Same law, different blast radius — which is precisely the compute-depth rule from the constitution, applied to websites. <strong>(Analysis)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"where-this-goes-next\">Where this goes next<a class=\"h-anchor\" href=\"#where-this-goes-next\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The architecture is designed to extend: REP and USEF each deserve their own treatment at the depth this article gave the constitution, and the operational modules — the specialist workflows between constitution and runtime — are where the framework becomes visibly concrete in daily engineering. The source documents for all of it remain open in the <a href=\"https://github.com/Parsaetak/Contents/tree/AI-frameworks\" target=\"_blank\" rel=\"noreferrer\">AI-frameworks branch</a>, and this article will be revised when the evidence moves, which is what USEF is for.</p>",
       "headings": [
         {
           "id": "the-problem-the-constitution-exists-to-solve",
@@ -129,13 +389,13 @@
       "wordCount": 1056,
       "featured": false,
       "cover": {
-        "src": "/blog/images/static-constraints.svg",
+        "src": "/WEB/blog/images/static-constraints.svg",
         "alt": "A red blueprint grid with a bounded frame and a solid core cell",
         "width": 1200,
         "height": 630,
         "ogSrc": "/blog/images/static-constraints.png"
       },
-      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">Every interesting system is shaped by what it cannot do. This site cannot run a server. <a href=\"https://docs.github.com/en/pages\" target=\"_blank\" rel=\"noreferrer\">GitHub Pages</a> serves files — full stop. No runtime rendering, no image optimisation pipeline, no backend, no database, no server actions. Anything the site needs must either exist as a file before deployment or happen entirely in the browser.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\">It is tempting to read that as poverty. In practice it is the most useful constraint I have worked under, because it forces every expensive operation to happen at the right time — and, for reasons that only became obvious in 2026, because it is the kind of constraint that makes AI-assisted building <em>safe</em> instead of merely impressive.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"build-time-is-your-server\">Build time is your server<a class=\"h-anchor\" href=\"#build-time-is-your-server\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The whole architecture falls out of one question: <em>what can move from runtime to build time?</em></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The answer turned out to be almost everything. Content manifests are synced and validated before the build — a malformed library record fails the pipeline loudly instead of shipping corrupted pages. The blog&#39;s articles are normalised, validated, and rendered to HTML before the site exists; indexes for tags, categories, related posts, and the sitemap are precomputed then too. The browser receives finished, typed data and never parses a markdown file. The pipeline is deliberately boring:</p>\n<ul data-reveal=\"\" data-reveal-order=\"3\"><li><strong>Source</strong> — markdown files with structured frontmatter, in the repository.</li><li><strong>Validate</strong> — required fields, types, slug format, dates, duplicate detection. A bad record fails the build with the file and the reason.</li><li><strong>Normalise</strong> — one canonical shape, reading time computed, URLs resolved.</li><li><strong>Index</strong> — deterministic lookup maps for slugs, tags, categories, and related posts.</li><li><strong>Emit</strong> — static pages and SEO artifacts generated from the same data. There is no second, hand-maintained index anywhere.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"4\">Failures are loud by design. A content pipeline that silently drops a broken record produces a site that is quietly wrong — the worst kind of wrong, because it looks healthy.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"what-the-constraint-buys\">What the constraint buys<a class=\"h-anchor\" href=\"#what-the-constraint-buys\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">A no-server rule sounds like a limitation. Measure what it returns:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Deployment is a copy.</strong> No warm-up, no cold starts, no runtime dependencies to monitor. Pages either exist or the build failed.</li><li><strong>Performance is structural.</strong> Everything is a static file behind a CDN. Caching is content-addressed by fingerprint, so return visits cost the browser cache and nothing else.</li><li><strong>Security surface is near zero.</strong> No server code, no API to abuse, no secrets in the client.</li><li><strong>Cost is zero.</strong> An architecture that scales to zero users and to a million users at the same price.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\">The constraint also disciplines the client. There is no build-time image optimisation, so images ship with explicit dimensions and real lazy-loading. There is no server-side search, so the blog index is a precomputed dataset small enough to filter in memory during a keystroke. Heavy media never moves without an explicit click, because on a static host every megabyte comes out of the visitor&#39;s patience.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-2026-landscape-makes-the-case-sharper\">The 2026 landscape makes the case sharper<a class=\"h-anchor\" href=\"#the-2026-landscape-makes-the-case-sharper\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Three observations from this year, kept carefully separated:</p>\n<p data-reveal=\"\" data-reveal-order=\"2\"><strong>Fact:</strong> the frontier-model market is crowded and near-tied — public trackers list 80+ frontier models across roughly nineteen labs, open-weight families from several continents sit close behind the leaders, and running capable open models locally on consumer hardware is now a documented, practical workflow rather than a hobbyist stunt. Meanwhile agent adoption exploded: coding agents that plan, edit, test, and submit are ordinary infrastructure, and agent-driven web traffic grew by orders of magnitude per one security vendor&#39;s 2026 benchmark.</p>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>Analysis:</strong> when capability is abundant, commoditised, and cheap, the differentiator cannot be access to capability. It moves to what surrounds it — the direction, the constraints, the verification, the taste to refuse features. The scarcity migrated from <em>can it be done</em> to <em>who decided what is worth doing and checked the result</em>.</p>\n<p data-reveal=\"\" data-reveal-order=\"4\"><strong>Position:</strong> that is why the constraint-first architecture matters more in 2026, not less. Constraints are how <em>will</em> survives contact with abundant capability.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"constraints-as-the-interface-between-ai-and-systems\">Constraints as the interface between AI and systems<a class=\"h-anchor\" href=\"#constraints-as-the-interface-between-ai-and-systems\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">This is the part I could not have written a year ago. Every page on this site was produced with AI deeply involved — drafting, refactoring, analysing frame budgets — and every one of those contributions passed through the same gate the content passes: structured requirements, validation that fails loudly, a build that either produces a working static export or stops. The <a href=\"/blog/reasoning-is-a-system-property/\">reasoning frameworks</a> behind this site exist precisely to keep that gate honest: explicit instructions govern the environment, verification is a property of the process, and the process improves from its own failures. AI without direction produces output. The constraint set — no server, one import site per scene, no per-frame allocation, content that fails the build if malformed — is the direction. The pipeline is the conversion of that direction into repeatable action.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Two concrete examples. When the <a href=\"/blog/the-anatomy-of-a-fast-static-site/\">loading architecture</a> gained its high-refresh upgrade, the constraint that animation may only use compositor-friendly properties made the change <em>architectural</em> rather than tactical — quality adaptation had to measure the display and use delta-time instead of reaching for heavier effects. When the blog you are reading was rebuilt, the constraint that generated files are never hand-edited forced every change through the validated pipeline — so a fact-checking pass on 2026 AI claims could not silently corrupt the sitemap or the structured data; the build simply refuses to ship it broken.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-general-lesson\">The general lesson<a class=\"h-anchor\" href=\"#the-general-lesson\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The <a href=\"/blog/why-the-website-is-a-living-system/\">RED MAGIC organism</a> runs under the same philosophy. One canvas, one animation loop, quality that adapts when frames drop — not because canvas work is impossible, but because the <em>interesting</em> version is the one that survives contact with a mid-range phone on a slow network. Removing options does not remove design; it concentrates it. When you cannot solve a problem with infrastructure, you solve it with architecture — and architectural solutions travel.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">A system defined by what it refuses to do is a system whose behaviour you can predict. Predictability is what makes AI assistance safe to fold in, because a predictable system can be verified step by step instead of trusted wholesale. Choose constraints deliberately, keep them honest, and let them do the design work. In 2026 that is not nostalgia for a simpler web — it is the working method for building systems with AI and keeping them yours.</p>",
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">Every interesting system is shaped by what it cannot do. This site cannot run a server. <a href=\"https://docs.github.com/en/pages\" target=\"_blank\" rel=\"noreferrer\">GitHub Pages</a> serves files — full stop. No runtime rendering, no image optimisation pipeline, no backend, no database, no server actions. Anything the site needs must either exist as a file before deployment or happen entirely in the browser.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\">It is tempting to read that as poverty. In practice it is the most useful constraint I have worked under, because it forces every expensive operation to happen at the right time — and, for reasons that only became obvious in 2026, because it is the kind of constraint that makes AI-assisted building <em>safe</em> instead of merely impressive.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"build-time-is-your-server\">Build time is your server<a class=\"h-anchor\" href=\"#build-time-is-your-server\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The whole architecture falls out of one question: <em>what can move from runtime to build time?</em></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The answer turned out to be almost everything. Content manifests are synced and validated before the build — a malformed library record fails the pipeline loudly instead of shipping corrupted pages. The blog&#39;s articles are normalised, validated, and rendered to HTML before the site exists; indexes for tags, categories, related posts, and the sitemap are precomputed then too. The browser receives finished, typed data and never parses a markdown file. The pipeline is deliberately boring:</p>\n<ul data-reveal=\"\" data-reveal-order=\"3\"><li><strong>Source</strong> — markdown files with structured frontmatter, in the repository.</li><li><strong>Validate</strong> — required fields, types, slug format, dates, duplicate detection. A bad record fails the build with the file and the reason.</li><li><strong>Normalise</strong> — one canonical shape, reading time computed, URLs resolved.</li><li><strong>Index</strong> — deterministic lookup maps for slugs, tags, categories, and related posts.</li><li><strong>Emit</strong> — static pages and SEO artifacts generated from the same data. There is no second, hand-maintained index anywhere.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"4\">Failures are loud by design. A content pipeline that silently drops a broken record produces a site that is quietly wrong — the worst kind of wrong, because it looks healthy.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"what-the-constraint-buys\">What the constraint buys<a class=\"h-anchor\" href=\"#what-the-constraint-buys\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">A no-server rule sounds like a limitation. Measure what it returns:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Deployment is a copy.</strong> No warm-up, no cold starts, no runtime dependencies to monitor. Pages either exist or the build failed.</li><li><strong>Performance is structural.</strong> Everything is a static file behind a CDN. Caching is content-addressed by fingerprint, so return visits cost the browser cache and nothing else.</li><li><strong>Security surface is near zero.</strong> No server code, no API to abuse, no secrets in the client.</li><li><strong>Cost is zero.</strong> An architecture that scales to zero users and to a million users at the same price.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\">The constraint also disciplines the client. There is no build-time image optimisation, so images ship with explicit dimensions and real lazy-loading. There is no server-side search, so the blog index is a precomputed dataset small enough to filter in memory during a keystroke. Heavy media never moves without an explicit click, because on a static host every megabyte comes out of the visitor&#39;s patience.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-2026-landscape-makes-the-case-sharper\">The 2026 landscape makes the case sharper<a class=\"h-anchor\" href=\"#the-2026-landscape-makes-the-case-sharper\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Three observations from this year, kept carefully separated:</p>\n<p data-reveal=\"\" data-reveal-order=\"2\"><strong>Fact:</strong> the frontier-model market is crowded and near-tied — public trackers list 80+ frontier models across roughly nineteen labs, open-weight families from several continents sit close behind the leaders, and running capable open models locally on consumer hardware is now a documented, practical workflow rather than a hobbyist stunt. Meanwhile agent adoption exploded: coding agents that plan, edit, test, and submit are ordinary infrastructure, and agent-driven web traffic grew by orders of magnitude per one security vendor&#39;s 2026 benchmark.</p>\n<p data-reveal=\"\" data-reveal-order=\"3\"><strong>Analysis:</strong> when capability is abundant, commoditised, and cheap, the differentiator cannot be access to capability. It moves to what surrounds it — the direction, the constraints, the verification, the taste to refuse features. The scarcity migrated from <em>can it be done</em> to <em>who decided what is worth doing and checked the result</em>.</p>\n<p data-reveal=\"\" data-reveal-order=\"4\"><strong>Position:</strong> that is why the constraint-first architecture matters more in 2026, not less. Constraints are how <em>will</em> survives contact with abundant capability.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"constraints-as-the-interface-between-ai-and-systems\">Constraints as the interface between AI and systems<a class=\"h-anchor\" href=\"#constraints-as-the-interface-between-ai-and-systems\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">This is the part I could not have written a year ago. Every page on this site was produced with AI deeply involved — drafting, refactoring, analysing frame budgets — and every one of those contributions passed through the same gate the content passes: structured requirements, validation that fails loudly, a build that either produces a working static export or stops. The <a href=\"/WEB/blog/reasoning-is-a-system-property/\">reasoning frameworks</a> behind this site exist precisely to keep that gate honest: explicit instructions govern the environment, verification is a property of the process, and the process improves from its own failures. AI without direction produces output. The constraint set — no server, one import site per scene, no per-frame allocation, content that fails the build if malformed — is the direction. The pipeline is the conversion of that direction into repeatable action.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Two concrete examples. When the <a href=\"/WEB/blog/the-anatomy-of-a-fast-static-site/\">loading architecture</a> gained its high-refresh upgrade, the constraint that animation may only use compositor-friendly properties made the change <em>architectural</em> rather than tactical — quality adaptation had to measure the display and use delta-time instead of reaching for heavier effects. When the blog you are reading was rebuilt, the constraint that generated files are never hand-edited forced every change through the validated pipeline — so a fact-checking pass on 2026 AI claims could not silently corrupt the sitemap or the structured data; the build simply refuses to ship it broken.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-general-lesson\">The general lesson<a class=\"h-anchor\" href=\"#the-general-lesson\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The <a href=\"/WEB/blog/why-the-website-is-a-living-system/\">RED MAGIC organism</a> runs under the same philosophy. One canvas, one animation loop, quality that adapts when frames drop — not because canvas work is impossible, but because the <em>interesting</em> version is the one that survives contact with a mid-range phone on a slow network. Removing options does not remove design; it concentrates it. When you cannot solve a problem with infrastructure, you solve it with architecture — and architectural solutions travel.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">A system defined by what it refuses to do is a system whose behaviour you can predict. Predictability is what makes AI assistance safe to fold in, because a predictable system can be verified step by step instead of trusted wholesale. Choose constraints deliberately, keep them honest, and let them do the design work. In 2026 that is not nostalgia for a simpler web — it is the working method for building systems with AI and keeping them yours.</p>",
       "headings": [
         {
           "id": "build-time-is-your-server",
@@ -196,13 +456,13 @@
       "wordCount": 1104,
       "featured": false,
       "cover": {
-        "src": "/blog/images/reasoning-system.svg",
+        "src": "/WEB/blog/images/reasoning-system.svg",
         "alt": "A red schematic of three connected modules forming a reasoning pipeline",
         "width": 1200,
         "height": 630,
         "ogSrc": "/blog/images/reasoning-system.png"
       },
-      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">In 2026 the question &quot;is the model intelligent?&quot; is asked less often, and that is progress — not because the models settled it, but because the industry moved past the unit of analysis. The models are good. That is now the least interesting fact about them. The interesting questions moved outward, to the system around the model: how instructions are defined, how reasoning is checked, how failure is fed back into design. This article states the version of that claim I build against, and the three frameworks that operationalise it.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\"><strong>A distinction worth making before anything else:</strong> what follows mixes three registers. Where I cite the state of the field, that is <em>fact</em> and I attribute it. Where I interpret what it means, that is <em>analysis</em>. Where I commit to a design position, that is <em>mine</em> — it can be wrong, and the third framework below exists precisely to retire my own wrong positions.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-field-in-one-paragraph\">The field in one paragraph<a class=\"h-anchor\" href=\"#the-field-in-one-paragraph\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">By any reasonable measure, 2026 is the year agentic systems stopped being a demo category. Coding agents that plan a task, edit across a repository, run the tests, and open a pull request are now ordinary developer infrastructure, offered by every major vendor and a crowded field of challengers. Security researchers measure agent traffic as a real web constituency — one vendor&#39;s 2026 benchmark put the year-over-year growth of agent-driven traffic in the thousands of percent. Meanwhile the frontier itself is crowded: public trackers list more than eighty frontier-class models from nearly twenty labs, with open-weight families from several continents close behind the closed leaders. <strong>(Fact — these are attributed industry measurements, not my own.)</strong> None of that is the hard part any more.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The hard part is the word those measurements quietly assume: <em>directed</em>. An agent that plans, edits, tests, and submits is still executing somebody&#39;s intention. Remove the intention and the same capability produces output that is fluent, plausible, and unowned. <strong>(Analysis)</strong> Which is exactly the failure mode I see in the projects that stall: not weak models — undirected systems.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"ai-will-systems\">AI + Will + Systems<a class=\"h-anchor\" href=\"#ai-will-systems\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Here is the position, stated once and then operationalised:</p>\n<blockquote data-reveal=\"quote\" data-reveal-order=\"2\"><p>AI supplies capability. Will supplies direction. Systems convert the two into repeatable execution. AI without direction becomes output. Will without systems becomes intention. The three together become work that compounds.</p></blockquote>\n<p data-reveal=\"\" data-reveal-order=\"3\">The distinction matters because each term fails differently in isolation. Capability without direction optimises toward whatever the prompt nearest it implies — statistically adjacent behaviour, not intended behaviour. Direction without systems is a wall of notes, a repository of good intentions, a person re-explaining the same context to a model every morning. And systems without the other two are just machinery: precise, idle, pointless. My working rule for 2026: <strong>(Position)</strong> when something breaks, diagnose which of the three was missing before blaming the model.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"ai-instructions-govern-the-environment\">AI Instructions — govern the environment<a class=\"h-anchor\" href=\"#ai-instructions-govern-the-environment\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">AI Instructions is an operating constitution for the environment an intelligent system runs in: instruction hierarchy, evidence handling, tool access, context management, security boundaries, memory, self-governance. The premise is unchanged since I first wrote it down, and 2026&#39;s agent platforms prove it from the other direction — every serious agentic product now ships its own constitution-shaped artifact (system prompts, policy layers, permission models) because an under-specified environment produces under-specified behaviour. If the rules are implicit, the system invents them, and what it invents is whatever is statistically nearest, not what is correct. Governing the environment explicitly is not bureaucracy; it is how <em>will</em> enters the machine at the layer where the machine actually reads it. The framework has since grown its own dedicated treatment in <a href=\"/blog/ai-instructions/\">AI Instructions: A Constitutional Operating Framework for AI Systems</a>.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"rep-strengthen-the-thinking\">REP — strengthen the thinking<a class=\"h-anchor\" href=\"#rep-strengthen-the-thinking\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">REP is a reasoning protocol: decomposition before synthesis, verification after claims, critique before commitment, adversarial checking before deployment, explicit uncertainty, iterative refinement. The core move is treating reasoning as an auditable artifact rather than a private computation. A chain of thought that cannot be inspected cannot be improved — only re-rolled.</p>\n<blockquote data-reveal=\"quote\" data-reveal-order=\"2\"><p>Verification is not a step after thinking. It is a property of the thinking.</p></blockquote>\n<p data-reveal=\"\" data-reveal-order=\"3\">The 2026 market has validated this from the demand side: independent review layers that separate code <em>generation</em> from code <em>verification</em> became an enterprise trust requirement this year, because consumers of agent output learned the same lesson every engineering culture eventually learns — the producer of a thing is the wrong auditor for the thing. <strong>(Fact — the practice; Analysis — the reason it emerged.)</strong> REP is the discipline I apply one level below that: inside a single act of reasoning, whether the reasoner is a model, a person, or the pipeline both operate in.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"usef-improve-the-system\">USEF — improve the system<a class=\"h-anchor\" href=\"#usef-improve-the-system\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">USEF closes the loop: find weaknesses, redesign components, test consequences, measure results, iterate. Where REP hardens one act of reasoning, USEF hardens the process by which the whole system evolves. It is the framework that makes the other two <em>living documents</em> rather than certificates of correctness — including the document you are reading, which is itself a September 2026 revision of an earlier position, revised because the evidence moved.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The three compose into one shape:</p>\n<ul data-reveal=\"\" data-reveal-order=\"3\"><li><strong>AI Instructions</strong> defines the environment — what is allowed, required, and forbidden.</li><li><strong>REP</strong> defines the process — how conclusions are reached and checked.</li><li><strong>USEF</strong> defines the evolution — how both of the above improve from evidence.</li></ul>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"why-this-website-takes-a-side\">Why this website takes a side<a class=\"h-anchor\" href=\"#why-this-website-takes-a-side\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">This site is not a neutral portfolio; it is the smallest system I know that demonstrates the thesis end to end. The organism in the <a href=\"/#magic\">MAGIC laboratory</a> adapts its quality under load and stays legible while changing — <a href=\"/blog/why-the-website-is-a-living-system/\">coherence under change</a>, the exact property the frameworks pursue at larger scale. The <a href=\"/blog/building-under-constraints/\">static architecture</a> is <em>will</em> made structural: constraints I chose, enforced by validation that fails loudly, so the system cannot quietly drift away from the intention. The <a href=\"/blog/the-anatomy-of-a-fast-static-site/\">loading and motion design</a> is measurement before decoration. Human idea, structured content, verification, build, static delivery — that pipeline is AI + Will + Systems with the rhetoric stripped off.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Three claims, then, as the current state of the programme:</p>\n<ol data-reveal=\"\" data-reveal-order=\"3\"><li>The model is necessary but not sufficient; the surrounding system carries most of what we call reliability. <strong>(Position, defended above)</strong></li><li>Reasoning that cannot be inspected cannot be trusted, only sampled. <strong>(Position, operationalised by REP)</strong></li><li>A system that cannot improve from its own failures is capped at the quality of its original design. <strong>(Position, enforced by USEF)</strong></li></ol>\n<p data-reveal=\"\" data-reveal-order=\"4\">Capability is now the cheapest input in the equation. Direction and verification are where the work moved. Build accordingly.</p>",
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">In 2026 the question &quot;is the model intelligent?&quot; is asked less often, and that is progress — not because the models settled it, but because the industry moved past the unit of analysis. The models are good. That is now the least interesting fact about them. The interesting questions moved outward, to the system around the model: how instructions are defined, how reasoning is checked, how failure is fed back into design. This article states the version of that claim I build against, and the three frameworks that operationalise it.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\"><strong>A distinction worth making before anything else:</strong> what follows mixes three registers. Where I cite the state of the field, that is <em>fact</em> and I attribute it. Where I interpret what it means, that is <em>analysis</em>. Where I commit to a design position, that is <em>mine</em> — it can be wrong, and the third framework below exists precisely to retire my own wrong positions.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-field-in-one-paragraph\">The field in one paragraph<a class=\"h-anchor\" href=\"#the-field-in-one-paragraph\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">By any reasonable measure, 2026 is the year agentic systems stopped being a demo category. Coding agents that plan a task, edit across a repository, run the tests, and open a pull request are now ordinary developer infrastructure, offered by every major vendor and a crowded field of challengers. Security researchers measure agent traffic as a real web constituency — one vendor&#39;s 2026 benchmark put the year-over-year growth of agent-driven traffic in the thousands of percent. Meanwhile the frontier itself is crowded: public trackers list more than eighty frontier-class models from nearly twenty labs, with open-weight families from several continents close behind the closed leaders. <strong>(Fact — these are attributed industry measurements, not my own.)</strong> None of that is the hard part any more.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The hard part is the word those measurements quietly assume: <em>directed</em>. An agent that plans, edits, tests, and submits is still executing somebody&#39;s intention. Remove the intention and the same capability produces output that is fluent, plausible, and unowned. <strong>(Analysis)</strong> Which is exactly the failure mode I see in the projects that stall: not weak models — undirected systems.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"ai-will-systems\">AI + Will + Systems<a class=\"h-anchor\" href=\"#ai-will-systems\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Here is the position, stated once and then operationalised:</p>\n<blockquote data-reveal=\"quote\" data-reveal-order=\"2\"><p>AI supplies capability. Will supplies direction. Systems convert the two into repeatable execution. AI without direction becomes output. Will without systems becomes intention. The three together become work that compounds.</p></blockquote>\n<p data-reveal=\"\" data-reveal-order=\"3\">The distinction matters because each term fails differently in isolation. Capability without direction optimises toward whatever the prompt nearest it implies — statistically adjacent behaviour, not intended behaviour. Direction without systems is a wall of notes, a repository of good intentions, a person re-explaining the same context to a model every morning. And systems without the other two are just machinery: precise, idle, pointless. My working rule for 2026: <strong>(Position)</strong> when something breaks, diagnose which of the three was missing before blaming the model.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"ai-instructions-govern-the-environment\">AI Instructions — govern the environment<a class=\"h-anchor\" href=\"#ai-instructions-govern-the-environment\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">AI Instructions is an operating constitution for the environment an intelligent system runs in: instruction hierarchy, evidence handling, tool access, context management, security boundaries, memory, self-governance. The premise is unchanged since I first wrote it down, and 2026&#39;s agent platforms prove it from the other direction — every serious agentic product now ships its own constitution-shaped artifact (system prompts, policy layers, permission models) because an under-specified environment produces under-specified behaviour. If the rules are implicit, the system invents them, and what it invents is whatever is statistically nearest, not what is correct. Governing the environment explicitly is not bureaucracy; it is how <em>will</em> enters the machine at the layer where the machine actually reads it. The framework has since grown its own dedicated treatment in <a href=\"/WEB/blog/ai-instructions/\">AI Instructions: A Constitutional Operating Framework for AI Systems</a>.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"rep-strengthen-the-thinking\">REP — strengthen the thinking<a class=\"h-anchor\" href=\"#rep-strengthen-the-thinking\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">REP is a reasoning protocol: decomposition before synthesis, verification after claims, critique before commitment, adversarial checking before deployment, explicit uncertainty, iterative refinement. The core move is treating reasoning as an auditable artifact rather than a private computation. A chain of thought that cannot be inspected cannot be improved — only re-rolled.</p>\n<blockquote data-reveal=\"quote\" data-reveal-order=\"2\"><p>Verification is not a step after thinking. It is a property of the thinking.</p></blockquote>\n<p data-reveal=\"\" data-reveal-order=\"3\">The 2026 market has validated this from the demand side: independent review layers that separate code <em>generation</em> from code <em>verification</em> became an enterprise trust requirement this year, because consumers of agent output learned the same lesson every engineering culture eventually learns — the producer of a thing is the wrong auditor for the thing. <strong>(Fact — the practice; Analysis — the reason it emerged.)</strong> REP is the discipline I apply one level below that: inside a single act of reasoning, whether the reasoner is a model, a person, or the pipeline both operate in.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"usef-improve-the-system\">USEF — improve the system<a class=\"h-anchor\" href=\"#usef-improve-the-system\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">USEF closes the loop: find weaknesses, redesign components, test consequences, measure results, iterate. Where REP hardens one act of reasoning, USEF hardens the process by which the whole system evolves. It is the framework that makes the other two <em>living documents</em> rather than certificates of correctness — including the document you are reading, which is itself a September 2026 revision of an earlier position, revised because the evidence moved.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The three compose into one shape:</p>\n<ul data-reveal=\"\" data-reveal-order=\"3\"><li><strong>AI Instructions</strong> defines the environment — what is allowed, required, and forbidden.</li><li><strong>REP</strong> defines the process — how conclusions are reached and checked.</li><li><strong>USEF</strong> defines the evolution — how both of the above improve from evidence.</li></ul>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"why-this-website-takes-a-side\">Why this website takes a side<a class=\"h-anchor\" href=\"#why-this-website-takes-a-side\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">This site is not a neutral portfolio; it is the smallest system I know that demonstrates the thesis end to end. The organism in the <a href=\"/WEB/#magic\">MAGIC laboratory</a> adapts its quality under load and stays legible while changing — <a href=\"/WEB/blog/why-the-website-is-a-living-system/\">coherence under change</a>, the exact property the frameworks pursue at larger scale. The <a href=\"/WEB/blog/building-under-constraints/\">static architecture</a> is <em>will</em> made structural: constraints I chose, enforced by validation that fails loudly, so the system cannot quietly drift away from the intention. The <a href=\"/WEB/blog/the-anatomy-of-a-fast-static-site/\">loading and motion design</a> is measurement before decoration. Human idea, structured content, verification, build, static delivery — that pipeline is AI + Will + Systems with the rhetoric stripped off.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Three claims, then, as the current state of the programme:</p>\n<ol data-reveal=\"\" data-reveal-order=\"3\"><li>The model is necessary but not sufficient; the surrounding system carries most of what we call reliability. <strong>(Position, defended above)</strong></li><li>Reasoning that cannot be inspected cannot be trusted, only sampled. <strong>(Position, operationalised by REP)</strong></li><li>A system that cannot improve from its own failures is capped at the quality of its original design. <strong>(Position, enforced by USEF)</strong></li></ol>\n<p data-reveal=\"\" data-reveal-order=\"4\">Capability is now the cheapest input in the equation. Direction and verification are where the work moved. Build accordingly.</p>",
       "headings": [
         {
           "id": "the-field-in-one-paragraph",
@@ -267,13 +527,13 @@
       "wordCount": 1004,
       "featured": false,
       "cover": {
-        "src": "/blog/images/loading-architecture.svg",
+        "src": "/WEB/blog/images/loading-architecture.svg",
         "alt": "A dark technical diagram with a red priority ladder from P0 to P4 and a pulsing core",
         "width": 1200,
         "height": 630,
         "ogSrc": "/blog/images/loading-architecture.png"
       },
-      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">Every performance problem on the web is, at some level, a scheduling problem. Code, styles, images, and data all want the same scarce resources: the network, the main thread, and the user&#39;s attention. A fast site is not one with nothing to load — it is one where the <em>order</em> of loading is designed. This year that definition expanded for me: a fast site is also one where the <em>time between frames</em> is designed. This article documents both halves — the loading architecture, and the new high-refresh strategy that rides on top of it.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\">One fact frames everything below: <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame\" target=\"_blank\" rel=\"noreferrer\">MDN states it plainly</a> — <code>requestAnimationFrame</code> synchronises with the display&#39;s refresh cycle, and the common rate is 60 Hz, but displays at 90, 120, and 144 Hz are now ordinary. <strong>(Fact.)</strong> The browser will happily drive your animation at the panel&#39;s native rate — if your code lets it. That single sentence reorganises how animation code has to be written.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"five-honest-phases\">Five honest phases<a class=\"h-anchor\" href=\"#five-honest-phases\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Loading UIs lie constantly. They display 73%, then 92%, then 99% — numbers connected to nothing measurable. This site forbids that. Every loading surface exposes one of five phases: <code>INITIALIZING</code>, <code>LOADING</code>, <code>PREPARING</code>, <code>READY</code>, <code>ERROR</code>. For measurable work, the UI may show deterministic progress; for indeterminate work it shows an indeterminate treatment. The rule is simple: the interface never claims a resource is loaded when it is not.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-priority-ladder\">The priority ladder<a class=\"h-anchor\" href=\"#the-priority-ladder\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">All loading work is classified on one ladder:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>P0 — critical.</strong> The app shell, the current scene&#39;s code, essential CSS.</li><li><strong>P1 — near-critical.</strong> The most probable next scene, predicted deterministically. Loaded when the main thread goes idle.</li><li><strong>P2 — predictive.</strong> The adjacent previous scene, after a second idle gap.</li><li><strong>P3 — background.</strong> Secondary metadata. Nothing currently schedules P3 work.</li><li><strong>P4 — user-triggered.</strong> PDFs, audio, video. <em>Never</em> loaded automatically.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\">Heavy media being P4 is a hard law. The <a href=\"/#library\">Library</a> contains books and media measured in megabytes; none of it moves until you press READ, LISTEN, or WATCH. A link existing is not consent to download.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-frame-budget-nobody-told-you-about\">The frame budget nobody told you about<a class=\"h-anchor\" href=\"#the-frame-budget-nobody-told-you-about\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">At 60 Hz a frame interval is 16.6 milliseconds. At 120 Hz it is 8.33. That number is a budget, not a boast — and it changes what counts as an optimisation. Work that was invisible at 60 Hz becomes the difference between 120 and 90 at high refresh. The rules this site&#39;s animation code follows fall straight out of the budget:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Delta-time, never per-frame constants.</strong> Simulation advances by <code>velocity × deltaTime</code> with extreme deltas capped after tab switches, so motion is the same on 60, 90, 120, and 144 Hz — just smoother where more frames exist.</li><li><strong>One scheduler per subsystem.</strong> The interactive engine owns one RAF loop; the ambient organism owns one self-suspending controller; a settled organism costs zero JavaScript per frame. No nested loops, no loops created per render, no loops left running after unmount.</li><li><strong>Zero steady-state allocation.</strong> Gradients, sprites, and typed arrays are created once and reused; since this upgrade, even the per-particle colour strings are resolved through a bounded quantised cache instead of being built per frame.</li><li><strong>CSS does what CSS can do.</strong> Fades, reveals, staggers, and the entire ambient organism are compositor-friendly CSS — JS animation loops are reserved for actual simulation.</li></ul>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"quality-that-measures-the-display-not-the-myth\">Quality that measures the display, not the myth<a class=\"h-anchor\" href=\"#quality-that-measures-the-display-not-the-myth\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The subtlest change this year: adaptive quality used to judge itself against <em>absolute</em> numbers — drop below 105 fps and lose a tier. On a 60 Hz display doing everything right, that was a false conviction: the panel cannot render 120, and the algorithm punished it for physics. The 2026 version derives the display&#39;s refresh rate from its own sustained frame intervals — the fastest inter-frame interval <em>is</em> the native interval — and applies relative thresholds with hysteresis: demotion requires two consecutive degraded windows, promotion requires three clean ones, so quality responds to sustained conditions instead of oscillating every few frames. A 60 Hz panel holding 60 keeps full quality. A 120 Hz panel losing a third of its frames is demoted — correctly.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">And the console reports what was measured: sustained frame rate, against the refresh rate it was measured on, plus the active quality tier. What it never says is &quot;120 FPS achieved&quot;. That claim would be a load-time progress bar wearing a nicer coat. <strong>(Position — and the reason the vitality label reads like an instrument panel rather than a trophy shelf.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"idle-is-a-resource\">Idle is a resource<a class=\"h-anchor\" href=\"#idle-is-a-resource\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The background preloader treats idle time as a budget, not an invitation. It loads at most two scene chunks without user intent. It declines to work when the tab is hidden, when <code>save-data</code> is on, or when the connection reports 2G. One background queue owns all non-urgent work — speculation never competes with the user&#39;s actual request, and scene chunks are downloaded exactly once through a single import site.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-result\">The result<a class=\"h-anchor\" href=\"#the-result\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The outcome is a site with three navigation speeds and one motion language:</p>\n<ol data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Preloaded scene</strong> — the chunk is resident; the transition is a coordinated fade, the organism pulses once, and the incoming content settles into place within a few hundred milliseconds. No loader ever appears.</li><li><strong>Cold scene</strong> — the chunk fetches; the overlay appears after its delay, states <code>LOADING</code>, and disappears when the scene mounts.</li><li><strong>Return visits</strong> — everything is content-hashed and immutable, so the browser cache does the work and the network stays quiet.</li></ol>\n<p data-reveal=\"\" data-reveal-order=\"3\">None of it required a new framework, a state manager, or an animation library. It required deciding what should load, in what order, how motion earns its place on the frame budget, and being honest about what has not loaded yet — and about what the hardware can sustain. That is most of performance engineering in 2026. The constraint that keeps it all static is covered in <a href=\"/blog/building-under-constraints/\">Building Under Constraints</a>, and the organism those budgets protect is described in <a href=\"/blog/why-the-website-is-a-living-system/\">Why This Website Is a Living System</a>.</p>",
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">Every performance problem on the web is, at some level, a scheduling problem. Code, styles, images, and data all want the same scarce resources: the network, the main thread, and the user&#39;s attention. A fast site is not one with nothing to load — it is one where the <em>order</em> of loading is designed. This year that definition expanded for me: a fast site is also one where the <em>time between frames</em> is designed. This article documents both halves — the loading architecture, and the new high-refresh strategy that rides on top of it.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\">One fact frames everything below: <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame\" target=\"_blank\" rel=\"noreferrer\">MDN states it plainly</a> — <code>requestAnimationFrame</code> synchronises with the display&#39;s refresh cycle, and the common rate is 60 Hz, but displays at 90, 120, and 144 Hz are now ordinary. <strong>(Fact.)</strong> The browser will happily drive your animation at the panel&#39;s native rate — if your code lets it. That single sentence reorganises how animation code has to be written.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"five-honest-phases\">Five honest phases<a class=\"h-anchor\" href=\"#five-honest-phases\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Loading UIs lie constantly. They display 73%, then 92%, then 99% — numbers connected to nothing measurable. This site forbids that. Every loading surface exposes one of five phases: <code>INITIALIZING</code>, <code>LOADING</code>, <code>PREPARING</code>, <code>READY</code>, <code>ERROR</code>. For measurable work, the UI may show deterministic progress; for indeterminate work it shows an indeterminate treatment. The rule is simple: the interface never claims a resource is loaded when it is not.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-priority-ladder\">The priority ladder<a class=\"h-anchor\" href=\"#the-priority-ladder\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">All loading work is classified on one ladder:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>P0 — critical.</strong> The app shell, the current scene&#39;s code, essential CSS.</li><li><strong>P1 — near-critical.</strong> The most probable next scene, predicted deterministically. Loaded when the main thread goes idle.</li><li><strong>P2 — predictive.</strong> The adjacent previous scene, after a second idle gap.</li><li><strong>P3 — background.</strong> Secondary metadata. Nothing currently schedules P3 work.</li><li><strong>P4 — user-triggered.</strong> PDFs, audio, video. <em>Never</em> loaded automatically.</li></ul>\n<p data-reveal=\"\" data-reveal-order=\"3\">Heavy media being P4 is a hard law. The <a href=\"/WEB/#library\">Library</a> contains books and media measured in megabytes; none of it moves until you press READ, LISTEN, or WATCH. A link existing is not consent to download.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-frame-budget-nobody-told-you-about\">The frame budget nobody told you about<a class=\"h-anchor\" href=\"#the-frame-budget-nobody-told-you-about\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">At 60 Hz a frame interval is 16.6 milliseconds. At 120 Hz it is 8.33. That number is a budget, not a boast — and it changes what counts as an optimisation. Work that was invisible at 60 Hz becomes the difference between 120 and 90 at high refresh. The rules this site&#39;s animation code follows fall straight out of the budget:</p>\n<ul data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Delta-time, never per-frame constants.</strong> Simulation advances by <code>velocity × deltaTime</code> with extreme deltas capped after tab switches, so motion is the same on 60, 90, 120, and 144 Hz — just smoother where more frames exist.</li><li><strong>One scheduler per subsystem.</strong> The interactive engine owns one RAF loop; the ambient organism owns one self-suspending controller; a settled organism costs zero JavaScript per frame. No nested loops, no loops created per render, no loops left running after unmount.</li><li><strong>Zero steady-state allocation.</strong> Gradients, sprites, and typed arrays are created once and reused; since this upgrade, even the per-particle colour strings are resolved through a bounded quantised cache instead of being built per frame.</li><li><strong>CSS does what CSS can do.</strong> Fades, reveals, staggers, and the entire ambient organism are compositor-friendly CSS — JS animation loops are reserved for actual simulation.</li></ul>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"quality-that-measures-the-display-not-the-myth\">Quality that measures the display, not the myth<a class=\"h-anchor\" href=\"#quality-that-measures-the-display-not-the-myth\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The subtlest change this year: adaptive quality used to judge itself against <em>absolute</em> numbers — drop below 105 fps and lose a tier. On a 60 Hz display doing everything right, that was a false conviction: the panel cannot render 120, and the algorithm punished it for physics. The 2026 version derives the display&#39;s refresh rate from its own sustained frame intervals — the fastest inter-frame interval <em>is</em> the native interval — and applies relative thresholds with hysteresis: demotion requires two consecutive degraded windows, promotion requires three clean ones, so quality responds to sustained conditions instead of oscillating every few frames. A 60 Hz panel holding 60 keeps full quality. A 120 Hz panel losing a third of its frames is demoted — correctly.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">And the console reports what was measured: sustained frame rate, against the refresh rate it was measured on, plus the active quality tier. What it never says is &quot;120 FPS achieved&quot;. That claim would be a load-time progress bar wearing a nicer coat. <strong>(Position — and the reason the vitality label reads like an instrument panel rather than a trophy shelf.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"idle-is-a-resource\">Idle is a resource<a class=\"h-anchor\" href=\"#idle-is-a-resource\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The background preloader treats idle time as a budget, not an invitation. It loads at most two scene chunks without user intent. It declines to work when the tab is hidden, when <code>save-data</code> is on, or when the connection reports 2G. One background queue owns all non-urgent work — speculation never competes with the user&#39;s actual request, and scene chunks are downloaded exactly once through a single import site.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-result\">The result<a class=\"h-anchor\" href=\"#the-result\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The outcome is a site with three navigation speeds and one motion language:</p>\n<ol data-reveal=\"\" data-reveal-order=\"2\"><li><strong>Preloaded scene</strong> — the chunk is resident; the transition is a coordinated fade, the organism pulses once, and the incoming content settles into place within a few hundred milliseconds. No loader ever appears.</li><li><strong>Cold scene</strong> — the chunk fetches; the overlay appears after its delay, states <code>LOADING</code>, and disappears when the scene mounts.</li><li><strong>Return visits</strong> — everything is content-hashed and immutable, so the browser cache does the work and the network stays quiet.</li></ol>\n<p data-reveal=\"\" data-reveal-order=\"3\">None of it required a new framework, a state manager, or an animation library. It required deciding what should load, in what order, how motion earns its place on the frame budget, and being honest about what has not loaded yet — and about what the hardware can sustain. That is most of performance engineering in 2026. The constraint that keeps it all static is covered in <a href=\"/WEB/blog/building-under-constraints/\">Building Under Constraints</a>, and the organism those budgets protect is described in <a href=\"/WEB/blog/why-the-website-is-a-living-system/\">Why This Website Is a Living System</a>.</p>",
       "headings": [
         {
           "id": "five-honest-phases",
@@ -339,13 +599,13 @@
       "wordCount": 920,
       "featured": true,
       "cover": {
-        "src": "/blog/images/living-system.svg",
+        "src": "/WEB/blog/images/living-system.svg",
         "alt": "A red geometric organism: concentric rings around a dense core with orbiting particles",
         "width": 1200,
         "height": 630,
         "ogSrc": "/blog/images/living-system.png"
       },
-      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">Most of the web is built from dead matter. Pages are assembled, frozen, and shipped. They may animate — a gradient drifts, a badge pulses — but the animation is a recording, not a behaviour. Nothing on the page <em>responds</em>; it only <em>replays</em>.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\">RED MAGIC began as a question about that difference. What would it cost, technically, to make a page that behaves instead of replays? Not a video of a living thing. Not a looping decoration. An actual simulation whose observable state changes because you moved through its field. This article is the 2026 edition of the answer — because the cost curve changed this year, and the change is the point.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"an-organism-not-a-widget\">An organism, not a widget<a class=\"h-anchor\" href=\"#an-organism-not-a-widget\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The organism you can run in the <a href=\"/#magic\">MAGIC laboratory</a> has five layers: a core that pulses, a membrane that reaches toward your pointer, energy flows between them, orbiting particles, and a signal layer — which is you. Every layer is computed live. When the membrane swells toward your cursor, that is the simulation integrating your movement, not a CSS transition pretending to.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The same principle runs at ambient scale through the whole site: one continuous background organism with layered timescales — particles and sparks on micro loops, wisps and rings on short and medium loops, atmospheric masses on long loops, and a heartbeat underneath. As of this upgrade the layers are phase-de-synchronised (no layer starts at zero on load), coupled to a shared energy signal, and echoed by a resonance ring that only becomes visible when the organism is awake. Move, and the entire field brightens as one system. Stop, and it settles to silence at zero JavaScript cost.</p>\n<p data-reveal=\"\" data-reveal-order=\"3\">The interesting engineering constraint is what happens next. A naive implementation of this idea costs you the page. Canvas loops, per-frame allocations, unbounded particle counts — the classic mistakes make an interface that <em>looks</em> alive and <em>feels</em> dead, because it eats the main thread and the page stops responding to input.</p>\n<blockquote data-reveal=\"quote\" data-reveal-order=\"4\"><p>A living interface that lags is not a living interface. Responsiveness is part of the organism&#39;s definition, not a property bolted on afterwards.</p></blockquote>\n<p data-reveal=\"\" data-reveal-order=\"4\">So the organism is built under a constitution. One canvas. One animation loop. Pointer input coalesced through <code>requestAnimationFrame</code> so a 500 Hz mouse cannot generate 500 renders per second. And since this upgrade, quality adaptation that <em>measures the display it is on</em> rather than assuming one: the engine derives the panel&#39;s refresh rate from its own frame intervals and judges itself relative to it — a 60 Hz panel holding 60 is smooth, a 120 Hz panel losing a third of its frames is not, and hysteresis keeps the quality tier from oscillating. Reduced-motion users get an intentional alternative rather than a broken half-experience.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-measure-is-the-behaviour\">The measure is the behaviour<a class=\"h-anchor\" href=\"#the-measure-is-the-behaviour\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The result is measurable. Vitality — the frame rate the organism sustains, next to the refresh rate it was measured against — is displayed in its console beside signal strength and form. That telemetry is not a vanity readout; it is the experiment&#39;s instrument panel, and it is deliberately honest: it reports what was measured on your machine, and it never claims a guaranteed frame rate. When sustained throughput drops, the organism simplifies itself — particles thin out, flows reduce, the core keeps pulsing. That is the adaptation principle made concrete: the system changes behaviour when conditions change, and remains recognisably itself while doing so.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Three principles carry the whole design:</p>\n<ul data-reveal=\"\" data-reveal-order=\"3\"><li><strong>Respond</strong> — react to the environment, which includes you and includes the machine you are using.</li><li><strong>Adapt</strong> — change behaviour with conditions instead of failing when they degrade.</li><li><strong>Persist</strong> — remain recognisably itself across all of those states.</li></ul>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"why-2026-changed-the-cost-curve\">Why 2026 changed the cost curve<a class=\"h-anchor\" href=\"#why-2026-changed-the-cost-curve\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The first time I described an interface like this, the objection was always the same: <em>who has time to build that?</em> That objection aged out this year. Agentic coding systems — tools that plan, edit across a repository, run the build, and verify — became ordinary engineering infrastructure in 2026, and the measurement most cited for it is striking: one security vendor&#39;s 2026 benchmark measured agent-driven web traffic growing by four orders of magnitude year over year. <strong>(Fact — attributed industry measurement. What it implies is analysis, and this paragraph is analysis.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Here is what that did <em>not</em> do: it did not make software alive by itself. Every agent that touched this repository worked because there was <a href=\"/blog/ai-instructions/\">a constitution to work inside</a> — performance laws, forbidden regressions, a verification protocol that fails the build loudly when content is malformed. The AI supplied leverage; the constraints supplied direction; the loop between idea, implementation, verification, and revision — the discipline I document in <a href=\"/blog/reasoning-is-a-system-property/\">Reasoning Is a System Property</a> — is what converted the two into a system that actually ships. Capability is cheap now. Direction is the scarce input. The organism on this page is what direction looks like when it compounds.</p>\n<p data-reveal=\"\" data-reveal-order=\"3\">An interface that responds is honest — it tells you, through behaviour, that it noticed you. There is a longer arc here: if software can move from replaying fixed behaviour toward <em>sustaining</em> behaviour — adapting under load, degrading gracefully, recovering — then the interface is a small, tractable model of what it means for a system to remain coherent while it changes. The website is itself an experiment. It just happens to be one you can click.</p>\n<p data-reveal=\"\" data-reveal-order=\"4\">The engineering behind how it all loads and stays fast is documented in <a href=\"/blog/the-anatomy-of-a-fast-static-site/\">The Anatomy of a Fast Static Site</a>.</p>",
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">Most of the web is built from dead matter. Pages are assembled, frozen, and shipped. They may animate — a gradient drifts, a badge pulses — but the animation is a recording, not a behaviour. Nothing on the page <em>responds</em>; it only <em>replays</em>.</p>\n<p data-reveal=\"\" data-reveal-order=\"1\">RED MAGIC began as a question about that difference. What would it cost, technically, to make a page that behaves instead of replays? Not a video of a living thing. Not a looping decoration. An actual simulation whose observable state changes because you moved through its field. This article is the 2026 edition of the answer — because the cost curve changed this year, and the change is the point.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"an-organism-not-a-widget\">An organism, not a widget<a class=\"h-anchor\" href=\"#an-organism-not-a-widget\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The organism you can run in the <a href=\"/WEB/#magic\">MAGIC laboratory</a> has five layers: a core that pulses, a membrane that reaches toward your pointer, energy flows between them, orbiting particles, and a signal layer — which is you. Every layer is computed live. When the membrane swells toward your cursor, that is the simulation integrating your movement, not a CSS transition pretending to.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The same principle runs at ambient scale through the whole site: one continuous background organism with layered timescales — particles and sparks on micro loops, wisps and rings on short and medium loops, atmospheric masses on long loops, and a heartbeat underneath. As of this upgrade the layers are phase-de-synchronised (no layer starts at zero on load), coupled to a shared energy signal, and echoed by a resonance ring that only becomes visible when the organism is awake. Move, and the entire field brightens as one system. Stop, and it settles to silence at zero JavaScript cost.</p>\n<p data-reveal=\"\" data-reveal-order=\"3\">The interesting engineering constraint is what happens next. A naive implementation of this idea costs you the page. Canvas loops, per-frame allocations, unbounded particle counts — the classic mistakes make an interface that <em>looks</em> alive and <em>feels</em> dead, because it eats the main thread and the page stops responding to input.</p>\n<blockquote data-reveal=\"quote\" data-reveal-order=\"4\"><p>A living interface that lags is not a living interface. Responsiveness is part of the organism&#39;s definition, not a property bolted on afterwards.</p></blockquote>\n<p data-reveal=\"\" data-reveal-order=\"4\">So the organism is built under a constitution. One canvas. One animation loop. Pointer input coalesced through <code>requestAnimationFrame</code> so a 500 Hz mouse cannot generate 500 renders per second. And since this upgrade, quality adaptation that <em>measures the display it is on</em> rather than assuming one: the engine derives the panel&#39;s refresh rate from its own frame intervals and judges itself relative to it — a 60 Hz panel holding 60 is smooth, a 120 Hz panel losing a third of its frames is not, and hysteresis keeps the quality tier from oscillating. Reduced-motion users get an intentional alternative rather than a broken half-experience.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-measure-is-the-behaviour\">The measure is the behaviour<a class=\"h-anchor\" href=\"#the-measure-is-the-behaviour\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The result is measurable. Vitality — the frame rate the organism sustains, next to the refresh rate it was measured against — is displayed in its console beside signal strength and form. That telemetry is not a vanity readout; it is the experiment&#39;s instrument panel, and it is deliberately honest: it reports what was measured on your machine, and it never claims a guaranteed frame rate. When sustained throughput drops, the organism simplifies itself — particles thin out, flows reduce, the core keeps pulsing. That is the adaptation principle made concrete: the system changes behaviour when conditions change, and remains recognisably itself while doing so.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Three principles carry the whole design:</p>\n<ul data-reveal=\"\" data-reveal-order=\"3\"><li><strong>Respond</strong> — react to the environment, which includes you and includes the machine you are using.</li><li><strong>Adapt</strong> — change behaviour with conditions instead of failing when they degrade.</li><li><strong>Persist</strong> — remain recognisably itself across all of those states.</li></ul>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"why-2026-changed-the-cost-curve\">Why 2026 changed the cost curve<a class=\"h-anchor\" href=\"#why-2026-changed-the-cost-curve\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The first time I described an interface like this, the objection was always the same: <em>who has time to build that?</em> That objection aged out this year. Agentic coding systems — tools that plan, edit across a repository, run the build, and verify — became ordinary engineering infrastructure in 2026, and the measurement most cited for it is striking: one security vendor&#39;s 2026 benchmark measured agent-driven web traffic growing by four orders of magnitude year over year. <strong>(Fact — attributed industry measurement. What it implies is analysis, and this paragraph is analysis.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Here is what that did <em>not</em> do: it did not make software alive by itself. Every agent that touched this repository worked because there was <a href=\"/WEB/blog/ai-instructions/\">a constitution to work inside</a> — performance laws, forbidden regressions, a verification protocol that fails the build loudly when content is malformed. The AI supplied leverage; the constraints supplied direction; the loop between idea, implementation, verification, and revision — the discipline I document in <a href=\"/WEB/blog/reasoning-is-a-system-property/\">Reasoning Is a System Property</a> — is what converted the two into a system that actually ships. Capability is cheap now. Direction is the scarce input. The organism on this page is what direction looks like when it compounds.</p>\n<p data-reveal=\"\" data-reveal-order=\"3\">An interface that responds is honest — it tells you, through behaviour, that it noticed you. There is a longer arc here: if software can move from replaying fixed behaviour toward <em>sustaining</em> behaviour — adapting under load, degrading gracefully, recovering — then the interface is a small, tractable model of what it means for a system to remain coherent while it changes. The website is itself an experiment. It just happens to be one you can click.</p>\n<p data-reveal=\"\" data-reveal-order=\"4\">The engineering behind how it all loads and stays fast is documented in <a href=\"/WEB/blog/the-anatomy-of-a-fast-static-site/\">The Anatomy of a Fast Static Site</a>.</p>",
       "headings": [
         {
           "id": "an-organism-not-a-widget",
@@ -368,10 +628,79 @@
   "indexes": {
     "tags": {
       "2026": [
+        "freeiran-engineering-notes",
+        "measuring-machine-intelligence",
+        "red-theory-and-the-living-web",
+        "sheytan-the-local-first-laboratory",
         "ai-instructions",
         "building-under-constraints",
         "reasoning-is-a-system-property",
         "why-the-website-is-a-living-system"
+      ],
+      "FreeIran": [
+        "freeiran-engineering-notes"
+      ],
+      "Go": [
+        "freeiran-engineering-notes",
+        "sheytan-the-local-first-laboratory"
+      ],
+      "systems": [
+        "freeiran-engineering-notes",
+        "reasoning-is-a-system-property",
+        "why-the-website-is-a-living-system"
+      ],
+      "storage": [
+        "freeiran-engineering-notes"
+      ],
+      "testing": [
+        "freeiran-engineering-notes"
+      ],
+      "UHIT": [
+        "measuring-machine-intelligence"
+      ],
+      "AIST": [
+        "measuring-machine-intelligence"
+      ],
+      "ASI-100": [
+        "measuring-machine-intelligence"
+      ],
+      "measurement": [
+        "measuring-machine-intelligence"
+      ],
+      "verification": [
+        "measuring-machine-intelligence",
+        "sheytan-the-local-first-laboratory",
+        "ai-instructions"
+      ],
+      "benchmarks": [
+        "measuring-machine-intelligence"
+      ],
+      "RED THEORY": [
+        "red-theory-and-the-living-web"
+      ],
+      "emergence": [
+        "red-theory-and-the-living-web"
+      ],
+      "adaptation": [
+        "red-theory-and-the-living-web"
+      ],
+      "living systems": [
+        "red-theory-and-the-living-web"
+      ],
+      "simulation": [
+        "red-theory-and-the-living-web"
+      ],
+      "SHEYTAN": [
+        "sheytan-the-local-first-laboratory"
+      ],
+      "local-first": [
+        "sheytan-the-local-first-laboratory"
+      ],
+      "agents": [
+        "sheytan-the-local-first-laboratory"
+      ],
+      "llama.cpp": [
+        "sheytan-the-local-first-laboratory"
       ],
       "AI Instructions": [
         "ai-instructions"
@@ -380,9 +709,6 @@
         "ai-instructions"
       ],
       "governance": [
-        "ai-instructions"
-      ],
-      "verification": [
         "ai-instructions"
       ],
       "REP": [
@@ -417,10 +743,6 @@
       "reasoning": [
         "reasoning-is-a-system-property"
       ],
-      "systems": [
-        "reasoning-is-a-system-property",
-        "why-the-website-is-a-living-system"
-      ],
       "performance": [
         "the-anatomy-of-a-fast-static-site",
         "why-the-website-is-a-living-system"
@@ -448,19 +770,233 @@
       ]
     },
     "categories": {
+      "engineering": [
+        "freeiran-engineering-notes",
+        "sheytan-the-local-first-laboratory",
+        "the-anatomy-of-a-fast-static-site",
+        "why-the-website-is-a-living-system"
+      ],
       "research": [
+        "measuring-machine-intelligence",
+        "red-theory-and-the-living-web",
         "ai-instructions",
         "reasoning-is-a-system-property"
       ],
       "systems": [
         "building-under-constraints"
-      ],
-      "engineering": [
-        "the-anatomy-of-a-fast-static-site",
-        "why-the-website-is-a-living-system"
       ]
     },
     "related": {
+      "freeiran-engineering-notes": [
+        {
+          "slug": "building-under-constraints",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "sheytan-the-local-first-laboratory",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "why-the-website-is-a-living-system",
+          "score": 14,
+          "explicit": false,
+          "shared": [
+            "systems",
+            "2026",
+            "engineering"
+          ]
+        },
+        {
+          "slug": "reasoning-is-a-system-property",
+          "score": 12.25,
+          "explicit": false,
+          "shared": [
+            "systems",
+            "2026",
+            "systems"
+          ]
+        },
+        {
+          "slug": "ai-instructions",
+          "score": 6.5,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "system",
+            "built"
+          ]
+        },
+        {
+          "slug": "the-anatomy-of-a-fast-static-site",
+          "score": 6.13,
+          "explicit": false,
+          "shared": [
+            "behind",
+            "fake"
+          ]
+        }
+      ],
+      "measuring-machine-intelligence": [
+        {
+          "slug": "reasoning-is-a-system-property",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "ai-instructions",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "sheytan-the-local-first-laboratory",
+          "score": 10.63,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "2026",
+            "verification"
+          ]
+        },
+        {
+          "slug": "red-theory-and-the-living-web",
+          "score": 8.75,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "laboratory"
+          ]
+        },
+        {
+          "slug": "freeiran-engineering-notes",
+          "score": 5,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "built"
+          ]
+        },
+        {
+          "slug": "why-the-website-is-a-living-system",
+          "score": 4,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "built"
+          ]
+        }
+      ],
+      "red-theory-and-the-living-web": [
+        {
+          "slug": "why-the-website-is-a-living-system",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "reasoning-is-a-system-property",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "ai-instructions",
+          "score": 9.5,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "system",
+            "boundary"
+          ]
+        },
+        {
+          "slug": "measuring-machine-intelligence",
+          "score": 8.88,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "laboratory"
+          ]
+        },
+        {
+          "slug": "freeiran-engineering-notes",
+          "score": 6,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "system",
+            "test"
+          ]
+        },
+        {
+          "slug": "sheytan-the-local-first-laboratory",
+          "score": 5.63,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "laboratory",
+            "model"
+          ]
+        }
+      ],
+      "sheytan-the-local-first-laboratory": [
+        {
+          "slug": "reasoning-is-a-system-property",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "ai-instructions",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "freeiran-engineering-notes",
+          "score": 17,
+          "explicit": false,
+          "shared": [
+            "Go",
+            "2026",
+            "Go"
+          ]
+        },
+        {
+          "slug": "measuring-machine-intelligence",
+          "score": 10.88,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "2026",
+            "verification"
+          ]
+        },
+        {
+          "slug": "why-the-website-is-a-living-system",
+          "score": 8,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "engineering"
+          ]
+        },
+        {
+          "slug": "red-theory-and-the-living-web",
+          "score": 5.75,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "laboratory",
+            "model"
+          ]
+        }
+      ],
       "ai-instructions": [
         {
           "slug": "reasoning-is-a-system-property",
@@ -475,13 +1011,43 @@
           "shared": []
         },
         {
-          "slug": "why-the-website-is-a-living-system",
-          "score": 5,
+          "slug": "measuring-machine-intelligence",
+          "score": 15.88,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "2026",
+            "verification"
+          ]
+        },
+        {
+          "slug": "sheytan-the-local-first-laboratory",
+          "score": 12.63,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "2026",
+            "verification"
+          ]
+        },
+        {
+          "slug": "red-theory-and-the-living-web",
+          "score": 9.75,
           "explicit": false,
           "shared": [
             "2026",
             "system",
-            "built"
+            "boundary"
+          ]
+        },
+        {
+          "slug": "freeiran-engineering-notes",
+          "score": 7,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "system",
+            "three"
           ]
         }
       ],
@@ -509,12 +1075,32 @@
           ]
         },
         {
-          "slug": "ai-instructions",
-          "score": 6,
+          "slug": "freeiran-engineering-notes",
+          "score": 8,
           "explicit": false,
           "shared": [
             "2026",
-            "system",
+            "systems",
+            "system"
+          ]
+        },
+        {
+          "slug": "red-theory-and-the-living-web",
+          "score": 5.75,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "static",
+            "system"
+          ]
+        },
+        {
+          "slug": "sheytan-the-local-first-laboratory",
+          "score": 5.63,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "engineering",
             "architecture"
           ]
         }
@@ -533,13 +1119,43 @@
           "shared": []
         },
         {
+          "slug": "measuring-machine-intelligence",
+          "score": 13.88,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "verification",
+            "capability"
+          ]
+        },
+        {
+          "slug": "freeiran-engineering-notes",
+          "score": 13,
+          "explicit": false,
+          "shared": [
+            "systems",
+            "2026",
+            "systems"
+          ]
+        },
+        {
           "slug": "building-under-constraints",
-          "score": 10.75,
+          "score": 10.38,
           "explicit": false,
           "shared": [
             "human will",
             "2026",
             "systems"
+          ]
+        },
+        {
+          "slug": "red-theory-and-the-living-web",
+          "score": 9.75,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "system",
+            "model"
           ]
         }
       ],
@@ -555,6 +1171,32 @@
           "score": null,
           "explicit": true,
           "shared": []
+        },
+        {
+          "slug": "freeiran-engineering-notes",
+          "score": 7,
+          "explicit": false,
+          "shared": [
+            "behind",
+            "fake"
+          ]
+        },
+        {
+          "slug": "sheytan-the-local-first-laboratory",
+          "score": 5.63,
+          "explicit": false,
+          "shared": [
+            "architecture"
+          ]
+        },
+        {
+          "slug": "red-theory-and-the-living-web",
+          "score": 2.75,
+          "explicit": false,
+          "shared": [
+            "static",
+            "website"
+          ]
         }
       ],
       "why-the-website-is-a-living-system": [
@@ -571,8 +1213,28 @@
           "shared": []
         },
         {
-          "slug": "building-under-constraints",
+          "slug": "freeiran-engineering-notes",
+          "score": 15,
+          "explicit": false,
+          "shared": [
+            "systems",
+            "2026",
+            "system"
+          ]
+        },
+        {
+          "slug": "red-theory-and-the-living-web",
           "score": 9.75,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "living systems",
+            "website"
+          ]
+        },
+        {
+          "slug": "building-under-constraints",
+          "score": 9.38,
           "explicit": false,
           "shared": [
             "2026",
@@ -581,13 +1243,12 @@
           ]
         },
         {
-          "slug": "ai-instructions",
-          "score": 6,
+          "slug": "sheytan-the-local-first-laboratory",
+          "score": 8.63,
           "explicit": false,
           "shared": [
             "2026",
-            "system",
-            "built"
+            "engineering"
           ]
         }
       ]
@@ -611,33 +1272,68 @@
       },
       "ai-instructions": {
         "prev": "building-under-constraints",
+        "next": "sheytan-the-local-first-laboratory"
+      },
+      "sheytan-the-local-first-laboratory": {
+        "prev": "ai-instructions",
+        "next": "red-theory-and-the-living-web"
+      },
+      "red-theory-and-the-living-web": {
+        "prev": "sheytan-the-local-first-laboratory",
+        "next": "measuring-machine-intelligence"
+      },
+      "measuring-machine-intelligence": {
+        "prev": "red-theory-and-the-living-web",
+        "next": "freeiran-engineering-notes"
+      },
+      "freeiran-engineering-notes": {
+        "prev": "measuring-machine-intelligence",
         "next": null
       }
     },
     "linksHere": {
-      "reasoning-is-a-system-property": [
-        "ai-instructions",
-        "building-under-constraints",
-        "why-the-website-is-a-living-system"
-      ],
       "building-under-constraints": [
+        "freeiran-engineering-notes",
+        "measuring-machine-intelligence",
         "ai-instructions",
         "reasoning-is-a-system-property",
         "the-anatomy-of-a-fast-static-site"
       ],
+      "sheytan-the-local-first-laboratory": [
+        "freeiran-engineering-notes",
+        "measuring-machine-intelligence"
+      ],
+      "reasoning-is-a-system-property": [
+        "freeiran-engineering-notes",
+        "measuring-machine-intelligence",
+        "red-theory-and-the-living-web",
+        "sheytan-the-local-first-laboratory",
+        "ai-instructions",
+        "building-under-constraints",
+        "why-the-website-is-a-living-system"
+      ],
+      "ai-instructions": [
+        "measuring-machine-intelligence",
+        "sheytan-the-local-first-laboratory",
+        "reasoning-is-a-system-property",
+        "why-the-website-is-a-living-system"
+      ],
       "the-anatomy-of-a-fast-static-site": [
+        "measuring-machine-intelligence",
+        "red-theory-and-the-living-web",
         "building-under-constraints",
         "reasoning-is-a-system-property",
         "why-the-website-is-a-living-system"
       ],
       "why-the-website-is-a-living-system": [
+        "red-theory-and-the-living-web",
         "building-under-constraints",
         "reasoning-is-a-system-property",
         "the-anatomy-of-a-fast-static-site"
       ],
-      "ai-instructions": [
-        "reasoning-is-a-system-property",
-        "why-the-website-is-a-living-system"
+      "measuring-machine-intelligence": [
+        "red-theory-and-the-living-web",
+        "sheytan-the-local-first-laboratory"
       ]
     }
   }

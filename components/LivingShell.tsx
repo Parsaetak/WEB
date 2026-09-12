@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState
 } from "react";
@@ -14,6 +15,9 @@ import {
 
 import styles from "@/components/LivingShell.module.css";
 
+import CompactMenu, {
+  type CompactMenuEntry
+} from "@/components/CompactMenu";
 import RedEye from "@/components/RedEye";
 import SceneLoadingScreen from "@/components/SceneLoadingScreen";
 import SceneNavigator, {
@@ -286,6 +290,67 @@ export default function LivingShell({
       [router]
     );
 
+  /*
+   * COMPACT MENU (v2.6.1) — the touch-first navigation mode for
+   * viewports where the full scene track stops being honest touch
+   * UI. Same scenes, same changeScene pipeline; BLOG and GITHUB ride
+   * in the same panel so every area stays reachable from one
+   * discoverable control. Rendered for phone and narrow-tablet
+   * widths by CSS (display rules in LivingShell.module.css); the
+   * full SceneNavigator remains the desktop navigation.
+   */
+  const compactMenuEntries =
+    useMemo<readonly CompactMenuEntry[]>(
+      () => [
+        ...SCENES.map(
+          (
+            scene,
+            index
+          ) => ({
+            kind: "action" as const,
+            id: `compact-scene-${scene.id}`,
+            label: scene.label,
+            index: String(
+              index + 1
+            ).padStart(
+              2,
+              "0"
+            ),
+            scene: scene.id,
+            active:
+              scene.id ===
+              activeScene,
+            onSelect: () =>
+              changeScene(
+                scene.id
+              )
+          })
+        ),
+        {
+          kind: "link",
+          id: "compact-blog",
+          label: "Blog",
+          index: "07",
+          scene: "blog",
+          href: "/blog/"
+        },
+        ...(github
+          ? [
+              {
+                kind: "link" as const,
+                id: "compact-github",
+                label: "GitHub",
+                index: "↗",
+                scene: "github",
+                href: github.href,
+                external: true
+              }
+            ]
+          : [])
+      ],
+      [activeScene, changeScene, github]
+    );
+
   return (
     <div
       className={
@@ -438,6 +503,23 @@ export default function LivingShell({
             >
               Blog ↗
             </Link>
+
+            <div
+              className={
+                styles.livingShellMenu
+              }
+            >
+              <CompactMenu
+                id="world-compact-menu"
+                label="Site scenes and areas"
+                entries={
+                  compactMenuEntries
+                }
+                dividerBefore={[
+                  "compact-blog"
+                ]}
+              />
+            </div>
           </div>
         </div>
       </header>

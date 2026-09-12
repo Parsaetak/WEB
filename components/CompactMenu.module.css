@@ -1,0 +1,416 @@
+/*
+ * COMPACT MENU (v2.6.1) — shared touch-first navigation panel.
+ *
+ * Visual language: the world's red/black instrument grammar — dark
+ * panel, red hairlines, mono uppercase labels, per-scene accent dots,
+ * the same index glyphs the scene track uses. Motion is compositor-
+ * only (opacity + transform), uses the global motion tokens, and
+ * collapses entirely under prefers-reduced-motion.
+ */
+
+.root {
+  position: relative;
+
+  display: inline-flex;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Trigger                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.trigger {
+  appearance: none;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  min-height: 44px;
+
+  padding: 0 14px;
+
+  border: 1px solid rgba(255, 32, 32, 0.24);
+
+  border-radius: 9px;
+
+  background: rgba(7, 8, 10, 0.82);
+
+  color: var(--text-muted);
+
+  cursor: pointer;
+
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.16em;
+
+  text-transform: uppercase;
+
+  transition:
+    color var(--motion-micro) ease,
+    border-color var(--motion-micro) ease,
+    background-color var(--motion-micro) ease;
+}
+
+.trigger:hover {
+  color: var(--text);
+
+  border-color: rgba(255, 64, 54, 0.5);
+
+  background: rgba(255, 32, 32, 0.06);
+}
+
+.trigger[data-open="true"] {
+  color: #ffffff;
+
+  border-color: rgba(255, 64, 54, 0.58);
+
+  background: rgba(255, 32, 32, 0.1);
+}
+
+/*
+ * Two-bar glyph that folds into a cross while open. Transform-only.
+ */
+.triggerGlyph {
+  position: relative;
+
+  width: 14px;
+
+  height: 10px;
+
+  display: inline-block;
+}
+
+.triggerGlyph > span {
+  position: absolute;
+
+  left: 0;
+
+  right: 0;
+
+  height: 1.5px;
+
+  border-radius: 1px;
+
+  background: currentColor;
+
+  transition:
+    transform var(--motion-micro) var(--ease-standard),
+    top var(--motion-micro) var(--ease-standard);
+}
+
+.triggerGlyph > span:first-child {
+  top: 1.5px;
+}
+
+.triggerGlyph > span:last-child {
+  top: 7px;
+}
+
+.trigger[data-open="true"] .triggerGlyph > span:first-child {
+  top: 4.25px;
+
+  transform: rotate(45deg);
+}
+
+.trigger[data-open="true"] .triggerGlyph > span:last-child {
+  top: 4.25px;
+
+  transform: rotate(-45deg);
+}
+
+.triggerLabel {
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Panel                                                                       */
+/* -------------------------------------------------------------------------- */
+
+.panel {
+  position: absolute;
+
+  top: calc(100% + 10px);
+
+  right: 0;
+
+  z-index: 1200;
+
+  width: min(268px, calc(100vw - 28px));
+
+  transform-origin: top right;
+
+  animation: compactMenuIn
+    var(--motion-short)
+    var(--ease-out-soft)
+    both;
+}
+
+@keyframes compactMenuIn {
+  from {
+    opacity: 0;
+
+    transform: translateY(-6px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: none;
+  }
+}
+
+.panelNav {
+  border: 1px solid rgba(255, 32, 32, 0.18);
+
+  border-radius: 14px;
+
+  background: rgba(7, 8, 10, 0.96);
+
+  backdrop-filter: blur(14px);
+
+  -webkit-backdrop-filter: blur(14px);
+
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  padding: 8px;
+}
+
+.list {
+  margin: 0;
+
+  padding: 0;
+
+  list-style: none;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.item {
+  display: block;
+}
+
+.divider {
+  height: 1px;
+
+  margin: 6px 10px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 32, 32, 0.28),
+    transparent
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Entries                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.entry {
+  --menu-accent: var(--red);
+
+  position: relative;
+
+  width: 100%;
+
+  min-height: 46px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 10px 12px;
+
+  border: 1px solid transparent;
+
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: var(--text-muted);
+
+  cursor: pointer;
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.14em;
+
+  text-transform: uppercase;
+
+  text-align: left;
+
+  text-decoration: none;
+
+  transition:
+    color var(--motion-micro) ease,
+    border-color var(--motion-micro) ease,
+    background-color var(--motion-micro) ease;
+}
+
+.entry:hover {
+  color: var(--text);
+
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.entry[data-active="true"] {
+  color: var(--text);
+
+  border-color: color-mix(
+    in srgb,
+    var(--menu-accent) 36%,
+    transparent
+  );
+
+  background: color-mix(
+    in srgb,
+    var(--menu-accent) 8%,
+    rgba(12, 13, 17, 0.94)
+  );
+}
+
+.entryIndex {
+  flex: 0 0 auto;
+
+  min-width: 16px;
+
+  color: color-mix(
+    in srgb,
+    var(--menu-accent) 62%,
+    var(--text-muted)
+  );
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+
+  line-height: 1;
+
+  opacity: 0.72;
+}
+
+.entry[data-active="true"] .entryIndex {
+  opacity: 1;
+}
+
+.entryLabel {
+  flex: 1 1 auto;
+
+  min-width: 0;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.entryArrow {
+  flex: 0 0 auto;
+
+  opacity: 0.7;
+}
+
+/*
+ * Active indicator — a small accent dot that pulses once per the
+ * organism's heartbeat cadence, matching the scene track.
+ */
+.entryDot {
+  flex: 0 0 auto;
+
+  width: 4px;
+
+  height: 4px;
+
+  border-radius: 50%;
+
+  background: transparent;
+
+  transition:
+    background-color var(--motion-micro) ease,
+    box-shadow var(--motion-micro) ease;
+}
+
+.entry[data-active="true"] .entryDot {
+  background: var(--menu-accent);
+
+  box-shadow: 0 0 10px
+    color-mix(
+      in srgb,
+      var(--menu-accent) 72%,
+      transparent
+    );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scene / area accents — the same identity map the scene track uses.          */
+/* -------------------------------------------------------------------------- */
+
+.entry[data-scene="home"] {
+  --menu-accent: #ff3030;
+}
+
+.entry[data-scene="about"] {
+  --menu-accent: #c96fff;
+}
+
+.entry[data-scene="systems"] {
+  --menu-accent: #ff9d32;
+}
+
+.entry[data-scene="magic"] {
+  --menu-accent: #ff2020;
+}
+
+.entry[data-scene="work"] {
+  --menu-accent: #4db6ff;
+}
+
+.entry[data-scene="library"] {
+  --menu-accent: #ff4638;
+}
+
+.entry[data-scene="blog"] {
+  --menu-accent: var(--red-hot);
+}
+
+.entry[data-scene="github"] {
+  --menu-accent: #f0f6fc;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion — the panel appears without travel or scale.                 */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+
+  .trigger,
+  .triggerGlyph > span,
+  .entry,
+  .entryDot {
+    transition: none;
+  }
+}

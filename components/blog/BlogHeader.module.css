@@ -154,7 +154,16 @@
   color: var(--text);
 }
 
+/*
+ * The BLOG control (v2.6.1) — a REAL link to /blog/ rendered by the
+ * BlogAreaControl island. On the index it is the current page
+ * (aria-current="page"); on articles it navigates back to the index.
+ * The old dead, pointer-events-none span is gone at the root: the
+ * active area is now navigable with mouse, touch and keyboard.
+ */
 .sceneLinkActive {
+  display: inline-block;
+
   color: var(--red-hot);
 
   border: 1px solid
@@ -164,7 +173,32 @@
 
   padding: 4px 8px;
 
-  pointer-events: none;
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.14em;
+
+  text-transform: uppercase;
+
+  white-space: nowrap;
+
+  text-decoration: none;
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.sceneLinkActive:hover {
+  color: #ffffff;
+
+  border-color: rgba(255, 64, 54, 0.55);
+
+  background: rgba(255, 32, 32, 0.08);
 }
 
 .headerActions {
@@ -175,6 +209,16 @@
   gap: 16px;
 
   min-width: max-content;
+}
+
+/*
+ * COMPACT MODE (v2.6.1) — the blog header's touch-first navigation
+ * island. Hidden on desktop (the scene-link row + GitHub own that
+ * space); revealed at ≤860px where a wrapped row of 9px links stops
+ * being honest touch UI.
+ */
+.headerMenu {
+  display: none;
 }
 
 .githubLink {
@@ -211,12 +255,45 @@
   }
 }
 
+/*
+ * COMPACT NAVIGATION MODE (v2.6.1) — ≤860px (phones and narrow
+ * portrait tablets). The wrapped scene-link row and the GitHub text
+ * link stand down; the header row keeps brand + BLOG control + the
+ * compact menu trigger. GITHUB and every scene ride inside the
+ * menu panel, so nothing is lost — only un-crowded.
+ */
+@media (max-width: 860px) {
+  .sceneLinks {
+    display: none;
+  }
+
+  .githubLink {
+    display: none;
+  }
+
+  .headerMenu {
+    display: inline-flex;
+  }
+
+  /*
+   * The scene-link row carried flex: 1 (it pushed the actions to the
+   * right edge on desktop). With it hidden, the actions group takes
+   * over that job explicitly.
+   */
+  .headerActions {
+    gap: 12px;
+
+    margin-left: auto;
+  }
+}
+
 @media (max-width: 760px) {
   .blogHeaderInner {
-    width:
-      calc(
-        100% - 20px
-      );
+    width: calc(
+      100% - 20px -
+      env(safe-area-inset-left, 0px) -
+      env(safe-area-inset-right, 0px)
+    );
 
     gap: 14px;
 

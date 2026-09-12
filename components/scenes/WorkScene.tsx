@@ -5,13 +5,55 @@ import {
 import styles from "./WorkScene.module.css";
 
 /*
- * Project cards are informational by default. Only the RED MAGIC
- * project carries a live destination on this site — the Magic scene
- * runs the actual organism — so only that card is navigable
- * (data-linked). Hover affordances are scoped to it in CSS so no
- * inert card ever looks clickable.
+ * Work cards are plain anchors (a full-card link must not nest a
+ * next/link inside future content), so internal routes must carry
+ * the deployment basePath explicitly — next/link is not used here.
+ * NEXT_PUBLIC_BASE_PATH is inlined at build time by Next.js
+ * ("" locally, "/WEB" on GitHub Pages), the same convention
+ * app/not-found.tsx uses. Scene hashes (#magic) are same-document
+ * and must never be prefixed.
  */
-const projects = [
+const BASE_PATH =
+  process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+function routeHref(
+  path: string
+): string {
+  return `${BASE_PATH}${path}`;
+}
+
+/*
+ * Project cards are informational by default — hover affordances and
+ * navigation exist ONLY where a real destination exists
+ * (data-linked, Interaction Truth Law 56).
+ *
+ * Destinations (v2.6.1):
+ * - RED MAGIC opens the live Magic scene (the organism runs there).
+ * - UHIT, RED THEORY and AI SYSTEMS open their field-notes articles
+ *   in the blog — real /blog/<slug>/ routes generated from the
+ *   content pipeline, each written against the actual public state
+ *   of the corresponding project. The NOTES line inside the card
+ *   names the destination; the whole card is one link (never a
+ *   nested anchor).
+ */
+
+type Project = {
+  number: string;
+  code: string;
+  title: string;
+  type: string;
+  status: string;
+  copy: string;
+  tags: readonly string[];
+  /** Destination href — a scene hash or a real blog route. */
+  href: string | null;
+  /** Accessible description of where a linked card goes. */
+  ariaLabel?: string;
+  /** Visible mono line naming the destination of a linked card. */
+  notes?: string;
+};
+
+const projects: readonly Project[] = [
   {
     number: "01",
     code: "UHIT",
@@ -27,7 +69,13 @@ const projects = [
       "INTELLIGENCE",
       "ASSESSMENT"
     ],
-    href: null as string | null
+    href: routeHref(
+      "/blog/measuring-machine-intelligence/"
+    ),
+    ariaLabel:
+      "Read the UHIT field notes: Measuring Machine Intelligence",
+    notes:
+      "NOTES — MEASURING MACHINE INTELLIGENCE"
   },
   {
     number: "02",
@@ -44,7 +92,13 @@ const projects = [
       "SIMULATION",
       "EVOLUTION"
     ],
-    href: null as string | null
+    href: routeHref(
+      "/blog/red-theory-and-the-living-web/"
+    ),
+    ariaLabel:
+      "Read the RED THEORY article: Red Theory and the Living Web",
+    notes:
+      "NOTES — RED THEORY AND THE LIVING WEB"
   },
   {
     number: "03",
@@ -61,7 +115,9 @@ const projects = [
       "CANVAS",
       "ADAPTATION"
     ],
-    href: "#magic"
+    href: "#magic",
+    ariaLabel:
+      "Open the RED MAGIC experiment in the Magic scene"
   },
   {
     number: "04",
@@ -78,18 +134,24 @@ const projects = [
       "AI",
       "SYSTEMS"
     ],
-    href: null as string | null
+    href: routeHref(
+      "/blog/sheytan-the-local-first-laboratory/"
+    ),
+    ariaLabel:
+      "Read the AI systems field notes: SHEYTAN, the local-first engineering laboratory",
+    notes:
+      "NOTES — SHEYTAN, THE LOCAL-FIRST LABORATORY"
   }
 ];
 
 /*
- * Shared card body so the linked (RED MAGIC) and informational
- * variants render identically.
+ * Shared card body so the linked and informational variants render
+ * identically.
  */
 function ProjectBody({
   project
 }: {
-  project: (typeof projects)[number];
+  project: Project;
 }) {
   return (
     <>
@@ -165,6 +227,22 @@ function ProjectBody({
             )
           )}
         </div>
+
+        {project.notes && (
+          <p
+            className={
+              styles.workProjectNotes
+            }
+          >
+            <span
+              aria-hidden="true"
+            >
+              ↳&nbsp;
+            </span>
+
+            {project.notes}
+          </p>
+        )}
       </div>
 
       <div
@@ -275,7 +353,9 @@ export default function WorkScene() {
 
           <div className={styles.workInstrument}>
             <div
-              className={styles.workInstrumentHeader}
+              className={
+                styles.workInstrumentHeader
+              }
             >
               <div>
                 <p className="kicker">
@@ -315,7 +395,9 @@ export default function WorkScene() {
                       }
                       data-linked="true"
                       href={project.href}
-                      aria-label={`Open the ${project.code} experiment in the Magic scene`}
+                      aria-label={
+                        project.ariaLabel
+                      }
                     >
                       <ProjectBody
                         project={project}

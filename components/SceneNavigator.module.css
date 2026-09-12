@@ -10,6 +10,20 @@
     );
 }
 
+/*
+ * COMPACT NAVIGATION MODE (v2.6.1) — on phones and narrow portrait
+ * tablets the horizontal scene track stands down entirely. It is
+ * replaced by the shared CompactMenu island in the HUD actions area
+ * (see LivingShell.tsx): one discoverable 44px trigger, real touch
+ * targets, no hidden overflow, no hover dependence. Above 860px the
+ * full track is the navigation, exactly as before.
+ */
+@media (max-width: 860px) {
+  .sceneNavigator {
+    display: none;
+  }
+}
+
 .track {
   min-width: 0;
 

@@ -4,24 +4,28 @@ Live site: https://parsaetak.github.io/WEB/
 
 Repository: https://github.com/Parsaetak/WEB
 
-Version: 2.5.7 — reader comfort on top of the v2.5 RSS-removal /
-related-content / SEO-link-graph / reading-motion base, the v2.5.2
-reading instruments (context chips, heading anchors, code copy,
-back-to-top), the v2.5.3 reading flow (J / K keyboard navigation
-with visible keycap hints, a copy-link SHARE instrument, a "/"
-search hotkey, a deterministic per-category accent system), the
-v2.5.4 link-graph mirror + keyboard reference ("Referenced by"
-reverse graph, "?" shortcuts dialog), the v2.5.5 graph-made-visible
-pass ("↩ N" inbound badges, shared-signal related hints, the
-sr-only fix), and the v2.5.6 wayfinding pass (UPDATED chips,
-click-to-filter card tags, T back-to-top, the inbound-graph Δ
-ledger). New in 2.5.7: the reading column bends to the reader — a
-three-step text-size control (A− / A / A+) docks beside COPY LINK,
-scales the article body and headings through one CSS variable,
-persists the choice in localStorage, and disables itself politely
-at the range ends; and search finishes where it should — Enter in
-the search field opens the top result (an "↵" hint teaches it, the
-"?" reference documents it, IME composition stands down).
+Version: 2.6.1 — mobile navigation, a working Blog control, and
+project-connected writing, on top of the v2.5 RSS-removal /
+related-content / SEO-link-graph / reading-motion base and the
+v2.5.1–v2.5.7 reading-instrument rounds (TOC, J / K navigation,
+copy-link, "/" search, category accents, "Referenced by" reverse
+graph, "?" shortcuts dialog, inbound badges, shared-signal hints,
+UPDATED chips, click-to-filter card tags, T back-to-top, the
+inbound-graph Δ ledger, the text-size control, and Enter-to-open
+search). New in 2.6.1: phones and narrow portrait tablets get a
+touch-first compact menu in the HUD — one discoverable 44px trigger
+expanding a red/black panel of all scenes plus BLOG and GITHUB, with
+roving arrow-key focus, Escape / outside-click / selection closing,
+no scroll locking, and reduced-motion collapse; the blog header's
+top-right BLOG item stops being a dead span and becomes a real link
+(aria-current="page" on the index, a return-to-index control on
+articles) via a tiny pathname-aware island; and four new articles —
+Measuring Machine Intelligence (UHIT), Red Theory and the Living
+Web, SHEYTAN: The Local-First Engineering Laboratory, and FreeIran
+Engineering Notes — connect the Work projects to the blog through
+the existing related-content machinery, with the Work scene's
+project cards now routing to their field notes where a real
+destination exists.
 
 ## Stack
 
@@ -90,12 +94,39 @@ Every visible affordance must tell the truth:
 - **Full-card links.** Where a card's summary and its destination
   coincide, the whole card is one link (no nested `<a>` inside
   `<a>`) — Home system rows, the Systems AI-INSTRUCTIONS module,
-  and the Work RED MAGIC project.
+  and the linked Work project cards (RED MAGIC → the Magic scene;
+  UHIT, RED THEORY, and AI SYSTEMS → their field-notes articles,
+  with plain anchors carrying the deployment basePath explicitly).
 - **No untruthful status text.** Loading/error surfaces only claim
   what the code actually offers (the ERROR phase suggests a reload
   because that is the real recovery path).
 - **Keyboard parity.** Every newly-linked card has a
   `:focus-visible` outline in the site's quiet outline language.
+
+## Responsive navigation (2.6.1)
+
+One navigation system, two honest modes, switched by viewport
+capability (media queries only — no user-agent detection):
+
+- **Compact mode (≤860px — phones and narrow portrait tablets).**
+  The horizontal scene track stands down and a shared
+  `CompactMenu` island appears in the HUD (world shell) or the blog
+  header: one 44px trigger expanding a dark panel with the scene
+  list, BLOG, and GITHUB. Real buttons and links only —
+  `aria-expanded` / `aria-controls` / `aria-haspopup` on the
+  trigger, `aria-current="page"` on the active entry. Opening
+  focuses the active entry; Arrow keys / Home / End rove focus;
+  Escape closes and restores the trigger; pointer-down outside
+  closes; selecting an entry always closes; Tab-past closes. No
+  scroll locking, ever. Motion is opacity + transform through the
+  global motion tokens and collapses under `prefers-reduced-motion`.
+- **Full mode (>860px).** The desktop scene track and the
+  full header rows render exactly as before — tablet landscape and
+  desktop keep the existing navigation untouched.
+- **Blog header parity.** The blog header uses the same compact
+  mode; GITHUB rides inside the menu on phones, BLOG stays visible
+  as the working area control, and safe-area insets join the
+  ≤760px header widths on both shells.
 
 ## Text style rule (2.4)
 
@@ -597,20 +628,36 @@ Background preloading is bounded, skips hidden tabs, and respects
 
 ## Blog content policy (2026 edition)
 
-All five articles are the September 10, 2026 edition — `date` and
-`updated` set to `2026-09-10` — written around one thesis: **AI
+The five September 10, 2026 foundation articles — `date` and
+`updated` set to `2026-09-10` — are written around one thesis: **AI
 supplies capability, Will supplies direction, Systems convert the two
-into execution.** Each article has a distinct purpose (reasoning
+into execution.** Each has a distinct purpose (reasoning
 frameworks / AI Instructions architecture / living-interface
 philosophy / time architecture / constraint-first system building),
 draws its factual claims about the 2026 AI landscape from attributed
 public sources, and separates FACT from ANALYSIS from POSITION in
 the text. The AI Instructions article summarises the canonical
 source `Parsaetak/Contents@AI-frameworks/Ai-instructions-Sep2026.md`
-and links to it; further project articles (REP, USEF, and others)
-will follow the same convention as research completes. Claims about
-this site are backed by this repository; no achievement is claimed
-beyond what the code demonstrates.
+and links to it.
+
+The four v2.6.1 articles (September 12, 2026) extend the same
+convention to the actual public project ecosystem, one article per
+`project`: **Measuring Machine Intelligence** (project `uhit` — the
+AIST-2026.09 / ASI-100-Elite-2026.09 specifications in
+`Parsaetak/Contents@AI-Tests`), **Red Theory and the Living Web**
+(project `red-theory` — the five-dynamics model, with the honest
+boundary that the demonstrated instance is this repository),
+**SHEYTAN: The Local-First Engineering Laboratory** (project
+`sheytan-local-agent` — the public v1.1.5Z repository, including its
+stated slower-than-llama.cpp native-engine status), and **FreeIran
+Engineering Notes** (project `freeiran` — the v0.5.0 Go repository).
+Every project claim in these articles is checkable in the linked
+public repository; nothing is claimed beyond what the repositories
+and this codebase demonstrate. The Work scene's project cards route
+to the matching field-notes article where a real destination exists
+(see Interaction law) — project → article, article → project
+context, article → related article, through the one deterministic
+related-content system.
 
 ## Writing an article
 

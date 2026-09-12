@@ -52,7 +52,7 @@ Top-level routed areas:
 /blog/ — blog index (static route)
 /blog/<slug>/ — article pages (static routes)
 
-Current version: 2.5.0
+Current version: 2.6.1
 
 ---
 
@@ -1222,6 +1222,118 @@ Every identity term must correspond to something the site actually
 presents or claims (TRADEMARKS.md is the claim source).
 
 XVII. CURRENT BASELINE
+
+Version 2.6.1 — mobile navigation, blog navigation, project articles:
+
+QA FIRST: repository cloned at d1889961a78551865cea0bde92f3efc94277d130
+(v2.5.7) and inspected end to end; the live GitHub ecosystem was
+inspected before any content was written (Parsaetak/Contents branches
+AI-Tests / AI-frameworks / Projects, Parsaetak/SHEYTAN-local-agent
+v1.1.5Z README, Parsaetak/FreeIran v0.5.0 README) so every new
+project claim is grounded in a real public artifact. Baseline lint on
+HEAD reproduced the known 10 pre-existing warnings; feature round
+followed.
+
+- COMPACT MENU (components/CompactMenu.tsx + module CSS): ONE shared
+  touch-first navigation island used by both the world HUD and the
+  blog header. Disclosure pattern: 44px trigger (glyph folds to a
+  cross, transform-only) expanding a dark red-hairline panel of real
+  buttons/links — the six scenes with their index glyphs and accent
+  identities, BLOG ("07", matching the blog kicker), GITHUB ("↗"),
+  with an optional divider. State law: trigger carries aria-expanded
+  / aria-controls (only while open — no dangling id) / aria-haspopup;
+  open focuses the ACTIVE entry; ArrowUp/ArrowDown/Home/End rove
+  focus inside the panel; Escape closes and restores the trigger;
+  pointer-down outside closes (capture-phase listener, mounted only
+  while open, passive); React onBlur (= focusout) closes when focus
+  leaves the root; selecting an entry ALWAYS closes. No scroll
+  locking, no body mutations, native scrolling untouched. Motion:
+  opacity+transform entrance on --motion-short/--ease-out-soft,
+  reduced-motion renders it without animation.
+- RESPONSIVE NAVIGATION MODE (LivingShell + SceneNavigator CSS):
+  ≤860px the horizontal scene track is display:none and the HUD
+  actions group takes the last grid column (media queries only — no
+  UA detection); ≥861px the compact menu wrapper is display:none and
+  the full track is the navigation, unchanged. ≤560px the GitHub text
+  link moves into the menu panel (no header crowding at 320px).
+  BlogHeader gets the same ≤860px mode: the wrapped scene-link row
+  and GitHub stand down, BLOG + trigger remain, and
+  margin-left:auto keeps the actions pinned right. Safe-area insets
+  join both shells' ≤760px header widths. Tablet judgement: 1024/
+  1180 landscape keep the full track; 600/768/820 portrait get the
+  compact menu.
+- BLOG AREA CONTROL FIX (components/blog/BlogAreaControl.tsx): the
+  top-right BLOG item on /blog/ routes — previously a dead
+  pointer-events-none <span> because the layout cannot know the
+  pathname server-side — is now a real <Link href="/blog/"> rendered
+  by a tiny usePathname() island: aria-current="page" on the index,
+  no aria-current on articles (the article is the page; the control
+  says "back to the blog index"), hover/focus states, pointer-events
+  restored. Root cause fixed (missing route context), not styled
+  over. The control moved from the sceneLinks nav into the header
+  actions group so it stays visible in compact mode.
+- WORK SCENE → BLOG ROUTES (WorkScene.tsx + CSS): the three
+  informational project cards gain real destinations — UHIT →
+  /blog/measuring-machine-intelligence/, RED THEORY →
+  /blog/red-theory-and-the-living-web/, AI SYSTEMS →
+  /blog/sheytan-the-local-first-laboratory/ — each as ONE full-card
+  link (data-linked) with a truthful aria-label and a quiet "↳ NOTES
+  — <TITLE>" line that names the destination at rest. Plain anchors
+  cannot use next/link, so internal routes carry the deployment
+  basePath explicitly via NEXT_PUBLIC_BASE_PATH at render time (the
+  not-found.tsx convention) — verified inlined as `/WEB${path}` in
+  the production chunk; #magic stays unprefixed. RED MAGIC keeps its
+  Magic-scene destination; no card links anywhere unreal.
+- FOUR NEW ARTICLES (content/blog/, date 2026-09-12, cover SVG +
+  1200×630 PNG twins): measuring-machine-intelligence (project uhit,
+  research), red-theory-and-the-living-web (project red-theory,
+  research), sheytan-the-local-first-laboratory (project
+  sheytan-local-agent, engineering), freeiran-engineering-notes
+  (project freeiran, engineering). Every factual project claim is
+  attributed to and checkable in the linked public repository
+  (AIST/ASI-100 structure and honesty rules, SHEYTAN's agent loop /
+  Coding Lab gates / native-engine status, FreeIran's pipeline /
+  storage / fake-core harness); the RED THEORY article states its
+  boundary explicitly (the demonstrated instance is this repo; no
+  standalone simulation repo is claimed). House registers
+  (Fact/Analysis/Position) kept; no metrics, statuses, or results
+  invented; deep links validated against real heading ids by the
+  pipeline.
+- GRAPH RESULT: related graph 14 → 53 edges across 9 articles;
+  links-here 29 inbound edges across 7 articles; the inbound Δ
+  ledger printed the movement at build time (reasoning 3 → 7,
+  building-under-constraints 3 → 5, anatomy 3 → 5, living-system
+  3 → 4, ai-instructions 2 → 4; new articles 0 → 2 each). The
+  existing deterministic related-content system absorbed the new
+  articles with NO second recommendation mechanism.
+- Docs: README header (2.6.1) + "Responsive navigation (2.6.1)"
+  section + interaction-law full-card bullet + blog content policy
+  (five foundation articles + four v2.6.1 project articles); worklog
+  (this entry); package.json → 2.6.1; PUSH-NOTES rewritten for the
+  v2.6.1 delivery.
+- Verified: lint 0 errors (10 pre-existing warnings, none new —
+  warning set diffed against a clean HEAD worktree); blog pipeline ✓
+  (9 articles, 41 tags, 3 categories); GITHUB_ACTIONS=true build ✓
+  (14 static pages) and basePath="" build ✓; verify:seo 72/72 —
+  interaction audit 813 href(s) / 158 fragment(s), all resolved, no
+  label punctuation violations; sitemap 11 URLs = exported routes
+  with article-date lastmods; robots production sitemap; feed.xml
+  absent with zero RSS references. Browser QA on the exported site
+  served under /WEB (production-equivalent prefix): menu opens/
+  closes via trigger, Escape, outside pointer-down, selection, and
+  Tab-past; focus lands on the active entry (05Work verified) and
+  roves with arrows; Enter on LIBRARY switched the scene and closed;
+  BLOG control navigated article → /blog/ and reported
+  aria-current="page" on the index; blog menu SYSTEMS entry deep-
+  linked /#systems; UHIT card landed on
+  /blog/measuring-machine-intelligence/ with the correct title;
+  / search, "?" READER CONSOLE, J/K (measuring ↔ red-theory), typing
+  guards, and TOC anchor scroll (heading 94px vs header 66px) all
+  pass; zero horizontal overflow and correct nav mode at
+  320/360/375/390/412/430/600/768/820 (menu) and 861/1024/1180/1280/
+  1440/1920 (full track); landscape 844×390 clean; desktop 1280
+  pixel-compared against the live production site (identical HUD);
+  console clean, no page errors.
 
 Version 2.5.7 — reader comfort (cron QA round 9):
 
