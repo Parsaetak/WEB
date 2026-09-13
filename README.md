@@ -143,6 +143,51 @@ One editorial rule, applied site-wide and enforced by
 - **Technical values / versions / statuses**: the component's
   intended format.
 
+## Brand & asset system (2.9)
+
+The site's identity mark is a **mathematically exact 13-point star** —
+the regular star polygon `{13/5}`, generated in polar coordinates
+(13 outer + 13 inner vertices, 26 alternating vertices, 360/26°
+angular step, inner radius `R · cos(5π/13)/cos(4π/13)`). It is never
+hand-drawn: `scripts/generate-brand.mjs` is the single source of the
+geometry, and `scripts/verify-brand.mjs` re-proves every emitted path
+mathematically (vertex angles, exact radii, 13-fold rotational
+symmetry, byte-identical geometry across colour variants).
+
+### Identity law
+
+- **13-point star = Parsa Tak / site identity** — world-shell HUD,
+  blog header, footer, loading surface, favicon set, OG artwork.
+- **Red Eye = RED MAGIC** — the artistic system experience, now
+  rendered only inside the RED MAGIC scene (its sigil) and article
+  context. The two identities are never merged.
+
+### Asset layers
+
+- `assets/` is the canonical, documented source of truth
+  (`brand/`, `icons/`, `illustrations/`, `social/`, plus
+  `brand/manifest.json` and `assets/README.md` conventions).
+- `public/brand/` + `public/images/projects/` are byte-identical
+  runtime copies; `verify-brand.mjs` fails if the layers drift.
+- Generated outputs are committed — builds never require a hidden
+  local step. Generators: `generate-brand.mjs` (stars, glyphs,
+  favicon SVG), `generate-project-art.mjs` (project diagrams),
+  `generate-brand-raster.py` (favicon PNG/ICO, Apple touch icon,
+  OG images).
+
+### Runtime rules
+
+- The logo is a static asset referenced by URL (`lib/brand.ts`),
+  never an inline React component — no hydration for a logo.
+- Decorative renderings are `aria-hidden`; accessible names live on
+  the wrapping link. Project artwork carries descriptive alt text,
+  intrinsic 1200×630 dimensions, and lazy loading below the fold.
+- Weight budgets are enforced: star SVGs ≤ 6KB, glyphs ≤ 4KB,
+  project diagrams ≤ 8KB, OG PNG ≤ 300KB.
+- The favicon family lives in `public/` (`icon.svg`, `icon.png`,
+  `favicon.ico`, `apple-icon.png`) and is linked via explicit
+  `metadata.icons` — deterministic in every build mode.
+
 ## SEO architecture (2.3)
 
 Principle: **technical SEO improves machine understanding without
@@ -254,7 +299,13 @@ references), no `localhost` / `/blog/undefined`
 anywhere — plus, since 2.4, an **interaction audit** (no `href="#"`,
 no empty `href`, no `javascript:` URLs, and every root-relative
 href resolves to an exported route) and a **text-QA audit** (no
-uppercase label-style text ending in a terminal period). CI runs it
+uppercase label-style text ending in a terminal period). Since 2.9,
+`verify-seo.mjs` also proves the **Google Search Console
+verification meta tag** on every canonical page (exact token,
+context-preserved — the build fails if it disappears or changes),
+the complete **favicon family** (SVG + 192px PNG + multi-size ICO +
+180px Apple touch icon, all linked from the home head), and the
+presence of the generated brand assets in the export. CI runs it
 on every deploy.
 
 The site is Search-Console-ready (sitemap submission, URL
@@ -712,7 +763,9 @@ The deployment environment is detected via `GITHUB_ACTIONS=true`
 `.github/workflows/deploy.yml`: checkout → Node 22 + caches →
 `npm ci` → Pages setup → Library manifest sync + validation →
 blog content validation (posts.json + sitemap + no feed) → Next.js
-build → static SEO verification (`verify-seo.mjs`) → export
+build → static SEO verification (`verify-seo.mjs`) → brand asset
+verification (`verify-brand.mjs`, plus a generator determinism
+re-run: regenerating the asset system must change nothing) → export
 verification (blog routes, sitemap, robots, og image present, feed
 absent; sitemap URL count matches article count) → deployment
 manifest → Pages artifact → deploy → deployed-revision verification.
@@ -723,6 +776,10 @@ manifest → Pages artifact → deploy → deployed-revision verification.
 npm ci
 npm run lint
 npm run build
-npm run verify:seo   # static SEO checks against out/
+npm run verify        # verify:seo + verify:brand, both against real artifacts
+npm run verify:seo    # static SEO checks against out/
+npm run verify:brand  # mathematical star geometry + asset system coherence
+npm run brand         # regenerate the SVG asset system (deterministic)
+npm run brand:raster  # regenerate favicon rasters + OG images (Pillow)
 ls out/blog/ out/blog/<any-slug>/ out/sitemap.xml out/robots.txt
 ```

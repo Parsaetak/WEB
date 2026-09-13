@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import RedEye from "@/components/RedEye";
+import { BRAND_STAR } from "@/lib/brand";
 import CompactMenu, {
   type CompactMenuEntry
 } from "@/components/CompactMenu";
@@ -86,8 +86,20 @@ export default function BlogHeader() {
           href="/"
           aria-label="Parsa Tak — back to the world"
         >
-          <span className={styles.brandEye}>
-            <RedEye size={32} />
+          <span className={styles.brandEye} aria-hidden="true">
+            {/*
+             * The 13-point star — the Parsa Tak site identity, as a
+             * static asset (no hydration for a logo). The link's
+             * aria-label carries the accessible name.
+             */}
+            <img
+              src={BRAND_STAR.red}
+              alt=""
+              width={32}
+              height={32}
+              loading="eager"
+              decoding="async"
+            />
           </span>
 
           <span className={styles.brandName}>

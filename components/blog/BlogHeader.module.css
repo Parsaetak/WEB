@@ -55,8 +55,8 @@
 }
 
 .brandEye {
-  width: 34px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
 
   display: inline-flex;
 
@@ -64,6 +64,13 @@
   justify-content: center;
 
   overflow: visible;
+}
+
+.brandEye img {
+  display: block;
+
+  width: 32px;
+  height: 32px;
 }
 
 .brandName {

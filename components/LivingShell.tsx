@@ -18,7 +18,7 @@ import styles from "@/components/LivingShell.module.css";
 import CompactMenu, {
   type CompactMenuEntry
 } from "@/components/CompactMenu";
-import RedEye from "@/components/RedEye";
+import { BRAND_STAR } from "@/lib/brand";
 import SceneLoadingScreen from "@/components/SceneLoadingScreen";
 import SceneNavigator, {
   type SceneNavigationItem
@@ -418,9 +418,22 @@ export default function LivingShell({
               className={
                 styles.livingShellBrandEye
               }
+              aria-hidden="true"
             >
-              <RedEye
-                size={36}
+              {/*
+               * The 13-point star — the Parsa Tak site identity. A
+               * static asset on purpose: no component hydration for a
+               * logo. The accessible name lives on the wrapping link
+               * (aria-label="Parsa Tak home"), so the image is
+               * decorative to assistive technology.
+               */}
+              <img
+                src={BRAND_STAR.red}
+                alt=""
+                width={36}
+                height={36}
+                loading="eager"
+                decoding="async"
               />
             </span>
 

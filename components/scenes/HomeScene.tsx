@@ -80,6 +80,12 @@ const capabilities = [
  * against the actual repositories. Each card names WHAT IT IS,
  * WHAT PROBLEM IT ADDRESSES, and WHERE TO SEE IT (repository +
  * field notes article). The full portfolio lives in the Work scene.
+ *
+ * v2.9: each card carries original generated artwork — abstract
+ * system diagrams that represent what the project IS (an agent
+ * loop, a benchmark scale, a proxy mesh, an organism, a route
+ * tree). No screenshots are faked; alt text describes exactly
+ * what is drawn. Assets come from scripts/generate-project-art.mjs.
  */
 type FeaturedProject = {
   number: string;
@@ -94,7 +100,18 @@ type FeaturedProject = {
   liveLabel?: string;
   notesHref: string;
   notesLabel: string;
+  image: {
+    src: string;
+    alt: string;
+    width: 1200;
+    height: 630;
+  };
 };
+
+/* Generated artwork is served from the static export. */
+const PROJECT_IMAGE_BASE = `${
+  process.env.NEXT_PUBLIC_BASE_PATH ?? ""
+}/images/projects`;
 
 const featuredProjects: readonly FeaturedProject[] = [
   {
@@ -108,7 +125,13 @@ const featuredProjects: readonly FeaturedProject[] = [
     repository: "https://github.com/Parsaetak/SHEYTAN-local-agent",
     repositoryLabel: "GitHub ↗",
     notesHref: "/blog/sheytan-the-local-first-laboratory/",
-    notesLabel: "Field notes"
+    notesLabel: "Field notes",
+    image: {
+      src: `${PROJECT_IMAGE_BASE}/sheytan-agent-lab.svg`,
+      alt: "Abstract diagram of the SHEYTAN local agent laboratory: a framed local workspace containing a four-stage agent loop — plan, act, verify, remember — orbiting a red 13-point core",
+      width: 1200,
+      height: 630
+    }
   },
   {
     number: "02",
@@ -116,12 +139,18 @@ const featuredProjects: readonly FeaturedProject[] = [
     title: "Universal Human Intelligence Test",
     category: "INTELLIGENCE MEASUREMENT",
     copy:
-      "The measurement programme behind this laboratory: the AIST-2026.09 standard and the ASI-100-Elite benchmark, built on verified operational intelligence.",
+      "The measurement programme behind this laboratory: UHIT — the Universal Human Intelligence Test — realised as the AIST-2026.09 standard and the ASI-100-Elite benchmark, built on verified operational intelligence.",
     tags: ["AIST", "ASI-100", "VERIFICATION"],
     repository: "https://github.com/Parsaetak/Contents/tree/AI-Tests",
     repositoryLabel: "Specifications ↗",
     notesHref: "/blog/measuring-machine-intelligence/",
-    notesLabel: "Field notes"
+    notesLabel: "Field notes",
+    image: {
+      src: `${PROJECT_IMAGE_BASE}/uhit-intelligence-scale.svg`,
+      alt: "Abstract measurement artwork for UHIT: a rising scale of evaluation bars under a dashed elite threshold, one result ringed and marked in red",
+      width: 1200,
+      height: 630
+    }
   },
   {
     number: "03",
@@ -134,7 +163,13 @@ const featuredProjects: readonly FeaturedProject[] = [
     repository: "https://github.com/Parsaetak/FreeIran",
     repositoryLabel: "GitHub ↗",
     notesHref: "/blog/freeiran-engineering-notes/",
-    notesLabel: "Engineering notes"
+    notesLabel: "Engineering notes",
+    image: {
+      src: `${PROJECT_IMAGE_BASE}/freeiran-vpn-mesh.svg`,
+      alt: "Abstract mesh artwork for FreeIran: a field of proxy network nodes with two bright routing tunnels crossing it toward a highlighted client node",
+      width: 1200,
+      height: 630
+    }
   },
   {
     number: "04",
@@ -147,7 +182,13 @@ const featuredProjects: readonly FeaturedProject[] = [
     liveHref: "#magic",
     liveLabel: "Live experiment",
     notesHref: "/blog/why-the-website-is-a-living-system/",
-    notesLabel: "Article"
+    notesLabel: "Article",
+    image: {
+      src: `${PROJECT_IMAGE_BASE}/red-magic-organism.svg`,
+      alt: "Abstract artwork of the RED MAGIC computational organism: a red nucleus inside three breathing membranes with flow currents and orbiting signal particles",
+      width: 1200,
+      height: 630
+    }
   },
   {
     number: "05",
@@ -160,7 +201,13 @@ const featuredProjects: readonly FeaturedProject[] = [
     repository: "https://github.com/Parsaetak/WEB",
     repositoryLabel: "GitHub ↗",
     notesHref: "/blog/the-anatomy-of-a-fast-static-site/",
-    notesLabel: "How it works"
+    notesLabel: "How it works",
+    image: {
+      src: `${PROJECT_IMAGE_BASE}/web-static-living-system.svg`,
+      alt: "Abstract diagram of this website as a static living system: a red 13-point identity core linking six world scenes and a chained blog route tree",
+      width: 1200,
+      height: 630
+    }
   }
 ];
 
@@ -631,6 +678,28 @@ export default function HomeScene() {
                       </span>
                     </Link>
                   </div>
+                  </div>
+
+                  {/*
+                    * v2.9 project artwork — original generated system
+                    * diagrams (never fake screenshots). Intrinsic
+                    * 1200×630 prevents layout shift; lazy because the
+                    * section is below the hero; decorative-free alt
+                    * text describes exactly what is drawn.
+                    */}
+                  <div
+                    className={
+                      styles.homeProjectVisual
+                    }
+                  >
+                    <img
+                      src={project.image.src}
+                      alt={project.image.alt}
+                      width={project.image.width}
+                      height={project.image.height}
+                      loading="lazy"
+                      decoding="async"
+                    />
                   </div>
                 </article>
               )

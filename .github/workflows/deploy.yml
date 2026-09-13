@@ -143,6 +143,23 @@ jobs:
       - name: Verify static SEO output
         run: node scripts/verify-seo.mjs
 
+      - name: Verify brand asset system
+        run: |
+          set -euo pipefail
+
+          # The committed asset system must already be coherent...
+          node scripts/verify-brand.mjs
+
+          # ...and the generators must be deterministic: regenerating
+          # from source changes nothing (no hidden local steps).
+          node scripts/generate-brand.mjs
+          node scripts/generate-project-art.mjs
+          node scripts/verify-brand.mjs
+
+          git diff --exit-code -- assets/brand assets/icons assets/illustrations assets/social public/brand public/images/projects public/icon.svg public/icon.png public/favicon.ico public/apple-icon.png public/og-default.png
+
+          echo "Brand asset system verified and deterministic."
+
       - name: Verify static export output
         run: |
           set -euo pipefail

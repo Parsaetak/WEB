@@ -18,6 +18,15 @@ import {
 } from "@/lib/seo";
 
 /*
+ * The deployment basePath, inlined at build time (mirrors
+ * next.config.ts). Used for the favicon links below: Next applies
+ * metadataBase to OG/twitter images and canonical URLs but emits
+ * metadata.icons hrefs verbatim, so the /WEB prefix must be carried
+ * explicitly — the same discipline as lib/brand.ts and not-found.tsx.
+ */
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+/*
  * THE site identity graph. Emitted exactly once, here in the root
  * layout, so every route shares one coherent Person + WebSite
  * entity model. Route-specific objects (WebPage, Blog, BlogPosting,
@@ -100,6 +109,53 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true
+  },
+  /*
+   * FAVICON FAMILY (v2.9) — declared explicitly and served from
+   * public/ so the exact link set is deterministic in every build
+   * mode (file-convention emission proved unreliable for
+   * favicon.ico once a basePath is active). Hrefs carry the
+   * basePath explicitly: Next emits metadata.icons verbatim
+   * (metadataBase does not apply to them).
+   * The SVG is the generated 13-point star (public/icon.svg).
+   */
+  icons: {
+    icon: [
+      {
+        url: `${BASE_PATH}/favicon.ico`,
+        sizes: "48x48",
+        type: "image/x-icon"
+      },
+      {
+        url: `${BASE_PATH}/icon.svg`,
+        type: "image/svg+xml"
+      },
+      {
+        url: `${BASE_PATH}/icon.png`,
+        sizes: "192x192",
+        type: "image/png"
+      }
+    ],
+    apple: [
+      {
+        url: `${BASE_PATH}/apple-icon.png`,
+        sizes: "180x180",
+        type: "image/png"
+      }
+    ]
+  },
+  /*
+   * SEARCH CONSOLE VERIFICATION (v2.9). Emitted exactly once from
+   * this root layout, so every canonical route carries the same
+   * <meta name="google-site-verification"> tag — no per-route
+   * duplication. The value is verified by scripts/verify-seo.mjs on
+   * every build: if the tag disappears or changes, the build fails.
+   * This token proves ownership of parsaetak.github.io/WEB in Google
+   * Search Console; it is a public verification token, not a secret,
+   * and must never appear in visible page content.
+   */
+  verification: {
+    google: "K8PQwvcGcrpBCyR-6XbmnDhv2IFPxpxjXV90UY7glTo"
   }
 };
 

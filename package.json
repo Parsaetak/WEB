@@ -1,6 +1,6 @@
 {
   "name": "parsaetak-web",
-  "version": "2.8.1",
+  "version": "2.9.0",
   "private": true,
   "scripts": {
     "dev": "node scripts/build-blog.mjs && next dev",
@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "blog": "node scripts/build-blog.mjs",
-    "verify:seo": "node scripts/verify-seo.mjs"
+    "brand": "node scripts/generate-brand.mjs && node scripts/generate-project-art.mjs",
+    "brand:raster": "python3 scripts/generate-brand-raster.py",
+    "verify:seo": "node scripts/verify-seo.mjs",
+    "verify:brand": "node scripts/verify-brand.mjs",
+    "verify": "npm run verify:seo && npm run verify:brand"
   },
   "dependencies": {
     "next": "16.3.3",

@@ -125,7 +125,7 @@
   animation: none;
 }
 
-.sceneLoadingScreen[data-variant="scene"] .eye {
+.sceneLoadingScreen[data-variant="scene"] .mark {
   width: 54px;
 
   height: 54px;
@@ -296,7 +296,7 @@
     both;
 }
 
-.eye {
+.mark {
   width: 78px;
   height: 78px;
 
@@ -571,7 +571,7 @@
     animation: none;
   }
 
-  .eye {
+  .mark {
     animation: none;
   }
 

@@ -99,12 +99,21 @@ const PROFILE_URLS: readonly string[] = [
 /*
  * Person entity — the author/creator identity of the site.
  * No image field: the site publishes a brand mark, not a photo,
- * and structured data must stay truthful.
+ * and structured data must stay truthful. (The 13-point star is the
+ * SITE identity mark; a Person is not an Organization, so no `logo`
+ * property applies here either — v2.9 audited this and deliberately
+ * keeps the graph free of an invented publisher organization.)
  *
  * Identity terms (AI Instructions, REP, USEF, SHEYTAN, RED MAGIC)
  * each appear exactly once and correspond to real marks the site
  * owner claims in TRADEMARKS.md and to work actually presented on
  * this site. Nothing here is a keyword list.
+ *
+ * v2.9 additions — both visible-backed:
+ * - jobTitle mirrors the hero kicker ("RESEARCHER · BUILDER ·
+ *   PROGRAMMER · WRITER · ARTIST") in plain, crawlable wording.
+ * - knowsAbout lists the capability vocabulary the home scene
+ *   presents in its capabilities grid and featured projects.
  */
 export function personEntity() {
   return {
@@ -114,6 +123,17 @@ export function personEntity() {
     url: `${SITE_URL}/`,
     description:
       "Architect of the AI Instructions, REP, and USEF framework family, the SHEYTAN local-agent experiments, and the RED MAGIC interface experiments.",
+    jobTitle: "Researcher and software engineer",
+    knowsAbout: [
+      "AI systems",
+      "AI agents",
+      "Reasoning",
+      "Software engineering",
+      "System architecture",
+      "Local AI",
+      "Simulation",
+      "Creative technology"
+    ],
     sameAs: PROFILE_URLS
   };
 }

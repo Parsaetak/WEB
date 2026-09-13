@@ -81,8 +81,8 @@
 }
 
 .livingShellBrandEye {
-  width: 39px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
 
   display: inline-flex;
 
@@ -90,6 +90,35 @@
   justify-content: center;
 
   overflow: visible;
+}
+
+.livingShellBrandEye img {
+  display: block;
+
+  width: 36px;
+  height: 36px;
+}
+
+/*
+ * Footer brand mark (v2.9) — the 13-point star anchoring the legal
+ * block to the site identity. Decorative; sized to the copyright
+ * line's optical weight.
+ */
+.livingShellFooterMark {
+  display: inline-flex;
+
+  align-items: center;
+
+  margin-right: 9px;
+
+  vertical-align: -3px;
+}
+
+.livingShellFooterMark img {
+  display: block;
+
+  width: 18px;
+  height: 18px;
 }
 
 .livingShellBrandName {
@@ -554,6 +583,12 @@
 
   .livingShellBrandEye {
     width: 34px;
+    height: 34px;
+  }
+
+  .livingShellBrandEye img {
+    width: 34px;
+    height: 34px;
   }
 
   .livingShellViewport {
@@ -585,6 +620,12 @@
 
   .livingShellBrandEye {
     width: 32px;
+    height: 32px;
+  }
+
+  .livingShellBrandEye img {
+    width: 32px;
+    height: 32px;
   }
 
   /*

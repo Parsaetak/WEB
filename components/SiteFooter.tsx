@@ -1,5 +1,7 @@
 import styles from "@/components/LivingShell.module.css";
 
+import { BRAND_STAR } from "@/lib/brand";
+
 import FooterLinks from "@/components/FooterLinks";
 
 /*
@@ -33,6 +35,26 @@ export default function SiteFooter() {
             }
           >
             <strong>
+              <span
+                className={
+                  styles.livingShellFooterMark
+                }
+                aria-hidden="true"
+              >
+                {/*
+                 * The 13-point star anchors the legal block to the
+                 * site identity. Decorative: the adjacent text is
+                 * the accessible content.
+                 */}
+                <img
+                  src={BRAND_STAR.red}
+                  alt=""
+                  width={18}
+                  height={18}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </span>
               © 2026 Parsa Tak. All rights reserved.
             </strong>
 

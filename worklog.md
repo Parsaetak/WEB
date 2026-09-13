@@ -1298,6 +1298,41 @@ chip bar explains why. No parallel relationship system may be
 created — the frontmatter field, the URL state, and the filter
 machinery are the single source of truth.
 
+63. Brand Star Geometry Law (2.9)
+
+The Parsa Tak identity mark is the regular 13-point star
+polygon {13/5}: 13 outer + 13 inner vertices (26 alternating),
+360/26 degree angular step, first vertex at -90 degrees, inner
+radius R * cos(5pi/13)/cos(4pi/13). The geometry exists ONLY in
+scripts/generate-brand.mjs; SVG outputs are generated, committed,
+and never hand-edited. verify:brand re-proves every emitted path
+mathematically (vertex polar positions, exact radii, 13-fold
+rotational symmetry, byte-identical geometry across all colour
+variants) and fails the build on any drift. Only colour treatment
+may differ between variants.
+
+64. Identity Separation Law (2.9)
+
+The 13-point star is the SITE identity: world-shell HUD, blog
+header, footer mark, loading surface, favicon family, OG
+artwork. The Red Eye is RED MAGIC's own artistic sigil and
+renders only inside the RED MAGIC scene. The logo is a static
+asset referenced through lib/brand.ts (no inline React logo
+component, no hydration for a logo); decorative renderings are
+aria-hidden and the accessible name lives on the wrapping link.
+
+65. Asset System Law (2.9)
+
+assets/ is the canonical asset system (brand/, icons/,
+illustrations/, social/, manifest, README conventions);
+public/brand/ and public/images/projects/ hold byte-identical
+runtime copies. Generators (generate-brand.mjs,
+generate-project-art.mjs, generate-brand-raster.py) are
+deterministic and zero-dependency; regenerating must change
+nothing (CI re-runs them and fails on any diff). Weight budgets
+are enforced by verify:brand: star SVGs <= 6KB, glyphs <= 4KB,
+project diagrams <= 8KB, og-default.png <= 300KB.
+
 - HOME SCENE (components/scenes/HomeScene.tsx + module CSS): hero
   kicker carries identity (PARSA TAK — RESEARCHER · BUILDER ·
   PROGRAMMER · WRITER · ARTIST), h1 carries capability (AI

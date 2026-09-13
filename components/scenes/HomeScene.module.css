@@ -948,12 +948,18 @@
   display:
     grid;
 
+  /*
+   * v2.9: third column carries the project artwork plate on wide
+   * screens; the plate drops below the copy on narrower viewports
+   * (see the media-query overrides at the bottom of this file).
+   */
   grid-template-columns:
     76px
     minmax(
       0,
       1fr
-    );
+    )
+    272px;
 
   gap:
     24px
@@ -965,6 +971,34 @@
   border-bottom:
     1px solid
     var(--line-soft);
+}
+
+/*
+ * Project artwork plate (v2.9). The 1px frame + quiet surface match
+ * the card's typographic language; the intrinsic 1200×630 size in
+ * the markup keeps the plate from shifting layout while loading.
+ */
+.homeProjectVisual {
+  align-self: center;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius: 10px;
+
+  background:
+    #0a0a0c;
+
+  overflow: hidden;
+}
+
+.homeProjectVisual img {
+  display: block;
+
+  width: 100%;
+
+  height: auto;
 }
 
 .homeProject::before {
@@ -2278,6 +2312,16 @@ strong i {
       22px;
   }
 
+  /*
+   * Narrow-tablet (v2.9): the artwork plate leaves the grid and
+   * flows below the copy, inside the text column.
+   */
+  .homeProjectVisual {
+    grid-column: 2;
+
+    max-width: 460px;
+  }
+
   .homeWorkflowGrid {
     grid-template-columns:
       repeat(
@@ -2392,6 +2436,13 @@ strong i {
 
     gap:
       14px;
+  }
+
+  /* Phone (v2.9): the artwork plate spans the single column. */
+  .homeProjectVisual {
+    grid-column: 1;
+
+    max-width: 100%;
   }
 
   .homeProjectLinks {

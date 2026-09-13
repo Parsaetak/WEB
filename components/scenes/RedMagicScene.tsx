@@ -1,3 +1,4 @@
+import RedEye from "@/components/RedEye";
 import MagicConsole from "@/components/MagicConsole";
 import styles from "./RedMagicScene.module.css";
 
@@ -94,6 +95,23 @@ export default function RedMagicScene() {
         <div className="page-container">
           <header className={styles.magicOrganismHeader}>
             <div className={styles.magicOrganismHeading}>
+              {/*
+               * THE RED MAGIC SIGIL (v2.9). Since the 13-point star
+               * became the site's primary identity mark, the all-
+               * seeing eye belongs to RED MAGIC alone — this scene is
+               * its artistic home. aria-hidden: the h1 beside it
+               * already names RED MAGIC, so the sigil stays decorative
+               * and never duplicates the announcement.
+               */}
+              <span
+                className={
+                  styles.magicOrganismSigil
+                }
+                aria-hidden="true"
+              >
+                <RedEye size={44} />
+              </span>
+
               <p className="kicker">
                 03 / MAGIC
               </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import RedEye from "@/components/RedEye";
+import { BRAND_STAR } from "@/lib/brand";
 
 import type {
   LoadPhase
@@ -82,7 +82,7 @@ export default function SceneLoadingScreen({
       >
         <div
           className={
-            styles.eye
+            styles.mark
           }
           data-error={
             isError
@@ -91,8 +91,19 @@ export default function SceneLoadingScreen({
           }
           aria-hidden="true"
         >
-          <RedEye
-            size={56}
+          {/*
+           * The 13-point star — the site identity, shown while the
+           * world becomes interactive. Static asset, aria-hidden:
+           * the surface itself already announces state through its
+           * role="status" label, so the mark is decorative.
+           */}
+          <img
+            src={BRAND_STAR.redHot}
+            alt=""
+            width={56}
+            height={56}
+            loading="eager"
+            decoding="async"
           />
         </div>
 

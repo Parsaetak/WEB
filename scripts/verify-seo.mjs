@@ -45,6 +45,15 @@ const OUT_DIR = path.join(ROOT, "out");
 const SITE_ORIGIN = "https://parsaetak.github.io/WEB";
 
 /*
+ * Google Search Console verification token (v2.9). Emitted once from
+ * the root layout's metadata.verification field; every canonical page
+ * must carry it EXACTLY, and CI fails the moment it disappears or is
+ * altered. This is a public verification token, not a secret.
+ */
+const GOOGLE_SITE_VERIFICATION =
+  "K8PQwvcGcrpBCyR-6XbmnDhv2IFPxpxjXV90UY7glTo";
+
+/*
  * Mirror next.config.ts / build-blog.mjs: exported hrefs carry the
  * deployment basePath in CI, but the out/ tree itself is NOT
  * basePath-prefixed — strip it before resolving hrefs to files.
@@ -216,6 +225,26 @@ async function verifyPage(route, file, expectations) {
     fail(`${route}: missing robots meta (expected index,follow)`);
   } else {
     pass(`${route}: robots meta index,follow`);
+  }
+
+  /*
+   * SEARCH CONSOLE VERIFICATION (v2.9): every canonical page must
+   * carry the exact google-site-verification meta tag, exactly once,
+   * with the token byte-preserved. Disappearing or mutated tokens are
+   * a build failure — the tag is the site's ownership proof for
+   * Google Search Console.
+   */
+  const verificationPattern = new RegExp(
+    `<meta name="google-site-verification" content="${GOOGLE_SITE_VERIFICATION}"\\s*/>`,
+    "g"
+  );
+  const verificationCount = (html.match(verificationPattern) ?? []).length;
+  if (verificationCount !== 1) {
+    fail(
+      `${route}: google-site-verification meta tag must appear exactly once with the exact token (found ${verificationCount})`
+    );
+  } else {
+    pass(`${route}: google-site-verification token present and exact`);
   }
 
   /* JSON-LD validity + expected types */
@@ -664,6 +693,97 @@ async function verifyHomeContent() {
   }
 }
 
+/*
+ * FAVICON FAMILY (v2.9): the export must carry the complete brand
+ * icon set built from the 13-point star, and the home page HTML must
+ * link every piece of it. Google surfaces favicons in search when the
+ * icon is crawlable, square, stable, and larger than minimum — the
+ * checks below keep that true.
+ */
+async function verifyFaviconFamily() {
+  const requiredIcons = [
+    { file: "icon.svg", label: "SVG favicon (public/icon.svg)" },
+    { file: "icon.png", label: "PNG favicon fallback (192×192)" },
+    { file: "favicon.ico", label: "legacy multi-size favicon" },
+    { file: "apple-icon.png", label: "Apple touch icon (180×180)" }
+  ];
+
+  for (const icon of requiredIcons) {
+    if (!existsSync(path.join(OUT_DIR, icon.file))) {
+      fail(`${icon.file}: ${icon.label} missing from export`);
+    } else {
+      pass(`${icon.file}: ${icon.label} present in export`);
+    }
+  }
+
+  const html = await readText("index.html");
+  /*
+   * The icon link set must be complete AND correctly prefixed: Next
+   * emits metadata.icons hrefs verbatim (metadataBase does not apply),
+   * so under the /WEB deployment the hrefs must carry the basePath —
+   * an unprefixed href would 404 on GitHub Pages.
+   */
+  const linkExpectations = [
+    { file: "favicon.ico", label: "favicon.ico icon link" },
+    { file: "icon.svg", label: "SVG icon link" },
+    { file: "icon.png", label: "PNG icon link" },
+    { file: "apple-icon.png", label: "apple-touch-icon link" }
+  ];
+
+  for (const expectation of linkExpectations) {
+    const hrefPattern = new RegExp(
+      `<link rel="(?:icon|apple-touch-icon)"[^>]*href="${BASE_PATH}/${expectation.file.replace(/\./g, "\\.")}"`,
+      ""
+    );
+    if (!hrefPattern.test(html)) {
+      fail(
+        `home: ${expectation.label} missing or not basePath-prefixed (expected href="${BASE_PATH}/${expectation.file}")`
+      );
+    } else {
+      pass(`home: ${expectation.label} present (${BASE_PATH}/${expectation.file})`);
+    }
+  }
+}
+
+/*
+ * BRAND ASSETS IN EXPORT (v2.9): the generated brand system must
+ * actually ship — star variants, the glyph library, and the project
+ * artwork the home scene references.
+ */
+async function verifyBrandAssetsInExport() {
+  const requiredRuntime = [
+    "brand/star-red.svg",
+    "brand/star-red-hot.svg",
+    "brand/star-white.svg",
+    "brand/star-outline-red.svg",
+    "brand/star-silver.svg",
+    "images/projects/sheytan-agent-lab.svg",
+    "images/projects/uhit-intelligence-scale.svg",
+    "images/projects/freeiran-vpn-mesh.svg",
+    "images/projects/red-magic-organism.svg",
+    "images/projects/web-static-living-system.svg"
+  ];
+
+  for (const asset of requiredRuntime) {
+    if (!existsSync(path.join(OUT_DIR, asset))) {
+      fail(`brand asset missing from export: ${asset}`);
+    }
+  }
+
+  const iconCount = existsSync(path.join(OUT_DIR, "brand", "icons"))
+    ? (await readdir(path.join(OUT_DIR, "brand", "icons"))).filter((name) => name.endsWith(".svg")).length
+    : 0;
+  if (iconCount < 14) {
+    fail(`brand glyph library incomplete in export: ${iconCount}/14 icons`);
+  }
+
+  if (failures.length === 0 || !failures.some((entry) => entry.startsWith("brand asset missing") || entry.startsWith("brand glyph library"))) {
+    pass(
+      `brand assets: ${requiredRuntime.length} runtime asset(s) + ${iconCount} glyph(s) ship in the export`
+    );
+  }
+}
+
 async function main() {
   if (!existsSync(OUT_DIR)) {
     console.error("[seo] out/ does not exist — run `npm run build` first.");
@@ -761,12 +881,9 @@ async function main() {
   await verifyNoRss();
   await verifyInteractivity();
 
-  /* Icon asset */
-  if (!existsSync(path.join(OUT_DIR, "icon.svg"))) {
-    fail("icon.svg: favicon missing from export");
-  } else {
-    pass("icon.svg: favicon present in export");
-  }
+  /* Favicon family + brand assets (v2.9) — checked with the export. */
+  await verifyFaviconFamily();
+  await verifyBrandAssetsInExport();
 
   console.log(`\n[seo] ${checks.length} check(s) passed`);
   for (const entry of checks) {

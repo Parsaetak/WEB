@@ -331,6 +331,19 @@
   min-width: 0;
 }
 
+/*
+ * RED MAGIC sigil (v2.9) — the all-seeing eye above the scene title.
+ * RED MAGIC's own artistic mark, deliberately distinct from the
+ * 13-point star that carries the site identity elsewhere.
+ */
+.magicOrganismSigil {
+  display: inline-flex;
+
+  align-items: center;
+
+  margin-bottom: 14px;
+}
+
 .magicOrganismTitle {
   margin-top: 10px;
 }
