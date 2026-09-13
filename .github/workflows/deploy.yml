@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
   workflow_dispatch:
 
 permissions:
@@ -12,9 +11,6 @@ permissions:
   pages: write
   id-token: write
 
-# GitHub Pages deployments must be allowed to finish.
-# Newer pushes may replace pending work, but must not cancel
-# an already-running production deployment.
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -51,57 +47,56 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v6
 
-      # Fail fast on the one repository setting this deployment
-      # architecture DEPENDS on but cannot change from code:
-      #
-      #   Settings → Pages → Build and deployment → Source
-      #
-      # must be "GitHub Actions" (API build_type "workflow").
-      # When it is left on "Deploy from a branch" (build_type
-      # "legacy"), the legacy Jekyll build of the repository
-      # README keeps owning the site: actions/deploy-pages then
-      # accepts our artifact but the deployment never reaches
-      # "live" (it hangs in purging_cdn until the action's
-      # timeout kills it) and visitors keep seeing the stale
-      # branch build. Catching this here avoids spending the
-      # whole build pipeline on a deployment that can never
-      # succeed. The authoritative re-check also runs in the
-      # deploy job immediately before deployment.
-      - name: Check Pages source configuration
+      - name: Verify Pages configuration
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
 
-          http_code="$(curl \
-            --silent --show-error --location --max-time 20 \
-            --header "Authorization: Bearer ${GH_TOKEN}" \
-            --header "Accept: application/vnd.github+json" \
-            --write-out '%{http_code}' \
-            --output /tmp/pages-config.json \
-            "https://api.github.com/repos/${GH_REPO}/pages" 2>/dev/null || echo '000')"
+          response_file="$(mktemp)"
+
+          http_code="$(
+            curl \
+              --silent \
+              --show-error \
+              --location \
+              --max-time 20 \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header "Accept: application/vnd.github+json" \
+              --header "X-GitHub-Api-Version: 2026-03-10" \
+              --write-out '%{http_code}' \
+              --output "${response_file}" \
+              "https://api.github.com/repos/${GH_REPO}/pages"
+          )"
 
           if [ "${http_code}" != "200" ]; then
-            echo "::warning::Could not read the Pages configuration (HTTP ${http_code}); continuing — the deploy job re-checks before deployment."
-            exit 0
-          fi
-
-          build_type="$(node -e '
-            const fs = require("fs");
-            const config = JSON.parse(fs.readFileSync("/tmp/pages-config.json", "utf8"));
-            console.log(config.build_type ?? "legacy");
-          ')"
-
-          if [ "${build_type}" != "workflow" ]; then
-            echo "::error::GitHub Pages source is '${build_type}' (\"Deploy from a branch\"), but this workflow deploys with actions/deploy-pages, which requires 'GitHub Actions'. The legacy branch build keeps owning the site and deployments hang in purging_cdn. Fix (one-time, repository settings — cannot be changed from code): Settings → Pages → Build and deployment → Source → 'GitHub Actions'."
+            echo "::error::Unable to read GitHub Pages configuration (HTTP ${http_code})."
+            cat "${response_file}" || true
             exit 1
           fi
 
-          echo "Pages source verified: build_type=workflow ('GitHub Actions')."
+          build_type="$(
+            node -e '
+              const fs = require("fs");
+              const config = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+              process.stdout.write(config.build_type || "legacy");
+            ' "${response_file}"
+          )"
+
+          if [ "${build_type}" != "workflow" ]; then
+            echo "::error::GitHub Pages is configured as '${build_type}'."
+            echo "::error::Set Settings -> Pages -> Build and deployment -> Source to 'GitHub Actions'."
+            echo "::error::This workflow deploys through actions/deploy-pages and cannot work while Pages uses 'Deploy from a branch'."
+            exit 1
+          fi
+
+          echo "GitHub Pages source verified: workflow."
 
       - name: Sync Library manifest
         run: |
+          set -euo pipefail
+
           mkdir -p data
 
           curl \
@@ -114,23 +109,20 @@ jobs:
 
       - name: Validate Library manifest
         run: |
-          node -e "
+          set -euo pipefail
+
+          node <<'NODE'
           const fs = require('fs');
 
           const file = 'data/library.json';
-
-          const data = JSON.parse(
-            fs.readFileSync(file, 'utf8')
-          );
+          const data = JSON.parse(fs.readFileSync(file, 'utf8'));
 
           if (
             typeof data.version !== 'number' ||
             typeof data.updated !== 'string' ||
             !Array.isArray(data.items)
           ) {
-            throw new Error(
-              'Invalid Library manifest'
-            );
+            throw new Error('Invalid Library manifest');
           }
 
           for (const item of data.items) {
@@ -140,18 +132,14 @@ jobs:
               typeof item.title !== 'string' ||
               typeof item.type !== 'string'
             ) {
-              throw new Error(
-                'Invalid Library manifest item'
-              );
+              throw new Error('Invalid Library manifest item');
             }
           }
 
           console.log(
-            'Library manifest valid:',
-            data.items.length,
-            'items'
+            `Library manifest valid: ${data.items.length} items`
           );
-          "
+          NODE
 
       - name: Restore Next.js build cache
         uses: actions/cache@v5
@@ -161,22 +149,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-
 
-      # The blog content pipeline validates every article (required
-      # fields, slug format, dates, cover files, internal links, the
-      # related-content graph) before the site exists. A malformed
-      # article fails the build
-      # with the file and the reason instead of silently shipping
-      # corrupted content. `npm run build` re-runs the script itself;
-      # this step exists to surface content failures with a clear
-      # dedicated job step.
       - name: Validate blog content and data pipeline
         run: |
+          set -euo pipefail
+
           node scripts/build-blog.mjs
 
           test -f data/blog/posts.json
           test -f public/sitemap.xml
 
-          # RSS was removed in v2.5 — the pipeline must not emit a feed.
           if [ -f public/blog/feed.xml ]; then
             echo "public/blog/feed.xml must not exist (RSS removed in v2.5)." >&2
             exit 1
@@ -187,15 +168,9 @@ jobs:
       - name: Build Next.js site
         run: npm run build
 
-      # Programmatic SEO verification against the exported artifacts:
-      # titles, descriptions, canonicals, JSON-LD validity, sitemap/
-      # robots contents, RSS absence, and production URL correctness.
       - name: Verify static SEO output
         run: node scripts/verify-seo.mjs
 
-      # Artifact-level validation: the export must actually contain
-      # the blog routes and the SEO assets — and must NOT contain the
-      # removed RSS feed — before anything is uploaded.
       - name: Verify static export output
         run: |
           set -euo pipefail
@@ -214,15 +189,20 @@ jobs:
           grep -q "https://parsaetak.github.io/WEB/sitemap.xml" out/robots.txt
 
           sitemap_urls="$(grep -c "<loc>" out/sitemap.xml)"
+
           article_count="$(
-            find out/blog -mindepth 1 -maxdepth 1 -type d \
-              ! -name images | wc -l
+            find out/blog \
+              -mindepth 1 \
+              -maxdepth 1 \
+              -type d \
+              ! -name images \
+              | wc -l
           )"
 
-          # Every article must appear in the sitemap (plus home and
-          # the blog index).
-          if [ "${sitemap_urls}" -ne $((article_count + 2)) ]; then
-            echo "Sitemap/.route mismatch: ${sitemap_urls} sitemap URLs for ${article_count} article(s)." >&2
+          expected_urls=$((article_count + 2))
+
+          if [ "${sitemap_urls}" -ne "${expected_urls}" ]; then
+            echo "Sitemap/route mismatch: ${sitemap_urls} sitemap URLs for ${article_count} article(s)." >&2
             exit 1
           fi
 
@@ -231,39 +211,8 @@ jobs:
             exit 1
           fi
 
-          echo "Static export verified: blog index, sitemap, robots, and ${article_count} article route(s) present; no feed shipped."
+          echo "Static export verified: ${article_count} article route(s)."
 
-      # Deployment manifests, deliberately written after the Next.js
-      # export (and after SEO/export verification) so they ride the
-      # same uploaded artifact.
-      #
-      # Two manifests are written:
-      #
-      # 1. out/deployment.json — human-readable, stable URL. Useful as
-      #    a public pointer to the currently deployed revision. It is
-      #    NOT used for verification: the GitHub Pages CDN serves it
-      #    with Cache-Control: max-age=600, so a verification request
-      #    to this stable URL can observe the PREVIOUS deployment's
-      #    manifest (a false failure) for up to 10 minutes after a
-      #    new deployment.
-      #
-      # 2. out/deployments/<sha>.json — the authoritative verification
-      #    artifact. Its URL path is unique per commit, so no response
-      #    from any earlier deployment can ever be served at that
-      #    path: if this URL returns 200 with the expected commit in
-      #    the body, then exactly this revision is publicly served.
-      #    This is what the deploy job verifies.
-      #
-      # Measured GitHub Pages CDN (Fastly) facts that shaped this
-      # design (verified empirically against parsaetak.github.io):
-      #   - Query strings are NOT part of the cache key: /f.json?a=1
-      #     and /f.json?a=2 share one cache entry, so "?sha=" query
-      #     parameters cannot bust the cache.
-      #   - 404 responses ARE cached at the edge: probing a URL before
-      #     propagation caches the 404, and later requests for the
-      #     same path hit that cached 404. A unique-per-commit path is
-      #     requested for the first time by this very run, so the only
-      #    cached entry that can exist is one this run created.
       - name: Write deployment manifests
         env:
           DEPLOYMENT_SHA: ${{ github.sha }}
@@ -271,21 +220,22 @@ jobs:
         run: |
           set -euo pipefail
 
-          printf '%s\n' \
-            '{' \
-            "  \"commit\": \"${DEPLOYMENT_SHA}\"," \
-            "  \"runId\": \"${DEPLOYMENT_RUN_ID}\"" \
-            '}' > out/deployment.json
+          cat > out/deployment.json <<EOF
+          {
+            "commit": "${DEPLOYMENT_SHA}",
+            "runId": "${DEPLOYMENT_RUN_ID}"
+          }
+          EOF
 
-          mkdir -p "out/deployments"
-          printf '%s\n' \
-            '{' \
-            "  \"commit\": \"${DEPLOYMENT_SHA}\"," \
-            "  \"runId\": \"${DEPLOYMENT_RUN_ID}\"," \
-            "  \"deployedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" \
-            '}' > "out/deployments/${DEPLOYMENT_SHA}.json"
+          mkdir -p out/deployments
 
-          echo "Wrote verification artifact deployments/${DEPLOYMENT_SHA}.json"
+          cat > "out/deployments/${DEPLOYMENT_SHA}.json" <<EOF
+          {
+            "commit": "${DEPLOYMENT_SHA}",
+            "runId": "${DEPLOYMENT_RUN_ID}",
+            "deployedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
@@ -296,189 +246,39 @@ jobs:
     name: Deploy site
     needs:
       - build
-
     runs-on: ubuntu-latest
 
     environment:
       name: github-pages
-      url: ${{ steps.acceptance.outputs.url }}
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      # Authoritative pre-deployment source check (mirrors the build
-      # job's check). This is the exact failure mode of run
-      # 34736391200: with the Pages source left on "Deploy from a
-      # branch", deploy-pages accepted the artifact, the deployment
-      # status sat in purging_cdn until the action's 10-minute
-      # timeout cancelled it, and the verify step was skipped. When
-      # misconfigured, fail HERE in seconds with the exact setting
-      # to change instead of burning 10+ minutes on a deployment
-      # that can never go live.
-      - name: Check Pages source configuration
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-
-          http_code="$(curl \
-            --silent --show-error --location --max-time 20 \
-            --header "Authorization: Bearer ${GH_TOKEN}" \
-            --header "Accept: application/vnd.github+json" \
-            --write-out '%{http_code}' \
-            --output /tmp/pages-config.json \
-            "https://api.github.com/repos/${GH_REPO}/pages" 2>/dev/null || echo '000')"
-
-          if [ "${http_code}" != "200" ]; then
-            echo "::warning::Could not read the Pages configuration (HTTP ${http_code}); proceeding to deployment — deploy-pages and the revision verification remain the acceptance gates."
-            exit 0
-          fi
-
-          build_type="$(node -e '
-            const fs = require("fs");
-            const config = JSON.parse(fs.readFileSync("/tmp/pages-config.json", "utf8"));
-            console.log(config.build_type ?? "legacy");
-          ')"
-
-          if [ "${build_type}" != "workflow" ]; then
-            echo "::error::GitHub Pages source is '${build_type}' (\"Deploy from a branch\"), but this workflow deploys with actions/deploy-pages, which requires 'GitHub Actions'. Fix (one-time, repository settings — cannot be changed from code): Settings → Pages → Build and deployment → Source → 'GitHub Actions'."
-            exit 1
-          fi
-
-          echo "Pages source verified: build_type=workflow ('GitHub Actions')."
-
-      # Deploy attempt 1 of 2. The default timeout (10 minutes) was
-      # the direct cause of run 34736391200 failing while GitHub's
-      # CDN purge was still in progress: the deployment was created,
-      # sat in purging_cdn, and the action cancelled it at exactly
-      # 10 minutes. 20 minutes tolerates slow purges without
-      # inviting an unbounded hang. continue-on-error lets the next
-      # step decide whether a bounded retry is warranted; the final
-      # acceptance step below re-raises any real failure.
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
         with:
           timeout: 1200000
-        continue-on-error: true
 
-      # Bounded retry: exactly ONE re-deployment of the SAME
-      # artifact when the first attempt fails (timeout, transient
-      # status-report errors, or CDN stall). A new deployment
-      # replaces the stuck one; verification below still decides
-      # acceptance, so a retry can never disguise a bad deployment
-      # as success.
-      - name: Redeploy to GitHub Pages
-        id: deployment_retry
-        if: steps.deployment.outcome == 'failure'
-        uses: actions/deploy-pages@v5
-        with:
-          timeout: 1200000
-        continue-on-error: true
-
-      # Deployment acceptance: distinct from build success and from
-      # live-revision verification. The workflow only moves to
-      # verification when at least one deploy attempt reported
-      # success; otherwise diagnostics are printed and the job
-      # fails. A timed-out deployment is NEVER treated as success.
-      - name: Accept deployment
-        id: acceptance
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          EXPECTED_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-
-          if [ "${{ steps.deployment.outcome }}" = "success" ]; then
-            echo "url=${{ steps.deployment.outputs.page_url }}" >> "${GITHUB_OUTPUT}"
-            echo "Deployment accepted on attempt 1."
-            exit 0
-          fi
-
-          if [ "${{ steps.deployment_retry.outcome }}" = "success" ]; then
-            echo "url=${{ steps.deployment_retry.outputs.page_url }}" >> "${GITHUB_OUTPUT}"
-            echo "Deployment accepted on attempt 2."
-            exit 0
-          fi
-
-          # Both attempts failed. Explain WHY with real data: fetch
-          # the Pages deployments for this commit and their latest
-          # status, so a stuck purging_cdn (or a legacy-source
-          # conflict) is visible directly in the run log.
-          echo "::error::GitHub Pages deployment failed on both attempts (attempt 1: ${{ steps.deployment.outcome }}, attempt 2: ${{ steps.deployment_retry.outcome }})."
-
-          deployments_http="$(curl \
-            --silent --show-error --location --max-time 20 \
-            --header "Authorization: Bearer ${GH_TOKEN}" \
-            --header "Accept: application/vnd.github+json" \
-            --write-out '%{http_code}' \
-            --output /tmp/pages-deployments.json \
-            "https://api.github.com/repos/${GH_REPO}/deployments?environment=github-pages&sha=${EXPECTED_SHA}&per_page=5" 2>/dev/null || echo '000')"
-
-          if [ "${deployments_http}" = "200" ]; then
-            node -e '
-              const fs = require("fs");
-              const deployments = JSON.parse(fs.readFileSync("/tmp/pages-deployments.json", "utf8"));
-              if (!Array.isArray(deployments) || deployments.length === 0) {
-                console.log("No github-pages deployment records exist for commit " + process.env.EXPECTED_SHA + " — the deployment was never created (check the Pages source setting).");
-              } else {
-                for (const deployment of deployments) {
-                  console.log("Deployment " + deployment.id + " (created " + deployment.created_at + "): statuses fetched separately.");
-                }
-              }
-            ' || true
-          else
-            echo "Deployment diagnostics unavailable (HTTP ${deployments_http})."
-          fi
-
-          exit 1
-
-      # Do not consider the workflow completely successful merely
-      # because deploy-pages accepted the artifact. Verify that the
-      # newly deployed revision is actually being served.
-      #
-      # Verification ladder (each rung is distinct and observable):
-      #   1. artifact built        → build job completed + artifact uploaded
-      #   2. deployment accepted   → Accept deployment step succeeded
-      #   3. revision served       → THIS step: the commit-specific
-      #                              artifact is publicly reachable with
-      #                              HTTP 200 and contains the expected
-      #                              commit in its JSON body
-      #
-      # The verification target is /deployments/<sha>.json — a URL path
-      # that exists only in this commit's artifact. That property makes
-      # the check immune to stale deployments by construction: a 200
-      # response containing the expected SHA can only come from the
-      # exact revision this run built. The stable /deployment.json URL
-      # is deliberately NOT used for verification (CDN max-age=600 on
-      # the stable path can serve the previous revision's manifest and
-      # produce a false failure; query-string cache-busting does not
-      # work because the Pages CDN ignores query strings in cache
-      # keys).
       - name: Verify deployed revision
         env:
-          PAGE_URL: ${{ steps.acceptance.outputs.url }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
           EXPECTED_SHA: ${{ github.sha }}
-          RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
 
           base_url="${PAGE_URL%/}"
-          if [ -z "$base_url" ]; then
+
+          if [ -z "${base_url}" ]; then
             base_url="https://parsaetak.github.io/WEB"
-            echo "page_url output was empty; falling back to ${base_url}"
           fi
 
-          verify_url="${base_url}/deployments/${EXPECTED_SHA}.json?run=${RUN_ID}"
+          verify_url="${base_url}/deployments/${EXPECTED_SHA}.json"
+
           echo "Verifying ${verify_url}"
 
-          attempts=40
-          for attempt in $(seq 1 "${attempts}"); do
+          for attempt in $(seq 1 40); do
             body_file="$(mktemp)"
 
-            # --fail fails the request on any non-2xx status.
-            # -w captures the actual HTTP status for reporting.
             http_code="$(
               curl \
                 --silent \
@@ -493,72 +293,24 @@ jobs:
             )"
 
             if \
-              [ "${http_code}" = "200" ] && \
+              [ "${http_code}" = "200" ] &&
               grep -Fq "\"commit\": \"${EXPECTED_SHA}\"" "${body_file}"
             then
-              echo "GitHub Pages is serving the expected revision ${EXPECTED_SHA} (HTTP ${http_code})."
+              echo "GitHub Pages is serving revision ${EXPECTED_SHA}."
               cat "${body_file}"
               rm -f "${body_file}"
               exit 0
             fi
 
             rm -f "${body_file}"
-            echo "Revision not observable yet (HTTP ${http_code}); attempt ${attempt}/${attempts}."
+
+            echo \
+              "Revision not visible yet: HTTP ${http_code} " \
+              "attempt ${attempt}/40."
+
             sleep 5
           done
 
-          # Diagnostics: figure out WHAT is being served instead of the
-          # expected revision, so the failure message is actionable
-          # instead of mysterious. The historical root cause of this
-          # verification failing is GitHub Pages being configured with
-          # "Deploy from a branch" (legacy Jekyll build of README.md)
-          # instead of "GitHub Actions": deploy-pages then accepts the
-          # artifact, but the branch build keeps serving the site.
-          root_status="$(
-            curl --silent --location --max-time 15 \
-              --write-out '%{http_code}' --output /dev/null \
-              "${base_url}/" 2>/dev/null || echo '000'
-          )"
-          curl --silent --location --max-time 15 "${base_url}/" \
-            --output /tmp/live-root.html 2>/dev/null || true
-
-          if grep -Fq 'style.css?v=' /tmp/live-root.html 2>/dev/null && grep -Fq 'edit/main/README.md' /tmp/live-root.html 2>/dev/null; then
-            echo "::error::GitHub Pages is serving the legacy Jekyll branch build (root returned HTTP ${root_status}; the served HTML is the Primer-theme rendering of README.md), not this workflow's Next.js artifact. Fix the root cause: Settings → Pages → Build and deployment → Source must be 'GitHub Actions' (not 'Deploy from a branch'). The verification artifact ${verify_url} was never published."
-          elif grep -Fq 'content="Jekyll' /tmp/live-root.html 2>/dev/null; then
-            echo "::error::GitHub Pages is serving the legacy Jekyll branch build (root returned HTTP ${root_status} with a Jekyll generator tag), not this workflow's Next.js artifact. Fix the root cause: Settings → Pages → Build and deployment → Source must be 'GitHub Actions' (not 'Deploy from a branch'). The verification artifact ${verify_url} was never published."
-          else
-            echo "::error::GitHub Pages accepted the deployment, but the expected commit ${EXPECTED_SHA} was not publicly served at ${verify_url} (root URL status: ${root_status}) after ${attempts} verification attempts."
-          fi
-
-          # Final diagnostic: report the backend deployment statuses
-          # for this commit so a stalled purging_cdn is explicit.
-          GH_TOKEN="${{ github.token }}" GH_REPO="${{ github.repository }}" EXPECTED_SHA="${EXPECTED_SHA}" node -e '
-            const https = require("https");
-            const headers = {
-              "Authorization": "Bearer " + process.env.GH_TOKEN,
-              "Accept": "application/vnd.github+json",
-              "User-Agent": "pages-deployment-verification"
-            };
-            const listPath = "/repos/" + process.env.GH_REPO + "/deployments?environment=github-pages&sha=" + process.env.EXPECTED_SHA + "&per_page=1";
-            const get = (path) => new Promise((resolve) => {
-              https.get({ host: "api.github.com", path, headers }, (res) => {
-                let body = "";
-                res.on("data", (chunk) => { body += chunk; });
-                res.on("end", () => resolve({ code: res.statusCode, body }));
-              }).on("error", () => resolve({ code: 0, body: "" }));
-            });
-            (async () => {
-              const list = await get(listPath);
-              if (list.code !== 200) { console.log("Deployment status diagnostics unavailable (HTTP " + list.code + ")."); return; }
-              const deployments = JSON.parse(list.body);
-              if (!Array.isArray(deployments) || deployments.length === 0) { console.log("No github-pages deployment records for this commit."); return; }
-              const statuses = await get("/repos/" + process.env.GH_REPO + "/deployments/" + deployments[0].id + "/statuses?per_page=10");
-              if (statuses.code !== 200) { console.log("Deployment " + deployments[0].id + " status fetch failed (HTTP " + statuses.code + ")."); return; }
-              const records = JSON.parse(statuses.body);
-              for (const record of Array.isArray(records) ? records : []) {
-                console.log("Deployment " + deployments[0].id + " state: " + record.state + " — " + (record.description || "no description"));
-              }
-            })();
-          ' || true
+          echo "::error::The deployment was accepted, but revision ${EXPECTED_SHA} was not observed publicly."
 
           exit 1
