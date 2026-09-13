@@ -115,6 +115,21 @@
   flex-direction: column;
 }
 
+/*
+ * Closed-state contract hardening.
+ *
+ * The author `display: flex` above competes with the browser's
+ * closed-<details> content hiding: Chromium still lays out children
+ * with an author display value (real bounding boxes), even though
+ * they are not painted, not hit-testable and not focusable. Those
+ * phantom boxes pollute overlap analysis and would surface visually
+ * if paint order ever changed. The explicit closed-state rule makes
+ * the collapsed TOC deterministic: no layout, no boxes, no surprises.
+ */
+.tocInline:not([open]) .inlineList {
+  display: none;
+}
+
 .inlineLink {
   display: flex;
 

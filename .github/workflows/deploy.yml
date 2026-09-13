@@ -184,20 +184,59 @@ jobs:
 
           echo "Static export verified: blog index, sitemap, robots, and ${article_count} article route(s) present; no feed shipped."
 
-      # This file is deliberately added after the Next.js export.
-      # It lets the deploy job verify that GitHub Pages is serving
-      # the exact commit that triggered this workflow.
-      - name: Write deployment manifest
+      # Deployment manifests, deliberately written after the Next.js
+      # export (and after SEO/export verification) so they ride the
+      # same uploaded artifact.
+      #
+      # Two manifests are written:
+      #
+      # 1. out/deployment.json — human-readable, stable URL. Useful as
+      #    a public pointer to the currently deployed revision. It is
+      #    NOT used for verification: the GitHub Pages CDN serves it
+      #    with Cache-Control: max-age=600, so a verification request
+      #    to this stable URL can observe the PREVIOUS deployment's
+      #    manifest (a false failure) for up to 10 minutes after a
+      #    new deployment.
+      #
+      # 2. out/deployments/<sha>.json — the authoritative verification
+      #    artifact. Its URL path is unique per commit, so no response
+      #    from any earlier deployment can ever be served at that
+      #    path: if this URL returns 200 with the expected commit in
+      #    the body, then exactly this revision is publicly served.
+      #    This is what the deploy job verifies.
+      #
+      # Measured GitHub Pages CDN (Fastly) facts that shaped this
+      # design (verified empirically against parsaetak.github.io):
+      #   - Query strings are NOT part of the cache key: /f.json?a=1
+      #     and /f.json?a=2 share one cache entry, so "?sha=" query
+      #     parameters cannot bust the cache.
+      #   - 404 responses ARE cached at the edge: probing a URL before
+      #     propagation caches the 404, and later requests for the
+      #     same path hit that cached 404. A unique-per-commit path is
+      #     requested for the first time by this very run, so the only
+      #    cached entry that can exist is one this run created.
+      - name: Write deployment manifests
         env:
           DEPLOYMENT_SHA: ${{ github.sha }}
           DEPLOYMENT_RUN_ID: ${{ github.run_id }}
         run: |
-          cat > out/deployment.json <<EOF
-          {
-            "commit": "${DEPLOYMENT_SHA}",
-            "runId": "${DEPLOYMENT_RUN_ID}"
-          }
-          EOF
+          set -euo pipefail
+
+          printf '%s\n' \
+            '{' \
+            "  \"commit\": \"${DEPLOYMENT_SHA}\"," \
+            "  \"runId\": \"${DEPLOYMENT_RUN_ID}\"" \
+            '}' > out/deployment.json
+
+          mkdir -p "out/deployments"
+          printf '%s\n' \
+            '{' \
+            "  \"commit\": \"${DEPLOYMENT_SHA}\"," \
+            "  \"runId\": \"${DEPLOYMENT_RUN_ID}\"," \
+            "  \"deployedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" \
+            '}' > "out/deployments/${DEPLOYMENT_SHA}.json"
+
+          echo "Wrote verification artifact deployments/${DEPLOYMENT_SHA}.json"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
@@ -223,35 +262,94 @@ jobs:
       # Do not consider the workflow completely successful merely
       # because deploy-pages accepted the artifact. Verify that the
       # newly deployed revision is actually being served.
+      #
+      # Verification ladder (each rung is distinct and observable):
+      #   1. artifact built        → build job completed + artifact uploaded
+      #   2. deployment accepted   → deploy-pages step completed
+      #   3. revision served       → THIS step: the commit-specific
+      #                              artifact is publicly reachable with
+      #                              HTTP 200 and contains the expected
+      #                              commit in its JSON body
+      #
+      # The verification target is /deployments/<sha>.json — a URL path
+      # that exists only in this commit's artifact. That property makes
+      # the check immune to stale deployments by construction: a 200
+      # response containing the expected SHA can only come from the
+      # exact revision this run built. The stable /deployment.json URL
+      # is deliberately NOT used for verification (CDN max-age=600 on
+      # the stable path can serve the previous revision's manifest and
+      # produce a false failure; query-string cache-busting does not
+      # work because the Pages CDN ignores query strings in cache
+      # keys).
       - name: Verify deployed revision
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
           EXPECTED_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
 
-          manifest_url="${PAGE_URL%/}/deployment.json?sha=${EXPECTED_SHA}"
+          base_url="${PAGE_URL%/}"
+          if [ -z "$base_url" ]; then
+            base_url="https://parsaetak.github.io/WEB"
+            echo "page_url output was empty; falling back to ${base_url}"
+          fi
 
-          for attempt in $(seq 1 36); do
-            response="$(
+          verify_url="${base_url}/deployments/${EXPECTED_SHA}.json?run=${RUN_ID}"
+          echo "Verifying ${verify_url}"
+
+          attempts=40
+          for attempt in $(seq 1 "${attempts}"); do
+            body_file="$(mktemp)"
+
+            # --fail fails the request on any non-2xx status.
+            # -w captures the actual HTTP status for reporting.
+            http_code="$(
               curl \
-                --fail \
                 --silent \
                 --show-error \
                 --location \
-                --max-time 10 \
-                "$manifest_url" \
-                2>/dev/null || true
+                --max-time 15 \
+                --header 'Cache-Control: no-cache' \
+                --header 'Pragma: no-cache' \
+                --write-out '%{http_code}' \
+                --output "${body_file}" \
+                "${verify_url}" 2>/dev/null || echo '000'
             )"
 
-            if printf '%s' "$response" | grep -Fq "\"commit\": \"$EXPECTED_SHA\""; then
-              echo "GitHub Pages is serving commit $EXPECTED_SHA."
+            if \
+              [ "${http_code}" = "200" ] && \
+              grep -Fq "\"commit\": \"${EXPECTED_SHA}\"" "${body_file}"
+            then
+              echo "GitHub Pages is serving the expected revision ${EXPECTED_SHA} (HTTP ${http_code})."
+              cat "${body_file}"
+              rm -f "${body_file}"
               exit 0
             fi
 
-            echo "Deployment not visible yet; verification attempt ${attempt}/36."
+            rm -f "${body_file}"
+            echo "Revision not observable yet (HTTP ${http_code}); attempt ${attempt}/${attempts}."
             sleep 5
           done
 
-          echo "GitHub Pages accepted the deployment, but the expected commit was not reachable after verification retries."
+          # Diagnostics: figure out WHAT is being served instead of the
+          # expected revision, so the failure message is actionable
+          # instead of mysterious. The historical root cause of this
+          # verification failing is GitHub Pages being configured with
+          # "Deploy from a branch" (legacy Jekyll build of README.md)
+          # instead of "GitHub Actions": deploy-pages then accepts the
+          # artifact, but the branch build keeps serving the site.
+          root_status="$(
+            curl --silent --location --max-time 15 \
+              --write-out '%{http_code}' --output /dev/null \
+              "${base_url}/" 2>/dev/null || echo '000'
+          )"
+          curl --silent --location --max-time 15 "${base_url}/" \
+            --output /tmp/live-root.html 2>/dev/null || true
+
+          if grep -Fq 'content="Jekyll' /tmp/live-root.html 2>/dev/null; then
+            echo "::error::GitHub Pages is serving the legacy Jekyll branch build (root returned HTTP ${root_status} with a Jekyll generator tag), not this workflow's Next.js artifact. Fix the root cause: Settings → Pages → Build and deployment → Source must be 'GitHub Actions' (not 'Deploy from a branch'). The verification artifact ${verify_url} was never published."
+          else
+            echo "::error::GitHub Pages accepted the deployment, but the expected commit ${EXPECTED_SHA} was not publicly served at ${verify_url} (root URL status: ${root_status}) after ${attempts} verification attempts."
+          fi
           exit 1

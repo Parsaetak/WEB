@@ -47,6 +47,15 @@
 }
 
 .backLink {
+  display: inline-flex;
+
+  align-items: center;
+
+  /* Touch-target sizing (WCAG 2.5.8): the bare 10px text link was an
+     ~11px target; padded inline-flex makes it ~29px while the
+     transparent padding keeps the kicker's visual density. */
+  padding: 9px 10px 9px 0;
+
   color: var(--red-hot);
 
   transition: color 160ms ease;
@@ -69,7 +78,9 @@
 
   gap: 4px;
 
-  padding: 3px 8px;
+  /* Touch-target sizing (WCAG 2.5.8): 3px vertical padding made an
+     ~20px target; 7px makes it ~26px. */
+  padding: 7px 10px;
 
   border: 1px solid rgba(255, 32, 32, 0.28);
 

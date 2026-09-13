@@ -227,6 +227,17 @@
 
   white-space: nowrap;
 
+  /*
+   * Touch-target sizing (WCAG 2.5.8): a bare 10px text link is an
+   * ~11px target. Centering inside padded inline-flex grows the
+   * tappable box to ~27px without changing the HUD's rhythm.
+   */
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 8px 4px;
+
   transition:
     color 160ms ease,
     opacity 160ms ease;

@@ -29,12 +29,30 @@ const VALID_SCENES: readonly SceneId[] =
 function readSceneFromHash():
   | SceneId
   | null {
-  const hash =
+  let hash =
     window.location.hash
       .replace(
         /^#/,
         ""
-      )
+      );
+
+  /*
+   * Hashes set by the browser arrive percent-encoded ("# MAGIC "
+   * becomes "#%20MAGIC%20"), so the trim below would otherwise
+   * operate on encoded bytes and never trim anything. Decode first;
+   * a malformed percent sequence falls back to the raw string.
+   */
+  try {
+    hash =
+      decodeURIComponent(
+        hash
+      );
+  } catch {
+    /* keep the raw hash */
+  }
+
+  hash =
+    hash
       .trim()
       .toLowerCase();
 
@@ -136,6 +154,20 @@ export default function SceneUrlSync({
           nextScene
         ) {
           onSceneChangeRef.current(
+            nextScene
+          );
+
+          /*
+           * Canonicalize the URL after any hash navigation.
+           * Invalid (e.g. "#bogus") and aliased (e.g. "#home",
+           * "#MAGIC") hashes resolve to a scene above, but the
+           * raw hash would otherwise stay in the address bar —
+           * inconsistent with the load-time normalization in the
+           * mount effect, which always rewrites to the canonical
+           * form. replaceState never fires hashchange or
+           * popstate, so this cannot re-enter.
+           */
+          normalizeHash(
             nextScene
           );
 

@@ -162,7 +162,9 @@
  * active area is now navigable with mouse, touch and keyboard.
  */
 .sceneLinkActive {
-  display: inline-block;
+  display: inline-flex;
+
+  align-items: center;
 
   color: var(--red-hot);
 
@@ -171,7 +173,9 @@
 
   border-radius: 3px;
 
-  padding: 4px 8px;
+  /* Touch-target sizing (WCAG 2.5.8): 4px padding made a ~20px
+     target; 9px vertical padding makes it ~28px. */
+  padding: 9px 10px;
 
   font-family: var(--font-mono);
 
@@ -235,6 +239,17 @@
   text-transform: uppercase;
 
   white-space: nowrap;
+
+  /*
+   * Touch-target sizing (WCAG 2.5.8): a bare 10px text link is an
+   * ~12px target on tablets. Padded inline-flex grows the tappable
+   * box to ~28px without altering the header's visual rhythm.
+   */
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 9px 4px;
 
   transition: color 160ms ease;
 }

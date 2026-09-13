@@ -76,9 +76,6 @@ html {
   background:
     var(--background);
 
-  scroll-behavior:
-    smooth;
-
   text-rendering:
     optimizeLegibility;
 
@@ -87,6 +84,20 @@ html {
 
   -moz-osx-font-smoothing:
     grayscale;
+}
+
+/*
+ * Smooth scrolling only for users who have not asked the system for
+ * reduced motion (WCAG 2.3.3 / vestibular safety). Fragment jumps,
+ * focus navigation and programmatic scrolls stay instant under
+ * prefers-reduced-motion: reduce — matching the JS-side gating of
+ * every smooth scrollIntoView in the app.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior:
+      smooth;
+  }
 }
 
 body {
