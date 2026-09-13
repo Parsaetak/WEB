@@ -431,8 +431,48 @@ async function verifyInteractivity() {
     }
   }
 
+  /*
+   * MEDIA EXISTENCE (v2.8.1): every internal <img src> and favicon
+   * reference in the export must point at a file that actually ships.
+   * Broken image references were previously invisible to this
+   * pipeline (href auditing never looked at src attributes) — a
+   * renamed or deleted asset is now a build failure instead of a
+   * silent 404 for visitors and crawlers.
+   */
+  let mediaChecked = 0;
+
+  for (const file of htmlFiles) {
+    const html = await readFile(path.join(OUT_DIR, file), "utf8");
+    const label = file;
+    const srcs = [...html.matchAll(/\ssrc="([^"]+)"/g)].map((match) =>
+      decodeEntities(match[1])
+    );
+
+    for (const src of srcs) {
+      if (!/\.(png|jpe?g|svg|webp|avif|gif|ico)(\?|$)/i.test(src)) {
+        continue;
+      }
+
+      if (/^(https?:)?\/\//i.test(src) || src.startsWith("data:")) {
+        continue;
+      }
+
+      mediaChecked += 1;
+
+      const unbased =
+        BASE_PATH !== "" && src.startsWith(BASE_PATH)
+          ? src.slice(BASE_PATH.length)
+          : src;
+      const clean = unbased.split("?")[0].split("#")[0];
+
+      if (!existsSync(path.join(OUT_DIR, clean.replace(/^\//, "")))) {
+        fail(`${label}: image src does not resolve to an exported file: "${src}"`);
+      }
+    }
+  }
+
   pass(
-    `interaction: ${htmlFiles.length} page(s), ${hrefsChecked} href(s) audited, ${fragmentsChecked} in-page fragment(s) resolved — no dead anchors${labelIssues === 0 ? ", no label punctuation violations" : ""}`
+    `interaction: ${htmlFiles.length} page(s), ${hrefsChecked} href(s) audited, ${fragmentsChecked} in-page fragment(s), ${mediaChecked} media reference(s) resolved — no dead anchors${labelIssues === 0 ? ", no label punctuation violations" : ""}`
   );
 }
 

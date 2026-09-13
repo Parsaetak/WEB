@@ -1441,7 +1441,15 @@
   }
 
   .body {
-    font-size: 16px;
+    /*
+     * READER SCALE: the static 16px here used to cancel the
+     * --reader-scale preference on phones and small tablets — the
+     * TextSize control stayed visible, stored the preference, and
+     * had no visible effect below 760px. Multiply the same fixed
+     * base the desktop clamp bottoms out at, so every step of the
+     * control scales the reading column on narrow screens too.
+     */
+    font-size: calc(16px * var(--reader-scale, 1));
   }
 
   .body h2 {

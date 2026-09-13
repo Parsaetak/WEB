@@ -448,6 +448,16 @@
 
   letter-spacing: 0.12em;
 
+  /*
+   * TOUCH TARGET (v2.8.1): these are standalone footer controls, not
+   * inline links in running text. Vertical padding lifts the hit
+   * height to the 24px minimum; the negative margin keeps the footer
+   * row's visual geometry exactly as designed.
+   */
+  padding: 7px 0;
+
+  margin: -7px 0;
+
   text-transform: uppercase;
 
   transition:

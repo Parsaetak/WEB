@@ -490,7 +490,16 @@
 
   align-items: center;
 
-  padding: 0;
+  /*
+   * TOUCH TARGET (v2.8.1): the 8px mono chip kept its visual size,
+   * but as a pressed/not-pressed control it needs a real pointer
+   * target. Padding enlarges the hit area to >=24px; the negative
+   * margin pays the padding back so the kicker row's layout is
+   * pixel-identical to the old zero-padding chip.
+   */
+  padding: 8px 10px;
+
+  margin: -8px -4px -8px -10px;
 
   border: 0;
 
@@ -623,6 +632,19 @@
 
 .cardTitle a {
   color: var(--text);
+
+  /*
+   * TOUCH TARGET (v2.8.1): the title anchor is the card's primary
+   * destination on touch screens; vertical padding lifts its hit
+   * height above the 24px minimum without moving the text (negative
+   * margin compensates). display:inline-block so the padding forms
+   * one solid target across wrapped two-line titles.
+   */
+  display: inline-block;
+
+  padding: 4px 0;
+
+  margin: -4px 0;
 }
 
 .cardTitle a:hover {

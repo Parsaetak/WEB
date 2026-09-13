@@ -19,8 +19,26 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  pages-source:
+    name: Verify Pages source configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Verify Pages source is GitHub Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash .github/scripts/verify-pages-source.sh
+
   build:
     name: Prepare and build site
+    needs:
+      - pages-source
     runs-on: ubuntu-latest
 
     steps:
@@ -46,52 +64,6 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
-
-      - name: Verify Pages configuration
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-
-          response_file="$(mktemp)"
-
-          http_code="$(
-            curl \
-              --silent \
-              --show-error \
-              --location \
-              --max-time 20 \
-              --header "Authorization: Bearer ${GH_TOKEN}" \
-              --header "Accept: application/vnd.github+json" \
-              --header "X-GitHub-Api-Version: 2026-03-10" \
-              --write-out '%{http_code}' \
-              --output "${response_file}" \
-              "https://api.github.com/repos/${GH_REPO}/pages"
-          )"
-
-          if [ "${http_code}" != "200" ]; then
-            echo "::error::Unable to read GitHub Pages configuration (HTTP ${http_code})."
-            cat "${response_file}" || true
-            exit 1
-          fi
-
-          build_type="$(
-            node -e '
-              const fs = require("fs");
-              const config = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-              process.stdout.write(config.build_type || "legacy");
-            ' "${response_file}"
-          )"
-
-          if [ "${build_type}" != "workflow" ]; then
-            echo "::error::GitHub Pages is configured as '${build_type}'."
-            echo "::error::Set Settings -> Pages -> Build and deployment -> Source to 'GitHub Actions'."
-            echo "::error::This workflow deploys through actions/deploy-pages and cannot work while Pages uses 'Deploy from a branch'."
-            exit 1
-          fi
-
-          echo "GitHub Pages source verified: workflow."
 
       - name: Sync Library manifest
         run: |
@@ -253,6 +225,17 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Re-verify Pages source before deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash .github/scripts/verify-pages-source.sh
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
