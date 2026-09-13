@@ -500,6 +500,25 @@
     0.92;
 }
 
+/*
+ * Touch scrolling (v2.8): RedMagic sets touch-action: none on its
+ * root and canvas so the full MAGIC scene can own every gesture.
+ * Embedded as the home hero organism, that same rule swallowed
+ * scroll gestures that started on the canvas — on phones the hero
+ * became a scroll trap. Vertical panning stays available here;
+ * horizontal (drawing-class) gestures inside the organism remain
+ * handled by the canvas.
+ */
+.homeOriginMagicOrganism > * {
+  touch-action:
+    pan-y;
+}
+
+.homeOriginMagicOrganism > * canvas {
+  touch-action:
+    pan-y;
+}
+
 .homeOriginMagicVignette {
   position:
     absolute;

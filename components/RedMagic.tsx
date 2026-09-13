@@ -287,6 +287,22 @@ const SHOCKWAVE_DURATION =
 const IDLE_SIMULATION_SCALE =
   0.32;
 
+/*
+ * Idle cadence (v2.8): after this long without pointer intent the
+ * ambient organism drops from full vsync to a capped redraw rate.
+ * The canvas redraw — clear plus membrane, network, node sprites
+ * and glow passes — is the engine's dominant cost; capping idle
+ * redraws cuts that cost to roughly a quarter on high-refresh
+ * displays while the drift stays visibly alive. Any pointer
+ * movement, click, or interaction event restores the full rate
+ * instantly.
+ */
+const IDLE_CADENCE_DELAY_MS =
+  4000;
+
+const IDLE_FRAME_INTERVAL_MS =
+  33;
+
 const GRID_ENERGY_DECAY =
   0.94;
 
@@ -1869,6 +1885,20 @@ export default function RedMagic({
     let lastTimestamp =
       0;
 
+    /*
+     * Idle-cadence bookkeeping: the timestamp of the last frame
+     * actually drawn, and when pointer intent left the canvas
+     * (null = intent present or never left; 0 = never entered —
+     * a never-touched organism idles from the start).
+     */
+    let lastDrawTimestamp =
+      0;
+
+    let idleSince:
+      | number
+      | null =
+      0;
+
     let pointer: Point = {
       x: 0,
       y: 0
@@ -2659,6 +2689,15 @@ export default function RedMagic({
           width,
           height
         );
+
+        /*
+         * A resize changed the world geometry. While the loop runs,
+         * start() is a no-op and the next frame picks the new size
+         * up; under reduced motion the loop is stopped, so this
+         * renders one fresh static frame at the new size instead of
+         * leaving a stale canvas.
+         */
+        start();
       };
 
     const updatePointer =
@@ -3421,8 +3460,23 @@ export default function RedMagic({
             charge =
               0;
 
+            idleSince =
+              performance.now();
+
             break;
         }
+
+        /*
+         * Interaction events carry real intent: leave the idle
+         * cadence and (under reduced motion) draw one fresh static
+         * frame so event-driven state is reflected without a loop.
+         */
+        if (detail.type !== "leave") {
+          idleSince =
+            null;
+        }
+
+        start();
       };
 
     const handleCanvasClick =
@@ -3452,10 +3506,23 @@ export default function RedMagic({
         pointerTarget.y =
           y;
 
-        addClickParticle(
-          x,
-          y
-        );
+        /*
+         * Click particles animate through stepDelta, which is
+         * permanently zero under reduced motion — spawning them
+         * there would leave frozen artifacts. The click still
+         * produces one fresh static frame via start().
+         */
+        if (!reducedMotion) {
+          addClickParticle(
+            x,
+            y
+          );
+        }
+
+        idleSince =
+          null;
+
+        start();
       };
 
     const updateGrid =
@@ -6251,6 +6318,32 @@ export default function RedMagic({
           return;
         }
 
+        /*
+         * Idle cadence (v2.8): with no pointer intent on the canvas
+         * (and none for the last few seconds), skip the expensive
+         * redraw and just reschedule. Physics deltas collapse to
+         * the clamp ceiling on the next drawn frame, so ambient
+         * motion stays continuous — only the redraw rate drops.
+         */
+        if (
+          !pointerActive &&
+          idleSince !== null &&
+          timestamp - idleSince >
+            IDLE_CADENCE_DELAY_MS &&
+          timestamp - lastDrawTimestamp <
+            IDLE_FRAME_INTERVAL_MS
+        ) {
+          animationFrame =
+            window.requestAnimationFrame(
+              render
+            );
+
+          return;
+        }
+
+        lastDrawTimestamp =
+          timestamp;
+
         if (
           lastTimestamp ===
           0
@@ -6398,6 +6491,21 @@ export default function RedMagic({
           timestamp
         );
 
+        /*
+         * Reduced motion (v2.8): render exactly one static frame and
+         * stop scheduling. Redrawing an identical frame at full
+         * vsync is not reduced motion — it is the same cost with
+         * time frozen. Event-driven state changes (pointer, click,
+         * resize, mode, visibility) call start() themselves, which
+         * produces one fresh static frame per event.
+         */
+        if (reducedMotion) {
+          animationFrame =
+            0;
+
+          return;
+        }
+
         animationFrame =
           window.requestAnimationFrame(
             render
@@ -6454,12 +6562,24 @@ export default function RedMagic({
 
         pointerActive =
           true;
+
+        /*
+         * Pointer intent is present: leave idle cadence and (under
+         * reduced motion) draw one fresh static frame per event.
+         */
+        idleSince =
+          null;
+
+        start();
       };
 
     const handlePointerLeave =
       () => {
         pointerActive =
           false;
+
+        idleSince =
+          performance.now();
       };
 
     const handleMotionChange =

@@ -36,7 +36,7 @@
  */
 
 import { readdir, readFile, writeFile, mkdir, access } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, openSync, readSync, closeSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -328,7 +328,7 @@ function renderInline(text, usedIds) {
       if (!isSafeUrl(src)) {
         return escapeHtml(match);
       }
-      return `<img src="${applyBasePath(src)}" alt="${alt}" loading="lazy" decoding="async" />`;
+      return bodyImg(src, alt);
     }
   );
 
@@ -377,6 +377,107 @@ function applyBasePath(url) {
     return url;
   }
   return `${BASE_PATH}${url}`;
+}
+
+/*
+ * Intrinsic image size (v2.8) — lets body <img> markup carry
+ * width/height attributes so the browser can reserve the layout
+ * box before the bytes arrive (the same layout-shift protection
+ * the cover pipeline enforces on covers). Only local, already
+ * validated images are considered: PNG dimensions come from the
+ * IHDR header (signature + first chunk), SVG from explicit
+ * width/height or the viewBox aspect. Anything unreadable or
+ * remote returns null and the attributes are simply omitted —
+ * a measurement failure must never break the build.
+ */
+function imageIntrinsicSize(src) {
+  if (typeof src !== "string" || !src.startsWith("/blog/images/")) {
+    return null;
+  }
+
+  const file = path.join(ROOT, "public", src.replace(/^\//, ""));
+
+  try {
+    if (!existsSync(file)) {
+      return null;
+    }
+
+    if (/\.png$/i.test(src)) {
+      const buffer = Buffer.alloc(24);
+      const fd = openSync(file, "r");
+      try {
+        readSync(fd, buffer, 0, 24, 0);
+      } finally {
+        closeSync(fd);
+      }
+
+      const isPng =
+        buffer[0] === 0x89 &&
+        buffer[1] === 0x50 &&
+        buffer[2] === 0x4e &&
+        buffer[3] === 0x47;
+
+      if (!isPng) {
+        return null;
+      }
+
+      const width = buffer.readUInt32BE(16);
+      const height = buffer.readUInt32BE(20);
+
+      if (width > 0 && height > 0) {
+        return { width, height };
+      }
+
+      return null;
+    }
+
+    if (/\.svg$/i.test(src)) {
+      const source = readFileSync(file, "utf8").slice(0, 4096);
+
+      const widthAttr = source.match(/\bwidth="([\d.]+)"/);
+      const heightAttr = source.match(/\bheight="([\d.]+)"/);
+
+      if (widthAttr && heightAttr) {
+        const width = Number.parseFloat(widthAttr[1]);
+        const height = Number.parseFloat(heightAttr[1]);
+
+        if (width > 0 && height > 0) {
+          return { width, height };
+        }
+      }
+
+      const viewBox = source.match(/\bviewBox="[\d.\-\s]+([\d.]+)\s+([\d.]+)"/);
+
+      if (viewBox) {
+        const width = Number.parseFloat(viewBox[1]);
+        const height = Number.parseFloat(viewBox[2]);
+
+        if (width > 0 && height > 0) {
+          return { width, height };
+        }
+      }
+
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+/*
+ * Shared <img> emission for body images: lazy, async-decoded, and
+ * dimensioned when the intrinsic size is known (CLS protection).
+ */
+function bodyImg(src, alt) {
+  const size = imageIntrinsicSize(src);
+
+  const sizeAttributes = size
+    ? ` width="${size.width}" height="${size.height}"`
+    : "";
+
+  return `<img src="${applyBasePath(src)}" alt="${alt}"${sizeAttributes} loading="lazy" decoding="async" />`;
 }
 
 function renderMarkdown(source) {
@@ -566,7 +667,7 @@ function renderMarkdown(source) {
     if (imageMatch && isSafeUrl(imageMatch[2])) {
       flushAll();
       out.push(
-        `<figure${revealAttributes("scale")}><img src="${applyBasePath(imageMatch[2])}" alt="${imageMatch[1]}" loading="lazy" decoding="async" /></figure>`
+        `<figure${revealAttributes("scale")}>${bodyImg(imageMatch[2], imageMatch[1])}</figure>`
       );
       continue;
     }

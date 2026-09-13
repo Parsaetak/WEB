@@ -1128,3 +1128,15 @@
       76%;
   }
 }
+
+/*
+ * Reduced motion (v2.8): the status pulse and the module scan sweep
+ * stop for readers who ask the OS for reduced motion. Static tints
+ * remain, so no information is carried by the animation alone.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .systemsStatusDot,
+  .systemsModuleLine span {
+    animation: none;
+  }
+}

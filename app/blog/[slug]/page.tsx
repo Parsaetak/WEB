@@ -502,7 +502,6 @@ export default async function ArticlePage({
               className={
                 styles.contextChips
               }
-              aria-label="Article context"
               data-reveal="instant"
             >
               {post.project && (
@@ -623,14 +622,20 @@ export default async function ArticlePage({
          */}
         <CodeCopy />
 
-        {post.tags.length > 0 && (
-          <div
-            className={
-              styles.tags
-            }
-            aria-label="Article tags"
-            data-reveal="instant"
-          >
+        {/*
+         * FOOTER ROW (v2.8) — rendered unconditionally. Previously
+         * the whole row (including the reserved actions slot) was
+         * gated on tags.length, so a tagless article silently lost
+         * COPY LINK and the reader text-size control. Tags render
+         * only when present; the actions slot is always reserved.
+         */}
+        <div
+          className={
+            styles.tags
+          }
+          data-reveal="instant"
+        >
+          {post.tags.length > 0 && (
             <div
               className={
                 styles.tagList
@@ -646,8 +651,9 @@ export default async function ArticlePage({
                 )
               )}
             </div>
+          )}
 
-            {/**
+            {/*
               * Actions slot (v2.5.3) — reserved right edge of the
               * row; the ShareLink island docks a COPY LINK button
               * here after hydration, and since v2.5.7 the TextSize
@@ -664,8 +670,7 @@ export default async function ArticlePage({
 
               <TextSize />
             </span>
-          </div>
-        )}
+        </div>
 
         <nav
           className={

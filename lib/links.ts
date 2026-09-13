@@ -133,7 +133,7 @@ export const PUBLIC_LINKS = {
     {
       id: "patreon",
       label: "Patreon",
-      href: "http://patreon.com/Parsaetak",
+      href: "https://patreon.com/Parsaetak",
       description: "Creator support and exclusive work.",
       category: "resources",
       icon: "patreon",

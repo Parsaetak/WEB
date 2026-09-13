@@ -913,6 +913,27 @@ export default function WorkScene() {
                           href={
                             project.href
                           }
+                          /*
+                           * External destinations (GitHub
+                           * specifications, repositories) open in a
+                           * new tab exactly like the featured
+                           * cards' external links — same tab was a
+                           * v2.7 regression for these group rows.
+                           */
+                          target={
+                            project.href.startsWith(
+                              "http"
+                            )
+                              ? "_blank"
+                              : undefined
+                          }
+                          rel={
+                            project.href.startsWith(
+                              "http"
+                            )
+                              ? "noreferrer"
+                              : undefined
+                          }
                           aria-label={
                             project.ariaLabel
                           }

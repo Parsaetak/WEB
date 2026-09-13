@@ -21,7 +21,10 @@ import {
   formatBlogDateShort
 } from "@/lib/blogFormat";
 
-import { isTypingTarget } from "@/lib/keyboard";
+import {
+  isModalDialogOpen,
+  isTypingTarget
+} from "@/lib/keyboard";
 
 import styles from "./BlogIndex.module.css";
 
@@ -219,12 +222,19 @@ function writeDeepLinkFilters(
   const query =
     params.toString();
 
+  /*
+   * The current path is preserved verbatim (window.location.pathname),
+   * NOT hardcoded to "/blog/": the production deployment serves the
+   * site under the /WEB basePath, and a hardcoded path would rewrite
+   * the address bar to /blog/?… (outside the deployment), corrupting
+   * the shareable URL and making the next full page load a 404.
+   */
   window.history.replaceState(
     null,
     "",
     query
-      ? `/blog/?${query}`
-      : "/blog/"
+      ? `${window.location.pathname}?${query}`
+      : window.location.pathname
   );
 
   window.dispatchEvent(
@@ -419,6 +429,17 @@ export default function BlogIndex({
         return;
       }
 
+      /*
+       * A modal dialog (the shortcuts reference) eats the page's
+       * single keys: its keydowns still reach document, but the
+       * search field behind the modal is inert — focusing or
+       * scrolling to it from inside the modal would silently do
+       * nothing visible.
+       */
+      if (isModalDialogOpen()) {
+        return;
+      }
+
       const searchInput =
         document.getElementById(
           "blog-search"
@@ -566,6 +587,7 @@ export default function BlogIndex({
             className={styles.tagFilter}
             role="group"
             aria-label="Filter by tag"
+            id="blog-tag-filter-full"
           >
             {visibleTags.map(
               (tag) => {
@@ -606,6 +628,10 @@ export default function BlogIndex({
                 className={
                   styles.tagMore
                 }
+                aria-expanded={
+                  showAllTags
+                }
+                aria-controls="blog-tag-filter-full"
                 onClick={() =>
                   setShowAllTags(
                     (

@@ -646,20 +646,12 @@
       );
 }
 
-.aboutIdentityCard:hover {
-  transform:
-    translateY(
-      -2px
-    );
-
-  border-color:
-    rgba(
-      255,
-      32,
-      32,
-      0.16
-    );
-}
+/*
+ * v2.8: the hover lift was removed — these identity cards are not
+ * interactive, and a pointer-reactive transform promised an action
+ * that does not exist (the same honesty law the principles cards
+ * already follow).
+ */
 
 .aboutIdentityCardLabel {
   color:

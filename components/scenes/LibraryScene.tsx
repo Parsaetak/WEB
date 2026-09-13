@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import {
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 
@@ -189,6 +190,16 @@ export default function LibraryScene() {
     setOpened
   ] = useState(false);
 
+  /*
+   * Focus target for the portal modal (see the opened effect):
+   * focused on open, participates in the Tab cycle, focus returns
+   * to the opening trigger on close.
+   */
+  const modalShellRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
   const [
     loading,
     setLoading
@@ -275,6 +286,28 @@ export default function LibraryScene() {
     const previousOverflow =
       document.body.style.overflow;
 
+    /*
+     * Focus management (v2.8): the portal dialog is a plain div
+     * (not a native <dialog>), so the platform provides no focus
+     * trap or restoration. On open, remember the trigger, move
+     * focus into the modal shell, and cycle Tab/Shift+Tab within
+     * the modal's focusable elements; on close, hand focus back to
+     * the trigger so keyboard and screen-reader readers never end
+     * up stranded at the document start.
+     */
+    const previousFocus =
+      document.activeElement instanceof
+      HTMLElement
+        ? document.activeElement
+        : null;
+
+    const shell =
+      modalShellRef.current;
+
+    if (shell) {
+      shell.focus();
+    }
+
     const handleKeyDown =
       (
         event: KeyboardEvent
@@ -286,6 +319,71 @@ export default function LibraryScene() {
           setOpened(
             false
           );
+
+          return;
+        }
+
+        if (
+          event.key !==
+            "Tab" ||
+          !modalShellRef.current
+        ) {
+          return;
+        }
+
+        const focusable =
+          modalShellRef.current.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])'
+          );
+
+        if (
+          focusable.length ===
+          0
+        ) {
+          event.preventDefault();
+
+          return;
+        }
+
+        const first =
+          focusable[0];
+
+        const last =
+          focusable[focusable.length -
+            1];
+
+        const active =
+          document.activeElement;
+
+        if (
+          event.shiftKey &&
+          (active ===
+            first ||
+            active ===
+            modalShellRef.current)
+        ) {
+          event.preventDefault();
+
+          last.focus();
+        } else if (
+          !event.shiftKey &&
+          active ===
+          last
+        ) {
+          event.preventDefault();
+
+          first.focus();
+        } else if (
+          active !==
+            modalShellRef.current &&
+          !modalShellRef.current.contains(
+            active
+          )
+        ) {
+          /* Focus escaped (e.g. clicked outside a control) — pull it back. */
+          event.preventDefault();
+
+          first.focus();
         }
       };
 
@@ -305,6 +403,8 @@ export default function LibraryScene() {
         "keydown",
         handleKeyDown
       );
+
+      previousFocus?.focus();
     };
   }, [opened]);
 
@@ -454,6 +554,8 @@ export default function LibraryScene() {
               className={
                 styles.libraryModalShell
               }
+              ref={modalShellRef}
+              tabIndex={-1}
             >
               <header
                 className={
@@ -616,6 +718,32 @@ export default function LibraryScene() {
                       ↓
                     </span>
                   </a>
+
+                  {/*
+                    * SOURCE (v2.8) — the item's GitHub origin.
+                    * The URL was already computed for every item by
+                    * lib/contentRepository but never surfaced; this
+                    * gives the viewer an honest provenance link
+                    * beside the download.
+                    */}
+                  <a
+                    className={
+                      styles.librarySourceButton
+                    }
+                    href={
+                      selected.githubUrl
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span>SOURCE</span>
+
+                    <span
+                      aria-hidden="true"
+                    >
+                      ↗
+                    </span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -697,7 +825,7 @@ export default function LibraryScene() {
               className={
                 styles.libraryFilters
               }
-              role="tablist"
+              role="group"
               aria-label="Library filters"
             >
               {MEDIA_FILTERS.map(
@@ -719,8 +847,15 @@ export default function LibraryScene() {
                   return (
                     <button
                       type="button"
-                      role="tab"
-                      aria-selected={
+                      /*
+                       * Toggle-style filter buttons (v2.8): the old
+                       * role="tab"/aria-selected markup implied a
+                       * tab pattern the component never implemented
+                       * (no arrow-key handling, no tabpanels). A
+                       * pressed/not-pressed button group describes
+                       * exactly what these controls do.
+                       */
+                      aria-pressed={
                         active
                       }
                       className={

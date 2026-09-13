@@ -135,20 +135,30 @@ export default function ReadingProgress() {
     /*
      * Late layout changes: the cover image and web fonts can shift
      * the article's height after first paint. One re-measure per
-     * event, never per frame.
+     * event, never per frame. The promise is guarded by `disposed`
+     * so a navigation away before fonts settle cannot re-measure or
+     * re-write the shared CSS variable after cleanup removed it.
      */
     window.addEventListener("load", handleResize, {
       passive: true
     });
 
+    let disposed = false;
+
     if (typeof document.fonts !== "undefined" && document.fonts.ready) {
       document.fonts.ready.then(() => {
+        if (disposed) {
+          return;
+        }
+
         measure();
         scheduleProgress();
       });
     }
 
     return () => {
+      disposed = true;
+
       if (frame !== 0) {
         window.cancelAnimationFrame(frame);
       }

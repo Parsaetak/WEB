@@ -4,7 +4,10 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 
 import { usePathname } from "next/navigation";
 
-import { isTypingTarget } from "@/lib/keyboard";
+import {
+  isModalDialogOpen,
+  isTypingTarget
+} from "@/lib/keyboard";
 
 import styles from "./ShortcutsDialog.module.css";
 
@@ -107,6 +110,15 @@ export default function ShortcutsDialog() {
         return;
       }
 
+      /*
+       * Never re-open (or fight Escape) while any modal dialog is
+       * already showing — "?" pressed inside the dialog is inert
+       * text, not another trigger.
+       */
+      if (isModalDialogOpen()) {
+        return;
+      }
+
       if (event.key === "?") {
         event.preventDefault();
         openDialog();
@@ -134,6 +146,29 @@ export default function ShortcutsDialog() {
       closeDialog();
     }
   };
+
+  /*
+   * Scroll lock: showModal makes the page inert, but wheel/touch
+   * input still scrolls the document behind the modal, silently
+   * moving the reader's place. Lock body overflow for exactly the
+   * open window (and only this island's lock) so closing always
+   * restores the previous state, even across unmount.
+   */
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const body = document.body;
+
+    const previousOverflow = body.style.overflow;
+
+    body.style.overflow = "hidden";
+
+    return () => {
+      body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
 
   if (!mounted) {
     return null;

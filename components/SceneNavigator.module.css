@@ -608,3 +608,14 @@
     transform: scale(1.18);
   }
 }
+
+/*
+ * Reduced motion (v2.8): the navigator's indicator pulse stops for
+ * readers who ask the OS for reduced motion; the active state keeps
+ * its static highlight.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .item[data-active="true"] .indicator {
+    animation: none;
+  }
+}

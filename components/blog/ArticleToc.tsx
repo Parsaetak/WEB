@@ -52,39 +52,90 @@ export default function ArticleToc({
       return;
     }
 
-    const orderOf = new Map(
-      targets.map((element, index) => [element.id, index])
-    );
-
     /*
-     * A thin horizontal band 15%–25% from the top of the viewport:
-     * whatever heading sits in it is the section being read. When
-     * several land in one callback batch, the EARLIEST wins.
+     * Scroll-spy v2.8 — the previous implementation highlighted
+     * whichever heading sat inside a thin 15%–25% band, which left
+     * the highlight stuck on the last-crossed section while reading
+     * long bodies between headings (and never cleared above the
+     * first heading on scroll-up).
+     *
+     * The geometry is now the source of truth: heading offsets in
+     * DOCUMENT space are cached once per layout event (mount, load,
+     * resize, fonts settled — the same events ReadingProgress
+     * re-measures on, zero layout reads during scroll), and the
+     * active section is "the last heading above the activation line
+     * (15% of viewport from the top)". The IntersectionObserver is
+     * kept as the crossing detector — with a root that starts at the
+     * activation line, it fires exactly when a heading crosses it in
+     * either direction, so every crossing recomputes the state from
+     * cached offsets without a scroll listener. Above the first
+     * heading nothing is active; the highlight tracks both scroll
+     * directions; long bodies between headings keep the enclosing
+     * section highlighted.
      */
+    const LINE_RATIO = 0.15;
+
+    let offsets: number[] = [];
+    let disposed = false;
+
+    const measure = () => {
+      const scrollY = window.scrollY;
+
+      offsets = targets.map(
+        (element) => element.getBoundingClientRect().top + scrollY
+      );
+    };
+
+    const recompute = () => {
+      const line =
+        window.scrollY +
+        (window.innerHeight || document.documentElement.clientHeight) *
+          LINE_RATIO;
+
+      let current: string | null = null;
+
+      for (let index = 0; index < targets.length; index += 1) {
+        if (offsets[index] <= line) {
+          current = targets[index].id;
+        } else {
+          break;
+        }
+      }
+
+      setActiveId(current);
+    };
+
+    const handleLayoutChange = () => {
+      measure();
+      recompute();
+    };
+
+    measure();
+    recompute();
+
+    window.addEventListener("resize", handleLayoutChange, {
+      passive: true
+    });
+    window.addEventListener("load", handleLayoutChange, {
+      passive: true
+    });
+
+    if (typeof document.fonts !== "undefined" && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        if (disposed) {
+          return;
+        }
+
+        handleLayoutChange();
+      });
+    }
+
     const observer = new IntersectionObserver(
-      (entries) => {
-        let best: string | null = null;
-        let bestOrder = Number.POSITIVE_INFINITY;
-
-        for (const entry of entries) {
-          if (!entry.isIntersecting) {
-            continue;
-          }
-
-          const order = orderOf.get(entry.target.id) ?? 0;
-
-          if (order < bestOrder) {
-            bestOrder = order;
-            best = entry.target.id;
-          }
-        }
-
-        if (best !== null) {
-          setActiveId(best);
-        }
+      () => {
+        recompute();
       },
       {
-        rootMargin: "-15% 0px -75% 0px",
+        rootMargin: "-15% 0px 0px 0px",
         threshold: 0
       }
     );
@@ -92,7 +143,11 @@ export default function ArticleToc({
     targets.forEach((element) => observer.observe(element));
 
     return () => {
+      disposed = true;
       observer.disconnect();
+
+      window.removeEventListener("resize", handleLayoutChange);
+      window.removeEventListener("load", handleLayoutChange);
     };
   }, [headings]);
 

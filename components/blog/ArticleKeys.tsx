@@ -4,7 +4,10 @@ import { useEffect } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { isTypingTarget } from "@/lib/keyboard";
+import {
+  isModalDialogOpen,
+  isTypingTarget
+} from "@/lib/keyboard";
 
 /*
  * ARTICLE KEYS (v2.5.3) — J/K keyboard navigation between articles.
@@ -32,7 +35,10 @@ import { isTypingTarget } from "@/lib/keyboard";
  * - Typing safety: keys are ignored while focus sits in an input,
  *   textarea, select, or contentEditable element (lib/keyboard);
  *   modified keys (Cmd/Ctrl/Alt/Shift) pass through to browser
- *   behavior untouched.
+ *   behavior untouched. Keys also stand down while a modal dialog
+ *   (the shortcuts reference) is open — its keydown events bubble
+ *   to document even though the page behind is inert, and acting
+ *   on that page from inside the modal would be a silent trap.
  * - With only one neighbor (oldest/newest article) the other key
  *   simply does nothing.
  */
@@ -71,6 +77,10 @@ export default function ArticleKeys({
       }
 
       if (isTypingTarget(event.target)) {
+        return;
+      }
+
+      if (isModalDialogOpen()) {
         return;
       }
 

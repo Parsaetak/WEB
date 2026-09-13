@@ -134,7 +134,6 @@ export default function BlogPage() {
 
             <div
               className={styles.blogHeroStatus}
-              aria-label="Blog status"
             >
               <span
                 className="status-dot"

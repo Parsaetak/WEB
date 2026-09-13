@@ -621,3 +621,14 @@
     display: none !important;
   }
 }
+
+/*
+ * Reduced motion (v2.8): the HUD status dot stops pulsing for
+ * readers who ask the OS for reduced motion. Its color and glow
+ * are static, so presence information survives without motion.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .livingShellStatusDot {
+    animation: none;
+  }
+}

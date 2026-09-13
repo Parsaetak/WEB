@@ -97,7 +97,6 @@ export default function BlogHeader() {
 
         <div
           className={styles.status}
-          aria-label="Current area"
         >
           <span
             className={styles.statusDot}

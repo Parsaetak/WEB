@@ -833,6 +833,27 @@
   }
 }
 
+/*
+ * Short viewports (v2.8): the fixed min-height used to force the
+ * modal's content area to scroll on landscape phones and small
+ * laptops just to reach the download/SOURCE controls. Give the
+ * stage room that always leaves the modal chrome visible instead.
+ */
+@media (max-height: 760px) {
+  .stage {
+    height:
+      auto;
+
+    min-height:
+      300px;
+
+    max-height:
+      calc(
+        100vh - 310px
+      );
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .open,
   .frame,

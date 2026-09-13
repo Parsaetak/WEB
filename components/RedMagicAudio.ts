@@ -199,7 +199,10 @@ export class RedMagicAudio {
   }
 
   public setEnabled(
-    enabled: boolean
+    enabled: boolean,
+    options?: {
+      deferStart?: boolean;
+    }
   ) {
     this.enabled =
       enabled;
@@ -211,6 +214,20 @@ export class RedMagicAudio {
     if (
       enabled
     ) {
+      /*
+       * deferStart (v2.8): restoring a stored ON preference at
+       * mount used to construct the AudioContext before any user
+       * gesture — browser autoplay policy kept it suspended and
+       * logged a console warning. A deferred start only records
+       * the preference; the first interaction event (handleEvent)
+       * starts the graph from inside a real gesture.
+       */
+      if (
+        options?.deferStart
+      ) {
+        return;
+      }
+
       void this.ensureStarted();
     } else {
       this.stop();
@@ -564,6 +581,19 @@ export class RedMagicAudio {
 
     this.setMode(
       this.mode
+    );
+
+    /*
+     * Restore the master level (v2.8): stop() ramps master gain to
+     * zero and suspends, but this function only resumed the context
+     * — an OFF→ON toggle left a running context with master gain
+     * pinned at zero: permanently silent until remount. Ramp it
+     * back to the designed level on every start.
+     */
+    nodes.master.gain.setTargetAtTime(
+      MASTER_GAIN,
+      context.currentTime,
+      0.08
     );
 
     if (

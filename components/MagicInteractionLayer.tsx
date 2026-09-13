@@ -130,8 +130,23 @@ export default function MagicInteractionLayer({
       null
     );
 
+  /*
+   * First-run gate for the soundEnabled effect: the mount value is
+   * applied by the creation effect with a deferred start, so the
+   * effect must not construct the audio graph during hydration.
+   */
+  const soundEffectMountRef =
+    useRef(true);
+
   const reducedMotionRef =
     useRef(false);
+
+  /*
+   * rAF handle for scroll-coalesced geometry updates (see
+   * scheduleGeometry below).
+   */
+  const geometryFrameRef =
+    useRef(0);
 
   /*
    * The leave-transition timer is retained so it can be cancelled on
@@ -177,6 +192,32 @@ export default function MagicInteractionLayer({
           rect.height *
           0.5
       };
+    };
+
+  /*
+   * Scroll arrives at event frequency; each event used to force a
+   * synchronous getBoundingClientRect (layout read) per tick. The
+   * layer's rect only changes when the page layout around it does,
+   * so scroll-driven updates are coalesced to one read per frame.
+   */
+  const scheduleGeometry =
+    () => {
+      if (
+        geometryFrameRef.current !==
+        0
+      ) {
+        return;
+      }
+
+      geometryFrameRef.current =
+        window.requestAnimationFrame(
+          () => {
+            geometryFrameRef.current =
+              0;
+
+            updateGeometry();
+          }
+        );
     };
 
   const getCanvasTarget =
@@ -1094,7 +1135,7 @@ export default function MagicInteractionLayer({
 
     window.addEventListener(
       "scroll",
-      updateGeometry,
+      scheduleGeometry,
       {
         passive: true
       }
@@ -1107,8 +1148,16 @@ export default function MagicInteractionLayer({
       mode
     );
 
+    /*
+     * Deferred start (v2.8): restoring a stored ON preference here
+     * must not construct the AudioContext before any user gesture —
+     * the first interaction event starts it instead.
+     */
     audio.setEnabled(
-      soundEnabled
+      soundEnabled,
+      {
+        deferStart: true
+      }
     );
 
     audioRef.current =
@@ -1166,8 +1215,20 @@ export default function MagicInteractionLayer({
 
       window.removeEventListener(
         "scroll",
-        updateGeometry
+        scheduleGeometry
       );
+
+      if (
+        geometryFrameRef.current !==
+        0
+      ) {
+        window.cancelAnimationFrame(
+          geometryFrameRef.current
+        );
+
+        geometryFrameRef.current =
+          0;
+      }
 
       audio.destroy();
 
@@ -1190,6 +1251,21 @@ export default function MagicInteractionLayer({
   }, [mode]);
 
   useEffect(() => {
+    /*
+     * The mount run is skipped: the creation effect already applied
+     * the stored preference with a deferred start (no AudioContext
+     * before a user gesture). Only later prop changes — real
+     * toggle clicks — (re)start or stop the graph immediately.
+     */
+    if (
+      soundEffectMountRef.current
+    ) {
+      soundEffectMountRef.current =
+        false;
+
+      return;
+    }
+
     const audio =
       audioRef.current;
 

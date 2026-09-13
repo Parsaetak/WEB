@@ -962,3 +962,18 @@
       500px;
   }
 }
+
+/*
+ * Reduced motion (v2.8): the scene's infinite decorative loops —
+ * the three organism rings and the node pulse — stop entirely for
+ * readers who ask the OS for reduced motion. The composition stays
+ * fully visible; only the continuous rotation/pulsing is dropped.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .magicOrganismRingOne,
+  .magicOrganismRingTwo,
+  .magicOrganismRingThree,
+  .magicOrganismNode {
+    animation: none;
+  }
+}
