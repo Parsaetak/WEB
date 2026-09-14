@@ -538,8 +538,13 @@ kbd {
   color:
     var(--text-soft);
 
+  /*
+   * READABILITY (v3.0): 1rem → 1.0625rem (17px) — inside the
+   * 1.05–1.12rem comfort range for interface body copy while the
+   * mono/label hierarchy stays untouched.
+   */
   font-size:
-    1rem;
+    1.0625rem;
 
   line-height:
     1.8;
@@ -804,11 +809,66 @@ span {
       );
 }
 
-.button:hover {
-  transform:
-    translateY(
-      -2px
+/*
+ * INTERACTION SYSTEM (v3.0) — hover, press, release, focus.
+ *
+ * One coherent language for every shared button:
+ * - hover: lift + border/glow response (180–240ms). The lift is a
+ *   motion enhancement guarded by prefers-reduced-motion; color,
+ *   border and shadow feedback apply regardless.
+ * - press: transform compresses toward the surface with a fast
+ *   90ms transition so the down-step reads as contact, not drift
+ * - release: the resting 200ms ease returns the button smoothly
+ * - focus-visible: a red ring that matches the site-wide outline
+ * All properties are transform/color/shadow — no layout animation.
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  .button:hover {
+    transform:
+      translateY(
+        -2px
+      );
+  }
+}
+
+.button:active {
+  transition-duration:
+    90ms;
+
+  box-shadow:
+    none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .button:active {
+    transform:
+      translateY(0)
+      scale(0.98);
+  }
+}
+
+.button:focus-visible {
+  outline:
+    2px solid
+    rgba(
+      255,
+      65,
+      65,
+      0.95
     );
+
+  outline-offset:
+    4px;
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity:
+    0.45;
+
+  pointer-events:
+    none;
 }
 
 .button-primary {

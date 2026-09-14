@@ -557,6 +557,206 @@
     );
 }
 
+/*
+ * HOME ORIGIN SEED (v3.0) — the dormant organism.
+ *
+ * Pure CSS stand-in for the RedMagic canvas: a red core with one
+ * breathing membrane, rendered in the exported HTML and during
+ * hydration. It keeps the hero alive for no-JS visitors, reduced-
+ * motion visitors, save-data visitors, and for the idle window
+ * before the real organism wakes up. The pulsing animation runs
+ * only when the user allows motion; the composition itself is
+ * always there.
+ */
+.homeOriginSeed {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  pointer-events:
+    none;
+}
+
+.homeOriginSeedGlow {
+  position:
+    absolute;
+
+  top:
+    50%;
+
+  left:
+    50%;
+
+  width:
+    min(
+      34vw,
+      34vh
+    );
+
+  aspect-ratio:
+    1;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+
+  border-radius:
+    50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(
+        255,
+        32,
+        32,
+        0.14
+      ) 0%,
+      rgba(
+        180,
+        0,
+        0,
+        0.05
+      ) 38%,
+      transparent 68%
+    );
+}
+
+.homeOriginSeedRing {
+  position:
+    absolute;
+
+  top:
+    50%;
+
+  left:
+    50%;
+
+  width:
+    min(
+      26vw,
+      26vh
+    );
+
+  aspect-ratio:
+    1;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+
+  border:
+    1px solid
+    rgba(
+      255,
+      32,
+      32,
+      0.16
+    );
+
+  border-radius:
+    50%;
+}
+
+.homeOriginSeedRingTwo {
+  width:
+    min(
+      17vw,
+      17vh
+    );
+
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.24
+    );
+}
+
+.homeOriginSeed img {
+  width:
+    min(
+      7vw,
+      56px
+    );
+
+  height:
+    auto;
+
+  opacity:
+    0.88;
+
+  filter:
+    drop-shadow(
+      0 0 18px
+      rgba(
+        255,
+        32,
+        32,
+        0.28
+      )
+    );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .homeOriginSeedGlow {
+    animation:
+      homeOriginSeedBreath
+      6.5s
+      ease-in-out
+      infinite;
+  }
+
+  .homeOriginSeedRing {
+    animation:
+      homeOriginSeedBreath
+      6.5s
+      ease-in-out
+      320ms
+      infinite;
+  }
+}
+
+@keyframes homeOriginSeedBreath {
+  0%,
+  100% {
+    opacity:
+      0.72;
+
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      scale(0.985);
+  }
+
+  50% {
+    opacity:
+      1;
+
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      scale(1.015);
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* Home hero content                                                          */
 /* -------------------------------------------------------------------------- */
@@ -2676,4 +2876,479 @@ strong i {
     animation:
       none;
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Home writing section (v3.0)                                                */
+/* -------------------------------------------------------------------------- */
+
+.homeWriting {
+  border-top:
+    1px solid
+    var(--line);
+}
+
+.homeWritingList {
+  display:
+    grid;
+
+  margin-top:
+    46px;
+
+  border-top:
+    1px solid
+    var(--line);
+}
+
+.homeWritingItem {
+  display:
+    grid;
+
+  grid-template-columns:
+    minmax(150px, 0.32fr) minmax(0, 2.4fr) auto;
+
+  gap:
+    24px;
+
+  align-items:
+    center;
+
+  padding:
+    26px 14px;
+
+  border-bottom:
+    1px solid
+    var(--line);
+
+  text-decoration:
+    none;
+
+  transition:
+    background-color 200ms ease,
+    transform 200ms
+      cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      ),
+    border-color 200ms ease;
+}
+
+.homeWritingItem:hover {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.02
+    );
+
+  border-bottom-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.35
+    );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .homeWritingItem:hover {
+    transform:
+      translateX(6px);
+  }
+
+  .homeWritingItem:hover
+    .homeWritingArrow {
+    transform:
+      translateX(6px);
+
+    color:
+      var(--red);
+  }
+}
+
+.homeWritingMeta {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    6px;
+
+  min-width:
+    0;
+}
+
+.homeWritingNumber {
+  color:
+    var(--red);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    11px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.14em;
+}
+
+.homeWritingCategory {
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.2em;
+
+  line-height:
+    1.4;
+
+  text-transform:
+    uppercase;
+}
+
+.homeWritingDate {
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    11px;
+
+  letter-spacing:
+    0.06em;
+
+  line-height:
+    1.4;
+}
+
+.homeWritingMain {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    9px;
+
+  min-width:
+    0;
+}
+
+.homeWritingTitle {
+  color:
+    var(--text);
+
+  font-size:
+    clamp(
+      1.08rem,
+      1.6vw,
+      1.3rem
+    );
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    -0.015em;
+
+  line-height:
+    1.35;
+
+  text-wrap:
+    balance;
+}
+
+.homeWritingExcerpt {
+  color:
+    var(--text-soft);
+
+  font-size:
+    0.95rem;
+
+  line-height:
+    1.7;
+
+  overflow-wrap:
+    break-word;
+}
+
+.homeWritingFoot {
+  display:
+    flex;
+
+  gap:
+    16px;
+
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10.5px;
+
+  letter-spacing:
+    0.08em;
+
+  line-height:
+    1.4;
+}
+
+.homeWritingArrow {
+  color:
+    var(--text-muted);
+
+  font-size:
+    18px;
+
+  line-height:
+    1;
+
+  transition:
+    transform 200ms
+      cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      ),
+    color 200ms ease;
+}
+
+.homeWritingArchive {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    18px;
+
+  margin-top:
+    30px;
+
+  padding:
+    15px 20px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius:
+    3px;
+
+  text-decoration:
+    none;
+
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms
+      cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      );
+}
+
+.homeWritingArchive span {
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.2em;
+
+  text-transform:
+    uppercase;
+}
+
+.homeWritingArchive strong {
+  color:
+    var(--text);
+
+  font-size:
+    13px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.01em;
+}
+
+.homeWritingArchive:hover {
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.45
+    );
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.045
+    );
+
+  box-shadow:
+    0 10px 30px
+      rgba(
+        255,
+        32,
+        32,
+        0.09
+      );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .homeWritingArchive:hover {
+    transform:
+      translateY(-2px);
+  }
+}
+
+@media (max-width: 860px) {
+  .homeWritingItem {
+    grid-template-columns:
+      minmax(0, 1fr);
+
+    gap:
+      12px;
+
+    padding:
+      22px 6px;
+  }
+
+  .homeWritingArrow {
+    display:
+      none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Interaction refinements (v3.0) — cards, links, press states                */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Project artwork responds to the card: a restrained scale on the
+ * image plate. Transform-only (compositor-friendly), and removed
+ * entirely under prefers-reduced-motion.
+ */
+.homeProjectVisual img {
+  transition:
+    transform
+    var(--motion-medium)
+    var(--ease-out-soft);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .homeProject:hover .homeProjectVisual img,
+  .homeProject:focus-within .homeProjectVisual img {
+    transform:
+      scale(1.025);
+  }
+}
+
+/*
+ * Inline arrow nudge on project card links. Color feedback is not
+ * motion, so it stays available under reduced motion.
+ */
+.homeProjectLink > span[aria-hidden="true"] {
+  display:
+    inline-block;
+
+  transition:
+    transform
+    var(--motion-micro)
+    var(--ease-out-soft);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .homeProjectLink:hover
+    > span[aria-hidden="true"],
+  .homeProjectLink:focus-visible
+    > span[aria-hidden="true"] {
+    transform:
+      translateX(4px);
+  }
+}
+
+/*
+ * Press states: fast (90ms) contact feedback on the interactive
+ * rows of the home scene. Transform-only, guarded for reduced
+ * motion; color feedback applies regardless.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .homeProjectLink:active,
+  .homeSystemItem:active,
+  .homeSystemsOverviewLink:active,
+  .homeProjectArchive:active,
+  .homeWritingItem:active,
+  .homeWritingArchive:active {
+    transform:
+      scale(0.995);
+  }
+}
+
+.homeProjectLink:active,
+.homeSystemItem:active,
+.homeWritingItem:active {
+  transition-duration: 90ms;
+}
+
+/*
+ * Focus visibility for row links that previously relied on the
+ * global outline alone: keep the global outline, and add a quiet
+ * surface response so keyboard focus reads as an intentional state.
+ */
+.homeWritingItem:focus-visible,
+.homeSystemItem:focus-visible,
+.homeSystemsOverviewLink:focus-visible {
+  outline:
+    2px solid
+    rgba(
+      255,
+      65,
+      65,
+      0.95
+    );
+
+  outline-offset:
+    2px;
 }

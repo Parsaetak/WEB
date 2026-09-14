@@ -1,475 +1,220 @@
-# Updated-Files.md — WEB 2.9.0 Production Release
+# Updated-Files.md — WEB 3.0.0 Professional SEO, Content Graph, Readability, Performance & Interaction Upgrade
 
 ## Release
 
 | Field | Value |
 | --- | --- |
-| Release / version | **2.9.0** (13-point star identity + asset system, Search Console verification, favicon family, project imagery, brand validation) |
-| Base commit | `a0ad86eff2d9da448b3e7178c9bd7d2cf7889ad9` ("2026-09-13") |
+| Release / version | **3.0.0** (crawlable-first home document, lazy organism, home Writing section, knowledge-graph link repair, readability pass, interaction system, verification tightening) |
+| Base commit | `fec289e5d81b9f52917fc94cc7ec0702eaa062f2` ("2026-09-13") |
 | Date | 2026-09-14 |
-| Base commit state | Actions run green on `main`; site serving from `actions/deploy-pages@v5` with the Pages source preflight (`2.8.1` state) |
 
-### Why 2.9.0 exists
+### Why 3.0.0 exists
 
-The site's visible brand mark was the RED MAGIC all-seeing eye — an
-artistic mark for one scene standing in as the identity of the whole
-site — and the favicon mixed that eye into a star. There was no asset
-system: the eye was inline JSX hydrated in three components, the
-favicon was a hand-maintained file, and there was no Google Search
-Console verification, no PNG/ICO favicon fallback, no Apple touch
-icon, and no imagery on the home scene's featured projects.
+The 2.9.0 site rendered the home scene through `next/dynamic`. During
+static export a dynamic scene suspends, so React streamed the entire
+homepage as a hidden Suspense completion (`<div hidden id="S:0">`)
+while the visible document showed only a loading gate. The homepage's
+H1, positioning, capabilities, projects and links existed only in the
+flight payload — invisible to crawlers that do not execute React
+hydration, to social scrapers, and to visitors with JavaScript
+disabled. The boot loading gate had no no-JS escape either, and the
+hero mounted the full 6.8k-line RED MAGIC canvas organism eagerly.
 
-2.9.0 separates identity from art and gives both a real system:
+3.0.0 inverts the architecture to the target model:
 
-1. **A mathematically exact 13-point star becomes the site identity.**
-   The regular star polygon `{13/5}` — 13 outer + 13 inner vertices,
-   26 alternating vertices, 360/26° angular step, inner radius
-   `R · cos(5π/13)/cos(4π/13)` — generated in polar coordinates by
-   `scripts/generate-brand.mjs`, never hand-drawn. Nine colour
-   variants share byte-identical geometry; only colour treatment
-   differs.
-2. **The Red Eye returns to RED MAGIC.** It now renders only as the
-   RED MAGIC scene's sigil. Star = Parsa Tak / site identity; eye =
-   the artistic system experience. Never merged.
-3. **Google Search Console verification** ships in the root layout's
-   metadata (one emission point, every canonical page) with the exact
-   token `K8PQwvcGcrpBCyR-6XbmnDhv2IFPxpxjXV90UY7glTo`, and CI fails
-   if the tag disappears or changes.
-4. **A complete favicon family** is built from the star and served
-   from `public/` (`icon.svg`, 192×192 PNG fallback, 16/32/48
-   multi-size `favicon.ico`, 180×180 opaque Apple touch icon),
-   linked through the root layout's explicit `metadata.icons`. The
-   explicit declaration exists because Next's file-convention
-   favicon.ico link proved unreliable once the `/WEB` basePath is
-   active — the explicit set is deterministic in every build mode.
-5. **A central `assets/` system** (brand / icons / illustrations /
-   social) with documented conventions, a machine-readable manifest,
-   byte-identical runtime copies under `public/`, and three
-   deterministic zero-dependency generators whose re-run must change
-   nothing (CI-enforced).
-6. **Original featured-project artwork** (five 1200×630 abstract
-   system diagrams — agent loop, benchmark scale, proxy mesh,
-   organism, route tree) on the home scene's project cards, with
-   descriptive alt text, intrinsic dimensions, and lazy loading. No
-   fake screenshots.
-7. **A new default OG image** (1200×630, star identity + wordmark)
-   plus a square social variant, keeping the established article
-   cover pipeline (per-article PNG twins) untouched.
-8. **Structured-data truthfulness audit:** Person gains visible-backed
-   `jobTitle` and `knowsAbout`; no invented Organization/logo nodes
-   (a Person-published WebSite has no valid `logo` slot — documented,
-   not forced).
+```text
+semantic/static HTML → real professional content → React hydration
+→ living scene system → animation → RED MAGIC (enhancement layer)
+```
 
-## What changed in the application
+1. **The home document is genuinely crawlable.** The home scene is
+   statically imported into `SceneRegistry` and `SceneViewport` no
+   longer wraps it in a Suspense boundary. The exported `index.html`
+   now carries the complete homepage inline in `<main>` — h1, core
+   positioning, capabilities, five featured projects with crawlable
+   links, workflow, frameworks, Writing, and Connect — 964 visible
+   words before any JavaScript, versus 10 before (the loading gate).
+   Lazy hash scenes keep their Suspense boundary and their
+   interaction-gated loading.
+2. **The RED MAGIC organism is an idle-time enhancement.** The hero
+   renders a CSS-only seed (glow, membrane rings, 13-point star) in
+   the exported HTML. After hydration, and only when the environment
+   allows it (motion permitted, no save-data, not a memory-
+   constrained device), one dynamic `import()` fetches the organism
+   chunk at idle time and mounts it over the seed. Reduced-motion,
+   save-data and low-memory visitors keep the complete dormant hero
+   permanently.
+3. **No-JS and reduced-motion safety gates.** The boot loading gate
+   is hidden by default and becomes visible only under the pre-paint
+   `html.reveal-js` class — the same law the reveal system already
+   followed. Without JavaScript the world renders directly.
+4. **Home Writing section.** The strongest articles (author-flagged
+   featured first, then by real inbound internal-link count, then by
+   date) are selected on the server from the content index and passed
+   down as serializable props — the server-only blog data layer never
+   enters the client graph. The section links real article routes
+   with a quiet "↩ N references" badge from the site's own graph.
+5. **Knowledge-graph repair.** The two zero-inbound articles
+   (`freeiran-engineering-notes`, `red-theory-and-the-living-web`)
+   gained honest contextual inbound links from three related articles
+   (`building-under-constraints`, `sheytan-the-local-first-laboratory`,
+   `why-the-website-is-a-living-system`). Every project-tagged article
+   now also links to the Work scene through a `SCENE · Work ↗` context
+   chip. No artificial links: each new edge names a real technical
+   relationship.
+6. **Readability.** Article body scale rises to 17–18.7px (≈1.06–1.17rem)
+   with a 745px measure (≈72ch at body size, inside the 65–78ch
+   target), paragraph spacing 1.4em → 1.5em, article header metadata
+   10px → 11px, site-wide `.body` copy 1rem → 1.0625rem. The mono
+   label hierarchy is untouched.
+7. **Interaction system.** Shared buttons gain a press state (90ms
+   contact), a release ease, an explicit focus-visible ring and a
+   disabled state; hover travel is guarded by
+   `prefers-reduced-motion: no-preference`. Home scene rows/cards gain
+   arrow nudges, artwork scale, press feedback and keyboard focus
+   rings — transform/opacity only, reduced-motion aware, no layout
+   animation.
+8. **Verification tightening.** `verify-seo.mjs` now fails the build
+   if the home h1 is not inside `<main>`, if a hidden streamed
+   Suspense wrapper exists, if core positioning/writing phrases are
+   missing from the visible main document, or if fewer than three
+   crawlable article links ship on the home route. A new internal
+   link-graph audit resolves every internal article/scene href across
+   all exported pages, fails on broken/localhost/repository-clone
+   destinations, and reports per-article inbound link counts with a
+   warning (not a failure) on zero-inbound articles.
 
-- **Identity surfaces** — `LivingShell` (world HUD), `BlogHeader`,
-  `SceneLoadingScreen`, and `SiteFooter` now render the star as a
-  static `<img>` resolved through the new `lib/brand.ts` (basePath-
-  aware). No logo hydration anywhere; decorative renderings are
-  `aria-hidden` and the accessible name stays on the wrapping link.
-  The HUD brand slot is square (36/34/32px by breakpoint); the
-  loading surface's `.eye` slot became `.mark` (56px, red-hot
-  gradient star); the footer anchors the legal block with an 18px
-  star.
-- **RED MAGIC scene** — carries the all-seeing-eye sigil (44px,
-  `aria-hidden`) above the scene kicker. `RedEye.tsx` is unchanged
-  and now has exactly one render site.
-- **Home scene** — featured-project cards gained a third grid column
-  (272px) holding the artwork plate; below 1100px the plate flows
-  under the copy inside the text column; below 760px it spans the
-  single column. Intrinsic `width`/`height` (1200×630) prevent
-  layout shift. UHIT's visible copy now names "UHIT — the Universal
-  Human Intelligence Test" (previously the acronym was metadata
-  only), keeping the CI-checked phrase set intact.
-- **Search Console** — `app/layout.tsx` gained
-  `verification.google`; Next emits exactly one
-  `<meta name="google-site-verification">` per page.
-- **Structured data** — `lib/seo.tsx` Person entity gained
-  `jobTitle` and `knowsAbout` (both mirror visible home content).
-- **CI** — `deploy.yml` gained a brand-asset verification step after
-  the SEO check: `verify-brand.mjs`, then a generator re-run with
-  `git diff --exit-code` over the asset layers (determinism gate).
-- **Tooling** — `package.json` 2.9.0 with `brand`, `brand:raster`,
-  `verify:brand`, and combined `verify` scripts.
+### What deliberately did not change
 
-## Files to replace
-
-| File | Reason |
-| --- | --- |
-| `package.json` | version 2.9.0; `brand` / `brand:raster` / `verify:brand` / `verify` scripts |
-| `app/layout.tsx` | Google verification meta (root metadata, single emission point) + explicit `metadata.icons` favicon set |
-| `lib/seo.tsx` | Person `jobTitle` + `knowsAbout` (visible-backed); documentation of the no-logo-in-schema decision |
-| `public/icon.svg` | replaces the old `app/icon.svg` (star-eye) with the pure generated 13-point star favicon; linked via explicit `metadata.icons` |
-| `components/LivingShell.tsx` | HUD brand: static star `<img>` replaces hydrated `RedEye` |
-| `components/LivingShell.module.css` | square brand slots + `.livingShellFooterMark` |
-| `components/blog/BlogHeader.tsx` | blog brand: static star `<img>` |
-| `components/blog/BlogHeader.module.css` | square `.brandEye` slot |
-| `components/SceneLoadingScreen.tsx` | loading identity: star `<img>` (`.mark` slot) |
-| `components/SceneLoadingScreen.module.css` | `.eye` → `.mark` rename |
-| `components/SiteFooter.tsx` | footer brand mark (18px star, aria-hidden) |
-| `components/scenes/RedMagicScene.tsx` | RED MAGIC eye sigil (the eye's single remaining home) |
-| `components/scenes/RedMagicScene.module.css` | `.magicOrganismSigil` |
-| `components/scenes/HomeScene.tsx` | project artwork plates + UHIT visible naming |
-| `components/scenes/HomeScene.module.css` | 3-column project grid + `.homeProjectVisual` + responsive overrides |
-| `public/og-default.png` | new 1200×630 default OG (star identity + wordmark) |
-| `scripts/verify-seo.mjs` | Search-Console tag, favicon-family, and brand-asset checks (94 checks total) |
-| `.github/workflows/deploy.yml` | brand verification + generator-determinism gate |
-| `README.md` | "Brand & asset system (2.9)" section; verification/deployment updates |
-| `worklog.md` | Laws 63–65 (geometry, identity separation, asset system) |
-| `Updated-Files.md` | this release block |
-
-## Files to delete
-
-| File | Reason |
-| --- | --- |
-| `app/icon.svg` | moved to `public/icon.svg` (same generated bytes) — the favicon family is now declared explicitly in `metadata.icons` instead of relying on Next file conventions, which dropped the favicon.ico link under basePath |
-
-Nothing else became obsolete: the 2.8.1 file set remains valid, and
-`RedEye.tsx` stays (single render site in the RED MAGIC scene).
-
-## Files added
-
-| Path | Purpose |
-| --- | --- |
-| `assets/README.md` | asset-system conventions (layers, naming, identity law, generators) |
-| `assets/brand/star-red.svg` | primary identity star (solid brand red) — canonical |
-| `assets/brand/star-red-hot.svg` | red-hot gradient variant |
-| `assets/brand/star-crimson.svg` | deep crimson variant |
-| `assets/brand/star-white.svg` | monochrome white variant |
-| `assets/brand/star-black.svg` | monochrome black variant |
-| `assets/brand/star-silver.svg` | neutral silver variant |
-| `assets/brand/star-dark.svg` | dark neutral variant |
-| `assets/brand/star-outline-red.svg` | transparent-fill red stroke variant |
-| `assets/brand/star-outline-white.svg` | transparent-fill white stroke variant |
-| `assets/brand/manifest.json` | machine-readable variant/geometry registry |
-| `assets/icons/*.svg` (14) | currentColor glyph library (star, concentric, grid, orbit, signal, system, research, AI, engineering, simulation, link, arrows) |
-| `assets/illustrations/*.svg` (5) | canonical featured-project artwork (1200×630) |
-| `assets/social/og-default.png` | canonical copy of the served default OG |
-| `assets/social/og-square.png` | 1200×1200 square social share variant |
-| `public/brand/*.svg` (5) | served runtime copies of the star variants the site references |
-| `public/brand/icons/*.svg` (14) | served runtime glyph copies |
-| `public/images/projects/*.svg` (5) | served project artwork |
-| `lib/brand.ts` | basePath-aware brand asset URL registry |
-| `scripts/generate-brand.mjs` | deterministic star/glyph/favicon-SVG generator (source of the geometry) |
-| `scripts/generate-project-art.mjs` | deterministic project-artwork generator |
-| `scripts/generate-brand-raster.py` | deterministic raster generator (icon.png, favicon.ico, apple-icon.png, OG family; Pillow) |
-| `scripts/verify-brand.mjs` | mathematical geometry proof + asset-system coherence gate |
-| `public/icon.png` | 192×192 PNG favicon fallback (multiple of 48 per Google guidance) |
-| `public/favicon.ico` | 16/32/48 legacy favicon |
-| `public/apple-icon.png` | 180×180 opaque Apple touch icon |
-
-## Important preserved systems (audited, deliberately unchanged)
-
-- The SEO architecture: canonical strategy, metadataBase, JSON-LD
-  `@id` graph, sitemap/robots generation, RSS absence, cover PNG-twin
-  pipeline — all untouched; only additions (`verification`,
-  `jobTitle`, `knowsAbout`).
-- The blog pipeline (`build-blog.mjs`), content files, and the
-  deterministic related-content model — untouched.
-- `RedEye.tsx` component — unchanged code, one render site (RED MAGIC
-  scene sigil).
-- Motion system, compact menu, scene machinery, resource store,
-  schedulers, library/PDF reader — untouched.
-- `public/robots.txt`, `public/sitemap.xml` (generated), `data/**`
-  (generated) — untouched.
-
-## Verification performed on this release state
-
-- `npm ci --legacy-peer-deps` — clean install
-- `npm run lint` — **0 errors** (15 warnings: the 10 pre-existing
-  accepted `<img>` warnings + 5 new static-asset `<img>` usages,
-  same accepted static-export pattern; every new image declares
-  intrinsic dimensions)
-- `npm run build` — clean build, 14/14 routes exported
-- `npm run verify:seo` — **94 checks pass**, including per-page
-  exact-token Search Console verification, the favicon family
-  (SVG + PNG + ICO + Apple touch, all linked from the home head),
-  and brand assets in the export
-- `npm run verify:brand` — **13 checks pass**: every star variant
-  re-proven against the polar construction (26 vertices at
-  `-90° + i·360/26°`, exact `{13/5}` inner ratio
-  `0.624233221799`, 13-fold rotational symmetry), byte-identical
-  geometry across variants, favicon star at icon scale, canonical↔
-  runtime layers byte-identical, PNG/ICO dimensions and formats,
-  OG family dimensions, weight budgets. Negative-tested: a
-  deliberately corrupted vertex fails the build (symmetry, radius,
-  and cross-variant drift all caught).
-- Generator determinism: re-running all three generators produces
-  byte-identical outputs (the CI gate enforces this on every deploy)
-- Browser visual QA (headless Chromium against the exported site):
-  world HUD star (36px) on dark; blog header star; footer star; RED
-  MAGIC eye sigil; project artwork plates at 1440px and 390px;
-  article header; star variant matrix rendered at 128/64/32/16px on
-  white, near-black, and crimson backgrounds — geometry identical,
-  legible at 16px, no clipping or blur; favicon frames verified at
-  16/32/48
-- No ranking or indexing claims are made — indexing is a crawler-side
-  decision after deployment; the site is technically Search
-  Console-ready (verified tag, sitemap, robots, canonical URLs,
-  crawlable images, valid JSON-LD)
-
-## Migration order
-
-Apply to a checkout of `a0ad86e` in this exact order:
-
-1. **Copy the whole `assets/` tree** from this release (canonical
-   system), then the runtime copies: `public/brand/`,
-   `public/images/projects/`, and the favicon family
-   `public/icon.svg` (replaces the deleted `app/icon.svg`),
-   `public/icon.png`, `public/favicon.ico`, `public/apple-icon.png`.
-2. **Replace the files in "Files to replace"** and **add**
-   `lib/brand.ts` plus the three generator scripts and
-   `verify-brand.mjs` from "Files added".
-3. **Run install/build/verify:**
-   ```bash
-   npm ci --legacy-peer-deps
-   npm run lint                        # 0 errors (warnings only)
-   npm run build                       # blog pipeline + static export
-   npm run verify                      # verify:seo (94) + verify:brand (13)
-   ```
-   Expected: both verifiers print their `passed.` summaries; the
-   favicon family ships in `out/` (`icon.svg`, `icon.png`,
-   `favicon.ico`, `apple-icon.png`); every page head carries the
-   exact Google verification meta tag.
-4. **Optional — regenerate from scratch to prove determinism:**
-   ```bash
-   npm run brand && npm run brand:raster
-   git diff --exit-code -- assets public/brand public/images/projects app
-   ```
-5. **Commit and push to `main`.** The deploy workflow now runs the
-   brand-asset gate (including the determinism re-run) after the SEO
-   gate; all three jobs must be green.
-6. **After deployment:** use Search Console → URL Inspection on
-   `https://parsaetak.github.io/WEB/` and request recrawl of the
-   sitemap. Indexing and any favicon appearance in search are
-   crawler-side outcomes that follow later — never claimed here.
+The six-scene world architecture, the visual identity (13-point star
+= site, Red Eye = RED MAGIC), the SEO entity graph, canonical/OG/Twitter
+metadata, sitemap generation law (lastmod from real article dates only),
+the GSC verification token
+(`K8PQwvcGcrpBCyR-6XbmnDhv2IFPxpxjXV90UY7glTo`), the asset system, and
+the blog pipeline were preserved. No new runtime dependencies.
 
 ---
 
-# Updated-Files.md — release archive (2.8.1)
+## Added
 
-### Release
-
-| Field | Value |
+| File | Purpose |
 | --- | --- |
-| Release / version | **2.8.1** (Pages-architecture preflight, reader-scale fix, touch-target and CI hardening) |
-| Base commit | `c5b74c3cf03b905c1da47901f86f81a32b839992` ("Refactor GitHub Pages deployment workflow", 2026-09-13) |
-| Date | 2026-09-13 |
-| Base commit state | Actions run **34740258813**: FAIL at `Verify Pages configuration` (`build_type = legacy`); parallel legacy `pages build and deployment` run succeeded (still serving the branch build of README) |
+| `components/HomeOriginOrganism.tsx` | Lazy hero organism: CSS seed in SSR, one idle-time `import()` for the RED MAGIC canvas, capability-gated (reduced motion / save-data / device memory) |
+| `lib/homeWriting.ts` | Server-side Writing selection for the home scene (featured → inbound links → date), serializable props only |
 
-#### Why 2.8.1 exists
+## Modified
 
-The production workflow is still red for exactly one reason: GitHub Pages is
-configured as **"Deploy from a branch"** (API `build_type: "legacy"`) while
-this repository deploys exclusively through `actions/deploy-pages@v5`, which
-requires the source to be **"GitHub Actions"** (`build_type: "workflow"`).
-Repository files cannot change that setting — it is a repository-owner
-operation.
+| File | Change |
+| --- | --- |
+| `components/SceneRegistry.tsx` | Home scene statically imported (was `dynamic()`); `suspense={renderedScene !== "home"}`; `writingPosts` prop forwarded to the home scene |
+| `components/SceneViewport.tsx` | Conditional Suspense boundary (`suspense` prop) — the P0 fix that keeps large synchronous scene content inline in the exported HTML instead of React's hidden streamed completion |
+| `components/scenes/HomeScene.tsx` | Organism via `HomeOriginOrganism` (was static RedMagic import); new Writing section; `writingPosts` prop; `formatBlogDate` from the client-safe formatter module |
+| `components/scenes/HomeScene.module.css` | Seed visual styles; Writing section styles; interaction refinements (artwork scale, arrow nudge, press states, focus rings) with reduced-motion guards |
+| `components/LivingShell.tsx` | `writingPosts` prop threading to `SceneRegistry` |
+| `components/SceneLoadingScreen.module.css` | Boot gate hidden by default, visible only under `html.reveal-js` (no-JS safety) |
+| `app/page.tsx` | Server-side `getHomeWritingPosts()` → `LivingShell writingPosts` |
+| `app/globals.css` | `.body` 1.0625rem; button interaction system (press/release/focus/disabled, reduced-motion guard) |
+| `app/blog/[slug]/article.module.css` | Body 17–18.7px, measure 745px, paragraph spacing 1.5em, header meta 11px |
+| `app/blog/[slug]/page.tsx` | `SCENE · Work ↗` context chip linking project-tagged articles to the Work scene |
+| `content/blog/building-under-constraints.md` | Contextual link to `freeiran-engineering-notes` (real engineering-philosophy relationship) |
+| `content/blog/sheytan-the-local-first-laboratory.md` | Contextual link to `freeiran-engineering-notes` (shared Go-first discipline) |
+| `content/blog/why-the-website-is-a-living-system.md` | Contextual link to `red-theory-and-the-living-web` (theory ↔ demonstration) |
+| `scripts/verify-seo.mjs` | P0 home-content assertions (h1 in main, no S:0 wrapper, visible-main phrases, ≥3 article links) + internal link-graph audit with orphan report |
+| `data/blog/posts.json` | Regenerated by `scripts/build-blog.mjs` from the three edited articles (body HTML, related/linksHere indexes) |
+| `package.json` | Version 2.9.0 → 3.0.0 |
 
-2.8.1 does three things the base commit did not:
+## Deleted
 
-1. **Makes the Pages-source guard fail fast and impossible to miss.** The
-   check moved out of the build job (where it ran after `setup-node` +
-   `npm ci`) into a dedicated `pages-source` preflight job that fails in
-   seconds — no Node setup, no dependency install, no wasted build minutes —
-   and the deploy job re-verifies the setting immediately before
-   `deploy-pages` runs, so a setting flipped back mid-run fails loudly
-   instead of hanging in `purging_cdn` for the action timeout.
-2. **Fixes a functional blog bug found by interaction testing:** the article
-   TextSize control was visually inert on phones and small tablets — the
-   `max-width: 760px` media query set `.body { font-size: 16px }` with no
-   `--reader-scale` multiplication, so the control stayed visible, stored the
-   preference, and did nothing on screen below 760 px.
-3. **Fixes touch targets that failed the 24 px minimum** (WCAG 2.5.8): the
-   blog card `PROJECT · <name>` filter chips (9 px tall), the card title
-   anchors (21 px), and the footer LICENSE/TRADEMARKS links (11 px). All
-   keep their exact visual geometry via padding + compensating negative
-   margins.
+None.
 
-### ⚠️ Required manual action (unchanged — cannot be done from the repository)
+---
 
-**Settings → Pages → Build and deployment → Source must be set to
-"GitHub Actions"** (not "Deploy from a branch").
+## Behaviour changes
 
-Until this is switched, every push will keep failing at the new
-`Verify Pages source configuration` job — in seconds, with the exact fix in
-the error message, and with zero build minutes spent. That failure is by
-design and is the workflow working correctly.
+### Homepage rendering
+- Exported `out/index.html` contains the full home scene inline in
+  `<main>` (h1 → positioning → capabilities → featured work → method →
+  frameworks → writing → direction → connect). Before: 10 visible words
+  (loading gate) with the real content inside `<div hidden id="S:0">`.
+  After: 964 visible words, no hidden wrapper.
+- Hydration is unchanged for JS visitors: initial scene is "home" on
+  server and client, hash correction still happens behind the boot
+  gate, scene transitions keep their loading choreography.
 
-### What changed in the deployment architecture
+### Internal-link graph
+- Every article now has ≥1 inbound internal link (was: two orphans).
+- Articles with a `project` link to `/#work` (12 new template edges,
+  one per project-tagged article — 9 articles).
+- Home → Writing adds 3 article links + the blog index link.
 
-- **New `pages-source` preflight job.** Runs first; `build` needs it. Shallow
-  checkout + one API call (`GET /repos/<owner>/<repo>/pages`). The job is
-  named exactly `Verify Pages source configuration` so the failing state is
-  visible in the Actions UI before anything expensive starts.
-- **Shared guard script (`.github/scripts/verify-pages-source.sh`).** One
-  implementation used by both the preflight and the deploy job. Behaviour:
-  - `build_type = workflow` → pass, log `Pages build_type = workflow
-    (GitHub Actions). Deployment path verified.`
-  - `build_type = legacy` → hard fail reporting
-    `Pages build_type = legacy (Deploy from a branch).` plus the exact
-    settings path: `Settings -> Pages -> Build and deployment -> Source ->
-    GitHub Actions`.
-  - missing `build_type` field → treated as `legacy` and fails (the API's
-    own default is the branch build).
-  - HTTP 404 → Pages has never been configured; fails with the same
-    settings path.
-  - Any other HTTP status → fails and dumps the response body.
-  - There is **no fallback deployment path** by design; the script never
-    exits 0 on anything but `build_type = workflow`.
-- **Deploy-job re-verification restored.** `c5b74c3` removed the deploy-time
-  re-check; a mid-run settings flip would otherwise surface as a
-  `deploy-pages` hang instead of an explicit error. The re-check runs
-  immediately before deployment against the same script.
-- **Everything else preserved unchanged:** `actions/deploy-pages@v5`,
-  20-minute deploy `timeout: 1200000`, `actions/configure-pages@v6`,
-  library manifest sync + validation, blog pipeline validation, Next.js
-  build, SEO verification, static-export verification (sitemap/route
-  equality, RSS absence), deployment manifests (`deployment.json`,
-  `deployments/<sha>.json`), upload artifact, and the deployed-revision
-  verification loop (40 × 5 s against the commit-unique manifest URL).
+### SEO
+- Verification suite extended (see `verify-seo.mjs` above); all
+  previous checks unchanged and passing (canonical, OG, Twitter,
+  robots, sitemap↔route equality, GSC token exactness, favicon family,
+  brand assets, structured-data entity graph).
+- Sitemap unchanged in URL set; `lastmod` still derived from real
+  article `updated`/`date` fields only.
 
-### What changed in the application
+### Typography
+- Article reading column: 17–18.7px / 1.85 line-height / 745px measure.
+- Site interface body copy 17px. Metadata floor in article headers
+  raised 10px → 11px. Everything remains reader-scale aware.
 
-- **Article reader scale on mobile** (`app/blog/[slug]/article.module.css`):
-  the `max-width: 760px` override `.body { font-size: 16px }` became
-  `font-size: calc(16px * var(--reader-scale, 1))`. The TextSize island
-  (visible on phones), its localStorage preference, and the desktop scale
-  rule all already existed — only the small-screen override cancelled them.
-  Every step (0.95 → 1.2) now scales the reading column on narrow screens.
-- **Touch targets** (`components/blog/BlogIndex.module.css`,
-  `components/LivingShell.module.css`): `PROJECT · <name>` chips → 25 px hit
-  height (was 9 px), card title anchors → full title height ≥ 24 px (was
-  21 px per line box), footer LICENSE/TRADEMARKS → 25 px (was 11 px). Each
-  uses padding + compensating negative margin so rendered layout is
-  pixel-identical; chip font stays 8 px by design.
-- **CI strengthening** (`scripts/verify-seo.mjs`): new MEDIA EXISTENCE pass —
-  every internal `<img src>` in the export must resolve to a file that
-  ships (renamed/deleted assets are now a build failure, not a silent 404).
-  19 media references audited on the current export. Negative-tested: a
-  broken `src` fails the run.
-- `package.json`: version bump 2.8.0 → 2.8.1.
+### Interaction system
+- `.button`: press 90ms transform contact, 200ms release ease,
+  focus-visible ring, disabled state; hover lift only under
+  `prefers-reduced-motion: no-preference`.
+- Home cards/rows: hover arrow nudge, artwork scale (1.025), press
+  scale (0.995), explicit focus-visible rings.
 
-### Files to replace
+### Performance
+Measured on identical hardware, production builds of `fec289e` (before)
+and this release (after), `out/` inspected directly:
 
-| File | Reason |
-| ---- | ------ |
-| `.github/workflows/deploy.yml` | New job graph: `pages-source` preflight → `build` → `deploy`; deploy job re-verifies Pages source before `deploy-pages@v5`; build job no longer hosts the guard (replaced by the preflight job that cannot waste build time). |
-| `app/blog/[slug]/article.module.css` | Mobile `.body` font-size now multiplies `--reader-scale` — fixes the inert TextSize control below 760 px. |
-| `components/blog/BlogIndex.module.css` | `.cardProject` chip and `.cardTitle a` touch targets raised to ≥ 24 px via padding + compensating negative margins (visual geometry unchanged). |
-| `components/LivingShell.module.css` | Footer `.livingShellLegalLinks a` (LICENSE / TRADEMARKS) touch target raised to 25 px the same way. |
-| `package.json` | Version bump 2.8.0 → 2.8.1. |
-| `scripts/verify-seo.mjs` | New MEDIA EXISTENCE pass in `verifyInteractivity()` — every internal image `src` in the export must exist; negative-tested. |
+| Metric | Before | After |
+| --- | --- | --- |
+| Eager script JS on `/` | 617 KB (11 chunks) | 644 KB (11 chunks) |
+| RED MAGIC organism chunk | 28 KB, fetched immediately at hydration; canvas runs from first paint of the scene | 28 KB, fetched at idle (≤2.4s cap) and only when motion/save-data/memory allow; skipped entirely otherwise |
+| Visible words in initial `<main>` | 10 | 964 |
+| Hidden streamed `S:0` wrapper | present | absent |
+| First-paint content | loading gate only | full homepage (LCP candidate is real content) |
 
-### Files to delete
+The +27 KB eager delta is the home scene's content module moving into
+the eager graph — the cost of a crawlable inline document. The
+organism's bytes and main-thread work moved off the hydration path to
+idle time.
 
-| File | Reason |
-| ---- | ------ |
-| (none) | This release removes nothing. |
+### Accessibility
+- No-JS: boot gate and reveal system cannot hide content
+  (`html.reveal-js`-gated CSS); full homepage readable without
+  JavaScript.
+- Reduced motion: seed replaces the animated organism; hover/press
+  transforms are removed while color/shadow/border feedback and all
+  functional state changes remain.
+- Keyboard: explicit focus-visible rings on shared buttons and home
+  rows; tab order unchanged.
 
-### Files added
+---
 
-| File | Reason |
-| ---- | ------ |
-| `.github/scripts/verify-pages-source.sh` | The single Pages-source guard implementation, executed by both the `pages-source` preflight job and the deploy job's pre-deployment re-verification. Testable in isolation; passes on `workflow`, fails on `legacy` / missing field / 404 / other HTTP errors / API unreachable, always naming the exact settings path on failure. |
+## Verification
 
-### Important preserved systems (audited, deliberately unchanged)
+Commands actually executed against this tree, with real results:
 
-- `next.config.ts` — static export + `/WEB` basePath + trailing slash
-- `components/LivingShell.tsx`, `SceneUrlSync.tsx`, `SceneRegistry.tsx`,
-  `ScenePreloader.tsx`, `SceneViewport.tsx`, `MotionReveal.tsx`,
-  `WorldBackground.tsx`, `RedCursor.tsx`, `CompactMenu.tsx`,
-  `SceneLoadingScreen.tsx`, `RedEye.tsx` — world shell, hash routing,
-  history navigation, preloading, single-observer reveal system
-- `components/scenes/*` — all six scenes (Home, About, Systems, RedMagic,
-  Work, Library); every link verified against live destinations and the
-  export; REP/USEF informational panels correctly non-linked
-- `components/RedMagic*.ts(x)`, `MagicConsole.tsx`,
-  `MagicInteractionLayer.tsx` — organism engine, console modes (DRIFT /
-  LISTEN / SURGE aria-pressed exclusivity), audio toggle, reduced-motion
-  and hidden-tab suspension
-- `components/blog/*` — index filters (project deep links via `?project=`,
-  topic chips, tag buttons, search with Enter-to-open, `/` `?` J K T keys,
-  CLEAR FILTERS), TOC anchors verified against heading ids, reading
-  progress (transform-only), code copy + share link with honest fallback
-  states, prev/next + related + referenced-by
-- `components/LibraryPdfReader.tsx`, `lib/contentRepository.ts` — PDF/media
-  viewer, focus trap, Escape/scroll-lock, DOWNLOAD + SOURCE provenance links
-- `lib/*` — links (all external destinations verified live), keyboard,
-  clipboard, schedulers, worldSignals, seo
-- `content/blog/*.md` — all nine articles (content untouched)
-- `public/robots.txt`, `public/og-default.png`, `public/blog/images/**`;
-  `data/blog/posts.json` and `public/sitemap.xml` remain build-generated
-  (never hand-edited)
-- `LICENSE.md`, `TRADEMARKS.md`, `README.md`, `PUSH-NOTES.txt`, `worklog.md`
+| Command | Result |
+| --- | --- |
+| `npx tsc --noEmit` | Passed, no type errors |
+| `npm run lint` | `✖ 16 problems (0 errors, 16 warnings)` — all pre-existing `@next/next/no-img-element` warnings |
+| `npm run build` | Exit 0; 13 static routes generated (/, /blog, 9 articles, 404, not-found) |
+| `npm run verify:seo` | `[seo] static SEO verification passed.` — includes the new v3.0 checks: `home: no hidden streamed-Suspense wrapper`, `home: h1 renders inside <main>`, `home: 8 core phrase(s) present in visible <main> before JavaScript`, `home: N crawlable article link(s) in home HTML`, `link graph: all internal article/scene hrefs across 14 exported page(s) resolve`, `link graph: no orphan articles` |
+| `npm run verify:brand` | `[brand] brand asset verification passed.` |
+| `node scripts/build-blog.mjs` (via `npm run blog`) | Regenerated indexes; reported the inbound deltas `freeiran-engineering-notes: 0 → 2`, `red-theory-and-the-living-web: 0 → 1` |
+| Generated-output inspection | `out/index.html`: 84,311 bytes; `<main>` 37,263 bytes inline; h1/SHEYTAN/FreeIran/Writing/CTAs present before JavaScript; `<div hidden id="S:0">` absent; `google-site-verification` meta exact |
+| Browser verification (agent-browser against `out/` served statically) | Home: h1 rendered, seed → organism canvas mounts at idle, Writing section links = featured + 2 most-referenced articles, `#work` scene switch + history back work, zero console errors/page errors, Tab focus shows solid outline ring. Article `/blog/building-under-constraints/`: h1 rendered, `SCENE · Work ↗` chip present, FreeIran contextual link present, computed body typography 18.56px / 745px / line-height 1.85 |
 
-### Verification performed on this release state
+## ZIP
 
-- `npm ci --legacy-peer-deps --no-audit --no-fund` — clean install
-- `npm run lint` — **0 errors** (10 pre-existing `<img>` warnings; static
-  export uses unoptimized images by design)
-- `GITHUB_ACTIONS=true npm run build` — clean build, 14/14 routes exported
-- `GITHUB_ACTIONS=true node scripts/verify-seo.mjs` — **75 checks pass**,
-  including the new 19-reference media pass
-- Programmatic link audit: 14 HTML pages, 838 hrefs, 232 fragment refs —
-  no `href="#"`, no empty href, no `javascript:`, no invalid internal
-  paths, no missing images, no nested interactive elements, every internal
-  link resolved against the actual export
-- External destinations verified live: GitHub repos (SHEYTAN-local-agent,
-  FreeIran, Contents incl. `AI-Tests` branch, WEB), CDN manifest, social
-  links (403/429/999 responses are bot-protection, not dead links)
-- Browser interaction tests (Chromium, headless): scene navigation via
-  track + brand + hash URLs + browser back/forward + `#bogus`
-  normalization; compact menu open/select/Escape/outside-tap/focus-out;
-  home CTAs and all 19 unique home link targets; blog search filtering,
-  Enter-to-open, project chip deep-link + CLEAR FILTERS, shortcuts dialog,
-  J/K article navigation, T back-to-top, TOC anchor scrolling, reading
-  progress, text size (post-fix), copy controls' honest states; library
-  catalog, filters, featured card, PDF modal open/Escape, focus trap,
-  scroll lock; RED MAGIC console mode exclusivity and pointer interaction.
-  Zero console errors, zero page errors across all sessions.
-- Responsive sweep: 15 viewports × 4 page types = **60 combos, zero
-  horizontal overflow** (320×568 → 2560×1080)
-- Guard script state tests: `legacy`, `workflow`, `404`, `500`, missing
-  field, API unreachable — all six behave as specified
-- Reduced motion: gated in all 10 shipped CSS chunks; smooth scrolling
-  behind `no-preference`; canvas engines render static frames; JS smooth
-  scrolls collapse to jumps
-
-### Migration order
-
-Apply to a checkout of `c5b74c3` in this exact order:
-
-1. **Replace the files in "Files to replace"** and **add**
-   `.github/scripts/verify-pages-source.sh` from "Files added"
-   (`chmod +x` is not required — the workflow invokes it with `bash`).
-2. **Run install/build/test:**
-   ```bash
-   npm ci --legacy-peer-deps --no-audit --no-fund
-   npm run lint                       # 0 errors (10 pre-existing <img> warnings)
-   GITHUB_ACTIONS=true npm run build  # regenerates data/blog/posts.json,
-                                      # public/sitemap.xml, and out/
-   GITHUB_ACTIONS=true node scripts/verify-seo.mjs
-   # static export spot checks:
-   test -f out/index.html && test -f out/blog/index.html \
-     && test -f out/sitemap.xml && test -f out/robots.txt \
-     && test -f out/og-default.png && test ! -f out/blog/feed.xml
-   ```
-   Expected: lint clean (warnings only), build succeeds, SEO verifier prints
-   `[seo] static SEO verification passed.` with 75 checks, 9 article routes
-   exported.
-3. **Required manual setting (the actual root-cause fix):** repository
-   **Settings → Pages → Build and deployment → Source → "GitHub Actions"**.
-4. **Commit and push to `main`.**
-5. **Verify the run:** the push triggers `Deploy Next.js site to GitHub
-   Pages`. All three jobs must be green:
-   `Verify Pages source configuration` → `Prepare and build site` (library
-   validation, blog validation, Next.js build, SEO verification, static
-   export verification, artifact upload) → `Deploy site` (pre-deploy
-   re-verification, `deploy-pages`, `Verify deployed revision` against
-   `https://parsaetak.github.io/WEB/deployments/<commit-sha>.json`).
-6. **Verify the live site:** `https://parsaetak.github.io/WEB/` serves the
-   Next.js app (title "Parsa Tak — AI Systems, Reasoning, Software & RED
-   MAGIC"), the parallel legacy `pages build and deployment` workflow no
-   longer appears in the run list, and the deployment manifest URL returns
-   the pushed commit sha.
+`WEB-PROFESSIONAL-SEO-UX-UPGRADE.zip` — complete project source
+(excluding `node_modules/`, `.next/`, `out/`, `.git/`). Verified by
+extracting into a clean directory, running `npm ci`, `npm run build`
+and `npm run verify:seo` from the extracted tree, then re-inspecting
+the regenerated `out/index.html`.

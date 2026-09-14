@@ -200,7 +200,12 @@
 
   font-family: var(--font-mono);
 
-  font-size: 10px;
+  /*
+   * READABILITY (v3.0): article header metadata raised 10px →
+   * 11px — still clearly secondary to title/body, but no longer
+   * at the floor of legibility on small screens.
+   */
+  font-size: 11px;
 
   letter-spacing: 0.12em;
 
@@ -353,25 +358,25 @@
 /* ------------------------------------------------------------------------ */
 
 .body {
-  max-width: 720px;
+  /*
+   * READABILITY (v3.0): the reading column widens to keep the
+   * 65–78ch measure at the larger body size, and the body scale
+   * rises (17–18.7px, ≈1.06–1.17rem) to sit fully inside the
+   * comfortable article range. Everything still multiplies by the
+   * TextSize island's --reader-scale preference.
+   */
+  max-width: 745px;
 
   margin: 38px auto 0;
 
   color: var(--text-soft);
 
-  /*
-   * READER SCALE (v2.5.7): the TextSize island writes
-   * --reader-scale on the document root (0.95 … 1.2, fallback 1).
-   * Only the article body and its headings consume it, so the
-   * preference cannot leak anywhere else on the site. Body copy
-   * keeps its clamp; the whole reading column scales together.
-   */
   font-size:
     calc(
       clamp(
-        16px,
-        1.4vw,
-        18px
+        17px,
+        1.45vw,
+        18.7px
       ) * var(--reader-scale, 1)
     );
 
@@ -379,7 +384,7 @@
 }
 
 .body p {
-  margin: 0 0 1.4em;
+  margin: 0 0 1.5em;
 
   overflow-wrap: break-word;
 }

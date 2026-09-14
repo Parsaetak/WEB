@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 
 import LivingShell from "@/components/LivingShell";
 
+import { getHomeWritingPosts } from "@/lib/homeWriting";
+
 import {
   HOME_TITLE,
   JsonLd,
@@ -21,6 +23,15 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
+  /*
+   * SERVER-SIDE WRITING SELECTION (v3.0): the strongest articles
+   * are picked here, on the server, from the blog content index and
+   * passed down as serializable props. The home scene renders them
+   * into the exported HTML without ever importing the server-only
+   * blog data layer into the client graph.
+   */
+  const writingPosts = getHomeWritingPosts();
+
   return (
     <>
       <JsonLd
@@ -30,7 +41,7 @@ export default function Home() {
         }}
       />
 
-      <LivingShell />
+      <LivingShell writingPosts={writingPosts} />
     </>
   );
 }

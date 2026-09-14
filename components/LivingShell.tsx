@@ -36,6 +36,10 @@ import {
 } from "@/lib/worldSignals";
 import { GITHUB_LINK } from "@/lib/links";
 
+import type {
+  HomeWritingPost
+} from "@/lib/homeWriting";
+
 export type SceneId =
   | "home"
   | "about"
@@ -85,6 +89,14 @@ export const SCENES:
 
 type LivingShellProps = {
   initialScene?: SceneId;
+
+  /*
+   * SERVER-SIDE WRITING SELECTION (v3.0): computed once in
+   * app/page.tsx from the blog content index and passed down to the
+   * home scene. Serializable metadata only — article bodies never
+   * enter the client graph through this path.
+   */
+  writingPosts?: readonly HomeWritingPost[];
 };
 
 function readInitialScene(): SceneId {
@@ -141,7 +153,8 @@ function normalizeInitialHash(
 }
 
 export default function LivingShell({
-  initialScene = "home"
+  initialScene = "home",
+  writingPosts
 }: LivingShellProps) {
   const [
     activeScene,
@@ -561,6 +574,9 @@ export default function LivingShell({
         <SceneRegistry
           scene={
             activeScene
+          }
+          writingPosts={
+            writingPosts
           }
         />
       </main>

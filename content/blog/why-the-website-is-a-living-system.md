@@ -25,7 +25,7 @@ RED MAGIC began as a question about that difference. What would it cost, technic
 
 ## An organism, not a widget
 
-The organism you can run in the [MAGIC laboratory](/#magic) has five layers: a core that pulses, a membrane that reaches toward your pointer, energy flows between them, orbiting particles, and a signal layer — which is you. Every layer is computed live. When the membrane swells toward your cursor, that is the simulation integrating your movement, not a CSS transition pretending to.
+The organism you can run in the [MAGIC laboratory](/#magic) has five layers: a core that pulses, a membrane that reaches toward your pointer, energy flows between them, orbiting particles, and a signal layer — which is you. Every layer is computed live. When the membrane swells toward your cursor, that is the simulation integrating your movement, not a CSS transition pretending to. The theory underneath those layers — emergence, adaptation, competition, dissolution, replacement — is written up separately in [Red Theory and the living web](/blog/red-theory-and-the-living-web/), including the honest boundary between the model and this demonstration of it.
 
 The same principle runs at ambient scale through the whole site: one continuous background organism with layered timescales — particles and sparks on micro loops, wisps and rings on short and medium loops, atmospheric masses on long loops, and a heartbeat underneath. As of this upgrade the layers are phase-de-synchronised (no layer starts at zero on load), coupled to a shared energy signal, and echoed by a resonance ring that only becomes visible when the organism is awake. Move, and the entire field brightens as one system. Stop, and it settles to silence at zero JavaScript cost.
 

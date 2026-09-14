@@ -613,7 +613,7 @@ async function verifyNoRss() {
 }
 
 /*
- * HOME CONTENT VERIFICATION (v2.7).
+ * HOME CONTENT VERIFICATION (v2.7, tightened v3.0).
  *
  * The home scene is now server-rendered into the static export, so
  * its semantic content is crawlable. This check proves the
@@ -621,6 +621,13 @@ async function verifyNoRss() {
  * the capability vocabulary, the featured project names, the
  * workflow stages, and crawlable links to the real destinations.
  * It reads the same exported HTML a search engine receives.
+ *
+ * v3.0 additions — the P0 crawlability guarantees:
+ * - the h1 must sit INSIDE <main> in the real DOM, not inside a
+ *   React streamed-Suspense completion wrapper (<div hidden id="S:0">)
+ *   and not inside a <template> or script payload;
+ * - the visible <main> surface itself must carry the core content,
+ *   independent of what the flight data contains.
  */
 async function verifyHomeContent() {
   const html = await readFile(path.join(OUT_DIR, "index.html"), "utf8");
@@ -634,11 +641,51 @@ async function verifyHomeContent() {
     .replace(/&nbsp;/g, " ")
     .replace(/\s+/g, " ");
 
+  /*
+   * P0 (v3.0): the visible document — the part a search engine's
+   * renderer and every social scraper see before any JavaScript —
+   * is the <main>…</main> slice with scripts stripped. The home
+   * scene's core message must live THERE, verbatim.
+   */
+  const mainMatch = html.match(/<main[\s\S]*?<\/main>/);
+  const mainHtml = mainMatch ? mainMatch[0] : "";
+  const mainVisible = mainHtml
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<style[\s\S]*?<\/style>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ");
+
+  if (!mainMatch) {
+    fail("home: no <main> element found in exported HTML");
+  }
+
   const h1Matches = html.match(/<h1[^>]*>/g) ?? [];
   if (h1Matches.length !== 1) {
     fail(`home: expected exactly one h1, found ${h1Matches.length}`);
   } else {
     pass("home: exactly one h1 in exported HTML");
+  }
+
+  /*
+   * P0 (v3.0): React's streamed-Suspense completion lands in a
+   * <div hidden id="S:0"> wrapper. Its presence means the visible
+   * document shipped a loading gate instead of content.
+   */
+  if (/<div hidden id="S:0">/.test(html)) {
+    fail(
+      "home: streamed Suspense wrapper <div hidden id=\"S:0\"> found — home scene content is not in the visible document"
+    );
+  } else {
+    pass("home: no hidden streamed-Suspense wrapper (content renders inline)");
+  }
+
+  const h1InMain = /<main[^>]*>[\s\S]*?<h1[\s\S]*?<\/main>/.test(html);
+  if (!h1InMain) {
+    fail("home: h1 is not inside <main> in the exported HTML");
+  } else {
+    pass("home: h1 renders inside <main> (visible initial document)");
   }
 
   const requiredPhrases = [
@@ -672,6 +719,54 @@ async function verifyHomeContent() {
     pass(
       `home: ${requiredPhrases.length} capability/project/workflow phrase(s) present in visible HTML`
     );
+  }
+
+  /*
+   * P0 (v3.0): the core professional message must be present in
+   * the VISIBLE main document — not merely in the flight payload.
+   * These are the same phrases the mission defines as the minimum
+   * crawlable home content.
+   */
+  const mainRequiredPhrases = [
+    ["h1", "AI systems"],
+    ["positioning", "RESEARCHER"],
+    ["positioning", "I research intelligence"],
+    ["capabilities", "What I can do"],
+    ["featured work", "SHEYTAN Local Agent"],
+    ["featured work", "FreeIran"],
+    ["writing section", "Field notes"],
+    ["writing section", "Open the Blog"]
+  ];
+
+  for (const [kind, phrase] of mainRequiredPhrases) {
+    if (!mainVisible.includes(phrase)) {
+      fail(`home: ${kind} missing from visible <main> content: "${phrase}"`);
+    }
+  }
+
+  if (
+    !failures.some((entry) =>
+      entry.includes("missing from visible <main> content")
+    )
+  ) {
+    pass(
+      `home: ${mainRequiredPhrases.length} core phrase(s) present in visible <main> before JavaScript`
+    );
+  }
+
+  /*
+   * WRITING (v3.0): the home route must link real articles with
+   * descriptive destinations, not just the blog index.
+   */
+  const writingHrefs = (html.match(/href="(\/blog\/[a-z0-9-]+\/)"/g) ?? []).map(
+    (entry) => entry.slice(6, -1)
+  );
+  if (writingHrefs.length < 3) {
+    fail(
+      `home: expected ≥3 crawlable article links from the Writing section, found ${writingHrefs.length}`
+    );
+  } else {
+    pass(`home: ${writingHrefs.length} crawlable article link(s) in home HTML`);
   }
 
   /* Crawlable destinations from the home scene. */
@@ -784,6 +879,148 @@ async function verifyBrandAssetsInExport() {
   }
 }
 
+/*
+ * INTERNAL LINK GRAPH AUDIT (v3.0).
+ *
+ * Mission §7: identify orphan pages and weak links, and validate
+ * that internal links resolve. This audit:
+ *  1. FAILS on any internal href in the exported HTML that points
+ *     to an article slug or scene hash that does not exist
+ *     (broken internal links);
+ *  2. FAILS on accidental repository-clone URLs and localhost
+ *     destinations;
+ *  3. REPORTS the inbound internal-link count per article from the
+ *     build-time graph plus the exported HTML, and WARNs on zero-
+ *     inbound articles without failing the build (warnings must be
+ *     fixed with real links, never artificial ones).
+ */
+async function verifyInternalLinkGraph(articleRoutes) {
+  /*
+   * collectHtmlFiles() (defined with the v2.4 interaction audit)
+   * returns export-relative HTML paths (index.html, blog/<slug>/
+   * index.html, …). Reuse it — one file-walk across the script.
+   */
+  const htmlFiles = await collectHtmlFiles(OUT_DIR);
+
+  /*
+   * BasePath tolerance: the export rewrites internal hrefs to carry
+   * the /WEB prefix when building for GitHub Pages. The audit must
+   * accept both shapes — mirrors next.config.ts / build-blog.mjs.
+   */
+  const BASE = process.env.GITHUB_ACTIONS === "true" ? "/WEB" : "";
+
+  const internalHrefs = new Set();
+
+  const broken = [];
+
+  const articleSlugSet = new Set(articleRoutes);
+
+  const KNOWN_SCENES = new Set([
+    "home",
+    "about",
+    "systems",
+    "magic",
+    "work",
+    "library"
+  ]);
+
+  for (const relFile of htmlFiles) {
+    const file = path.join(OUT_DIR, relFile);
+
+    const html = await readFile(file, "utf8");
+
+    const hrefs = [
+      ...html.matchAll(/href="([^"]+)"/g)
+    ].map((match) => match[1]);
+
+    for (const href of hrefs) {
+      if (href.startsWith("http://localhost") || href.includes("127.0.0.1")) {
+        broken.push(`${relFile}: localhost link ${href}`);
+        continue;
+      }
+
+      if (href.startsWith("git@") || href.endsWith(".git")) {
+        broken.push(`${relFile}: repository-clone URL ${href}`);
+        continue;
+      }
+
+      const articleMatch = href.match(
+        new RegExp(`^${BASE}/blog/([a-z0-9-]+)/?$`)
+      );
+
+      if (articleMatch) {
+        internalHrefs.add(`blog/${articleMatch[1]}`);
+
+        if (!articleSlugSet.has(articleMatch[1])) {
+          broken.push(
+            `${relFile}: link to unknown article ${href}`
+          );
+        }
+
+        continue;
+      }
+
+      const sceneMatch = href.match(
+        new RegExp(`^${BASE}/?#([a-z]+)$`)
+      );
+
+      if (sceneMatch && !KNOWN_SCENES.has(sceneMatch[1]) && sceneMatch[1] !== "top") {
+        broken.push(
+          `${relFile}: link to unknown scene ${href}`
+        );
+      }
+    }
+  }
+
+  if (broken.length > 0) {
+    for (const entry of broken) {
+      fail(`link graph: ${entry}`);
+    }
+  } else {
+    pass(
+      `link graph: all internal article/scene hrefs across ${htmlFiles.length} exported page(s) resolve`
+    );
+  }
+
+  /*
+   * Inbound report: build-time body links + template edges
+   * (project chips / scene chips / writing section are all real
+   * anchors in the exported HTML, so the HTML scan above catches
+   * them — the per-slug count below reuses the same set).
+   */
+  const inboundCounts = {};
+
+  for (const slug of articleRoutes) {
+    inboundCounts[slug] = 0;
+  }
+
+  for (const href of internalHrefs) {
+    const slug = href.replace(/^blog\//, "");
+
+    if (slug in inboundCounts) {
+      inboundCounts[slug] += 1;
+    }
+  }
+
+  const orphans = articleRoutes.filter(
+    (slug) => (inboundCounts[slug] ?? 0) === 0
+  );
+
+  for (const slug of articleRoutes) {
+    console.log(
+      `  · link graph: /blog/${slug}/ has ${inboundCounts[slug]} inbound internal link(s)`
+    );
+  }
+
+  if (orphans.length > 0) {
+    console.warn(
+      `[seo] WARNING — ${orphans.length} article(s) with zero inbound internal links (fix with real links, never artificial ones): ${orphans.join(", ")}`
+    );
+  } else {
+    pass("link graph: no orphan articles — every article has ≥1 inbound internal link");
+  }
+}
+
 async function main() {
   if (!existsSync(OUT_DIR)) {
     console.error("[seo] out/ does not exist — run `npm run build` first.");
@@ -880,6 +1117,7 @@ async function main() {
   await verifyRobots();
   await verifyNoRss();
   await verifyInteractivity();
+  await verifyInternalLinkGraph(articleRoutes);
 
   /* Favicon family + brand assets (v2.9) — checked with the export. */
   await verifyFaviconFamily();

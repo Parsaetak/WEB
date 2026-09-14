@@ -21,15 +21,41 @@
       0.96
     );
 
-  opacity: 1;
+  /*
+   * NO-JS SAFETY GATE (v3.0): the default state is HIDDEN. The
+   * pre-paint MOTION GATE script in <head> adds `reveal-js` to
+   * <html> before first paint, and only then does a visible boot
+   * gate rule apply. Without JavaScript the class never lands, so
+   * crawlers, social scrapers and no-JS visitors read the server-
+   * rendered scene content directly instead of a permanent loading
+   * overlay. With JavaScript the gate appears before first paint —
+   * the boot experience is unchanged.
+   */
+  opacity: 0;
 
-  visibility: visible;
+  visibility: hidden;
+
+  pointer-events: none;
 
   transition:
     opacity 220ms ease,
     visibility 220ms ease;
 
   isolation: isolate;
+}
+
+/*
+ * JS-present visibility: boot gate covers the world only while the
+ * application becomes interactive (data-visible="true" until the
+ * shell mount effect flips it). Scoped under html.reveal-js so the
+ * rule can never apply in a no-JS environment.
+ */
+:global(html.reveal-js) .sceneLoadingScreen[data-visible="true"] {
+  opacity: 1;
+
+  visibility: visible;
+
+  pointer-events: auto;
 }
 
 .sceneLoadingScreen[data-visible="false"] {
@@ -73,7 +99,13 @@
   visibility: hidden;
 }
 
-.sceneLoadingScreen[data-variant="scene"][data-visible="true"] {
+/*
+ * Scene-variant visible state also rides the reveal-js gate: the
+ * variant only ever renders during client-side scene transitions,
+ * but the same no-JS law holds — no loader is ever visible when the
+ * runtime that drives it cannot exist.
+ */
+:global(html.reveal-js) .sceneLoadingScreen[data-variant="scene"][data-visible="true"] {
   opacity: 1;
 
   visibility: visible;

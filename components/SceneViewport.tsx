@@ -18,6 +18,17 @@ type SceneLoaderProps = {
   pendingScene?: SceneId;
   loading?: boolean;
   children: ReactNode;
+
+  /*
+   * P0 (v3.0): the home scene renders SYNCHRONOUSLY (static import),
+   * so it must NOT be wrapped in a Suspense boundary. During static
+   * export, React flushes boundary content that exceeds the first
+   * write as a streamed <div hidden id="S:0"> completion — the
+   * visible document then showed only the loading fallback while the
+   * entire homepage sat hidden until hydration. Lazy hash scenes
+   * still suspend (dynamic imports) and keep their boundary.
+   */
+  suspense?: boolean;
 };
 
 function SceneFallback({
@@ -39,6 +50,7 @@ export default function SceneViewport({
   scene,
   pendingScene,
   loading = false,
+  suspense = true,
   children
 }: SceneLoaderProps) {
   return (
@@ -51,13 +63,23 @@ export default function SceneViewport({
       }
       aria-label={`${scene} scene`}
     >
-      <Suspense
-        fallback={
-          <SceneFallback
-            scene={scene}
-          />
-        }
-      >
+      {suspense ? (
+        <Suspense
+          fallback={
+            <SceneFallback
+              scene={scene}
+            />
+          }
+        >
+          <div
+            className={
+              styles.sceneViewportContent
+            }
+          >
+            {children}
+          </div>
+        </Suspense>
+      ) : (
         <div
           className={
             styles.sceneViewportContent
@@ -65,7 +87,7 @@ export default function SceneViewport({
         >
           {children}
         </div>
-      </Suspense>
+      )}
 
       <SceneLoadingScreen
         visible={

@@ -526,6 +526,34 @@ export default async function ArticlePage({
                 </Link>
               )}
 
+              {/*
+                * WRITING → WORK (v3.0): every project-tagged article
+                * also links to the Work scene, where that project's
+                * section lives. A crawlable normal anchor — the hash
+                * scene target is part of the same canonical document,
+                * so this adds a real internal edge without creating a
+                * duplicate URL.
+                */}
+              {post.project && (
+                <Link
+                  className={
+                    styles.contextChip
+                  }
+                  href="/#work"
+                  title="Open the Work scene"
+                >
+                  <span
+                    className={
+                      styles.contextChipLabel
+                    }
+                  >
+                    SCENE
+                  </span>
+
+                  Work ↗
+                </Link>
+              )}
+
               {post.topics.map(
                 (topic) => (
                   <Link

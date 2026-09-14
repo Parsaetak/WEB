@@ -1,8 +1,14 @@
 import Link from "next/link";
 
 import PublicLinks from "@/components/PublicLinks";
-import RedMagic from "@/components/RedMagic";
+import HomeOriginOrganism from "@/components/HomeOriginOrganism";
 import { GITHUB_LINK } from "@/lib/links";
+
+import { formatBlogDate } from "@/lib/blogFormat";
+
+import type {
+  HomeWritingPost
+} from "@/lib/homeWriting";
 
 import styles from "./HomeScene.module.css";
 
@@ -315,7 +321,17 @@ const directionStages = [
   }
 ] as const;
 
-export default function HomeScene() {
+export default function HomeScene({
+  writingPosts = []
+}: {
+  /*
+   * SERVER-SIDE WRITING SELECTION (v3.0): serializable article
+   * metadata computed in app/page.tsx. This module stays in the
+   * client graph, so it must never import lib/blog directly — the
+   * props are the only bridge to the content index.
+   */
+  writingPosts?: readonly HomeWritingPost[];
+}) {
   const github = GITHUB_LINK;
 
   return (
@@ -371,7 +387,12 @@ export default function HomeScene() {
           <div
             className={styles.homeOriginMagicOrganism}
           >
-            <RedMagic />
+            {/**
+              * v3.0 — the organism loads lazily at idle time through
+              * HomeOriginOrganism; the exported HTML carries the
+              * CSS-only seed instead of a canvas dependency.
+              */}
+            <HomeOriginOrganism />
           </div>
         </div>
 
@@ -972,6 +993,166 @@ export default function HomeScene() {
           </div>
         </div>
       </section>
+
+      {/*
+        * WRITING (v3.0) — the home scene's bridge into the knowledge
+        * graph. The entries are selected on the server from the real
+        * content index: the featured article first, then the most
+        * internally referenced. Everything links to a real route.
+        */}
+      {writingPosts.length > 0 && (
+        <section
+          className={`section ${styles.homeWriting}`}
+        >
+          <div className="page-container">
+            <div className={styles.homeSectionIntro}>
+              <div>
+                <p className="kicker">
+                  WRITING
+                </p>
+
+                <h2 className="section-title">
+                  Field notes
+                  <br />
+                  from the laboratory
+                </h2>
+              </div>
+
+              <p
+                className={`body-large ${styles.homeSectionLead}`}
+              >
+                Research, engineering, and the
+                reasoning behind the systems —
+                written down and connected, not
+                left in commit logs.
+              </p>
+            </div>
+
+            <div
+              className={styles.homeWritingList}
+              aria-label="Selected writing"
+            >
+              {writingPosts.map(
+                (post, index) => (
+                  <Link
+                    className={
+                      styles.homeWritingItem
+                    }
+                    key={post.slug}
+                    href={`/blog/${post.slug}/`}
+                    prefetch={false}
+                  >
+                    <span
+                      className={
+                        styles.homeWritingMeta
+                      }
+                    >
+                      <span
+                        className={
+                          styles.homeWritingNumber
+                        }
+                      >
+                        {String(
+                          index + 1
+                        ).padStart(2, "0")}
+                      </span>
+
+                      <span
+                        className={
+                          styles.homeWritingCategory
+                        }
+                      >
+                        {post.category}
+                      </span>
+
+                      <span
+                        className={
+                          styles.homeWritingDate
+                        }
+                      >
+                        {formatBlogDate(
+                          post.date
+                        )}
+                      </span>
+                    </span>
+
+                    <span
+                      className={
+                        styles.homeWritingMain
+                      }
+                    >
+                      <strong
+                        className={
+                          styles.homeWritingTitle
+                        }
+                      >
+                        {post.title}
+                      </strong>
+
+                      <span
+                        className={
+                          styles.homeWritingExcerpt
+                        }
+                      >
+                        {post.excerpt}
+                      </span>
+
+                      <span
+                        className={
+                          styles.homeWritingFoot
+                        }
+                      >
+                        <span>
+                          {post.readingTime}
+                        </span>
+
+                        {post.inbound > 0 && (
+                          <span>
+                            ↩ {post.inbound}
+                            {" "}
+                            {post.inbound === 1
+                              ? "reference"
+                              : "references"}
+                          </span>
+                        )}
+                      </span>
+                    </span>
+
+                    <span
+                      className={
+                        styles.homeWritingArrow
+                      }
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
+                  </Link>
+                )
+              )}
+            </div>
+
+            <Link
+              className={
+                styles.homeWritingArchive
+              }
+              href="/blog/"
+              prefetch={false}
+            >
+              <span>
+                ALL WRITING
+              </span>
+
+              <strong>
+                Open the Blog
+                <span aria-hidden="true">
+                  {" "}
+                  →
+                </span>
+              </strong>
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section
         className={`section ${styles.homeDirection}`}

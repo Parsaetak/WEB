@@ -7,6 +7,8 @@ import {
   useState
 } from "react";
 
+import HomeScene from "@/components/scenes/HomeScene";
+
 import type {
   ComponentType
 } from "react";
@@ -14,6 +16,10 @@ import type {
 import type {
   SceneId
 } from "@/components/LivingShell";
+
+import type {
+  HomeWritingPost
+} from "@/lib/homeWriting";
 
 import {
   loadSceneModule
@@ -26,19 +32,23 @@ import styles from "@/components/SceneRegistry.module.css";
 /*
  * Scene registry.
  *
- * Every scene component resolves through loadSceneModule(), the single
- * import site owned by ScenePreloader. The dynamic() wrappers below
- * exist only to integrate React.lazy-compatible rendering with
- * Suspense — they never produce their own import graphs, so the
- * bundler emits exactly one chunk per scene.
+ * Every secondary scene component resolves through loadSceneModule(),
+ * the single import site owned by ScenePreloader. The dynamic()
+ * wrappers below exist only to integrate React.lazy-compatible
+ * rendering with Suspense — they never produce their own import
+ * graphs, so the bundler emits exactly one chunk per scene.
+ *
+ * P0 (v3.0) — the HOME scene is the exception: it is imported
+ * statically. A dynamic() scene suspends during static export, so
+ * the exported homepage previously carried its semantic content
+ * only inside React's streamed <div hidden id="S:0"> completion
+ * while the visible document showed a loading gate. Statically
+ * importing the scene renders it synchronously into <main> in the
+ * exported HTML: crawlers, social scrapers and no-JS visitors read
+ * the real homepage immediately, hydration still matches (initial
+ * scene is "home" on both sides), and the other five scenes keep
+ * their interaction-gated loading.
  */
-
-const HomeScene = dynamic(
-  () =>
-    loadSceneModule(
-      "home"
-    )
-);
 
 const AboutScene = dynamic(
   () =>
@@ -106,10 +116,18 @@ function wait(
 
 type SceneRegistryProps = {
   scene: SceneId;
+
+  /*
+   * SERVER-SIDE WRITING SELECTION (v3.0): forwarded to the home
+   * scene only. The home scene is statically rendered, so these
+   * props land in the exported HTML.
+   */
+  writingPosts?: readonly HomeWritingPost[];
 };
 
 export default function SceneRegistry({
-  scene
+  scene,
+  writingPosts
 }: SceneRegistryProps) {
   const [
     renderedScene,
@@ -198,6 +216,16 @@ export default function SceneRegistry({
       loading={
         transitioning
       }
+      /*
+       * P0 (v3.0): the home scene is statically rendered — it must
+       * not sit behind a Suspense boundary, or static export streams
+       * it into the hidden S:0 completion instead of the visible
+       * document. Every other scene resolves through dynamic import
+       * and keeps its boundary.
+       */
+      suspense={
+        renderedScene !== "home"
+      }
     >
       {/*
         * SCENE TRANSITION MOTION (v2.2).
@@ -226,7 +254,11 @@ export default function SceneRegistry({
             renderedScene
           }
         >
-          <Scene />
+          {renderedScene === "home" ? (
+            <HomeScene writingPosts={writingPosts} />
+          ) : (
+            <Scene />
+          )}
         </div>
       </div>
     </SceneViewport>
