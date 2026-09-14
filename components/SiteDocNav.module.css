@@ -1,0 +1,94 @@
+/*
+ * Site document nav (v3.1) — the compact crawlable link rows inside
+ * the shared footer. Sits on the same dark surface, uses the site's
+ * mono/uppercase language at footer scale, and stays readable at
+ * 320px by wrapping naturally.
+ */
+
+.nav {
+  display: grid;
+
+  gap: 10px;
+
+  width: 100%;
+
+  padding-bottom: 22px;
+
+  margin-bottom: 22px;
+
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.row {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: baseline;
+
+  gap: 8px 14px;
+}
+
+.heading {
+  min-width: 58px;
+
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.22em;
+
+  text-transform: uppercase;
+}
+
+.list {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 6px 16px;
+
+  margin: 0;
+
+  padding: 0;
+
+  list-style: none;
+}
+
+.link {
+  color: var(--text-soft);
+
+  font-size: 12px;
+
+  text-decoration: none;
+
+  transition: color 140ms ease;
+}
+
+.link:hover {
+  color: var(--red-hot);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--red-hot);
+
+  outline-offset: 3px;
+
+  border-radius: 2px;
+}
+
+@media (max-width: 560px) {
+  .row {
+    flex-direction: column;
+
+    gap: 8px;
+  }
+
+  .link {
+    font-size: 13px;
+  }
+}

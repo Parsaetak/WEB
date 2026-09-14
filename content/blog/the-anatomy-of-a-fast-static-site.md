@@ -1,6 +1,6 @@
 ---
 title: "The Anatomy of a Fast Static Site"
-subtitle: "What loads, when it loads, how it moves — and why nothing on this site ever lies to you."
+subtitle: "How this static Next.js site is engineered: what loads, when it loads, how it moves — and why nothing on it ever lies to you."
 excerpt: "A tour of the time architecture behind this website: loading priorities, frame budgets, refresh-rate-aware quality, and the rule that banned fake progress bars before it banned fake frame-rate claims."
 description: "How this static site orders its work in 2026: a five-phase loading vocabulary, a P0–P4 priority ladder, an 8.33 ms frame budget for high-refresh displays, and honest telemetry for both."
 date: "2026-09-10"

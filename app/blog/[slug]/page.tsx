@@ -17,7 +17,11 @@ import {
   type RelatedPost
 } from "@/lib/blog";
 
+import { getHubForArticle } from "@/lib/hubs";
+
 import {
+  AUTHOR_RESEARCH_LINE,
+  AUTHOR_TAGLINE,
   JsonLd,
   PERSON_ID,
   PERSON_NAME,
@@ -234,6 +238,14 @@ export default async function ArticlePage({
     getLinksHere(
       post.slug
     );
+
+  /*
+   * TOPIC HUB EDGE (v3.1): the article's honest primary hub. When it
+   * exists, the page renders one crawlable "TOPIC HUB" chip and the
+   * author box sits next to the article's home in the knowledge
+   * graph — a real semantic edge, never a keyword link.
+   */
+  const hub = getHubForArticle(post.slug);
 
   const publishedDate =
     formatBlogDate(
@@ -554,6 +566,31 @@ export default async function ArticlePage({
                 </Link>
               )}
 
+              {/*
+                * TOPIC HUB EDGE (v3.1): one crawlable chip to the
+                * article's primary topic hub — the document that
+                * owns this subject in the site's content graph.
+                * Rendered before the free-form topic chips so the
+                * structured relationship reads first.
+                */}
+              {hub && (
+                <Link
+                  className={styles.contextChip}
+                  href={`/${hub.slug}/`}
+                  title={`${hub.topicName} — topic hub`}
+                >
+                  <span
+                    className={
+                      styles.contextChipLabel
+                    }
+                  >
+                    TOPIC HUB
+                  </span>
+
+                  {hub.topicName}
+                </Link>
+              )}
+
               {post.topics.map(
                 (topic) => (
                   <Link
@@ -699,6 +736,36 @@ export default async function ArticlePage({
               <TextSize />
             </span>
         </div>
+
+        {/*
+          * AUTHOR AUTHORITY BLOCK (v3.1) — visible, factual authorship
+          * on every article. One wording, shared with /about/ and the
+          * Person entity via lib/seo constants; the name links to the
+          * /about/ entity page. No credentials beyond what the site
+          * actually presents.
+          */}
+        <section
+          className={styles.authorBox}
+          data-reveal="instant"
+          aria-label="About the author"
+        >
+          <p className={styles.authorKicker}>AUTHOR</p>
+
+          <p className={styles.authorName}>
+            By{" "}
+            <Link href="/about/">
+              {post.author}
+            </Link>
+          </p>
+
+          <p className={styles.authorTagline}>
+            {AUTHOR_TAGLINE}
+          </p>
+
+          <p className={styles.authorResearch}>
+            {AUTHOR_RESEARCH_LINE}
+          </p>
+        </section>
 
         <nav
           className={

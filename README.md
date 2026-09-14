@@ -1,6 +1,6 @@
 # Parsa Tak — WEB
 
-A statically exported Next.js portfolio that behaves like a living system: six hash-navigated scenes, a markdown-driven blog, a generated SEO graph, and a canvas organism that loads only when the browser can afford it.
+A statically exported Next.js portfolio that behaves like a living system: six hash-navigated scenes, a markdown-driven blog, a generated SEO graph, and a canvas organism that loads only when the browser can afford it — plus a connected knowledge base of real, indexable topic documents.
 
 **Live Site:** https://parsaetak.github.io/WEB/
 **Repository:** https://github.com/Parsaetak/WEB
@@ -27,6 +27,15 @@ The **Systems scene** (`#systems`) presents the framework family — AI Instruct
 
 ### Writing
 The **blog** is real content, not a stub: markdown articles under `content/blog/` become fully static `/blog/<slug>/` routes with generated metadata, related-article graphs, and structured data. The homepage's Writing section links the strongest articles, selected on the server at build time.
+
+### Topic hubs and content documents (v3.1)
+Beyond the living-world homepage, the site carries real indexable documents that own the site's most important search and research themes:
+
+- `/about/` — the entity/author page: who Parsa Tak is, research areas, selected systems, selected writing, and public profiles
+- `/work/` — the canonical professional portfolio: every significant system with what it is, the problem it addresses, why it matters, and real destinations
+- `/local-ai/`, `/ai-systems/`, `/ai-reasoning/`, `/ai-evaluation/`, `/software-engineering/`, `/creative-technology/` — six topic hubs, each a self-contained document: topic definition, what Parsa Tak works on, the systems built in the area, genuinely related articles, and a next exploration path
+
+The distinction between URL kinds is deliberate: a **real URL** (`/about/`, `/work/`, hubs, blog) is an indexable document; a **hash** (`/#work`, `/#magic`) is an interactive scene state of the living world, not a separate page. Every content route is statically rendered from server components with zero route-specific client JavaScript — they are the lightest pages on the site.
 
 ### RED MAGIC
 RED MAGIC is the site's living-layer experiment: a canvas-based computational organism with adaptation, perception, and visible state. It is deliberately **not** part of the critical path — visitors receive a CSS-only seed first, and the organism loads at idle time only when motion is permitted and the device can afford it.
@@ -70,11 +79,16 @@ Scene changes are URL-addressable (`#systems` is a shareable state), handled by 
 ## Repository structure
 
 ```
-app/                 routes: home, blog index, blog articles, 404
+app/                 routes: home, blog index, blog articles, 404,
+                     and the v3.1 content documents (about, work,
+                     and the six topic hubs)
 components/          world shell, scenes, navigation, RED MAGIC systems
+components/content/  shared server-rendered content-route system
+                     (shell, building blocks, hub view)
 components/scenes/   the six scene components (HomeScene is static)
 content/blog/        markdown article source (frontmatter + body)
-lib/                 data access, SEO graph, brand, schedulers, links
+lib/                 data access, SEO graph, hub definitions, brand,
+                     schedulers, links
 scripts/             build-blog, brand generators, verification suite
 data/blog/           GENERATED posts.json (never edited by hand)
 public/              static assets: brand art, icons, sitemap, robots
@@ -99,9 +113,11 @@ The sitemap is generated from the **same** content index that produces the route
 ## SEO
 
 - Every canonical route ships exactly one `<title>`, meta description, canonical link, Open Graph image, and robots directive
-- JSON-LD structured data: `Person` + `WebSite` anchors in the root layout, plus `WebPage`, `Blog`, `BlogPosting`, and `BreadcrumbList` on the right routes — all cross-referenced by `@id`, never duplicated
+- JSON-LD structured data: `Person` + `WebSite` anchors in the root layout, plus `WebPage`, `Blog`, `BlogPosting`, and `BreadcrumbList` on the right routes — all cross-referenced by `@id`, never duplicated. The v3.1 content routes add route-specific `WebPage` + `BreadcrumbList` nodes (and a truthful `ItemList` on `/work/`) referencing the same stable entities
 - Google Search Console ownership meta tag emitted once per route and byte-verified on every build
-- `sitemap.xml` + `robots.txt` generated and verified against the actual export
+- `sitemap.xml` + `robots.txt` generated and verified against the actual export, including the content routes; article `lastmod` reflects content dates, never the build date
+- Semantic internal-link graph: every article carries a `TOPIC HUB` chip to its honest primary hub; every hub links its systems and ≥3 genuinely related articles; the shared footer exposes every content document site-wide — the verifier rejects orphan routes and link-count padding
+- Visible author authority: every article ends with a factual author block (independent AI systems researcher and software engineer) linking to `/about/`
 - Social metadata (OG/Twitter) with stable, production-absolute image URLs
 - RSS is **intentionally absent** — the export must contain no feed and no residual feed references, and verification enforces that
 
@@ -212,8 +228,24 @@ Read this section before changing anything. It is the safety net that keeps the 
 
 - Next.js 16.3.4 / React 19.2.8 / TypeScript 5.9, static export, Node 22 in CI
 - 9 published articles; the Writing section links them from the homepage
+- 8 static content documents (v3.1): `/about/`, `/work/`, and six topic hubs forming the site's knowledge base
 - Full verification suite green: SEO + brand gates pass on every build
-- Known limitations: GitHub Pages serves the site under `/WEB`, so the bare root URL redirects; hash-scene states are not individually indexable documents by design (articles carry the indexable concepts)
+- Known limitations: GitHub Pages serves the site under `/WEB`, so the bare root URL redirects; hash-scene states are not individually indexable documents by design (the content routes and articles carry the indexable concepts)
+
+### Search Console workflow (v3.1)
+
+The site ships no analytics; discovery is measured through Google Search Console, which is already ownership-verified. The intended review loop:
+
+```text
+Search Console
+  ↓ queries with impressions
+pages ranking 8–20
+  ↓ improve page depth / links / title
+queries generating unexpected impressions
+  ↓ consider a dedicated authoritative hub
+```
+
+In practice: a query cluster that repeatedly produces impressions for a page ranking outside the top positions is a signal that the topic deserves more depth — a stronger hub section, more genuine internal links from related articles, or a clearer title. New hubs are created only when real material exists to support them; thin pages are worse than no pages.
 
 ## Licence
 

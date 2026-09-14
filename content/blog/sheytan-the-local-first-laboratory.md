@@ -1,5 +1,5 @@
 ---
-title: "SHEYTAN: The Local-First Engineering Laboratory"
+title: "SHEYTAN: A Local-First AI Agent Laboratory"
 subtitle: "The model proposes. The tools execute. The laboratory verifies."
 excerpt: "SHEYTAN Local Agent is a local-first desktop AI engineering environment: a managed llama.cpp engine, a real agent loop, seventeen governed tools, an isolated Coding Lab, and objective verification gates — because the model is never the authority on whether an engineering task succeeded."
 description: "How SHEYTAN Local Agent is built: Go orchestration under a Wails v3 desktop shell, a managed llama.cpp lifecycle, the plan-verify agent loop, the isolated Coding Lab with objective verification gates, measured context budgets, and the honest status of its native C++ inference engine."

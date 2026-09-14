@@ -42,12 +42,28 @@ export const SITE_IN_LANGUAGE = "en";
 /*
  * Home route title. One wording, shared by <title>, og:title, and
  * the WebPage structured data, so every representation of the home
- * route names it identically. "Software" joined the capability set
- * in v2.7: the hero, the capabilities grid, and the featured
- * projects all visibly present software engineering work.
+ * route names it identically.
+ *
+ * v3.1 evolution: the title now names the site's professional
+ * discovery surface — AI systems, local AI, software engineering —
+ * matching the topic-hub architecture. RED MAGIC remains visible
+ * brand/content (scenes, projects, writing, keywords) rather than a
+ * forced element of every search-facing title.
  */
 export const HOME_TITLE =
-  "Parsa Tak — AI Systems, Reasoning, Software & RED MAGIC";
+  "Parsa Tak — AI Systems, Local AI & Software Engineering";
+
+/*
+ * Author tagline (v3.1) — one factual wording shared by the
+ * /about/ route, the article author block, and anywhere identity
+ * must be stated in prose. No credentials beyond what the site
+ * actually presents.
+ */
+export const AUTHOR_TAGLINE =
+  "Independent AI systems researcher and software engineer.";
+
+export const AUTHOR_RESEARCH_LINE =
+  "Research: AI systems · local AI · reasoning · evaluation · software architecture";
 
 /*
  * Stable @id anchors. Referenced from structured data emitted on
@@ -123,7 +139,7 @@ export function personEntity() {
     url: `${SITE_URL}/`,
     description:
       "Architect of the AI Instructions, REP, and USEF framework family, the SHEYTAN local-agent experiments, and the RED MAGIC interface experiments.",
-    jobTitle: "Researcher and software engineer",
+    jobTitle: "Independent AI systems researcher and builder",
     knowsAbout: [
       "AI systems",
       "AI agents",
@@ -131,6 +147,7 @@ export function personEntity() {
       "Software engineering",
       "System architecture",
       "Local AI",
+      "AI evaluation",
       "Simulation",
       "Creative technology"
     ],
@@ -173,6 +190,66 @@ export function homeWebPageEntity() {
       "Parsa Tak — researcher, builder, programmer, writer, and artist working on AI systems, reasoning frameworks, local AI agents, software engineering, and creative technology. Featured systems: SHEYTAN Local Agent, UHIT, FreeIran, and RED MAGIC.",
     isPartOf: { "@id": WEBSITE_ID },
     about: { "@id": PERSON_ID },
+    inLanguage: SITE_IN_LANGUAGE
+  };
+}
+
+/*
+ * CONTENT ROUTE ENTITIES (v3.1) — shared builders for the static
+ * content documents (/about/, /work/, topic hubs). Each route gets
+ * exactly one WebPage node referencing the stable site-wide @id
+ * anchors (never a duplicate Person/WebSite) plus its own
+ * BreadcrumbList describing the real navigation path.
+ */
+
+export type ContentRouteInput = {
+  /** Route path with trailing slash, e.g. "about/" or "local-ai/". */
+  route: string;
+  /** Page name as rendered in <title> / og:title / WebPage.name. */
+  name: string;
+  /** Page description shared by meta + WebPage.description. */
+  description: string;
+  /**
+   * The page's subject matter. A schema.org value or @id reference —
+   * only pass entities that the page genuinely describes.
+   */
+  about?: Record<string, unknown> | Record<string, unknown>[];
+  /** The primary entity the page is about (e.g. Person on /about/). */
+  mainEntity?: Record<string, unknown>;
+};
+
+export function contentBreadcrumbEntity(
+  route: string,
+  trail: readonly { name: string; href: string | null }[]
+) {
+  return {
+    "@type": "BreadcrumbList",
+    "@id": `${SITE_URL}/${route}#breadcrumb`,
+    itemListElement: trail.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      ...(item.href ? { item: `${SITE_URL}${item.href}` } : {})
+    }))
+  };
+}
+
+export function contentWebPageEntity({
+  route,
+  name,
+  description,
+  about,
+  mainEntity
+}: ContentRouteInput) {
+  return {
+    "@type": "WebPage",
+    "@id": `${SITE_URL}/${route}#webpage`,
+    url: `${SITE_URL}/${route}`,
+    name,
+    description,
+    isPartOf: { "@id": WEBSITE_ID },
+    ...(about ? { about } : {}),
+    ...(mainEntity ? { mainEntity } : {}),
     inLanguage: SITE_IN_LANGUAGE
   };
 }

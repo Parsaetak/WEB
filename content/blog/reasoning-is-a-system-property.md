@@ -1,6 +1,6 @@
 ---
 title: "Reasoning Is a System Property"
-subtitle: "AI supplies capability. Will supplies direction. Systems convert the two into execution."
+subtitle: "AI Instructions, REP, and USEF: why systems — not models — turn capability into execution."
 excerpt: "Three connected frameworks — AI Instructions, REP, USEF — built on one claim: intelligence lives in the system around the model, and the model has never been the smallest part of the problem."
 description: "Why capability is not direction: an overview of the three reasoning frameworks at the core of this research, updated for 2026 — where agentic systems are mainstream and verification has become the bottleneck."
 date: "2026-09-10"

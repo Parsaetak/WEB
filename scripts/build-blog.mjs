@@ -1196,18 +1196,55 @@ function buildLinksHere(posts) {
  * - /blog/: the newest article modification the index reflects
  * - /: omitted — the world shell has no dated content model, and
  *   inventing a date would fake freshness.
+ * - content routes (v3.1): each route's own content-revision date —
+ *   bumped only when the page's substantive content changes, never
+ *   the build date. Fake freshness is still banned.
  * priority/changefreq are deliberately omitted: search engines
  * ignore them and they would be speculative signals.
  */
-/* Total sitemap URL count: home + blog index + every article. */
+
+/*
+ * STATIC CONTENT ROUTES (v3.1) — the real indexable documents beyond
+ * the blog: the identity/portfolio pages and the topic hubs. These
+ * are the same routes the app router exports and verify-seo.mjs
+ * audits; if a route is added or renamed there, update this list —
+ * the verifier fails the build when the sitemap and the exported
+ * route tree disagree.
+ */
+const STATIC_CONTENT_ROUTES = [
+  { path: "about", lastmod: "2026-09-14" },
+  { path: "work", lastmod: "2026-09-14" },
+  { path: "local-ai", lastmod: "2026-09-14" },
+  { path: "ai-systems", lastmod: "2026-09-14" },
+  { path: "ai-reasoning", lastmod: "2026-09-14" },
+  { path: "ai-evaluation", lastmod: "2026-09-14" },
+  { path: "software-engineering", lastmod: "2026-09-14" },
+  { path: "creative-technology", lastmod: "2026-09-14" }
+];
+
+/*
+ * Total sitemap URL count: home + blog index + every article + the
+ * static content routes.
+ */
 function sitemapUrlCount(postCount) {
-  return 2 + postCount;
+  return 2 + postCount + STATIC_CONTENT_ROUTES.length;
 }
 
 function buildSitemap(posts) {
   const urls = [
     `  <url>\n    <loc>${SITE_URL}/</loc>\n  </url>`,
   ];
+
+  /*
+   * Static content routes (v3.1): /about/, /work/, and the topic
+   * hubs — each with its own content-revision lastmod, never the
+   * build date.
+   */
+  for (const route of STATIC_CONTENT_ROUTES) {
+    urls.push(
+      `  <url>\n    <loc>${SITE_URL}/${route.path}/</loc>\n    <lastmod>${route.lastmod}</lastmod>\n  </url>`
+    );
+  }
 
   if (posts.length > 0) {
     const blogLastMod = posts

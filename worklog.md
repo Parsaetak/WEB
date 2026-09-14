@@ -2275,3 +2275,52 @@ Preserve the site's identity.
 Preserve its performance.
 
 Preserve its ability to evolve.
+
+XXI. CONTENT ROUTE LAW (v3.1)
+
+The site has two URL kinds and the distinction is permanent:
+
+- A REAL URL (/about/, /work/, /local-ai/, /ai-systems/,
+  /ai-reasoning/, /ai-evaluation/, /software-engineering/,
+  /creative-technology/, /blog/*) is an indexable document.
+- A HASH (/#home, /#about, /#systems, /#magic, /#work, /#library) is
+  an interaction state of the living world. Hash scenes are never
+  converted into fake SEO pages and never enter the sitemap.
+
+Content-route invariants:
+
+- Every content route is a real, independently useful document:
+  definition, what Parsa Tak works on, real projects, genuinely
+  related articles, cross-links, next path. If a topic does not have
+  real material, the hub is not created. Thin pages are worse than
+  no pages.
+- All content-route data lives in lib/hubs.ts (HUB_ROUTES,
+  ARTICLE_PRIMARY_HUB). Route files own metadata + lookup only; the
+  document structure is shared (HubPageView / ContentShell). A
+  missing definition is a build error (requireHub), never a thin
+  page.
+- Content routes are server-rendered with ZERO route-specific client
+  JavaScript: no canvas, no cursor, no reveal observer, no RED MAGIC
+  payloads. Plain anchors resolve basePath through routeHref().
+- Article → hub: exactly ONE primary hub per article via
+  ARTICLE_PRIMARY_HUB — the honest primary home. Hub → article:
+  only genuine relationships, each with a stated reason. The
+  verifier rejects hubs with fewer than 3 related articles and any
+  content route with fewer than 2 sibling links or fewer than 3
+  inbound pages.
+- Structured data for content routes references the stable @id
+  entities (WEBSITE_ID, PERSON_ID); Person/WebSite are never
+  duplicated. /work/ carries a truthful ItemList; hubs carry a
+  truthful `about` Thing. No unsupported schema, ever.
+- sitemap.xml must contain every content route with a
+  content-revision lastmod (bumped only on substantive content
+  change), and scripts/verify-seo.mjs fails when the sitemap, the
+  route tree, and the CONTENT_ROUTES registry disagree.
+- The shared footer (SiteDocNav) must always expose every content
+  route site-wide through ordinary crawlable anchors. Removing that
+  nav orphans the graph and fails verification.
+
+Author identity wording ("Independent AI systems researcher and
+builder", AUTHOR_TAGLINE, AUTHOR_RESEARCH_LINE) is defined once in
+lib/seo.tsx and reused everywhere. Never invent credentials,
+employment, awards, or affiliations.

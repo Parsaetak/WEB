@@ -4,6 +4,8 @@ import { BRAND_STAR } from "@/lib/brand";
 
 import FooterLinks from "@/components/FooterLinks";
 
+import SiteDocNav from "@/components/SiteDocNav";
+
 /*
  * Shared site footer — the legal block used by both the home world
  * shell and the blog routes. Rendered from a client parent it joins
@@ -24,6 +26,15 @@ export default function SiteFooter() {
           styles.livingShellLegalInner
         }
       >
+        {/*
+          * SITE DOCUMENT NAV (v3.1): crawlable links to the real
+          * indexable documents — identity routes and topic hubs —
+          * carried by every page that renders this footer. The hash
+          * scenes remain interaction states; these anchors make the
+          * content graph reachable without JavaScript.
+          */}
+        <SiteDocNav />
+
         <div
           className={
             styles.livingShellFooterMain

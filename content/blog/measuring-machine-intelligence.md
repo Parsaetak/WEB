@@ -1,6 +1,6 @@
 ---
 title: "Measuring Machine Intelligence"
-subtitle: "What a benchmark has to verify before the word intelligence is allowed anywhere near the score."
+subtitle: "The UHIT measurement programme: what a benchmark has to verify before the word intelligence is allowed anywhere near the score."
 excerpt: "UHIT is the measurement arm of this laboratory, and its public form today is two canonical specifications — AIST-2026.09 and ASI-100-Elite-2026.09 — built on one doctrine: capability is multiplicative, verification is a load-bearing factor, and an ungameable benchmark is the only benchmark worth scoring."
 description: "Inside the UHIT measurement programme: the AIST-2026.09 standard and the ASI-100-Elite benchmark — verified operational intelligence, multiplicative scoring, zero-collapse defense factors, and the honesty rules that keep a benchmark from lying."
 date: "2026-09-12"

@@ -1607,3 +1607,102 @@
     color: #444444;
   }
 }
+
+/*
+ * AUTHOR AUTHORITY BLOCK (v3.1) — visible authorship at the end of
+ * every article. Same panel language as the context chips and the
+ * footer: dark panel, red kicker, one clear link to /about/.
+ */
+.authorBox {
+  margin-top: 56px;
+
+  padding: 22px 24px;
+
+  border: 1px solid var(--line-soft);
+
+  border-left: 2px solid var(--red-deep);
+
+  border-radius: 12px;
+
+  background: var(--panel);
+}
+
+.authorKicker {
+  margin: 0 0 10px;
+
+  color: var(--red-hot);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.26em;
+
+  text-transform: uppercase;
+}
+
+.authorName {
+  margin: 0 0 6px;
+
+  color: var(--text);
+
+  font-size: 17px;
+
+  font-weight: 700;
+}
+
+.authorName a {
+  color: var(--text);
+
+  text-decoration: underline;
+
+  text-decoration-color: rgba(255, 32, 32, 0.5);
+
+  text-underline-offset: 3px;
+}
+
+.authorName a:hover {
+  color: #ffffff;
+
+  text-decoration-color: var(--red-hot);
+}
+
+.authorName a:focus-visible {
+  outline: 2px solid var(--red-hot);
+
+  outline-offset: 3px;
+
+  border-radius: 2px;
+}
+
+.authorTagline {
+  margin: 0 0 4px;
+
+  color: var(--text-soft);
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+.authorResearch {
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 11px;
+
+  letter-spacing: 0.04em;
+
+  line-height: 1.7;
+}
+
+@media (max-width: 560px) {
+  .authorBox {
+    padding: 16px;
+  }
+}

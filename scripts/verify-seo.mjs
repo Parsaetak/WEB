@@ -31,12 +31,17 @@
  *   hrefs resolve, no localhost, no repository-clone URLs, orphan
  *   report
  * - sitemap                verifySitemap         — URL set equals the
- *   exported route set, production HTTPS, content-date lastmod
+ *   exported route set (incl. v3.1 content routes), production HTTPS,
+ *   content-date lastmod
  * - robots                 verifyRobots          — production sitemap
  *   directive
  * - RSS policy             verifyNoRss           — feed.xml absent and
  *   unreferenced anywhere (the blog deliberately has no feed)
  * - favicon + brand assets verifyFaviconFamily / verifyBrandAssetsInExport
+ * - content graph (v3.1)   verifyContentGraph    — /about/, /work/, and
+ *   the topic hubs exist with full metadata, are linked from the home
+ *   document, link ≥3 related articles (hubs), and have ≥3 inbound
+ *   pages each — no SEO islands
  */
 
 import { readFile, readdir } from "node:fs/promises";
@@ -80,6 +85,26 @@ const SCENE_HASHES = new Set([
   "work",
   "library"
 ]);
+
+/*
+ * STATIC CONTENT ROUTES (v3.1) — the real indexable documents beyond
+ * the blog: the identity/portfolio pages and the topic hubs. Must
+ * mirror the route tree (app/<route>/) and the sitemap generator's
+ * STATIC_CONTENT_ROUTES list in scripts/build-blog.mjs. All three
+ * are cross-checked here: a route exported but absent from the
+ * sitemap (or vice versa) fails the build, and every route below is
+ * verified for metadata, structured data, and graph connectivity.
+ */
+const CONTENT_ROUTES = [
+  { route: "about", title: "About — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
+  { route: "work", title: "Selected Work — Parsa Tak", types: ["WebSite", "Person", "WebPage", "ItemList", "BreadcrumbList"] },
+  { route: "local-ai", title: "Local AI Systems & Agents — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
+  { route: "ai-systems", title: "AI Systems Engineering & Frameworks — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
+  { route: "ai-reasoning", title: "AI Reasoning Architectures — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
+  { route: "ai-evaluation", title: "AI Evaluation, Benchmarks & Measurement — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
+  { route: "software-engineering", title: "Software Engineering Notes & Systems — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
+  { route: "creative-technology", title: "Creative Technology & the Living Web — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] }
+];
 
 const failures = [];
 const checks = [];
@@ -542,6 +567,8 @@ async function verifySitemap(articleRoutes) {
   const expected = [
     `${SITE_ORIGIN}/`,
     `${SITE_ORIGIN}/blog/`,
+    /* Static content routes (v3.1): /about/, /work/, topic hubs. */
+    ...CONTENT_ROUTES.map((entry) => `${SITE_ORIGIN}/${entry.route}/`),
     ...articleRoutes.map((slug) => `${SITE_ORIGIN}/blog/${slug}/`)
   ].sort();
 
@@ -1068,6 +1095,146 @@ async function verifyInternalLinkGraph(articleRoutes) {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Content route verification + graph (v3.1)                                   */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * CONTENT GRAPH (v3.1) — the static content documents must be a
+ * connected, crawlable part of the site, never SEO islands.
+ * Deliberately concise: the checks below cover only the NEW
+ * invariants (existence/metadata/graph for the content routes);
+ * everything else continues to run through the existing groups.
+ */
+async function verifyContentGraph() {
+  const failureCountBefore = failures.length;
+
+  const htmlFiles = await collectHtmlFiles(OUT_DIR);
+
+  const pages = [];
+  for (const file of htmlFiles) {
+    pages.push({
+      file,
+      html: await readFile(path.join(OUT_DIR, file), "utf8")
+    });
+  }
+
+  const routeHref = (route) => `${BASE_PATH}/${route}/`;
+  const routeFile = (route) => path.join(route, "index.html");
+
+  /* Reachability: the home document links every content route. */
+  const home = pages.find((page) => page.file === "index.html");
+
+  if (!home) {
+    fail("content graph: home page not found in export");
+  } else {
+    let missing = 0;
+
+    for (const entry of CONTENT_ROUTES) {
+      if (!home.html.includes(`href="${routeHref(entry.route)}"`)) {
+        fail(
+          `content graph: /${entry.route}/ is not linked from the home document (expected href="${routeHref(entry.route)}")`
+        );
+        missing += 1;
+      }
+    }
+
+    if (missing === 0) {
+      pass(
+        `content graph: all ${CONTENT_ROUTES.length} content routes linked from the home document`
+      );
+    }
+  }
+
+  /* Outbound edges: sibling routes on every route, ≥3 articles per hub. */
+  const hubRoutes = CONTENT_ROUTES.filter(
+    (entry) => entry.route !== "about" && entry.route !== "work"
+  );
+
+  let hubArticleShortfalls = 0;
+
+  let siblingShortfalls = 0;
+
+  for (const entry of CONTENT_ROUTES) {
+    const ownPage = pages.find((page) => page.file === routeFile(entry.route));
+
+    if (!ownPage) {
+      /* Missing export is already reported by verifyPage(). */
+      continue;
+    }
+
+    const siblings = new Set(
+      [...ownPage.html.matchAll(/href="[^"]*\/([a-z-]+)\/"/g)]
+        .map((match) => match[1])
+        .filter(
+          (slug) =>
+            slug !== entry.route &&
+            CONTENT_ROUTES.some((candidate) => candidate.route === slug)
+        )
+    );
+
+    if (siblings.size < 2) {
+      fail(
+        `content graph: /${entry.route}/ links fewer than 2 sibling content routes (found ${siblings.size})`
+      );
+      siblingShortfalls += 1;
+    }
+
+    if (hubRoutes.some((hub) => hub.route === entry.route)) {
+      const articles = new Set(
+        [...ownPage.html.matchAll(/href="[^"]*\/blog\/([a-z0-9-]+)\/"/g)].map(
+          (match) => match[1]
+        )
+      );
+
+      if (articles.size < 3) {
+        fail(
+          `content graph: hub /${entry.route}/ links fewer than 3 related articles (found ${articles.size})`
+        );
+        hubArticleShortfalls += 1;
+      }
+    }
+  }
+
+  if (siblingShortfalls === 0 && hubArticleShortfalls === 0) {
+    pass(
+      "content graph: every content route links ≥2 sibling documents; every hub links ≥3 related articles"
+    );
+  }
+
+  /* Inbound edges: no orphan content route (footer nav carries it site-wide). */
+  let orphans = 0;
+
+  for (const entry of CONTENT_ROUTES) {
+    const inbound = pages.filter(
+      (page) =>
+        page.file !== routeFile(entry.route) &&
+        page.html.includes(`href="${routeHref(entry.route)}"`)
+    );
+
+    if (inbound.length < 3) {
+      fail(
+        `content graph: /${entry.route}/ has only ${inbound.length} inbound page(s) (expected ≥3 — the footer nav carries every route site-wide)`
+      );
+      orphans += 1;
+    }
+  }
+
+  if (orphans === 0) {
+    pass(
+      "content graph: no orphan content routes (every route has ≥3 inbound pages)"
+    );
+  }
+
+  /*
+   * The group-level passes above must never print alongside
+   * failures from this group — belt and braces for report clarity.
+   */
+  if (failures.length > failureCountBefore) {
+    fail(`content graph: ${failures.length - failureCountBefore} content-graph failure(s) listed above`);
+  }
+}
+
 async function main() {
   if (!existsSync(OUT_DIR)) {
     console.error("[seo] out/ does not exist — run `npm run build` first.");
@@ -1089,7 +1256,7 @@ async function main() {
   }
 
   await verifyPage("home", "index.html", {
-    title: "Parsa Tak — AI Systems, Reasoning, Software & RED MAGIC",
+    title: "Parsa Tak — AI Systems, Local AI & Software Engineering",
     canonical: `${SITE_ORIGIN}/`,
     types: ["WebSite", "Person", "WebPage"]
   });
@@ -1160,11 +1327,20 @@ async function main() {
     requireString(html, `<meta property="article:modified_time" content="${post.updated ?? post.date}"`, "article:modified_time", file);
   }
 
+  for (const entry of CONTENT_ROUTES) {
+    await verifyPage(entry.route, path.join(entry.route, "index.html"), {
+      title: entry.title,
+      canonical: `${SITE_ORIGIN}/${entry.route}/`,
+      types: entry.types
+    });
+  }
+
   await verifySitemap(articleRoutes);
   await verifyRobots();
   await verifyNoRss();
   await verifyInteractivity();
   await verifyInternalLinkGraph(articleRoutes);
+  await verifyContentGraph();
 
   /* Favicon family + brand assets (v2.9) — checked with the export. */
   await verifyFaviconFamily();
