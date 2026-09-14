@@ -143,7 +143,7 @@ export default function SystemsScene() {
           <header className={styles.systemsHeader}>
             <div className={styles.systemsHeaderCopy}>
               <p className="kicker">
-                02 / SYSTEMS
+                SYSTEMS
               </p>
 
               <h1

@@ -35,7 +35,7 @@ export const SITE_NAME =
 export const PERSON_NAME = "Parsa Tak";
 
 export const SITE_DESCRIPTION =
-  "An evolving laboratory for AI systems, reasoning architecture, software engineering, and creative technology — home of SHEYTAN, UHIT, FreeIran, and RED MAGIC.";
+  "Independent software engineer, product builder, and AI systems researcher — an evolving laboratory for AI systems, local AI agents, reasoning, evaluation, software engineering, and creative technology. Home of SHEYTAN, UHIT, FreeIran, and RED MAGIC.";
 
 export const SITE_IN_LANGUAGE = "en";
 
@@ -44,23 +44,23 @@ export const SITE_IN_LANGUAGE = "en";
  * the WebPage structured data, so every representation of the home
  * route names it identically.
  *
- * v3.1 evolution: the title now names the site's professional
- * discovery surface — AI systems, local AI, software engineering —
- * matching the topic-hub architecture. RED MAGIC remains visible
- * brand/content (scenes, projects, writing, keywords) rather than a
- * forced element of every search-facing title.
+ * v3.2 evolution: the title names the professional positioning —
+ * independent software engineer, product builder, AI systems
+ * researcher — while the description keeps the laboratory's
+ * systems vocabulary (SHEYTAN, UHIT, FreeIran, RED MAGIC) for the
+ * discovery surface.
  */
 export const HOME_TITLE =
-  "Parsa Tak — AI Systems, Local AI & Software Engineering";
+  "Parsa Tak — Software Engineer, Product Builder & AI Systems Researcher";
 
 /*
- * Author tagline (v3.1) — one factual wording shared by the
+ * Author tagline (v3.2) — one factual wording shared by the
  * /about/ route, the article author block, and anywhere identity
  * must be stated in prose. No credentials beyond what the site
  * actually presents.
  */
 export const AUTHOR_TAGLINE =
-  "Independent AI systems researcher and software engineer.";
+  "Independent software engineer, product builder, and AI systems researcher.";
 
 export const AUTHOR_RESEARCH_LINE =
   "Research: AI systems · local AI · reasoning · evaluation · software architecture";
@@ -125,11 +125,13 @@ const PROFILE_URLS: readonly string[] = [
  * owner claims in TRADEMARKS.md and to work actually presented on
  * this site. Nothing here is a keyword list.
  *
- * v2.9 additions — both visible-backed:
- * - jobTitle mirrors the hero kicker ("RESEARCHER · BUILDER ·
- *   PROGRAMMER · WRITER · ARTIST") in plain, crawlable wording.
- * - knowsAbout lists the capability vocabulary the home scene
- *   presents in its capabilities grid and featured projects.
+ * v3.2 positioning: jobTitle mirrors the home hero kicker
+ * ("SOFTWARE ENGINEER · PRODUCT BUILDER · AI SYSTEMS RESEARCHER")
+ * in plain, crawlable wording; knowsAbout lists the capability
+ * vocabulary the home scene presents in its capabilities grid —
+ * now including product building, which the shipped systems
+ * (SHEYTAN's product decisions, FreeIran's packaging, this
+ * website's design) demonstrate.
  */
 export function personEntity() {
   return {
@@ -138,16 +140,19 @@ export function personEntity() {
     name: "Parsa Tak",
     url: `${SITE_URL}/`,
     description:
-      "Architect of the AI Instructions, REP, and USEF framework family, the SHEYTAN local-agent experiments, and the RED MAGIC interface experiments.",
-    jobTitle: "Independent AI systems researcher and builder",
+      "Independent software engineer, product builder, and AI systems researcher. Builder of the SHEYTAN local-agent laboratory, the UHIT/AIST measurement programme, the FreeIran VPN manager, and the RED MAGIC experiments; author of the AI Instructions, REP, and USEF framework family.",
+    jobTitle:
+      "Independent software engineer, product builder, and AI systems researcher",
     knowsAbout: [
       "AI systems",
       "AI agents",
       "Reasoning",
+      "AI evaluation",
+      "Local AI",
       "Software engineering",
       "System architecture",
-      "Local AI",
-      "AI evaluation",
+      "Product building",
+      "Web engineering",
       "Simulation",
       "Creative technology"
     ],
@@ -210,6 +215,12 @@ export type ContentRouteInput = {
   /** Page description shared by meta + WebPage.description. */
   description: string;
   /**
+   * WebPage type override — schema.org subtypes such as
+   * "ProfilePage" (a page whose mainEntity is a person profile)
+   * keep the same properties as WebPage (v3.2, used by /about/).
+   */
+  pageType?: string;
+  /**
    * The page's subject matter. A schema.org value or @id reference —
    * only pass entities that the page genuinely describes.
    */
@@ -238,11 +249,12 @@ export function contentWebPageEntity({
   route,
   name,
   description,
+  pageType,
   about,
   mainEntity
 }: ContentRouteInput) {
   return {
-    "@type": "WebPage",
+    "@type": pageType ?? "WebPage",
     "@id": `${SITE_URL}/${route}#webpage`,
     url: `${SITE_URL}/${route}`,
     name,

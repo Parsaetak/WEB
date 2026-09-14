@@ -4,69 +4,54 @@ import { BRAND_STAR } from "@/lib/brand";
 import CompactMenu, {
   type CompactMenuEntry
 } from "@/components/CompactMenu";
-import BlogAreaControl from "@/components/blog/BlogAreaControl";
+import { PRIMARY_NAV, WORLD_NAV } from "@/lib/navigation";
 
 import { GITHUB_LINK } from "@/lib/links";
 
 import styles from "./BlogHeader.module.css";
 
 /*
- * Blog header — server-rendered shell with two small client islands.
+ * Blog header — server-rendered shell with one small client island.
  *
- * Mirrors the world shell's HUD geometry. Scene links return to the
- * home world with the target hash; the BLOG control (v2.6.1) is a
- * real link to /blog/ rendered by the BlogAreaControl island, so the
- * active area is navigable instead of a dead span.
+ * v3.2 navigation: the header carries the professional primary nav
+ * (HOME, WORK, RESEARCH, WRITING, ABOUT, CONTACT) with WRITING as
+ * the active area, and the experimental world scenes (SYSTEMS,
+ * RED MAGIC, LIBRARY) as a quieter secondary row. The numbered
+ * scene-link row (01 HOME … 06 LIBRARY) and the separate BLOG area
+ * control are retired — WRITING is the primary entry now.
  *
- * COMPACT MODE (v2.6.1): on phones and narrow portrait tablets the
- * wrapped scene-link row stands down and a shared CompactMenu island
- * takes over — HOME, the five world scenes, BLOG and GITHUB in one
- * touch panel. The islands are the only client JavaScript here; the
- * rest of the header remains static markup.
+ * COMPACT MODE: on phones and narrow portrait tablets the link rows
+ * stand down and a shared CompactMenu island takes over — the same
+ * primary/world split, plus GitHub. The island is the only client
+ * JavaScript here; the rest of the header remains static markup.
  */
 
-const SCENE_LINKS: readonly {
-  label: string;
-  href: string;
-  index: string;
-}[] = [
-  { label: "HOME", href: "/", index: "01" },
-  { label: "ABOUT", href: "/#about", index: "02" },
-  { label: "SYSTEMS", href: "/#systems", index: "03" },
-  { label: "MAGIC", href: "/#magic", index: "04" },
-  { label: "WORK", href: "/#work", index: "05" },
-  { label: "LIBRARY", href: "/#library", index: "06" }
-];
-
 const MENU_ENTRIES: readonly CompactMenuEntry[] = [
-  ...SCENE_LINKS.map(
-    (
-      scene
-    ): CompactMenuEntry => ({
+  ...PRIMARY_NAV.map(
+    (entry): CompactMenuEntry => ({
       kind: "link",
-      id: `blog-menu-${scene.label.toLowerCase()}`,
-      label: scene.label,
-      index: scene.index,
-      scene: scene.label.toLowerCase(),
-      href: scene.href
+      id: `blog-menu-${entry.id}`,
+      label: entry.label,
+      scene: entry.id,
+      href: entry.href,
+      active: entry.id === "writing"
     })
   ),
-  {
-    kind: "link",
-    id: "blog-menu-blog",
-    label: "BLOG",
-    index: "07",
-    scene: "blog",
-    href: "/blog/",
-    active: true
-  },
+  ...WORLD_NAV.map(
+    (entry): CompactMenuEntry => ({
+      kind: "link",
+      id: `blog-menu-${entry.id}`,
+      label: entry.label,
+      scene: entry.id,
+      href: entry.href
+    })
+  ),
   ...(GITHUB_LINK
     ? [
         {
           kind: "link" as const,
           id: "blog-menu-github",
           label: "GitHub",
-          index: "↗",
           scene: "github",
           href: GITHUB_LINK.href,
           external: true
@@ -122,21 +107,46 @@ export default function BlogHeader() {
           className={styles.sceneLinks}
           aria-label="Site areas"
         >
-          {SCENE_LINKS.map((scene) => (
+          {PRIMARY_NAV.map((entry) => (
             <Link
-              key={scene.label}
+              key={entry.id}
               className={styles.sceneLink}
-              href={scene.href}
+              href={entry.href}
+              data-active={
+                entry.id === "writing"
+                  ? "true"
+                  : "false"
+              }
+              aria-current={
+                entry.id === "writing"
+                  ? "true"
+                  : undefined
+              }
               prefetch={false}
             >
-              {scene.label}
+              {entry.shortLabel}
+            </Link>
+          ))}
+
+          <span
+            className={styles.sceneNavDivider}
+            aria-hidden="true"
+          />
+
+          {WORLD_NAV.map((entry) => (
+            <Link
+              key={entry.id}
+              className={`${styles.sceneLink} ${styles.sceneLinkWorld}`}
+              href={entry.href}
+              data-active="false"
+              prefetch={false}
+            >
+              {entry.shortLabel}
             </Link>
           ))}
         </nav>
 
         <div className={styles.headerActions}>
-          <BlogAreaControl />
-
           {github && (
             <a
               className={styles.githubLink}
@@ -153,9 +163,10 @@ export default function BlogHeader() {
           >
             <CompactMenu
               id="blog-compact-menu"
-              label="Site areas"
+              label="Site navigation"
               entries={MENU_ENTRIES}
               dividerBefore={[
+                "blog-menu-systems",
                 "blog-menu-github"
               ]}
             />

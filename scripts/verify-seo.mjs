@@ -96,8 +96,10 @@ const SCENE_HASHES = new Set([
  * verified for metadata, structured data, and graph connectivity.
  */
 const CONTENT_ROUTES = [
-  { route: "about", title: "About — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
+  { route: "about", title: "About — Parsa Tak", types: ["WebSite", "Person", "ProfilePage", "BreadcrumbList"] },
   { route: "work", title: "Selected Work — Parsa Tak", types: ["WebSite", "Person", "WebPage", "ItemList", "BreadcrumbList"] },
+  { route: "research", title: "Research — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
+  { route: "contact", title: "Contact — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
   { route: "local-ai", title: "Local AI Systems & Agents — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
   { route: "ai-systems", title: "AI Systems Engineering & Frameworks — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
   { route: "ai-reasoning", title: "AI Reasoning Architectures — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
@@ -724,10 +726,13 @@ async function verifyHomeContent(articleRoutes) {
 
   const requiredPhrases = [
     ["identity", "PARSA TAK"],
-    ["identity roles", "RESEARCHER"],
+    ["identity roles", "SOFTWARE ENGINEER"],
+    ["identity roles", "PRODUCT BUILDER"],
+    ["identity roles", "AI SYSTEMS RESEARCHER"],
     ["capability", "AI systems"],
     ["capability", "Reasoning"],
     ["capability", "Software"],
+    ["capability", "Product building"],
     ["capability section", "What I can do"],
     ["capability term", "Local AI"],
     ["capability term", "Creative technology"],
@@ -737,10 +742,13 @@ async function verifyHomeContent(articleRoutes) {
     ["project name", "FreeIran"],
     ["project name", "RED MAGIC"],
     ["workflow section", "How I work"],
-    ["workflow stage", "UNDERSTAND"],
-    ["workflow stage", "VERIFY"],
-    ["workflow stage", "SYNTHESIZE"],
-    ["workflow stage", "EVALUATE"]
+    ["workflow stage", "RESEARCH"],
+    ["workflow stage", "PRODUCT DIRECTION"],
+    ["workflow stage", "ARCHITECTURE"],
+    ["workflow stage", "IMPLEMENTATION"],
+    ["workflow stage", "TESTING"],
+    ["workflow stage", "VERIFICATION"],
+    ["workflow stage", "DELIVERY"]
   ];
 
   for (const [kind, phrase] of requiredPhrases) {
@@ -763,13 +771,14 @@ async function verifyHomeContent(articleRoutes) {
    */
   const mainRequiredPhrases = [
     ["h1", "AI systems"],
-    ["positioning", "RESEARCHER"],
+    ["positioning", "SOFTWARE ENGINEER"],
     ["positioning", "I research intelligence"],
     ["capabilities", "What I can do"],
     ["featured work", "SHEYTAN Local Agent"],
     ["featured work", "FreeIran"],
     ["writing section", "Field notes"],
-    ["writing section", "Open the Blog"]
+    ["writing section", "Open the Blog"],
+    ["contact CTA", "Email Parsa Tak"]
   ];
 
   for (const [kind, phrase] of mainRequiredPhrases) {
@@ -1147,8 +1156,16 @@ async function verifyContentGraph() {
   }
 
   /* Outbound edges: sibling routes on every route, ≥3 articles per hub. */
+  /*
+   * Hub routes (v3.2) — the six topic hubs, which must link ≥3
+   * related articles. The identity/professional routes (about, work,
+   * research, contact) are content routes but not hubs, and are
+   * therefore exempt from the article-count check.
+   */
+  const NON_HUB_ROUTES = new Set(["about", "work", "research", "contact"]);
+
   const hubRoutes = CONTENT_ROUTES.filter(
-    (entry) => entry.route !== "about" && entry.route !== "work"
+    (entry) => !NON_HUB_ROUTES.has(entry.route)
   );
 
   let hubArticleShortfalls = 0;
@@ -1256,7 +1273,7 @@ async function main() {
   }
 
   await verifyPage("home", "index.html", {
-    title: "Parsa Tak — AI Systems, Local AI & Software Engineering",
+    title: "Parsa Tak — Software Engineer, Product Builder & AI Systems Researcher",
     canonical: `${SITE_ORIGIN}/`,
     types: ["WebSite", "Person", "WebPage"]
   });

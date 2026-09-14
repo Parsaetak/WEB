@@ -1,5 +1,128 @@
 # Updated-Files.md — WEB release history
 
+## Release: v3.2 — Professional Identity (2026-09-15)
+
+Mission: make the site read as the portfolio of an independent software
+engineer · product builder · AI systems researcher — while preserving the
+experimental Parsa Tak / RED MAGIC identity, the six-scene world, and the
+entire v3.0/v3.1 SEO architecture.
+
+### Navigation (numbered HUD labels removed, new primary nav)
+
+- `lib/navigation.ts` — NEW. Single source of truth for site-wide
+  navigation: `PRIMARY_NAV` (HOME, WORK, RESEARCH, WRITING, ABOUT,
+  CONTACT) and `WORLD_NAV` (SYSTEMS, RED MAGIC, LIBRARY, quieter
+  secondary destinations). Every nav surface renders from these lists.
+- `components/SceneNavigator.tsx` — rebuilt: mixed scene/route entries
+  with a primary group and a quieter world group after a divider; the
+  numbered index spans (`01`–`06`) are gone. Route entries are real
+  `next/link`s (prefetch on intent); scene entries keep the preload
+  contract.
+- `components/LivingShell.tsx` — builds the desktop track and the
+  CompactMenu from `lib/navigation.ts`. HOME remains an in-shell scene
+  action; WORK/RESEARCH/WRITING/ABOUT/CONTACT are routes; the separate
+  "Blog ↗" HUD link is retired (WRITING covers it); the six-scene world
+  (scene ids, hash routing, preloading) is unchanged.
+- `components/CompactMenu.tsx` — index glyphs (`01`…`07`, `↗`) removed;
+  entries separated by dividers, spacing, and accent colors.
+- `components/blog/BlogHeader.tsx` — primary nav with WRITING active +
+  quiet world row; the separate BLOG area control is retired.
+  `components/blog/BlogAreaControl.tsx` — DELETED (stale island).
+- `components/content/ContentShell.tsx` — header renders the primary
+  nav from `lib/navigation.ts` with per-route active state
+  (`activeHref` + `data-active` + `aria-current`).
+- `components/SiteDocNav.tsx` — footer rows restructured: Site (primary
+  nav), World (experimental scenes), Topics (six hubs).
+- Scene kickers de-numbered: `01 / ABOUT` → `ABOUT`, `02 / SYSTEMS` →
+  `SYSTEMS`, `03 / MAGIC` → `RED MAGIC`, `04 / WORK` → `WORK`,
+  `06 / LIBRARY` → `LIBRARY` (in AboutScene, SystemsScene, RedMagicScene,
+  WorkScene, LibraryScene). The `SYSTEMS 03` overview link label in
+  HomeScene lost its number too.
+- CSS: `SceneNavigator.module.css` (divider, world-group typography,
+  route accents; index styles removed), `CompactMenu.module.css`
+  (entryIndex removed), `BlogHeader.module.css` (active state on the
+  link, world row, divider), `content.module.css` (headerLink active
+  state; contactCtaRow), `LivingShell.module.css` (livingShellBlog
+  removed), `HomeScene.module.css` (contact CTA row).
+
+### Professional positioning
+
+- `lib/seo.tsx` — `HOME_TITLE` → "Parsa Tak — Software Engineer, Product
+  Builder & AI Systems Researcher"; `SITE_DESCRIPTION` and
+  `AUTHOR_TAGLINE` updated; `Person` jobTitle/description/knowsAbout
+  refreshed (product building included; still visible-backed and free of
+  invented credentials); `contentWebPageEntity` gained an optional
+  `pageType` (ProfilePage support).
+- `components/scenes/HomeScene.tsx` — hero kicker "SOFTWARE ENGINEER ·
+  PRODUCT BUILDER · AI SYSTEMS RESEARCHER"; hero description states the
+  full pipeline; capability grid gains "Product building" (09 items);
+  the METHOD section is the seven-stage pipeline (research, product
+  direction, architecture, implementation, testing, verification,
+  delivery); the final section is a WORK WITH ME contact block
+  (primary email CTA + contact page + GitHub).
+- `app/layout.tsx` — keywords add "product building" (visible-backed).
+
+### About (restructured, 13 sections)
+
+- `app/about/page.tsx` — restructured around: Identity (the lead answers
+  who / what he builds / what he researches / how to work with him), What
+  I do, How I work (pipeline), Research (preserved areas + hubs),
+  Engineering (evidence), Product building (evidence), Selected systems
+  (preserved), Current direction, Academic/research collaboration,
+  Business/engineering collaboration, Writing (preserved), Profiles
+  (preserved), Contact (email CTA resolved from `lib/links.ts`).
+  JSON-LD: `ProfilePage` with `mainEntity` → the existing Person `@id`
+  (no duplicated Person).
+
+### Contact (new route)
+
+- `app/contact/page.tsx` — NEW. Primary CTA "Email Parsa Tak"
+  (`mailto:Parsaetak@gmail.com`, resolved from `lib/links.ts` — no
+  duplicated contact constant); secondary GitHub / LinkedIn; the four
+  collaboration types separated (academic/research, business/engineering,
+  project collaboration, open technical collaboration); "before writing"
+  guidance; no form, no backend. JSON-LD: `WebPage` with `about` →
+  Person `@id` + `BreadcrumbList`.
+
+### Research (new route)
+
+- `app/research/page.tsx` — NEW. The research programme: four questions,
+  the six topic hubs as the research map (clearly accessible from
+  Research), the framework family, the UHIT/AIST/ASI-100 measurement
+  programme with public specification links, selected research writing,
+  and next steps into contact/work. Not a thin page: every claim links a
+  real artifact.
+
+### SEO / entity integration
+
+- `lib/hubs.ts` — `RESEARCH_ROUTE` + `CONTACT_ROUTE` definitions;
+  `ABOUT_ROUTE` meta description refreshed.
+- `scripts/verify-seo.mjs` — CONTENT_ROUTES adds research + contact and
+  expects `ProfilePage` on about; hub/article-count checks explicitly
+  exempt about/work/research/contact (non-hubs); home title + phrase
+  expectations updated to the v3.2 positioning (pipeline stages, product
+  building, email CTA).
+- `scripts/build-blog.mjs` — STATIC_CONTENT_ROUTES adds research +
+  contact (lastmod 2026-09-15); sitemap now 21 URLs.
+- `package.json` — version 3.2.0.
+
+### Docs
+
+- `README.md` — identity line, content documents list, Navigation (v3.2)
+  section, SEO section (ProfilePage), author block wording.
+- `worklog.md` — v3.2 entry appended.
+
+### Verification
+
+- npm ci / npm run blog / npm run build / npm run lint (0 errors;
+  pre-existing img warnings only) / npm run verify — all pass, in both
+  plain and GITHUB_ACTIONS=true (basePath /WEB) modes.
+- Exported HTML re-inspected: new nav on every surface, no numbered HUD
+  labels in any <nav>, ProfilePage/WebPage JSON-LD, exactly one full
+  Person node, single mailto site-wide, 21-URL sitemap, no /undefined,
+  no localhost, no dead routes, all internal hrefs basePath-correct.
+
+
 ## Release: v3.1 — SEO & Discovery (2026-09-14)
 
 Base commit: `36e60eb` ("2026-09-14 + Next.js 16.3.4"). Mission: move the

@@ -3,6 +3,7 @@ import Link from "next/link";
 import PublicLinks from "@/components/PublicLinks";
 import HomeOriginOrganism from "@/components/HomeOriginOrganism";
 import { GITHUB_LINK } from "@/lib/links";
+import { routeHref } from "@/lib/hubs";
 
 import { formatBlogDate } from "@/lib/blogFormat";
 
@@ -36,6 +37,8 @@ import styles from "./HomeScene.module.css";
  * Verified capability set: each line names work that actually
  * exists in the public repository ecosystem (SHEYTAN, UHIT/AIST,
  * FreeIran, the framework family, this website, RED MAGIC).
+ * v3.2: product building sits alongside engineering and research —
+ * evidenced by the shipped products themselves.
  */
 const capabilities = [
   {
@@ -58,30 +61,36 @@ const capabilities = [
   },
   {
     number: "04",
+    title: "Product building",
+    copy:
+      "Taking products from direction to delivery: scoping the problem, shaping the interface, deciding what not to build, and shipping."
+  },
+  {
+    number: "05",
     title: "Local AI & agents",
     copy:
       "Running intelligence locally: managed llama.cpp inference, supervised agent loops, memory, and isolated workspaces."
   },
   {
-    number: "05",
+    number: "06",
     title: "System architecture",
     copy:
       "Designing systems that hold: process supervision, state, bounded restarts, and deliberate evolution paths."
   },
   {
-    number: "06",
+    number: "07",
     title: "Research frameworks",
     copy:
       "Turning research into frameworks: AI Instructions, REP, and USEF — governance, reasoning, and system improvement."
   },
   {
-    number: "07",
+    number: "08",
     title: "Web engineering",
     copy:
       "Engineering the web: static-first Next.js, performance budgets, accessibility, and honest, crawlable SEO."
   },
   {
-    number: "08",
+    number: "09",
     title: "Creative technology",
     copy:
       "Making technology expressive: canvas organisms, living interfaces, simulation, and generative art."
@@ -219,55 +228,47 @@ const featuredProjects: readonly FeaturedProject[] = [
 ];
 
 /*
- * The working loop, stated in human language. These stages are the
- * discipline the repository's own history demonstrates: understand
- * before building, verify before shipping, evaluate after delivery.
+ * The working pipeline, stated in human language (v3.2). One
+ * continuous chain from research to delivery — the same discipline
+ * the repository's own history demonstrates: research before
+ * direction, verification before shipping, evaluation after
+ * delivery.
  */
 const workflowStages = [
   {
-    label: "UNDERSTAND",
+    label: "RESEARCH",
     copy:
-      "Read the problem, the constraints, and the real goal before anything else."
+      "Explore the problem space: prior work, evidence, and the real question underneath."
   },
   {
-    label: "COMPILE",
+    label: "PRODUCT DIRECTION",
     copy:
-      "Gather the material: sources, prior work, and the actual current state."
+      "Decide what to build and for whom — scope, constraints, and the smallest useful outcome."
   },
   {
-    label: "ASSESS",
+    label: "ARCHITECTURE",
     copy:
-      "Judge what is true, what is missing, and where the real risks are."
+      "Design the system: components, state, boundaries, and failure handling before code."
   },
   {
-    label: "PLAN",
+    label: "IMPLEMENTATION",
     copy:
-      "Define the smallest change that produces a verifiable result."
+      "Build it as coherent, reviewable steps in Go, TypeScript, and React."
   },
   {
-    label: "ACT",
+    label: "TESTING",
     copy:
-      "Implement it as one coherent, reviewable step."
+      "Break it before anyone else can: automated tests, honest fixtures, regression suites."
   },
   {
-    label: "VERIFY",
+    label: "VERIFICATION",
     copy:
-      "Test the result against reality: build, run, inspect, measure."
+      "Prove the result against objective checks — build, run, inspect, measure — not confidence."
   },
   {
-    label: "SYNTHESIZE",
+    label: "DELIVERY",
     copy:
-      "Fold what was learned back into the system and its documentation."
-  },
-  {
-    label: "DELIVER",
-    copy:
-      "Ship it clean: static build, verified export, documented state."
-  },
-  {
-    label: "EVALUATE",
-    copy:
-      "Check the outcome after delivery and feed the next cycle."
+      "Ship it clean: static build, verified export, documented state, and a measured outcome."
   }
 ] as const;
 
@@ -602,7 +603,7 @@ export default function HomeScene({
             </div>
 
             <p className="kicker">
-              PARSA TAK — RESEARCHER · BUILDER · PROGRAMMER · WRITER · ARTIST
+              PARSA TAK — SOFTWARE ENGINEER · PRODUCT BUILDER · AI SYSTEMS RESEARCHER
             </p>
 
             <h1 className={`hero-title ${styles.homeIdentityTitle}`}>
@@ -618,14 +619,23 @@ export default function HomeScene({
             <p
               className={`body-large hero-description ${styles.homeIdentityLead}`}
             >
-              I research intelligence, build reasoning frameworks and local
-              AI agents, engineer software, and turn the work into research,
-              writing, experiments, and art.
+              I research intelligence and build AI systems — taking products
+              from research and product direction through architecture,
+              implementation, testing, verification, and delivery. Local AI
+              agents, reasoning frameworks, and the writing and art around
+              them.
             </p>
 
             <div className={`hero-actions ${styles.homeOriginActions}`}>
               <a className="button button-primary" href="#work">
                 Explore the work ↓
+              </a>
+
+              <a
+                className="button button-secondary"
+                href={routeHref("/contact/")}
+              >
+                Contact
               </a>
 
               {github && (
@@ -727,7 +737,7 @@ export default function HomeScene({
           <HomeSectionIntro
             kicker="METHOD"
             title="How I work"
-            lead="One disciplined loop, applied to research, software, and art — understand before building, verify before shipping, evaluate after delivery."
+            lead="One pipeline from research to delivery — direction before architecture, testing before verification, verification before shipping."
           />
 
           <div
@@ -788,8 +798,6 @@ export default function HomeScene({
             >
               <div className={styles.homeSystemsOverviewLabel}>
                 <span>SYSTEMS</span>
-
-                <span>03</span>
               </div>
 
               <strong>
@@ -929,21 +937,51 @@ export default function HomeScene({
         <div className="page-container">
           <div className={styles.homeFinalFrame}>
             <div>
-              <p className="kicker">KEEP EXPLORING</p>
+              <p className="kicker">WORK WITH ME</p>
 
               <h2 className="section-title">
                 Research
                 <br />
                 Build
                 <br />
-                Repeat
+                Deliver
               </h2>
             </div>
 
-            <p className="body-large">
-              The website is a living index of the systems, experiments,
-              writing, and art that come out of that process.
-            </p>
+            <div className={styles.homeFinalContact}>
+              <p className="body-large">
+                Research collaboration, product engineering, or a system to
+                build — the fastest way in is a direct email. Research,
+                writing, and the code behind the work are all open below.
+              </p>
+
+              <div className={styles.homeFinalActions}>
+                <a
+                  className="button button-primary"
+                  href="mailto:Parsaetak@gmail.com"
+                >
+                  Email Parsa Tak
+                </a>
+
+                <a
+                  className="button button-secondary"
+                  href={routeHref("/contact/")}
+                >
+                  Contact page
+                </a>
+
+                {github && (
+                  <a
+                    className="button button-secondary"
+                    href={github.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    GitHub ↗
+                  </a>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>

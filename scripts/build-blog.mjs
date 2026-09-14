@@ -1212,8 +1212,10 @@ function buildLinksHere(posts) {
  * route tree disagree.
  */
 const STATIC_CONTENT_ROUTES = [
-  { path: "about", lastmod: "2026-09-14" },
-  { path: "work", lastmod: "2026-09-14" },
+  { path: "about", lastmod: "2026-09-15" },
+  { path: "work", lastmod: "2026-09-15" },
+  { path: "research", lastmod: "2026-09-15" },
+  { path: "contact", lastmod: "2026-09-15" },
   { path: "local-ai", lastmod: "2026-09-14" },
   { path: "ai-systems", lastmod: "2026-09-14" },
   { path: "ai-reasoning", lastmod: "2026-09-14" },

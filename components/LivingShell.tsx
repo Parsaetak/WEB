@@ -8,11 +8,6 @@ import {
   useState
 } from "react";
 
-import Link from "next/link";
-import {
-  useRouter
-} from "next/navigation";
-
 import styles from "@/components/LivingShell.module.css";
 
 import CompactMenu, {
@@ -21,8 +16,9 @@ import CompactMenu, {
 import { BRAND_STAR } from "@/lib/brand";
 import SceneLoadingScreen from "@/components/SceneLoadingScreen";
 import SceneNavigator, {
-  type SceneNavigationItem
+  type SceneNavEntry
 } from "@/components/SceneNavigator";
+import { PRIMARY_NAV, WORLD_NAV } from "@/lib/navigation";
 import ScenePreloader from "@/components/ScenePreloader";
 import SceneRegistry from "@/components/SceneRegistry";
 import SceneUrlSync from "@/components/SceneUrlSync";
@@ -52,8 +48,19 @@ export type SceneChangeSource =
   | "navigation"
   | "history";
 
-export const SCENES:
-  readonly SceneNavigationItem[] =
+/*
+ * INTERNAL SCENE REGISTRY (v3.2) — the six-scene world, unchanged.
+ * Scene ids (home / about / systems / magic / work / library) are
+ * interaction states of the shell, NOT navigation labels; the labels
+ * here feed the HUD status readout and hash parsing. The visible
+ * navigation is built from lib/navigation.ts (PRIMARY_NAV +
+ * WORLD_NAV), which leads with the professional destinations.
+ */
+const SCENES: readonly {
+  id: SceneId;
+  label: string;
+  shortLabel: string;
+}[] =
   [
     {
       id: "home",
@@ -285,75 +292,99 @@ export default function LivingShell({
   const github = GITHUB_LINK;
 
   /*
-   * BLOG is a real route, not a scene. The link stays inert until
-   * pointer or focus intent, and only then prefetches the blog
-   * payload — aggressive auto-prefetch of route targets is
-   * deliberately avoided.
+   * NAVIGATION (v3.2) — the desktop track leads with the
+   * professional primary nav. HOME stays an in-shell scene action
+   * (a same-route link could not switch the hash scene); WORK,
+   * RESEARCH, WRITING, ABOUT and CONTACT are real routes. The
+   * experimental scenes (SYSTEMS, RED MAGIC, LIBRARY) follow as the
+   * quieter world group — the six-scene world stays one click away.
    */
-  const router =
-    useRouter();
-
-  const warmBlogRoute =
-    useCallback(
-      () => {
-        router.prefetch(
-          "/blog/"
-        );
-      },
-      [router]
-    );
+  const navigatorEntries = useMemo<readonly SceneNavEntry[]>(
+    () => [
+      ...PRIMARY_NAV.map(
+        (entry): SceneNavEntry =>
+          entry.id === "home"
+            ? {
+                kind: "scene",
+                group: "primary",
+                id: "home",
+                label: entry.label,
+                shortLabel: entry.shortLabel
+              }
+            : {
+                kind: "route",
+                group: "primary",
+                id: entry.id,
+                label: entry.label,
+                shortLabel: entry.shortLabel,
+                href: entry.href
+              }
+      ),
+      ...WORLD_NAV.map(
+        (entry): SceneNavEntry => ({
+          kind: "scene",
+          group: "world",
+          id: entry.id as SceneId,
+          label: entry.label,
+          shortLabel: entry.shortLabel
+        })
+      )
+    ],
+    []
+  );
 
   /*
-   * COMPACT MENU (v2.6.1) — the touch-first navigation mode for
+   * COMPACT MENU (v3.2) — the touch-first navigation mode for
    * viewports where the full scene track stops being honest touch
-   * UI. Same scenes, same changeScene pipeline; BLOG and GITHUB ride
-   * in the same panel so every area stays reachable from one
-   * discoverable control. Rendered for phone and narrow-tablet
-   * widths by CSS (display rules in LivingShell.module.css); the
-   * full SceneNavigator remains the desktop navigation.
+   * UI. Same primary/world split as the desktop track, no numbered
+   * index glyphs. HOME switches the scene in-shell, the other
+   * primary entries are links, the world scenes follow, and GitHub
+   * rides last as an external link.
    */
   const compactMenuEntries =
     useMemo<readonly CompactMenuEntry[]>(
       () => [
-        ...SCENES.map(
-          (
-            scene,
-            index
-          ) => ({
+        ...PRIMARY_NAV.map(
+          (entry): CompactMenuEntry =>
+            entry.id === "home"
+              ? {
+                  kind: "action" as const,
+                  id: `compact-${entry.id}`,
+                  label: entry.label,
+                  scene: entry.id,
+                  active:
+                    activeScene === "home",
+                  onSelect: () =>
+                    changeScene("home")
+                }
+              : {
+                  kind: "link" as const,
+                  id: `compact-${entry.id}`,
+                  label: entry.label,
+                  scene: entry.id,
+                  href: entry.href
+                }
+        ),
+        ...WORLD_NAV.map(
+          (entry): CompactMenuEntry => ({
             kind: "action" as const,
-            id: `compact-scene-${scene.id}`,
-            label: scene.label,
-            index: String(
-              index + 1
-            ).padStart(
-              2,
-              "0"
-            ),
-            scene: scene.id,
+            id: `compact-${entry.id}`,
+            label: entry.label,
+            scene: entry.id,
             active:
-              scene.id ===
-              activeScene,
+              entry.id === activeScene,
             onSelect: () =>
               changeScene(
-                scene.id
+                entry.id as SceneId
               )
           })
         ),
-        {
-          kind: "link",
-          id: "compact-blog",
-          label: "Blog",
-          index: "07",
-          scene: "blog",
-          href: "/blog/"
-        },
         ...(github
           ? [
               {
                 kind: "link" as const,
                 id: "compact-github",
                 label: "GitHub",
-                index: "↗",
                 scene: "github",
                 href: github.href,
                 external: true
@@ -481,8 +512,8 @@ export default function LivingShell({
           </div>
 
           <SceneNavigator
-            scenes={
-              SCENES
+            entries={
+              navigatorEntries
             }
             activeScene={
               activeScene
@@ -512,24 +543,6 @@ export default function LivingShell({
               </a>
             )}
 
-            <Link
-              className={
-                styles.livingShellBlog
-              }
-              href="/blog/"
-              prefetch={
-                false
-              }
-              onPointerEnter={
-                warmBlogRoute
-              }
-              onFocus={
-                warmBlogRoute
-              }
-            >
-              Blog ↗
-            </Link>
-
             <div
               className={
                 styles.livingShellMenu
@@ -537,12 +550,13 @@ export default function LivingShell({
             >
               <CompactMenu
                 id="world-compact-menu"
-                label="Site scenes and areas"
+                label="Site navigation"
                 entries={
                   compactMenuEntries
                 }
                 dividerBefore={[
-                  "compact-blog"
+                  "compact-systems",
+                  "compact-github"
                 ]}
               />
             </div>

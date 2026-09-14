@@ -162,54 +162,45 @@
 }
 
 /*
- * The BLOG control (v2.6.1) — a REAL link to /blog/ rendered by the
- * BlogAreaControl island. On the index it is the current page
- * (aria-current="page"); on articles it navigates back to the index.
- * The old dead, pointer-events-none span is gone at the root: the
- * active area is now navigable with mouse, touch and keyboard.
+ * Active area (v3.2) — WRITING is the blog header's current entry.
+ * State styling lives on the link itself; no separate island, no
+ * dead span: the active area is navigable with mouse, touch and
+ * keyboard like every other entry.
  */
-.sceneLinkActive {
-  display: inline-flex;
-
-  align-items: center;
-
+.sceneLink[data-active="true"] {
   color: var(--red-hot);
-
-  border: 1px solid
-    rgba(255, 32, 32, 0.3);
-
-  border-radius: 3px;
-
-  /* Touch-target sizing (WCAG 2.5.8): 4px padding made a ~20px
-     target; 9px vertical padding makes it ~28px. */
-  padding: 9px 10px;
-
-  font-family: var(--font-mono);
-
-  font-size: 9px;
-
-  font-weight: 700;
-
-  letter-spacing: 0.14em;
-
-  text-transform: uppercase;
-
-  white-space: nowrap;
-
-  text-decoration: none;
-
-  transition:
-    color 160ms ease,
-    border-color 160ms ease,
-    background-color 160ms ease;
 }
 
-.sceneLinkActive:hover {
-  color: #ffffff;
+/*
+ * World group (v3.2) — the experimental scenes (SYSTEMS, RED MAGIC,
+ * LIBRARY) trail the primary row behind a quiet divider, with
+ * reduced weight. Hierarchy through typography, not numbers.
+ */
+.sceneNavDivider {
+  flex: 0 0 auto;
 
-  border-color: rgba(255, 64, 54, 0.55);
+  align-self: center;
 
-  background: rgba(255, 32, 32, 0.08);
+  width: 1px;
+
+  height: 14px;
+
+  margin: 0 6px;
+
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.sceneLinkWorld {
+  color: color-mix(
+    in srgb,
+    var(--text-muted) 72%,
+    transparent
+  );
+}
+
+.sceneLinkWorld:hover,
+.sceneLinkWorld:focus-visible {
+  color: var(--text-muted);
 }
 
 .headerActions {

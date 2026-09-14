@@ -13,14 +13,19 @@ import Link from "next/link";
 import styles from "@/components/CompactMenu.module.css";
 
 /*
- * COMPACT MENU (v2.6.1) — the touch-first navigation mode shared by
+ * COMPACT MENU (v3.2) — the touch-first navigation mode shared by
  * the world shell HUD and the blog header.
  *
  * A disclosure-pattern navigation: one trigger button expands a small
  * panel of real navigation entries (buttons for world scenes, links
- * for routed areas). It exists because a six-item horizontal scene
+ * for routed areas). It exists because a nine-item horizontal scene
  * track stops being honest touch UI below ~860px — cramped targets,
  * hidden overflow, no discoverability.
+ *
+ * v3.2: the numbered index glyphs ("01"…"07") are gone — entries
+ * are separated by spacing, dividers and accent colors, and the
+ * panel carries the professional primary nav first, world scenes
+ * second.
  *
  * Behavior contract:
  * - trigger carries aria-expanded / aria-controls / aria-haspopup
@@ -39,8 +44,6 @@ export type CompactMenuEntry =
       kind: "action";
       id: string;
       label: string;
-      /** Optional index glyph ("01"…"07", "↗") shown before the label. */
-      index?: string;
       /** Accent hook — scene id or area name for the CSS accent map. */
       scene?: string;
       active?: boolean;
@@ -51,7 +54,6 @@ export type CompactMenuEntry =
       id: string;
       label: string;
       href: string;
-      index?: string;
       scene?: string;
       active?: boolean;
       external?: boolean;
@@ -322,16 +324,6 @@ export default function CompactMenu({
 
                   const entryBody = (
                     <>
-                      <span
-                        className={
-                          styles.entryIndex
-                        }
-                        aria-hidden="true"
-                      >
-                        {entry.index ??
-                          ""}
-                      </span>
-
                       <span
                         className={
                           styles.entryLabel

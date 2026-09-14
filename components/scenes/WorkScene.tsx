@@ -740,7 +740,7 @@ export default function WorkScene() {
           <div className={styles.workHeader}>
             <div className={styles.workHeaderCopy}>
               <p className="kicker">
-                04 / WORK
+                WORK
               </p>
 
               <h1

@@ -287,32 +287,6 @@
   );
 }
 
-.entryIndex {
-  flex: 0 0 auto;
-
-  min-width: 16px;
-
-  color: color-mix(
-    in srgb,
-    var(--menu-accent) 62%,
-    var(--text-muted)
-  );
-
-  font-size: 8px;
-
-  font-weight: 800;
-
-  letter-spacing: 0.08em;
-
-  line-height: 1;
-
-  opacity: 0.72;
-}
-
-.entry[data-active="true"] .entryIndex {
-  opacity: 1;
-}
-
 .entryLabel {
   flex: 1 1 auto;
 

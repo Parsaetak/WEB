@@ -31,7 +31,7 @@
 
   align-items: center;
 
-  gap: 4px;
+  gap: 2px;
 
   overflow-x: auto;
 
@@ -249,6 +249,24 @@
   --scene-accent: #4db6ff;
 }
 
+/*
+ * Route destinations (v3.2): WORK and ABOUT keep their scene
+ * accents; the new primary routes carry quiet red-family accents so
+ * the whole track reads as one navigation, not two systems.
+ */
+
+.item[data-scene="research"] {
+  --scene-accent: #ff7847;
+}
+
+.item[data-scene="writing"] {
+  --scene-accent: #ff5c5c;
+}
+
+.item[data-scene="contact"] {
+  --scene-accent: #ff3030;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Scene-specific motifs                                                      */
 /* -------------------------------------------------------------------------- */
@@ -459,41 +477,61 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* Index                                                                      */
+/* Primary / world groups (v3.2)                                              */
 /* -------------------------------------------------------------------------- */
 
-.index {
-  align-self: flex-start;
+/*
+ * The professional track leads; the experimental world scenes follow
+ * a quiet divider with reduced visual weight. Hierarchy is carried
+ * by typography and opacity — not by numbered HUD labels.
+ */
 
-  margin-top: 2px;
+.divider {
+  flex: 0 0 auto;
 
-  color:
-    color-mix(
-      in srgb,
-      var(--scene-accent) 60%,
-      var(--text-muted)
-    );
+  align-self: center;
 
-  font-family: var(--font-mono);
+  width: 1px;
 
-  font-size: 8px;
+  height: 22px;
 
-  font-weight: 800;
+  margin: 0 6px;
 
-  letter-spacing: 0.08em;
-
-  line-height: 1;
-
-  opacity: 0.62;
-
-  transition:
-    color 180ms ease,
-    opacity 180ms ease;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(255, 255, 255, 0.14),
+    transparent
+  );
 }
 
-.item:hover .index,
-.item[data-active="true"] .index {
-  opacity: 0.92;
+.worldItem {
+  --scene-accent: var(--red);
+
+  color: color-mix(
+    in srgb,
+    var(--text-muted) 72%,
+    transparent
+  );
+}
+
+.worldItem .label {
+  font-size: 8px;
+
+  letter-spacing: 0.12em;
+}
+
+.worldItem:hover,
+.worldItem[data-active="true"] {
+  color: var(--text-muted);
+}
+
+.worldItem[data-active="true"] {
+  color: var(--text);
+}
+
+.worldItem:focus-visible {
+  color: var(--text);
 }
 
 /* -------------------------------------------------------------------------- */

@@ -9,7 +9,7 @@ A statically exported Next.js portfolio that behaves like a living system: six h
 
 ## What this is
 
-This is the personal website of **Parsa Tak** — researcher, builder, programmer, writer, and artist. It presents the work in one place: AI systems, reasoning and evaluation, software engineering, and creative technology. The site itself is also a project: it is built as a static-first Next.js application that demonstrates how far a static export can go before it needs a server.
+This is the personal website of **Parsa Tak** — independent software engineer, product builder, and AI systems researcher. It presents the work in one place: AI systems, reasoning and evaluation, software engineering, product building, and creative technology. The site itself is also a project: it is built as a static-first Next.js application that demonstrates how far a static export can go before it needs a server.
 
 Everything a visitor and every search crawler receives is pre-rendered HTML. There is no server runtime, no database, and no client-rendered content gate: the homepage's full semantic content — identity, capabilities, featured work, method, systems, writing, and links — ships in the initial HTML.
 
@@ -28,14 +28,26 @@ The **Systems scene** (`#systems`) presents the framework family — AI Instruct
 ### Writing
 The **blog** is real content, not a stub: markdown articles under `content/blog/` become fully static `/blog/<slug>/` routes with generated metadata, related-article graphs, and structured data. The homepage's Writing section links the strongest articles, selected on the server at build time.
 
-### Topic hubs and content documents (v3.1)
+### Topic hubs and content documents (v3.1, extended v3.2)
 Beyond the living-world homepage, the site carries real indexable documents that own the site's most important search and research themes:
 
-- `/about/` — the entity/author page: who Parsa Tak is, research areas, selected systems, selected writing, and public profiles
+- `/about/` — the entity/author page: identity, what I do, how I work (the research → product direction → architecture → implementation → testing → verification → delivery pipeline), research, engineering, product building, selected systems, current direction, both collaboration tracks, writing, profiles, and contact. JSON-LD: `ProfilePage` referencing the site-wide `Person` `@id`
 - `/work/` — the canonical professional portfolio: every significant system with what it is, the problem it addresses, why it matters, and real destinations
+- `/research/` — the research programme: the questions, the six topic hubs as the research map, the framework family, the UHIT/AIST measurement programme, and selected research writing
+- `/contact/` — the single honest contact document: primary CTA **Email Parsa Tak** (resolved from `lib/links.ts`), secondary GitHub/LinkedIn, and the four collaboration types (academic/research, business/engineering, project collaboration, open technical collaboration). No form, no backend
 - `/local-ai/`, `/ai-systems/`, `/ai-reasoning/`, `/ai-evaluation/`, `/software-engineering/`, `/creative-technology/` — six topic hubs, each a self-contained document: topic definition, what Parsa Tak works on, the systems built in the area, genuinely related articles, and a next exploration path
 
-The distinction between URL kinds is deliberate: a **real URL** (`/about/`, `/work/`, hubs, blog) is an indexable document; a **hash** (`/#work`, `/#magic`) is an interactive scene state of the living world, not a separate page. Every content route is statically rendered from server components with zero route-specific client JavaScript — they are the lightest pages on the site.
+The distinction between URL kinds is deliberate: a **real URL** (`/about/`, `/work/`, `/research/`, `/contact/`, hubs, blog) is an indexable document; a **hash** (`/#work`, `/#magic`) is an interactive scene state of the living world, not a separate page. Every content route is statically rendered from server components with zero route-specific client JavaScript — they are the lightest pages on the site.
+
+### Navigation (v3.2)
+The site-wide navigation leads with the professional destinations and keeps the experimental world one click away:
+
+```
+PRIMARY:  HOME · WORK · RESEARCH · WRITING · ABOUT · CONTACT
+WORLD:    SYSTEMS · RED MAGIC · LIBRARY   (quieter, contextual)
+```
+
+Both rows render from one source of truth (`lib/navigation.ts`) across every surface — the desktop track, the CompactMenu, the blog header, the content-shell header, and the shared footer. The numbered HUD labels (`01 HOME` … `06 LIBRARY`) are gone: hierarchy is carried by spacing, typography, and active states. The six-scene world is unchanged internally — scene ids (`home / about / systems / magic / work / library`), hash routing, and preloading all behave exactly as before.
 
 ### RED MAGIC
 RED MAGIC is the site's living-layer experiment: a canvas-based computational organism with adaptation, perception, and visible state. It is deliberately **not** part of the critical path — visitors receive a CSS-only seed first, and the organism loads at idle time only when motion is permitted and the device can afford it.
@@ -80,8 +92,8 @@ Scene changes are URL-addressable (`#systems` is a shareable state), handled by 
 
 ```
 app/                 routes: home, blog index, blog articles, 404,
-                     and the v3.1 content documents (about, work,
-                     and the six topic hubs)
+                     and the content documents (about, work, research,
+                     contact, and the six topic hubs)
 components/          world shell, scenes, navigation, RED MAGIC systems
 components/content/  shared server-rendered content-route system
                      (shell, building blocks, hub view)
@@ -113,11 +125,11 @@ The sitemap is generated from the **same** content index that produces the route
 ## SEO
 
 - Every canonical route ships exactly one `<title>`, meta description, canonical link, Open Graph image, and robots directive
-- JSON-LD structured data: `Person` + `WebSite` anchors in the root layout, plus `WebPage`, `Blog`, `BlogPosting`, and `BreadcrumbList` on the right routes — all cross-referenced by `@id`, never duplicated. The v3.1 content routes add route-specific `WebPage` + `BreadcrumbList` nodes (and a truthful `ItemList` on `/work/`) referencing the same stable entities
+- JSON-LD structured data: `Person` + `WebSite` anchors in the root layout, plus `WebPage`, `ProfilePage` (on `/about/`), `Blog`, `BlogPosting`, and `BreadcrumbList` on the right routes — all cross-referenced by `@id`, never duplicated. The content routes add route-specific `WebPage` + `BreadcrumbList` nodes (and a truthful `ItemList` on `/work/`) referencing the same stable entities
 - Google Search Console ownership meta tag emitted once per route and byte-verified on every build
 - `sitemap.xml` + `robots.txt` generated and verified against the actual export, including the content routes; article `lastmod` reflects content dates, never the build date
 - Semantic internal-link graph: every article carries a `TOPIC HUB` chip to its honest primary hub; every hub links its systems and ≥3 genuinely related articles; the shared footer exposes every content document site-wide — the verifier rejects orphan routes and link-count padding
-- Visible author authority: every article ends with a factual author block (independent AI systems researcher and software engineer) linking to `/about/`
+- Visible author authority: every article ends with a factual author block (independent software engineer, product builder, and AI systems researcher) linking to `/about/`
 - Social metadata (OG/Twitter) with stable, production-absolute image URLs
 - RSS is **intentionally absent** — the export must contain no feed and no residual feed references, and verification enforces that
 

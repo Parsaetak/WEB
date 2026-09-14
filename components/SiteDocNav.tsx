@@ -1,28 +1,39 @@
 import { routeHref } from "@/lib/hubs";
 
+import { PRIMARY_NAV, WORLD_NAV } from "@/lib/navigation";
+
 import styles from "@/components/SiteDocNav.module.css";
 
 /*
- * SITE DOCUMENT NAV (v3.1) — crawlable links to the real, indexable
- * documents: the identity/portfolio routes and the six topic hubs.
+ * SITE DOCUMENT NAV (v3.2) — crawlable links to the real, indexable
+ * documents, carried by the shared SiteFooter on every page.
  *
- * Rendered inside the shared SiteFooter, so every page that carries
- * the footer (world shell, blog, articles, and the content routes
- * themselves) exposes the whole content graph through ordinary
- * anchors. This is the discoverability layer for the hub
- * architecture: the hash scenes stay interaction states, while the
- * real documents are one hop from anywhere.
+ * Three rows, in priority order:
+ * - Site: the professional primary navigation (HOME, WORK, RESEARCH,
+ *   WRITING, ABOUT, CONTACT) — the canonical evidence chain
+ *   PERSON → WORK → RESEARCH → WRITING → GITHUB → CONTACT;
+ * - World: the experimental scenes (SYSTEMS, RED MAGIC, LIBRARY) as
+ *   contextual destinations;
+ * - Topics: the six topic hubs — the research map, one hop from
+ *   every document.
  *
- * Plain anchors through routeHref: basePath-aware on GitHub Pages,
- * zero client JavaScript.
+ * The hash scenes remain interaction states; these anchors make the
+ * whole content graph reachable without JavaScript. Plain anchors
+ * through routeHref: basePath-aware on GitHub Pages, zero client
+ * JavaScript, no numbered labels.
  */
 
-const DOCUMENT_LINKS: readonly { label: string; href: string }[] = [
-  { label: "Home", href: "/" },
-  { label: "About", href: "/about/" },
-  { label: "Work", href: "/work/" },
-  { label: "Blog", href: "/blog/" }
-];
+const DOCUMENT_LINKS: readonly { label: string; href: string }[] =
+  PRIMARY_NAV.map((entry) => ({
+    label: entry.label,
+    href: entry.href
+  }));
+
+const WORLD_LINKS: readonly { label: string; href: string }[] =
+  WORLD_NAV.map((entry) => ({
+    label: entry.label,
+    href: entry.href
+  }));
 
 const TOPIC_LINKS: readonly { label: string; href: string }[] = [
   { label: "Local AI", href: "/local-ai/" },
@@ -61,6 +72,8 @@ export default function SiteDocNav() {
   return (
     <nav className={styles.nav} aria-label="Site documents and topics">
       <NavRow heading="Site" links={DOCUMENT_LINKS} />
+
+      <NavRow heading="World" links={WORLD_LINKS} />
 
       <NavRow heading="Topics" links={TOPIC_LINKS} />
     </nav>

@@ -2434,6 +2434,39 @@ strong i {
     break-word;
 }
 
+/*
+ * Contact CTA (v3.2) — the connect section leads with the primary
+ * action (email), then the contact page and GitHub. Buttons reuse
+ * the global button classes; this block only arranges them.
+ */
+.homeFinalContact {
+  display:
+    grid;
+
+  gap:
+    24px;
+
+  justify-self:
+    end;
+
+  max-width:
+    660px;
+}
+
+.homeFinalActions {
+  display:
+    flex;
+
+  flex-wrap:
+    wrap;
+
+  align-items:
+    center;
+
+  gap:
+    12px;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Home responsive                                                            */
 /* -------------------------------------------------------------------------- */

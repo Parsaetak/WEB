@@ -96,7 +96,7 @@ export const ABOUT_ROUTE = {
   slug: "about",
   metaTitle: "About — Parsa Tak",
   metaDescription:
-    "Parsa Tak is an independent AI systems researcher and builder focused on local AI agents, reasoning architectures, software systems, and machine intelligence evaluation. Profile, research areas, selected systems, and writing."
+    "Parsa Tak is an independent software engineer, product builder, and AI systems researcher working across local AI agents, reasoning architectures, machine-intelligence evaluation, and shipped software. Profile, working method, research, engineering, product building, selected systems, and collaboration."
 } as const;
 
 export const WORK_ROUTE = {
@@ -104,6 +104,20 @@ export const WORK_ROUTE = {
   metaTitle: "Selected Work — Parsa Tak",
   metaDescription:
     "Selected systems and projects by Parsa Tak: SHEYTAN local-first AI agent laboratory, the UHIT measurement programme (AIST-2026.09, ASI-100-Elite), FreeIran, this statically engineered website, and the RED MAGIC creative line."
+} as const;
+
+export const RESEARCH_ROUTE = {
+  slug: "research",
+  metaTitle: "Research — Parsa Tak",
+  metaDescription:
+    "The research programme of Parsa Tak: reasoning as a system property, honest machine-intelligence measurement (UHIT, AIST-2026.09, ASI-100-Elite), local-first AI, and governable AI systems — with the six topic hubs that map the work."
+} as const;
+
+export const CONTACT_ROUTE = {
+  slug: "contact",
+  metaTitle: "Contact — Parsa Tak",
+  metaDescription:
+    "Contact Parsa Tak: research collaboration, business and engineering engagements, project collaboration, and open technical collaboration. Primary channel: email. Secondary: GitHub and LinkedIn."
 } as const;
 
 /* -------------------------------------------------------------------------- */

@@ -797,7 +797,7 @@ export default function LibraryScene() {
                 }
               >
                 <p className="kicker">
-                  06 / LIBRARY
+                  LIBRARY
                 </p>
 
                 <h1

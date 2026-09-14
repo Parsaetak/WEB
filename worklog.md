@@ -2347,3 +2347,60 @@ against hardcoded counts:
   the developer at the validator, not a silent omission.
 - The former inline `article_count + 2` workflow check is superseded by
   this validator and must not return in any form.
+
+---
+
+## 2026-09-15 — v3.2 PROFESSIONAL IDENTITY
+
+Mission: reposition the site as an independent software engineer · product
+builder · AI systems researcher portfolio while preserving the RED MAGIC
+experimental identity, the six-scene world, and the v3.0/v3.1 SEO laws.
+
+Navigation:
+- Numbered HUD labels (01 HOME … 06 LIBRARY) removed everywhere; primary
+  nav is now HOME · WORK · RESEARCH · WRITING · ABOUT · CONTACT, with
+  SYSTEMS · RED MAGIC · LIBRARY as a quieter world group. One source of
+  truth: lib/navigation.ts, rendered by SceneNavigator (desktop),
+  CompactMenu (touch), BlogHeader, ContentShell header, SiteDocNav footer.
+- Scene ids unchanged (home / about / systems / magic / work / library);
+  scene kickers de-numbered; BlogAreaControl island retired.
+
+Routes:
+- /research/ (new): research programme + six-hub map + frameworks +
+  UHIT/AIST measurement + selected writing.
+- /contact/ (new): primary email CTA from lib/links.ts (no duplicated
+  constants), secondary GitHub/LinkedIn, four collaboration types, no
+  backend.
+- /about/ (restructured): identity lead answering who/what/research/
+  work-with, then What I do, How I work (research → product direction →
+  architecture → implementation → testing → verification → delivery),
+  Research, Engineering, Product building, Selected systems, Current
+  direction, Academic/research collaboration, Business/engineering
+  collaboration, Writing, Profiles, Contact.
+
+SEO/entity:
+- /about/ emits ProfilePage with mainEntity → the single site-wide
+  Person @id (Person not duplicated). Person jobTitle/knowsAbout
+  refreshed; HOME_TITLE, SITE_DESCRIPTION, AUTHOR_TAGLINE updated.
+- research + contact added to verify-seo CONTENT_ROUTES and build-blog
+  STATIC_CONTENT_ROUTES; sitemap 21 URLs; hub article-count check now
+  explicitly exempts the non-hub content routes.
+
+Verification (all passing, plain + GITHUB_ACTIONS basePath modes):
+- npm run blog → 21-URL sitemap; npm run build → 23 static pages;
+  npm run lint → 0 errors (18 pre-existing img warnings); npm run verify
+  → seo + brand + export suites green (24 pages, 1795 hrefs audited,
+  content graph: 10 routes, no orphans, link graph clean).
+- Exported HTML inspected directly: new nav on every surface, no numbered
+  labels in <nav>, ProfilePage on about, exactly one full Person node,
+  single mailto site-wide, no /undefined, no localhost, no dead routes,
+  all internal hrefs /WEB-correct in basePath mode.
+- Two regressions caught and fixed during verification: routeHref applied
+  to a mailto (about contact section) and basePath-less /contact/ hrefs
+  in HomeScene — both now correct and guarded by the interaction audit.
+
+Known limitations:
+- Workflow-stage phrase checks in verify-seo track the v3.2 pipeline
+  labels; if the pipeline copy changes again, update those expectations.
+- The 404/_not-found mirrors do not render the shared footer (pre-existing).
+- Push to origin/main and Search Console re-crawl are owner actions.

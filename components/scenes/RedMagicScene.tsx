@@ -113,7 +113,7 @@ export default function RedMagicScene() {
               </span>
 
               <p className="kicker">
-                03 / MAGIC
+                RED MAGIC
               </p>
 
               <h1

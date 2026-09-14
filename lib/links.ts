@@ -218,3 +218,23 @@ export const GITHUB_LINK =
       link.id ===
       "github"
   ) ?? null;
+
+/*
+ * Primary contact channel (v3.2) — resolved from the same verified
+ * source of truth (no duplicated contact constants): the mailto
+ * link used by the /contact/ route, the home contact CTA, and the
+ * About contact section.
+ */
+export const EMAIL_LINK =
+  PUBLIC_LINKS.social.find(
+    (link) =>
+      link.id ===
+      "email"
+  ) ?? null;
+
+export const LINKEDIN_LINK =
+  PUBLIC_LINKS.social.find(
+    (link) =>
+      link.id ===
+      "linkedin"
+  ) ?? null;

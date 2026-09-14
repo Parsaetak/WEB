@@ -121,7 +121,7 @@
   border-radius: 2px;
 }
 
-.headerLinkCurrent {
+.headerLink[data-active="true"] {
   color: var(--red-hot);
 }
 
@@ -822,4 +822,22 @@
   outline: 2px solid var(--red-hot);
 
   outline-offset: 3px;
+}
+
+/*
+ * CONTACT CTA ROW (v3.2) — the primary/secondary action row of the
+ * /contact/ route. The buttons reuse the global button classes; this
+ * block only arranges them and gives the touch targets breathing
+ * room.
+ */
+.contactCtaRow {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin: 20px 0 8px;
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import type {
   SceneId
 } from "@/components/LivingShell";
@@ -10,14 +12,41 @@ import {
 
 import styles from "@/components/SceneNavigator.module.css";
 
-export type SceneNavigationItem = {
-  id: SceneId;
-  label: string;
-  shortLabel: string;
-};
+/*
+ * SCENE NAVIGATOR (v3.2) — the desktop navigation track.
+ *
+ * v3.2 leads with the professional primary navigation (HOME, WORK,
+ * RESEARCH, WRITING, ABOUT, CONTACT) and demotes the experimental
+ * scenes (SYSTEMS, RED MAGIC, LIBRARY) to a quieter "world" group
+ * after a divider. The numbered HUD labels (01–06) are gone:
+ * hierarchy is carried by spacing, typography and active states.
+ *
+ * Entry kinds:
+ * - "scene": an in-shell interaction state, switched through
+ *   changeScene with the same preloading contract as before;
+ * - "route": a real document, rendered as a next/link with
+ *   prefetch disabled (routes load on intent, per site law).
+ */
+
+export type SceneNavEntry =
+  | {
+      kind: "scene";
+      group: "primary" | "world";
+      id: SceneId;
+      label: string;
+      shortLabel: string;
+    }
+  | {
+      kind: "route";
+      group: "primary" | "world";
+      id: string;
+      label: string;
+      shortLabel: string;
+      href: string;
+    };
 
 type SceneNavigatorProps = {
-  scenes: readonly SceneNavigationItem[];
+  entries: readonly SceneNavEntry[];
   activeScene: SceneId;
   onSceneChange: (
     scene: SceneId
@@ -25,116 +54,195 @@ type SceneNavigatorProps = {
 };
 
 export default function SceneNavigator({
-  scenes,
+  entries,
   activeScene,
   onSceneChange
 }: SceneNavigatorProps) {
+  const primary = entries.filter(
+    (entry) => entry.group === "primary"
+  );
+
+  const world = entries.filter(
+    (entry) => entry.group === "world"
+  );
+
   return (
     <nav
       className={
         styles.sceneNavigator
       }
-      aria-label="Site scenes"
+      aria-label="Site"
     >
       <div
         className={
           styles.track
         }
       >
-        {scenes.map(
-          (
-            scene,
-            index
-          ) => {
-            const active =
-              scene.id ===
-              activeScene;
+        {primary.map(
+          (entry) => (
+            <NavigatorEntry
+              key={
+                entry.id
+              }
+              entry={
+                entry
+              }
+              activeScene={
+                activeScene
+              }
+              onSceneChange={
+                onSceneChange
+              }
+            />
+          )
+        )}
 
-            const warmScene =
-              () => {
-                if (!active) {
-                  void preloadScene(
-                    scene.id
-                  );
-                }
-              };
+        {world.length > 0 && (
+          <>
+            <span
+              className={
+                styles.divider
+              }
+              aria-hidden="true"
+            />
 
-            return (
-              <button
-                key={
-                  scene.id
-                }
-                type="button"
-                className={
-                  styles.item
-                }
-                data-active={
-                  active
-                    ? "true"
-                    : "false"
-                }
-                data-scene={
-                  scene.id
-                }
-                aria-current={
-                  active
-                    ? "page"
-                    : undefined
-                }
-                aria-label={`Open ${scene.label}`}
-                onPointerEnter={
-                  warmScene
-                }
-                onFocus={
-                  warmScene
-                }
-                onClick={() =>
-                  onSceneChange(
-                    scene.id
-                  )
-                }
-              >
-                <span
-                  className={
-                    styles.index
+            {world.map(
+              (entry) => (
+                <NavigatorEntry
+                  key={
+                    entry.id
                   }
-                  aria-hidden="true"
-                >
-                  {String(
-                    index + 1
-                  ).padStart(
-                    2,
-                    "0"
-                  )}
-                </span>
-
-                <span
-                  className={
-                    styles.copy
+                  entry={
+                    entry
                   }
-                >
-                  <span
-                    className={
-                      styles.label
-                    }
-                  >
-                    {
-                      scene.shortLabel
-                    }
-                  </span>
-                </span>
-
-                <span
-                  className={
-                    styles.indicator
+                  activeScene={
+                    activeScene
                   }
-                  aria-hidden="true"
+                  onSceneChange={
+                    onSceneChange
+                  }
                 />
-              </button>
-            );
-          }
+              )
+            )}
+          </>
         )}
       </div>
     </nav>
+  );
+}
+
+function NavigatorEntry({
+  entry,
+  activeScene,
+  onSceneChange
+}: {
+  entry: SceneNavEntry;
+  activeScene: SceneId;
+  onSceneChange: (
+    scene: SceneId
+  ) => void;
+}) {
+  const isScene =
+    entry.kind === "scene";
+
+  const active =
+    isScene &&
+    entry.id ===
+      activeScene;
+
+  const warmScene = () => {
+    if (
+      isScene &&
+      !active
+    ) {
+      void preloadScene(
+        entry.id
+      );
+    }
+  };
+
+  const body = (
+    <>
+      <span
+        className={
+          styles.copy
+        }
+      >
+        <span
+          className={
+            styles.label
+          }
+        >
+          {
+            entry.shortLabel
+          }
+        </span>
+      </span>
+
+      <span
+        className={
+          styles.indicator
+        }
+        aria-hidden="true"
+      />
+    </>
+  );
+
+  const shared = {
+    className: `${styles.item} ${
+      entry.group === "world"
+        ? styles.worldItem
+        : ""
+    }`.trim(),
+    "data-active":
+      active
+        ? "true"
+        : "false",
+    "data-scene":
+      entry.id,
+    "aria-current":
+      active
+        ? ("page" as const)
+        : undefined,
+    "aria-label": `Open ${entry.label}`
+  };
+
+  if (
+    entry.kind ===
+    "route"
+  ) {
+    return (
+      <Link
+        {...shared}
+        href={
+          entry.href
+        }
+        prefetch={
+          false
+        }
+      >
+        {body}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      {...shared}
+      type="button"
+      onPointerEnter={
+        warmScene
+      }
+      onFocus={
+        warmScene
+      }
+      onClick={() =>
+        onSceneChange(
+          entry.id
+        )
+      }
+    >
+      {body}
+    </button>
   );
 }

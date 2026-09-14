@@ -4,21 +4,29 @@ import { BRAND_STAR } from "@/lib/brand";
 
 import { routeHref } from "@/lib/hubs";
 
+import { PRIMARY_NAV } from "@/lib/navigation";
+
 import SiteFooter from "@/components/SiteFooter";
 
 import styles from "@/components/content/content.module.css";
 
 /*
- * CONTENT SHELL (v3.1) — the shared server-rendered frame for the
- * static content documents: /about/, /work/, and the topic hubs.
+ * CONTENT SHELL (v3.2) — the shared server-rendered frame for the
+ * static content documents: /about/, /work/, /research/, /contact/,
+ * and the topic hubs.
  *
  * It is deliberately minimal: a light header (13-point star + name +
- * four plain anchors), a breadcrumb, the document H1 block, the
+ * the primary navigation), a breadcrumb, the document H1 block, the
  * page sections, and the shared site footer. No canvas organism, no
  * cursor, no reveal observer, no client components — a content
  * route ships as static semantic HTML with zero route JavaScript,
  * while the living-world homepage remains the high-experience
  * route.
+ *
+ * v3.2: the header renders the professional primary navigation from
+ * lib/navigation.ts with a per-route active state (data-active +
+ * aria-current), replacing the old four-link HOME/WORK/ABOUT/BLOG
+ * row.
  *
  * The 13-point star, mono kickers, and red accents are reused so
  * every content document reads as the same website, not a template.
@@ -37,21 +45,17 @@ type ContentShellProps = {
   crumbs: readonly Crumb[];
   /** Lead paragraphs rendered directly under the H1. */
   lead: readonly string[];
+  /** Root-relative href of the current route, marks the active header link. */
+  activeHref?: string;
   children: ReactNode;
 };
-
-const HEADER_LINKS: readonly { label: string; href: string }[] = [
-  { label: "HOME", href: "/" },
-  { label: "WORK", href: "/work/" },
-  { label: "ABOUT", href: "/about/" },
-  { label: "BLOG", href: "/blog/" }
-];
 
 export default function ContentShell({
   kicker,
   title,
   crumbs,
   lead,
+  activeHref,
   children
 }: ContentShellProps) {
   return (
@@ -78,15 +82,21 @@ export default function ContentShell({
           </a>
 
           <nav className={styles.headerNav} aria-label="Site">
-            {HEADER_LINKS.map((link) => (
-              <a
-                key={link.label}
-                className={styles.headerLink}
-                href={routeHref(link.href)}
-              >
-                {link.label}
-              </a>
-            ))}
+            {PRIMARY_NAV.map((entry) => {
+              const active = activeHref === entry.href;
+
+              return (
+                <a
+                  key={entry.id}
+                  className={styles.headerLink}
+                  href={routeHref(entry.href)}
+                  data-active={active ? "true" : "false"}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {entry.shortLabel}
+                </a>
+              );
+            })}
           </nav>
         </div>
       </header>

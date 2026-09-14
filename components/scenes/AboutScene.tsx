@@ -67,7 +67,7 @@ export default function AboutScene() {
           <header className={styles.aboutHeader}>
             <div className={styles.aboutHeaderCopy}>
               <p className="kicker">
-                01 / ABOUT
+                ABOUT
               </p>
 
               <h1 className={`section-title ${styles.aboutTitle}`}>

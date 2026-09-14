@@ -68,6 +68,7 @@ export const metadata: Metadata = {
     "local AI",
     "reasoning",
     "software engineering",
+    "product building",
     "creative technology",
     "system architecture",
     "RED MAGIC",
