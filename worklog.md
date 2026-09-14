@@ -2324,3 +2324,26 @@ Author identity wording ("Independent AI systems researcher and
 builder", AUTHOR_TAGLINE, AUTHOR_RESEARCH_LINE) is defined once in
 lib/seo.tsx and reused everywhere. Never invent credentials,
 employment, awards, or affiliations.
+
+XXII. EXPORT ROUTE VERIFICATION LAW (v3.1.1)
+
+The static export is validated against the route sources of truth, never
+against hardcoded counts:
+
+- scripts/verify-export-routes.mjs requires a three-way bijection:
+  app/**\/page.tsx (+ data/blog/posts.json slug registry) == exported
+  out/**\/index.html == sitemap.xml <loc> set. Any drift between source,
+  export, and sitemap fails the build.
+- Routes that exist in the export but are deliberately non-indexable
+  (/404/, /_not-found/) are declared explicitly in the validator's
+  NON_INDEXABLE_ROUTES. The default assumption is "indexable": a new
+  private route must be consciously registered there, or CI fails —
+  forgetting is a build failure, never a silent SEO hole.
+- The sitemap may never contain duplicates, non-production origins,
+  localhost, hash/query URLs, or implementation paths (_next, feed.xml,
+  deployment manifests, .json/.xml/.txt artifacts).
+- A dynamic route in app/ must be expandable by a registered content
+  registry; an unregistered dynamic segment is a build error that points
+  the developer at the validator, not a silent omission.
+- The former inline `article_count + 2` workflow check is superseded by
+  this validator and must not return in any form.

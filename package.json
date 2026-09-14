@@ -13,7 +13,8 @@
     "brand:raster": "python3 scripts/generate-brand-raster.py",
     "verify:seo": "node scripts/verify-seo.mjs",
     "verify:brand": "node scripts/verify-brand.mjs",
-    "verify": "npm run verify:seo && npm run verify:brand"
+    "verify:export": "node scripts/verify-export-routes.mjs",
+    "verify": "npm run verify:seo && npm run verify:brand && npm run verify:export"
   },
   "dependencies": {
     "next": "16.3.4",

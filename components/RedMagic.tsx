@@ -2593,24 +2593,56 @@ export default function RedMagic({
         canvasRectTop =
           rect.top;
 
-        width =
+        const nextWidth =
           Math.max(
             1,
             rect.width
           );
 
-        height =
+        const nextHeight =
           Math.max(
             1,
             rect.height
           );
 
-        dpr =
+        const nextDpr =
           Math.min(
             window.devicePixelRatio ||
               1,
             MAX_DPR
           );
+
+        /*
+         * Perf guard (v3.1.1): ResizeObserver only coalesces within a
+         * frame — a continuous window drag delivered up to ~60
+         * callbacks/s, and each one reset the canvas backing store,
+         * rebuilt the membrane gradient and re-placed every particle
+         * and grid node even when the observed size had not actually
+         * changed (initial no-op observer callbacks, the duplicate
+         * reduced-motion mount call, sub-pixel jitter). Skip the
+         * entire reallocation path when width/height/DPR are
+         * unchanged; the rect reads above still refresh pointer
+         * mapping.
+         */
+        if (
+          nextWidth ===
+            width &&
+          nextHeight ===
+            height &&
+          nextDpr ===
+            dpr
+        ) {
+          return;
+        }
+
+        width =
+          nextWidth;
+
+        height =
+          nextHeight;
+
+        dpr =
+          nextDpr;
 
         canvas.width =
           Math.floor(
@@ -5563,36 +5595,81 @@ export default function RedMagic({
         context.stroke();
       };
 
+    /*
+     * Reused draw-options record (perf, v3.1.1): the draw loop calls
+     * this once per animated frame; the previous object literal
+     * allocated a fresh 14-property object every frame inside the one
+     * component whose own allocation discipline treats per-frame
+     * garbage as a forbidden regression. Field writes on a stable
+     * monomorphic shape allocate nothing.
+     */
+    const particleDrawOptions = {
+      context,
+
+      particles,
+
+      width,
+      height,
+
+      centerX,
+      centerY,
+      radius,
+
+      pointer,
+      pointerActive,
+
+      pointerEnergy,
+      charge,
+
+      profile,
+
+      time: 0,
+      delta: 0,
+
+      reducedMotion
+    };
+
     const drawParticles =
       (
         time: number,
         delta: number
       ) => {
-        updateAndDrawParticles({
-          context,
+        particleDrawOptions.width =
+          width;
 
-          particles,
+        particleDrawOptions.height =
+          height;
 
-          width,
-          height,
+        particleDrawOptions.centerX =
+          centerX;
 
-          centerX,
-          centerY,
-          radius,
+        particleDrawOptions.centerY =
+          centerY;
 
-          pointer,
-          pointerActive,
+        particleDrawOptions.radius =
+          radius;
 
-          pointerEnergy,
-          charge,
+        particleDrawOptions.pointer =
+          pointer;
 
-          profile,
+        particleDrawOptions.pointerActive =
+          pointerActive;
 
-          time,
-          delta,
+        particleDrawOptions.pointerEnergy =
+          pointerEnergy;
 
-          reducedMotion
-        });
+        particleDrawOptions.charge =
+          charge;
+
+        particleDrawOptions.time =
+          time;
+
+        particleDrawOptions.delta =
+          delta;
+
+        updateAndDrawParticles(
+          particleDrawOptions
+        );
       };
 
     const drawCore =

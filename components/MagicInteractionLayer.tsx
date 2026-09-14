@@ -168,6 +168,25 @@ export default function MagicInteractionLayer({
       null
     );
 
+  /*
+   * The pooled ripple elements are static JSX children — they never
+   * mount, unmount, or reorder. Querying them with querySelectorAll
+   * on every triggerRipple call re-walked the DOM at interaction
+   * frequency; they are cached once instead. The pending-restart
+   * timers are tracked per element so a same-element retrigger
+   * supersedes (rather than doubles) its restart, and unmount
+   * cancels every outstanding restart.
+   */
+  const rippleElementsRef =
+    useRef<HTMLSpanElement[] | null>(
+      null
+    );
+
+  const rippleRestartTimersRef =
+    useRef<Map<HTMLSpanElement, number>>(
+      new Map()
+    );
+
   const updateGeometry =
     () => {
       const root =
@@ -308,10 +327,24 @@ export default function MagicInteractionLayer({
         return;
       }
 
+      /*
+       * Cached once (static pooled children); invalidated on unmount
+       * through rippleElementsRef cleanup. Falls back to a single
+       * query if the cache has not been populated yet.
+       */
+      const cachedRipples =
+        rippleElementsRef.current;
+
       const ripples =
-        root.querySelectorAll<HTMLSpanElement>(
-          `.${styles.magicInteractionRipple}`
+        cachedRipples ??
+        Array.from(
+          root.querySelectorAll<HTMLSpanElement>(
+            `.${styles.magicInteractionRipple}`
+          )
         );
+
+      rippleElementsRef.current =
+        ripples;
 
       if (
         ripples.length === 0
@@ -353,14 +386,51 @@ export default function MagicInteractionLayer({
             0.46}`
       );
 
+      /*
+       * Restart the pooled element's animation WITHOUT forcing
+       * layout: `void ripple.offsetWidth` here performed a full
+       * synchronous reflow on the pointer path (including the
+       * per-frame flick branch). The class is removed, then re-added
+       * on the next frame — the computed animation-name change
+       * between frames restarts the CSS animation, same mechanism
+       * WorldBackground uses. The re-add timer is tracked so a
+       * same-element retrigger supersedes the pending one and
+       * unmount cancels everything.
+       */
+      const restartTimers =
+        rippleRestartTimersRef.current;
+
+      const pendingTimer =
+        restartTimers.get(ripple);
+
+      if (pendingTimer !== undefined) {
+        window.clearTimeout(
+          pendingTimer
+        );
+
+        restartTimers.delete(
+          ripple
+        );
+      }
+
       ripple.classList.remove(
         styles.isActive
       );
 
-      void ripple.offsetWidth;
+      restartTimers.set(
+        ripple,
+        window.setTimeout(
+          () => {
+            restartTimers.delete(
+              ripple
+            );
 
-      ripple.classList.add(
-        styles.isActive
+            ripple.classList.add(
+              styles.isActive
+            );
+          },
+          16
+        )
       );
     };
 
@@ -1125,9 +1195,15 @@ export default function MagicInteractionLayer({
 
     updateGeometry();
 
+    /*
+     * resize is coalesced through the same rAF path as scroll: the
+     * handler only performs a getBoundingClientRect read, and burst
+     * resize events (window drag, devtools open) used to force one
+     * synchronous layout read per event.
+     */
     window.addEventListener(
       "resize",
-      updateGeometry,
+      scheduleGeometry,
       {
         passive: true
       }
@@ -1210,13 +1286,24 @@ export default function MagicInteractionLayer({
 
       window.removeEventListener(
         "resize",
-        updateGeometry
+        scheduleGeometry
       );
 
       window.removeEventListener(
         "scroll",
         scheduleGeometry
       );
+
+      for (const timer of rippleRestartTimersRef.current.values()) {
+        window.clearTimeout(
+          timer
+        );
+      }
+
+      rippleRestartTimersRef.current.clear();
+
+      rippleElementsRef.current =
+        null;
 
       if (
         geometryFrameRef.current !==

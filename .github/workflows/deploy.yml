@@ -133,47 +133,17 @@ jobs:
 
           echo "Brand asset system verified and deterministic."
 
+      # Route-source-aware static export verification. Derives the
+      # expected route set from app/**\/page.tsx + data/blog/posts.json
+      # and requires a three-way bijection: source routes == exported
+      # out/**\/index.html == sitemap <loc> set. Catches missing or
+      # unexpected exports, sitemap omissions/duplicates, wrong
+      # basePath, localhost/hash/_next/feed/deployment URLs, and
+      # missing article or content-hub routes — with no hardcoded
+      # route counts, so adding or removing any route keeps this
+      # correct. RSS absence is re-asserted here as a cheap pre-guard.
       - name: Verify static export output
-        run: |
-          set -euo pipefail
-
-          test -f out/index.html
-          test -f out/blog/index.html
-          test -f out/sitemap.xml
-          test -f out/robots.txt
-          test -f out/og-default.png
-
-          if [ -f out/blog/feed.xml ]; then
-            echo "out/blog/feed.xml must not exist (RSS removed in v2.5)." >&2
-            exit 1
-          fi
-
-          grep -q "https://parsaetak.github.io/WEB/sitemap.xml" out/robots.txt
-
-          sitemap_urls="$(grep -c "<loc>" out/sitemap.xml)"
-
-          article_count="$(
-            find out/blog \
-              -mindepth 1 \
-              -maxdepth 1 \
-              -type d \
-              ! -name images \
-              | wc -l
-          )"
-
-          expected_urls=$((article_count + 2))
-
-          if [ "${sitemap_urls}" -ne "${expected_urls}" ]; then
-            echo "Sitemap/route mismatch: ${sitemap_urls} sitemap URLs for ${article_count} article(s)." >&2
-            exit 1
-          fi
-
-          if [ "${article_count}" -eq 0 ]; then
-            echo "No blog article pages were exported." >&2
-            exit 1
-          fi
-
-          echo "Static export verified: ${article_count} article route(s)."
+        run: node scripts/verify-export-routes.mjs
 
       - name: Write deployment manifests
         env:

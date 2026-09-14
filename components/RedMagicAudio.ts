@@ -39,6 +39,16 @@ const MAX_CHARGE_GAIN =
 const EVENT_COOLDOWN_MS =
   72;
 
+/*
+ * Minimum spacing between ambient parameter updates. Interaction
+ * events include one coalesced "move" per animation frame; applying
+ * setTargetAtTime 60×/s to parameters with 0.14–0.18 s smoothing
+ * constants is inaudible busywork. 90 ms (≈11 Hz) is far above the
+ * smoothing resolution — the audible response is identical.
+ */
+const AMBIENT_UPDATE_MIN_S =
+  0.09;
+
 const MODE_SETTINGS: Record<
   RedMagicAudioMode,
   {
@@ -119,6 +129,8 @@ export class RedMagicAudio {
   private visible = true;
 
   private lastEventTime = 0;
+
+  private lastAmbientUpdateTime = -1;
 
   private attachedTarget:
     EventTarget | null =
@@ -552,6 +564,24 @@ export class RedMagicAudio {
   }
 
   private async ensureStarted() {
+    /*
+     * Fast path (perf): handleEvent fires once per coalesced pointer
+     * move (up to display refresh rate). Once the graph exists and is
+     * running, every call below re-issued setMode (5 setTargetAtTime
+     * calls) plus a master-gain ramp per event — all redundant while
+     * running, since mode changes go through public setMode() and the
+     * OFF→ON toggle path arrives with the context suspended and the
+     * master gain at zero, which this guard does not short-circuit.
+     */
+    if (
+      this.nodes &&
+      this.context &&
+      this.context.state ===
+        "running"
+    ) {
+      return true;
+    }
+
     if (
       !this.enabled ||
       !this.visible
@@ -704,6 +734,22 @@ export class RedMagicAudio {
     ) {
       return;
     }
+
+    /*
+     * Throttle (perf): move events arrive per animation frame; the
+     * ambient targets only need to track interaction at a fraction of
+     * that rate given the smoothing constants applied below.
+     */
+    if (
+      context.currentTime -
+        this.lastAmbientUpdateTime <
+      AMBIENT_UPDATE_MIN_S
+    ) {
+      return;
+    }
+
+    this.lastAmbientUpdateTime =
+      context.currentTime;
 
     const energy =
       clamp(

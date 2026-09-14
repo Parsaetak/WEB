@@ -420,3 +420,71 @@ Commands actually executed against this tree, with real results:
 extracting into a clean directory, running `npm ci`, `npm run build`
 and `npm run verify:seo` from the extracted tree, then re-inspecting
 the regenerated `out/index.html`.
+
+## Release: v3.1.1 — CI Reliability & Runtime Hardening (2026-09-14)
+
+Base commit: `bf3d009` ("2026-09-14"). Mission: fix the failing static-export
+verification (run 34856727071) at its root cause, make route validation
+future-proof, and fix only measured or directly demonstrated runtime
+inefficiencies. No architecture change. No visual change.
+
+### CI root cause fix
+
+- Failure: "Sitemap/route mismatch: 19 sitemap URLs for 9 article(s)." The
+  workflow's inline `article_count + 2` formula predated the v3.1 content
+  hubs and counted nothing but articles, while the sitemap generator
+  correctly emitted home + blog index + 8 hubs + 9 articles = 19 URLs.
+  verify-seo.mjs's own strict sitemap bijection had already passed — the
+  inline block was an obsolete duplicate check.
+- `scripts/verify-export-routes.mjs` (new, zero-dependency): replaces the
+  inline bash with a three-way bijection — app/**\/page.tsx +
+  data/blog/posts.json == exported out/**\/index.html == sitemap <loc> set.
+  No hardcoded route counts. Catches: missing/unexpected exports, sitemap
+  omissions and duplicates, wrong basePath, localhost/non-production URLs,
+  hash/query/_next/feed/deployment URLs, non-indexable exports
+  (/404/, /_not-found/ declared explicitly), missing article or hub routes,
+  and app routes that never exported. Proven by 16 negative tests (each
+  required failure mode) plus the pristine-sandbox pass.
+- `.github/workflows/deploy.yml`: "Verify static export output" now runs the
+  new validator. Redundant inline checks (robots sitemap directive, RSS
+  absence) remain covered by verify-seo.mjs — same or stronger verification,
+  one authoritative implementation.
+
+### Runtime hardening (each fix evidence-backed)
+
+- `components/RedMagicAudio.ts`: ensureStarted() fast-path when the graph is
+  already running (it previously re-issued ~6 AudioParam automations per
+  coalesced pointer-move event); updateAmbient() throttled to ≈11 Hz
+  (0.14–0.18 s smoothing constants make per-frame updates inaudible).
+- `components/MagicInteractionLayer.tsx`: ripple restart no longer forces a
+  synchronous layout with `void ripple.offsetWidth` (per-frame cost on the
+  flick path); pooled ripple elements are cached once instead of re-queried
+  per trigger; restart timers are tracked and cancelled on unmount; the
+  resize handler is rAF-coalesced through scheduleGeometry like scroll.
+- `components/RedMagic.tsx`: resize() skips the full canvas reallocation
+  (backing store reset, gradient rebuild, particle/grid re-placement) when
+  width/height/DPR are unchanged; the per-frame drawParticles options object
+  literal is a reused record (no per-frame allocation).
+- `components/RedMagicParticles.ts`: color cache key is a packed number —
+  the old template-literal string key allocated per drawn particle per
+  frame even on cache hits, contradicting the zero-garbage design law.
+- `components/WorldBackground.tsx`: ripple-restart setTimeout(16) ids are
+  tracked and cancelled on unmount like every other timer in the effect.
+- `components/MagicConsole.tsx`: the performance-sample subscription moved
+  from MagicConsole state into a MagicVitals leaf component — telemetry
+  ticks no longer re-render the MagicInteractionLayer/RedMagic subtree.
+
+### Verification
+
+- npm run lint: 0 errors (18 pre-existing img warnings, unchanged).
+- npm run verify: 159 SEO + 13 brand + 11 export-route checks pass.
+- CI-mode build (GITHUB_ACTIONS=true, /WEB basePath) passes the same suite.
+- Browser stress (Playwright + production-like static server): load, idle
+  cadence (22 fps active → 8 fps idle), hidden-tab halt (RAF 61→0→66),
+  3000-event pointer storm (0 new registrations, heap stable), 66 scene
+  switches + 20 back/forward (heap stable, no duplicate canvases), 20
+  resize alternations incl. DPR change (backing store capped at MAX_DPR 2 —
+  858×799 for 429 CSS px on a DPR-3 device), all 19 routes (unique titles,
+  one h1 each, zero console errors), reduced-motion emulation (RAF fully
+  halted, canvas never allocated, content intact), live-listener audit
+  after 4 scene cycles (only the current scene's 6 img load/error pairs).

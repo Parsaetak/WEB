@@ -447,6 +447,14 @@ export default function WorldBackground({
 
     let pulseTimeout = 0;
 
+    /*
+     * Per-ripple animation-restart timers (one 16 ms re-add per
+     * trigger). Tracked and cancelled on unmount like every other
+     * timer in this effect — previously the re-add could fire against
+     * a detached pooled element after teardown.
+     */
+    const rippleTimeouts = new Set<number>();
+
     let lastWrittenEnergy = -1;
 
     let lastWrittenX = -1;
@@ -540,11 +548,22 @@ export default function WorldBackground({
         styles.isRippling
       );
 
-      window.setTimeout(() => {
-        ripple.classList.add(
-          styles.isRippling
-        );
-      }, 16);
+      const rippleTimer = window.setTimeout(
+        () => {
+          rippleTimeouts.delete(
+            rippleTimer
+          );
+
+          ripple.classList.add(
+            styles.isRippling
+          );
+        },
+        16
+      );
+
+      rippleTimeouts.add(
+        rippleTimer
+      );
     };
 
     const playPulse = () => {
@@ -875,6 +894,14 @@ export default function WorldBackground({
       }
 
       window.clearTimeout(pulseTimeout);
+
+      for (const rippleTimer of rippleTimeouts) {
+        window.clearTimeout(
+          rippleTimer
+        );
+      }
+
+      rippleTimeouts.clear();
 
       window.removeEventListener(
         "pointermove",

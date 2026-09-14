@@ -213,6 +213,96 @@ function formLabel(
   return "LIGHT";
 }
 
+/*
+ * Vitals readout — isolated subscriber (perf, v3.1.1).
+ *
+ * The performance sample arrives roughly every 1.8 s; it used to be
+ * React state in MagicConsole itself, so every sample re-rendered the
+ * whole console subtree including MagicInteractionLayer and the
+ * RedMagic canvas component (a full vDOM diff over the hottest tree
+ * in the app for three text labels). The subscription now lives in
+ * this leaf component: telemetry ticks re-render only the three
+ * vitals values.
+ */
+function MagicVitals() {
+  const [
+    sample,
+    setSample
+  ] =
+    useState<RedMagicPerformanceSample | null>(
+      null
+    );
+
+  useEffect(
+    () =>
+      subscribeRedMagicPerformance(
+        setSample
+      ),
+    []
+  );
+
+  const signal =
+    sample
+      ? signalLabel(
+          sample.pointerEnergy ??
+            0
+        )
+      : "—";
+
+  const vitality =
+    sample
+      ? vitalityLabel(
+          sample.fps,
+          sample.refreshHz
+        )
+      : "—";
+
+  const form =
+    sample
+      ? formLabel(
+          sample.quality
+        )
+      : "—";
+
+  return (
+    <div
+      className={
+        styles.magicVitals
+      }
+    >
+      <div>
+        <span>
+          SIGNAL
+        </span>
+
+        <strong>
+          {signal}
+        </strong>
+      </div>
+
+      <div>
+        <span>
+          VITALITY
+        </span>
+
+        <strong>
+          {vitality}
+        </strong>
+      </div>
+
+      <div>
+        <span>
+          FORM
+        </span>
+
+        <strong>
+          {form}
+        </strong>
+      </div>
+    </div>
+  );
+}
+
 export default function MagicConsole() {
   const [
     mode,
@@ -234,14 +324,6 @@ export default function MagicConsole() {
   ] =
     useState(false);
 
-  const [
-    sample,
-    setSample
-  ] =
-    useState<RedMagicPerformanceSample | null>(
-      null
-    );
-
   useEffect(() => {
     setSoundEnabled(
       readSoundPreference()
@@ -249,10 +331,6 @@ export default function MagicConsole() {
 
     setSoundHydrated(
       true
-    );
-
-    return subscribeRedMagicPerformance(
-      setSample
     );
   }, []);
 
@@ -279,29 +357,6 @@ export default function MagicConsole() {
         mode
     ) ??
     BEHAVIOURS[1];
-
-  const signal =
-    sample
-      ? signalLabel(
-          sample.pointerEnergy ??
-            0
-        )
-      : "—";
-
-  const vitality =
-    sample
-      ? vitalityLabel(
-          sample.fps,
-          sample.refreshHz
-        )
-      : "—";
-
-  const form =
-    sample
-      ? formLabel(
-          sample.quality
-        )
-      : "—";
 
   return (
     <div
@@ -417,41 +472,7 @@ export default function MagicConsole() {
         </div>
       </div>
 
-      <div
-        className={
-          styles.magicVitals
-        }
-      >
-        <div>
-          <span>
-            SIGNAL
-          </span>
-
-          <strong>
-            {signal}
-          </strong>
-        </div>
-
-        <div>
-          <span>
-            VITALITY
-          </span>
-
-          <strong>
-            {vitality}
-          </strong>
-        </div>
-
-        <div>
-          <span>
-            FORM
-          </span>
-
-          <strong>
-            {form}
-          </strong>
-        </div>
-      </div>
+      <MagicVitals />
     </div>
   );
 }

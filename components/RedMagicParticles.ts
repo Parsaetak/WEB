@@ -241,12 +241,16 @@ function distanceSquared(
  * per frame, multiplied by every animation frame at 90–120 Hz. Colors
  * are now quantized (hue to 3 degrees, saturation/lightness to 3
  * percent — far below perceptual threshold) and resolved through a
- * bounded Map, so steady-state rendering reuses existing strings and
- * allocates no garbage. The cap keeps the cache bounded; an overflow
- * clear is a rare O(1) event, never per-frame work.
+ * bounded Map, so steady-state rendering reuses existing strings.
+ * The cache key is a packed NUMBER (v3.1.1): even on a cache hit the
+ * old `${a},${b},${c}` template key allocated a fresh string per
+ * drawn particle per frame, so steady-state rendering was not actually
+ * garbage-free. Numeric keys allocate nothing. The cap keeps the
+ * cache bounded; an overflow clear is a rare O(1) event, never
+ * per-frame work.
  */
 const COLOR_STRING_CACHE = new Map<
-  string,
+  number,
   string
 >();
 
@@ -273,7 +277,15 @@ function particleColor(
     lightness / 3
   );
 
-  const key = `${hueStep},${saturationStep},${lightnessStep}`;
+  /*
+   * Packed numeric key: hueStep ≤ 120 (6 bits used as 7),
+   * saturationStep ≤ 34 (6 bits), lightnessStep ≤ 34 (6 bits).
+   * Ranges never overlap, so the mapping is injective.
+   */
+  const key =
+    hueStep * 4096 +
+    saturationStep * 64 +
+    lightnessStep;
 
   let color =
     COLOR_STRING_CACHE.get(
