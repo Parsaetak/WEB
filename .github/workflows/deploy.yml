@@ -80,38 +80,7 @@ jobs:
             --output data/library.json
 
       - name: Validate Library manifest
-        run: |
-          set -euo pipefail
-
-          node <<'NODE'
-          const fs = require('fs');
-
-          const file = 'data/library.json';
-          const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-
-          if (
-            typeof data.version !== 'number' ||
-            typeof data.updated !== 'string' ||
-            !Array.isArray(data.items)
-          ) {
-            throw new Error('Invalid Library manifest');
-          }
-
-          for (const item of data.items) {
-            if (
-              typeof item.branch !== 'string' ||
-              typeof item.source !== 'string' ||
-              typeof item.title !== 'string' ||
-              typeof item.type !== 'string'
-            ) {
-              throw new Error('Invalid Library manifest item');
-            }
-          }
-
-          console.log(
-            `Library manifest valid: ${data.items.length} items`
-          );
-          NODE
+        run: node scripts/validate-library-manifest.mjs
 
       - name: Restore Next.js build cache
         uses: actions/cache@v5
@@ -125,6 +94,7 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Fails loudly on malformed content BEFORE the expensive build.
           node scripts/build-blog.mjs
 
           test -f data/blog/posts.json
@@ -137,8 +107,11 @@ jobs:
 
           echo "Blog data pipeline valid."
 
+      # The blog pipeline already generated and validated its output
+      # above, so this runs `next build` directly (one deterministic
+      # computation, not two passes over the same content).
       - name: Build Next.js site
-        run: npm run build
+        run: npm run build:next
 
       - name: Verify static SEO output
         run: node scripts/verify-seo.mjs

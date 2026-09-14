@@ -1333,6 +1333,29 @@ nothing (CI re-runs them and fails on any diff). Weight budgets
 are enforced by verify:brand: star SVGs <= 6KB, glyphs <= 4KB,
 project diagrams <= 8KB, og-default.png <= 300KB.
 
+66. Base-Path Verification Law (16.3.4)
+
+Every href pattern the verifier matches must be derived from
+scripts/verify-seo.mjs's own BASE_PATH constant (mirroring
+next.config.ts and build-blog.mjs) — never from a second
+hard-coded deployment path. The home Writing-link check detects
+article links in both deployment shapes (local /blog/<slug>/,
+GitHub Pages /WEB/blog/<slug>/) and requires every detected
+target to resolve to a real exported article route. A verifier
+that only knows the local shape fails CI with false negatives;
+a verifier that hard-codes /WEB fails local verification.
+
+67. Single Pipeline Evaluation Law (16.3.4)
+
+The blog pipeline (scripts/build-blog.mjs) is deterministic:
+one evaluation of the content must serve every downstream
+consumer. CI validates the generated output first (fail fast
+before the expensive build), then runs the Next.js build
+through the build:next script so the pipeline is not executed
+a second time over identical input. npm run build keeps
+composing both steps for local use, where content may have
+changed since the last run.
+
 - HOME SCENE (components/scenes/HomeScene.tsx + module CSS): hero
   kicker carries identity (PARSA TAK — RESEARCHER · BUILDER ·
   PROGRAMMER · WRITER · ARTIST), h1 carries capability (AI

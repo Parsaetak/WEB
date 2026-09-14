@@ -9,28 +9,34 @@
  * Zero runtime dependencies. Checked in so the same verification
  * runs locally, in CI, and on any future clone.
  *
- * Checks:
- * - every indexable route: exactly one <title>, a meta description,
- *   a canonical link, and a parseable JSON-LD block with the
- *   expected entity types
- * - canonical/og URLs are absolute, HTTPS, production host, and
- *   /WEB-aware (no localhost, no repository URLs, no /blog/undefined)
- * - articles: BlogPosting headline/date/author match the content
- *   index; BreadcrumbList present
- * - sitemap.xml: parses, every <loc> is production HTTPS, and the
- *   URL set equals the actual exported route set
- * - robots.txt: references the production sitemap
- * - RSS absence (v2.5): no feed.xml in the export, no RSS
- *   autodiscovery link, and no feed.xml reference anywhere — the
- *   blog deliberately has no feed, and nothing may half-reference it
- * - interaction audit (v2.4): every exported page is free of dead
- *   anchor targets (href="#", empty href, javascript: URLs), and
- *   every root-relative internal href resolves to an exported file
- *   or a known in-page anchor — no dead navigation ships
- * - text QA (v2.4): uppercase label-style text (kickers, buttons,
- *   nav, status chips) never ends in a terminal "." — the site's
- *   editorial rule is short labels without punctuation, full prose
- *   sentences with it
+ * Check groups (each group is one function, run from main()):
+ * - page metadata          verifyPage            — title, description,
+ *   canonical, og:image, robots, Search Console token, JSON-LD types
+ *   per canonical route; canonical/og URLs must be absolute, HTTPS,
+ *   production-host, /WEB-aware (no localhost, no repository URLs,
+ *   no /blog/undefined)
+ * - articles               main()                — BlogPosting
+ *   headline/date/author match the content index; BreadcrumbList
+ *   present
+ * - homepage content       verifyHomeContent     — one h1 inside <main>,
+ *   no streamed-Suspense wrapper, capability/project/workflow
+ *   vocabulary in the visible HTML
+ * - writing links          verifyWritingLinks    — ≥3 crawlable
+ *   article links, every target a real exported route, basePath-aware
+ *   (local /blog/<slug>/, GitHub Pages /WEB/blog/<slug>/)
+ * - interaction anchors    verifyInteractivity   — no dead anchors,
+ *   every internal href resolves to an exported file, media src
+ *   resolves, label punctuation QA
+ * - link graph             verifyInternalLinkGraph — article/scene
+ *   hrefs resolve, no localhost, no repository-clone URLs, orphan
+ *   report
+ * - sitemap                verifySitemap         — URL set equals the
+ *   exported route set, production HTTPS, content-date lastmod
+ * - robots                 verifyRobots          — production sitemap
+ *   directive
+ * - RSS policy             verifyNoRss           — feed.xml absent and
+ *   unreferenced anywhere (the blog deliberately has no feed)
+ * - favicon + brand assets verifyFaviconFamily / verifyBrandAssetsInExport
  */
 
 import { readFile, readdir } from "node:fs/promises";
@@ -125,6 +131,21 @@ function extractJsonLdBlocks(html) {
 
 async function readText(relativePath) {
   return readFile(path.join(OUT_DIR, relativePath), "utf8");
+}
+
+/*
+ * Visible-text projection: strip scripts, styles, and markup so the
+ * checks below read exactly what a crawler's renderer sees before
+ * any JavaScript runs.
+ */
+function toVisibleText(html) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<style[\s\S]*?<\/style>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -629,17 +650,10 @@ async function verifyNoRss() {
  * - the visible <main> surface itself must carry the core content,
  *   independent of what the flight data contains.
  */
-async function verifyHomeContent() {
+async function verifyHomeContent(articleRoutes) {
   const html = await readFile(path.join(OUT_DIR, "index.html"), "utf8");
 
-  /* Strip tags and scripts to the visible text surface. */
-  const visible = html
-    .replace(/<script[\s\S]*?<\/script>/g, " ")
-    .replace(/<style[\s\S]*?<\/style>/g, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&nbsp;/g, " ")
-    .replace(/\s+/g, " ");
+  const visible = toVisibleText(html);
 
   /*
    * P0 (v3.0): the visible document — the part a search engine's
@@ -648,14 +662,7 @@ async function verifyHomeContent() {
    * scene's core message must live THERE, verbatim.
    */
   const mainMatch = html.match(/<main[\s\S]*?<\/main>/);
-  const mainHtml = mainMatch ? mainMatch[0] : "";
-  const mainVisible = mainHtml
-    .replace(/<script[\s\S]*?<\/script>/g, " ")
-    .replace(/<style[\s\S]*?<\/style>/g, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&nbsp;/g, " ")
-    .replace(/\s+/g, " ");
+  const mainVisible = toVisibleText(mainMatch ? mainMatch[0] : "");
 
   if (!mainMatch) {
     fail("home: no <main> element found in exported HTML");
@@ -754,20 +761,7 @@ async function verifyHomeContent() {
     );
   }
 
-  /*
-   * WRITING (v3.0): the home route must link real articles with
-   * descriptive destinations, not just the blog index.
-   */
-  const writingHrefs = (html.match(/href="(\/blog\/[a-z0-9-]+\/)"/g) ?? []).map(
-    (entry) => entry.slice(6, -1)
-  );
-  if (writingHrefs.length < 3) {
-    fail(
-      `home: expected ≥3 crawlable article links from the Writing section, found ${writingHrefs.length}`
-    );
-  } else {
-    pass(`home: ${writingHrefs.length} crawlable article link(s) in home HTML`);
-  }
+  verifyWritingLinks(html, articleRoutes);
 
   /* Crawlable destinations from the home scene. */
   const requiredHrefs = [
@@ -786,6 +780,69 @@ async function verifyHomeContent() {
   if (!failures.some((entry) => entry.includes("crawlable destination"))) {
     pass("home: repository destinations crawlable in exported HTML");
   }
+}
+
+/*
+ * WRITING-LINK VERIFICATION (v3.0, basePath-aware).
+ *
+ * The home route must link real articles with descriptive
+ * destinations, not just the blog index.
+ *
+ * The href pattern is built from BASE_PATH — the same source of
+ * truth next.config.ts and build-blog.mjs use — so the check sees
+ * the links exactly as crawlers receive them in both deployment
+ * shapes:
+ *   local:        /blog/<slug>/
+ *   GitHub Pages: /WEB/blog/<slug>/
+ *
+ * Every detected href must resolve to an article route actually
+ * present in the export: a renamed or deleted slug, `/blog/undefined`,
+ * or any malformed target is a failure, not a silent dead link.
+ */
+const HOME_WRITING_MIN_LINKS = 3;
+
+const ARTICLE_SLUG_PATTERN = "[a-z0-9-]+";
+
+function verifyWritingLinks(html, articleRoutes) {
+  const articleHref = new RegExp(
+    `href="(${BASE_PATH}/blog/${ARTICLE_SLUG_PATTERN}/)"`,
+    "g"
+  );
+  const writingHrefs = [...html.matchAll(articleHref)].map(
+    (match) => match[1]
+  );
+
+  if (writingHrefs.length < HOME_WRITING_MIN_LINKS) {
+    fail(
+      `home: expected ≥${HOME_WRITING_MIN_LINKS} crawlable article links from the Writing section, found ${writingHrefs.length}`
+    );
+    return;
+  }
+
+  const exportedSlugs = new Set(articleRoutes);
+
+  const invalid = writingHrefs.filter((href) => {
+    if (href.includes("localhost") || href.includes("/blog/undefined")) {
+      return true;
+    }
+    /* Strip the deployment prefix and route prefix to the raw slug. */
+    const slug = href
+      .slice(BASE_PATH.length)
+      .replace(/^\/blog\//, "")
+      .replace(/\/$/, "");
+    return !exportedSlugs.has(slug);
+  });
+
+  if (invalid.length > 0) {
+    for (const href of invalid) {
+      fail(`home: writing link does not resolve to an exported article route: ${href}`);
+    }
+    return;
+  }
+
+  pass(
+    `home: ${writingHrefs.length} crawlable article link(s) in home HTML, all resolve to exported routes`
+  );
 }
 
 /*
@@ -905,24 +962,14 @@ async function verifyInternalLinkGraph(articleRoutes) {
   /*
    * BasePath tolerance: the export rewrites internal hrefs to carry
    * the /WEB prefix when building for GitHub Pages. The audit must
-   * accept both shapes — mirrors next.config.ts / build-blog.mjs.
+   * accept both shapes — BASE_PATH mirrors next.config.ts /
+   * build-blog.mjs and is the single source of truth in this script.
    */
-  const BASE = process.env.GITHUB_ACTIONS === "true" ? "/WEB" : "";
-
   const internalHrefs = new Set();
 
   const broken = [];
 
   const articleSlugSet = new Set(articleRoutes);
-
-  const KNOWN_SCENES = new Set([
-    "home",
-    "about",
-    "systems",
-    "magic",
-    "work",
-    "library"
-  ]);
 
   for (const relFile of htmlFiles) {
     const file = path.join(OUT_DIR, relFile);
@@ -945,7 +992,7 @@ async function verifyInternalLinkGraph(articleRoutes) {
       }
 
       const articleMatch = href.match(
-        new RegExp(`^${BASE}/blog/([a-z0-9-]+)/?$`)
+        new RegExp(`^${BASE_PATH}/blog/([a-z0-9-]+)/?$`)
       );
 
       if (articleMatch) {
@@ -961,10 +1008,10 @@ async function verifyInternalLinkGraph(articleRoutes) {
       }
 
       const sceneMatch = href.match(
-        new RegExp(`^${BASE}/?#([a-z]+)$`)
+        new RegExp(`^${BASE_PATH}/?#([a-z]+)$`)
       );
 
-      if (sceneMatch && !KNOWN_SCENES.has(sceneMatch[1]) && sceneMatch[1] !== "top") {
+      if (sceneMatch && !SCENE_HASHES.has(sceneMatch[1]) && sceneMatch[1] !== "top") {
         broken.push(
           `${relFile}: link to unknown scene ${href}`
         );
@@ -1047,7 +1094,7 @@ async function main() {
     types: ["WebSite", "Person", "WebPage"]
   });
 
-  await verifyHomeContent();
+  await verifyHomeContent(articleRoutes);
 
   await verifyPage("blog index", path.join("blog", "index.html"), {
     title: "Blog — Parsa Tak",

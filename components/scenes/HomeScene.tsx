@@ -6,23 +6,30 @@ import { GITHUB_LINK } from "@/lib/links";
 
 import { formatBlogDate } from "@/lib/blogFormat";
 
-import type {
-  HomeWritingPost
-} from "@/lib/homeWriting";
+import type { ReactNode } from "react";
+
+import type { HomeWritingPost } from "@/lib/homeWriting";
 
 import styles from "./HomeScene.module.css";
 
 /*
- * HOME SCENE (v2.7) — information priority redesign.
+ * HOME SCENE — the statically rendered home page.
  *
- * Section order follows the visitor's information need, not the
- * author's curiosity: identity and capability first (hero), what I
- * can do second (capabilities grid), what I have actually built
- * third (featured projects), how I work fourth (workflow), and only
- * then the conceptual material (frameworks, direction). Every
- * capability is backed by shipped work; every project link is real
- * (GitHub repository, blog field notes, or live scene); every
- * workflow stage is the loop the repository itself demonstrates.
+ * The file reads as the page narrative, top to bottom:
+ *   Hero → Capabilities → Featured Work → Method → Systems →
+ *   Writing → Direction → Connect
+ *
+ * Static-render law: this component renders synchronously into the
+ * exported HTML (see SceneRegistry), so everything below is what
+ * crawlers and no-JS visitors receive. Two boundaries keep it that
+ * way:
+ * - the organism is a CSS seed here; the canvas system loads at
+ *   idle time through HomeOriginOrganism, never on the critical
+ *   path;
+ * - writing metadata arrives as serializable props from the server
+ *   (app/page.tsx → lib/homeWriting). This module must never import
+ *   lib/blog directly — posts.json contains article HTML and must
+ *   never enter the client bundle.
  */
 
 /*
@@ -86,12 +93,6 @@ const capabilities = [
  * against the actual repositories. Each card names WHAT IT IS,
  * WHAT PROBLEM IT ADDRESSES, and WHERE TO SEE IT (repository +
  * field notes article). The full portfolio lives in the Work scene.
- *
- * v2.9: each card carries original generated artwork — abstract
- * system diagrams that represent what the project IS (an agent
- * loop, a benchmark scale, a proxy mesh, an organism, a route
- * tree). No screenshots are faked; alt text describes exactly
- * what is drawn. Assets come from scripts/generate-project-art.mjs.
  */
 type FeaturedProject = {
   number: string;
@@ -272,42 +273,48 @@ const workflowStages = [
 
 /*
  * Each framework row links somewhere real: AI INSTRUCTIONS has a
- * dedicated deep-dive article (mirroring the Systems scene's
- * convention); REP and USEF point to the Systems scene, which is
- * where their full presentation lives today.
+ * dedicated deep-dive article (a real /blog route); REP and USEF
+ * point to the Systems scene, which is where their full
+ * presentation lives today. `scene` marks which kind of link it is —
+ * scene hashes are plain anchors handled by the world shell, routes
+ * are next/link clients.
  */
-const systems = [
+type HomeSystem = {
+  number: string;
+  title: string;
+  copy: string;
+  href: string;
+  scene: boolean;
+};
+
+const systems: readonly HomeSystem[] = [
   {
     number: "01",
     title: "AI INSTRUCTIONS",
-    copy:
-      "A framework for governing intelligent systems.",
+    copy: "A framework for governing intelligent systems.",
     href: "/blog/ai-instructions/",
     scene: false
   },
   {
     number: "02",
     title: "REP",
-    copy:
-      "A framework for stronger reasoning and verification.",
+    copy: "A framework for stronger reasoning and verification.",
     href: "#systems",
     scene: true
   },
   {
     number: "03",
     title: "USEF",
-    copy:
-      "A framework for improving systems over time.",
+    copy: "A framework for improving systems over time.",
     href: "#systems",
     scene: true
   }
-] as const;
+];
 
 const directionStages = [
   {
     label: "RESEARCH",
-    copy:
-      "Explore intelligence, reasoning, and systems."
+    copy: "Explore intelligence, reasoning, and systems."
   },
   {
     label: "EXPERIMENT",
@@ -321,14 +328,207 @@ const directionStages = [
   }
 ] as const;
 
+/*
+ * Shared section intro: kicker + section title on the left, section
+ * lead on the right. The Systems section uses a tighter variant,
+ * selected through the optional class overrides.
+ */
+function HomeSectionIntro({
+  kicker,
+  title,
+  lead,
+  className = styles.homeSectionIntro,
+  leadClassName = `body-large ${styles.homeSectionLead}`
+}: {
+  kicker: string;
+  title: ReactNode;
+  lead: ReactNode;
+  className?: string;
+  leadClassName?: string;
+}) {
+  return (
+    <div className={className}>
+      <div>
+        <p className="kicker">{kicker}</p>
+
+        <h2 className="section-title">{title}</h2>
+      </div>
+
+      <p className={leadClassName}>{lead}</p>
+    </div>
+  );
+}
+
+/*
+ * One featured-project card. Kept as a unit because the meta row,
+ * the body, the link set, and the artwork describe one coherent
+ * thing: a project. The artwork carries intrinsic 1200×630
+ * dimensions (no layout shift), lazy-loads because the section is
+ * below the hero, and its alt text describes exactly what is drawn —
+ * the images are generated diagrams, never fake screenshots.
+ */
+function HomeProjectCard({ project }: { project: FeaturedProject }) {
+  return (
+    <article className={styles.homeProject} key={project.number}>
+      <div className={styles.homeProjectMeta}>
+        <span className={styles.homeProjectNumber}>{project.number}</span>
+
+        <span className={styles.homeProjectCategory}>{project.category}</span>
+      </div>
+
+      <div className={styles.homeProjectMain}>
+        <h3 className={styles.homeProjectTitle}>{project.title}</h3>
+
+        <p className={styles.homeProjectCopy}>{project.copy}</p>
+
+        <div className={styles.homeProjectTags}>
+          {project.tags.map((tag) => (
+            <span key={tag}>{tag}</span>
+          ))}
+        </div>
+
+        <div className={styles.homeProjectLinks}>
+          {project.repository && (
+            <a
+              className={styles.homeProjectLink}
+              href={project.repository}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {project.repositoryLabel}
+            </a>
+          )}
+
+          {project.liveHref && (
+            <a className={styles.homeProjectLink} href={project.liveHref}>
+              {project.liveLabel}
+              <span aria-hidden="true"> →</span>
+            </a>
+          )}
+
+          <Link
+            className={styles.homeProjectLink}
+            href={project.notesHref}
+            prefetch={false}
+          >
+            {project.notesLabel}
+            <span aria-hidden="true"> →</span>
+          </Link>
+        </div>
+      </div>
+
+      <div className={styles.homeProjectVisual}>
+        <img
+          src={project.image.src}
+          alt={project.image.alt}
+          width={project.image.width}
+          height={project.image.height}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </article>
+  );
+}
+
+/*
+ * One framework row. Scene hashes render as plain anchors — the
+ * world shell owns hash navigation; real routes render as
+ * next/link with prefetch disabled (blog payloads load on intent,
+ * not on hover past).
+ */
+function HomeSystemItem({ system }: { system: HomeSystem }) {
+  const body = (
+    <>
+      <span className={styles.homeSystemItemNumber}>{system.number}</span>
+
+      <div>
+        <h3>{system.title}</h3>
+
+        <p>{system.copy}</p>
+      </div>
+
+      <span className={styles.homeSystemItemArrow} aria-hidden="true">
+        →
+      </span>
+    </>
+  );
+
+  if (system.scene) {
+    return (
+      <a className={styles.homeSystemItem} href={system.href}>
+        {body}
+      </a>
+    );
+  }
+
+  return (
+    <Link className={styles.homeSystemItem} href={system.href} prefetch={false}>
+      {body}
+    </Link>
+  );
+}
+
+/*
+ * One writing entry — the server-selected article metadata rendered
+ * as a single link to its real /blog route.
+ */
+function HomeWritingItem({
+  post,
+  index
+}: {
+  post: HomeWritingPost;
+  index: number;
+}) {
+  return (
+    <Link
+      className={styles.homeWritingItem}
+      href={`/blog/${post.slug}/`}
+      prefetch={false}
+    >
+      <span className={styles.homeWritingMeta}>
+        <span className={styles.homeWritingNumber}>
+          {String(index + 1).padStart(2, "0")}
+        </span>
+
+        <span className={styles.homeWritingCategory}>{post.category}</span>
+
+        <span className={styles.homeWritingDate}>
+          {formatBlogDate(post.date)}
+        </span>
+      </span>
+
+      <span className={styles.homeWritingMain}>
+        <strong className={styles.homeWritingTitle}>{post.title}</strong>
+
+        <span className={styles.homeWritingExcerpt}>{post.excerpt}</span>
+
+        <span className={styles.homeWritingFoot}>
+          <span>{post.readingTime}</span>
+
+          {post.inbound > 0 && (
+            <span>
+              ↩ {post.inbound}{" "}
+              {post.inbound === 1 ? "reference" : "references"}
+            </span>
+          )}
+        </span>
+      </span>
+
+      <span className={styles.homeWritingArrow} aria-hidden="true">
+        →
+      </span>
+    </Link>
+  );
+}
+
 export default function HomeScene({
   writingPosts = []
 }: {
   /*
-   * SERVER-SIDE WRITING SELECTION (v3.0): serializable article
-   * metadata computed in app/page.tsx. This module stays in the
-   * client graph, so it must never import lib/blog directly — the
-   * props are the only bridge to the content index.
+   * SERVER-SIDE WRITING SELECTION: serializable article metadata
+   * computed in app/page.tsx. See the module comment for the import
+   * boundary this props bridge exists to protect.
    */
   writingPosts?: readonly HomeWritingPost[];
 }) {
@@ -336,9 +536,8 @@ export default function HomeScene({
 
   return (
     <div className={styles.homeScene}>
-      <section
-        className={`hero ${styles.homeOrigin}`}
-      >
+      {/* ---------------------------------------------------- HERO */}
+      <section className={`hero ${styles.homeOrigin}`}>
         <div
           className={styles.homeOriginGrid}
           aria-hidden="true"
@@ -380,15 +579,11 @@ export default function HomeScene({
           className={styles.homeOriginMagicBackground}
           aria-hidden="true"
         >
-          <div
-            className={styles.homeOriginMagicVignette}
-          />
+          <div className={styles.homeOriginMagicVignette} />
 
-          <div
-            className={styles.homeOriginMagicOrganism}
-          >
-            {/**
-              * v3.0 — the organism loads lazily at idle time through
+          <div className={styles.homeOriginMagicOrganism}>
+            {/*
+              * The organism loads lazily at idle time through
               * HomeOriginOrganism; the exported HTML carries the
               * CSS-only seed instead of a canvas dependency.
               */}
@@ -399,29 +594,18 @@ export default function HomeScene({
         <div
           className={`page-container hero-grid ${styles.homeOriginContent}`}
         >
-          <div
-            className={`hero-copy ${styles.homeOriginCopy}`}
-          >
+          <div className={`hero-copy ${styles.homeOriginCopy}`}>
             <div className="hero-status">
-              <span
-                className="status-dot"
-                aria-hidden="true"
-              />
+              <span className="status-dot" aria-hidden="true" />
 
-              <span>
-                ACTIVE
-              </span>
+              <span>ACTIVE</span>
             </div>
 
             <p className="kicker">
-              PARSA TAK — RESEARCHER ·
-              BUILDER · PROGRAMMER ·
-              WRITER · ARTIST
+              PARSA TAK — RESEARCHER · BUILDER · PROGRAMMER · WRITER · ARTIST
             </p>
 
-            <h1
-              className={`hero-title ${styles.homeIdentityTitle}`}
-            >
+            <h1 className={`hero-title ${styles.homeIdentityTitle}`}>
               AI systems
               <br />
               Reasoning
@@ -434,20 +618,13 @@ export default function HomeScene({
             <p
               className={`body-large hero-description ${styles.homeIdentityLead}`}
             >
-              I research intelligence, build{" "}
-              reasoning frameworks and local AI
-              agents, engineer software, and turn
-              the work into research, writing,
-              experiments, and art.
+              I research intelligence, build reasoning frameworks and local
+              AI agents, engineer software, and turn the work into research,
+              writing, experiments, and art.
             </p>
 
-            <div
-              className={`hero-actions ${styles.homeOriginActions}`}
-            >
-              <a
-                className="button button-primary"
-                href="#work"
-              >
+            <div className={`hero-actions ${styles.homeOriginActions}`}>
+              <a className="button button-primary" href="#work">
                 Explore the work ↓
               </a>
 
@@ -465,12 +642,8 @@ export default function HomeScene({
           </div>
         </div>
 
-        <div
-          className={styles.homeOriginFoot}
-        >
-          <span>
-            SCROLL TO EXPLORE
-          </span>
+        <div className={styles.homeOriginFoot}>
+          <span>SCROLL TO EXPLORE</span>
 
           <span
             className={styles.homeOriginFootLine}
@@ -479,438 +652,160 @@ export default function HomeScene({
         </div>
       </section>
 
-      <section
-        className={`section ${styles.homeCapabilities}`}
-      >
+      {/* -------------------------------------------- CAPABILITIES */}
+      <section className={`section ${styles.homeCapabilities}`}>
         <div className="page-container">
-          <div className={styles.homeSectionIntro}>
-            <div>
-              <p className="kicker">
-                CAPABILITIES
-              </p>
-
-              <h2 className="section-title">
-                What I can do
-              </h2>
-            </div>
-
-            <p
-              className={`body-large ${styles.homeSectionLead}`}
-            >
-              Capabilities backed by shipped
-              systems — not aspirations. Each
-              one is demonstrated by public
-              work you can inspect.
-            </p>
-          </div>
+          <HomeSectionIntro
+            kicker="CAPABILITIES"
+            title="What I can do"
+            lead="Capabilities backed by shipped systems — not aspirations. Each one is demonstrated by public work you can inspect."
+          />
 
           <div
             className={styles.homeCapabilityGrid}
             aria-label="Core capabilities"
           >
-            {capabilities.map(
-              (capability) => (
-                <div
-                  className={
-                    styles.homeCapability
-                  }
-                  key={capability.number}
-                >
-                  <span
-                    className={
-                      styles.homeCapabilityNumber
-                    }
-                  >
-                    {capability.number}
-                  </span>
+            {capabilities.map((capability) => (
+              <div
+                className={styles.homeCapability}
+                key={capability.number}
+              >
+                <span className={styles.homeCapabilityNumber}>
+                  {capability.number}
+                </span>
 
-                  <h3>
-                    {capability.title}
-                  </h3>
+                <h3>{capability.title}</h3>
 
-                  <p>
-                    {capability.copy}
-                  </p>
-                </div>
-              )
-            )}
+                <p>{capability.copy}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section
-        className={`section ${styles.homeProjects}`}
-      >
+      {/* ------------------------------------------- FEATURED WORK */}
+      <section className={`section ${styles.homeProjects}`}>
         <div className="page-container">
-          <div className={styles.homeSectionIntro}>
-            <div>
-              <p className="kicker">
-                FEATURED WORK
-              </p>
-
-              <h2 className="section-title">
+          <HomeSectionIntro
+            kicker="FEATURED WORK"
+            title={
+              <>
                 What I have
                 <br />
                 actually built
-              </h2>
-            </div>
-
-            <p
-              className={`body-large ${styles.homeSectionLead}`}
-            >
-              Real projects with real
-              destinations — every repository,
-              article, and experiment below
-              exists and is publicly reachable.
-            </p>
-          </div>
+              </>
+            }
+            lead="Real projects with real destinations — every repository, article, and experiment below exists and is publicly reachable."
+          />
 
           <div
             className={styles.homeProjectList}
             aria-label="Featured projects"
           >
-            {featuredProjects.map(
-              (project) => (
-                <article
-                  className={
-                    styles.homeProject
-                  }
-                  key={project.number}
-                >
-                  <div
-                    className={
-                      styles.homeProjectMeta
-                    }
-                  >
-                    <span
-                      className={
-                        styles.homeProjectNumber
-                      }
-                    >
-                      {project.number}
-                    </span>
-
-                    <span
-                      className={
-                        styles.homeProjectCategory
-                      }
-                    >
-                      {project.category}
-                    </span>
-                  </div>
-
-                  <div
-                    className={
-                      styles.homeProjectMain
-                    }
-                  >
-                  <h3
-                    className={
-                      styles.homeProjectTitle
-                    }
-                  >
-                    {project.title}
-                  </h3>
-
-                  <p
-                    className={
-                      styles.homeProjectCopy
-                    }
-                  >
-                    {project.copy}
-                  </p>
-
-                  <div
-                    className={
-                      styles.homeProjectTags
-                    }
-                  >
-                    {project.tags.map(
-                      (tag) => (
-                        <span
-                          key={tag}
-                        >
-                          {tag}
-                        </span>
-                      )
-                    )}
-                  </div>
-
-                  <div
-                    className={
-                      styles.homeProjectLinks
-                    }
-                  >
-                    {project.repository && (
-                      <a
-                        className={
-                          styles.homeProjectLink
-                        }
-                        href={
-                          project.repository
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {
-                          project.repositoryLabel
-                        }
-                      </a>
-                    )}
-
-                    {project.liveHref && (
-                      <a
-                        className={
-                          styles.homeProjectLink
-                        }
-                        href={
-                          project.liveHref
-                        }
-                      >
-                        {
-                          project.liveLabel
-                        }
-                        <span
-                          aria-hidden="true"
-                        >
-                          {" "}
-                          →
-                        </span>
-                      </a>
-                    )}
-
-                    <Link
-                      className={
-                        styles.homeProjectLink
-                      }
-                      href={
-                        project.notesHref
-                      }
-                      prefetch={false}
-                    >
-                      {
-                        project.notesLabel
-                      }
-                      <span
-                        aria-hidden="true"
-                      >
-                        {" "}
-                        →
-                      </span>
-                    </Link>
-                  </div>
-                  </div>
-
-                  {/*
-                    * v2.9 project artwork — original generated system
-                    * diagrams (never fake screenshots). Intrinsic
-                    * 1200×630 prevents layout shift; lazy because the
-                    * section is below the hero; decorative-free alt
-                    * text describes exactly what is drawn.
-                    */}
-                  <div
-                    className={
-                      styles.homeProjectVisual
-                    }
-                  >
-                    <img
-                      src={project.image.src}
-                      alt={project.image.alt}
-                      width={project.image.width}
-                      height={project.image.height}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                </article>
-              )
-            )}
+            {featuredProjects.map((project) => (
+              <HomeProjectCard
+                key={project.number}
+                project={project}
+              />
+            ))}
           </div>
 
-          <a
-            className={styles.homeProjectArchive}
-            href="#work"
-          >
-            <span>
-              FULL PORTFOLIO
-            </span>
+          <a className={styles.homeProjectArchive} href="#work">
+            <span>FULL PORTFOLIO</span>
 
             <strong>
               Open the Work scene
-              <span aria-hidden="true">
-                {" "}
-                →
-              </span>
+              <span aria-hidden="true"> →</span>
             </strong>
           </a>
         </div>
       </section>
 
-      <section
-        className={`section ${styles.homeWorkflow}`}
-      >
+      {/* ------------------------------------------------- METHOD */}
+      <section className={`section ${styles.homeWorkflow}`}>
         <div className="page-container">
-          <div className={styles.homeSectionIntro}>
-            <div>
-              <p className="kicker">
-                METHOD
-              </p>
-
-              <h2 className="section-title">
-                How I work
-              </h2>
-            </div>
-
-            <p
-              className={`body-large ${styles.homeSectionLead}`}
-            >
-              One disciplined loop, applied to
-              research, software, and art —
-              understand before building, verify
-              before shipping, evaluate after
-              delivery.
-            </p>
-          </div>
+          <HomeSectionIntro
+            kicker="METHOD"
+            title="How I work"
+            lead="One disciplined loop, applied to research, software, and art — understand before building, verify before shipping, evaluate after delivery."
+          />
 
           <div
             className={styles.homeWorkflowGrid}
             aria-label="Working method"
           >
-            {workflowStages.map(
-              (
-                stage,
-                index
-              ) => (
-                <div
-                  className={
-                    styles.homeWorkflowStage
-                  }
-                  key={stage.label}
-                >
-                  <div
-                    className={
-                      styles.homeWorkflowStageHead
-                    }
-                  >
+            {workflowStages.map((stage, index) => (
+              <div
+                className={styles.homeWorkflowStage}
+                key={stage.label}
+              >
+                <div className={styles.homeWorkflowStageHead}>
+                  <span className={styles.homeWorkflowStageIndex}>
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+
+                  <strong>{stage.label}</strong>
+
+                  {index < workflowStages.length - 1 && (
                     <span
-                      className={
-                        styles.homeWorkflowStageIndex
-                      }
+                      className={styles.homeWorkflowStageArrow}
+                      aria-hidden="true"
                     >
-                      {String(
-                        index + 1
-                      ).padStart(
-                        2,
-                        "0"
-                      )}
+                      →
                     </span>
-
-                    <strong>
-                      {stage.label}
-                    </strong>
-
-                    {index <
-                      workflowStages.length -
-                        1 && (
-                      <span
-                        className={
-                          styles.homeWorkflowStageArrow
-                        }
-                        aria-hidden="true"
-                      >
-                        →
-                      </span>
-                    )}
-                  </div>
-
-                  <p
-                    className={
-                      styles.homeWorkflowStageCopy
-                    }
-                  >
-                    {stage.copy}
-                  </p>
+                  )}
                 </div>
-              )
-            )}
+
+                <p className={styles.homeWorkflowStageCopy}>{stage.copy}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section
-        className={`section ${styles.homeSystems}`}
-      >
+      {/* ------------------------------------------------ SYSTEMS */}
+      <section className={`section ${styles.homeSystems}`}>
         <div className="page-container">
-          <div className={styles.homeSystemsIntro}>
-            <div>
-              <p className="kicker">
-                WHAT I BUILD
-              </p>
-
-              <h2 className="section-title">
+          <HomeSectionIntro
+            kicker="WHAT I BUILD"
+            title={
+              <>
                 Ideas
                 <br />
                 made concrete
-              </h2>
-            </div>
-
-            <p
-              className={`body ${styles.homeSystemsCopy}`}
-            >
-              I turn research into frameworks,{" "}
-              software, experiments, simulations,{" "}
-              and other working systems.
-            </p>
-          </div>
+              </>
+            }
+            lead="I turn research into frameworks, software, experiments, simulations, and other working systems."
+            className={styles.homeSystemsIntro}
+            leadClassName={`body ${styles.homeSystemsCopy}`}
+          />
 
           <div className={styles.homeSystemsOverview}>
             <a
-              className={
-                styles.homeSystemsOverviewLink
-              }
+              className={styles.homeSystemsOverviewLink}
               href="#systems"
               aria-label="Open the Systems scene"
             >
-              <div
-                className={
-                  styles.homeSystemsOverviewLabel
-                }
-              >
-                <span>
-                  SYSTEMS
-                </span>
+              <div className={styles.homeSystemsOverviewLabel}>
+                <span>SYSTEMS</span>
 
-                <span>
-                  03
-                </span>
+                <span>03</span>
               </div>
 
               <strong>
-                <span>
-                  AI
-                </span>
+                <span>AI</span>
 
-                <i>
-                  ·
-                </i>
+                <i>·</i>
 
-                <span>
-                  REASONING
-                </span>
+                <span>REASONING</span>
 
-                <i>
-                  ·
-                </i>
+                <i>·</i>
 
-                <span>
-                  SYSTEMS
-                </span>
+                <span>SYSTEMS</span>
               </strong>
 
               <span
-                className={
-                  styles.homeSystemsOverviewArrow
-                }
+                className={styles.homeSystemsOverviewArrow}
                 aria-hidden="true"
               >
                 →
@@ -919,254 +814,65 @@ export default function HomeScene({
           </div>
 
           <div className={styles.homeSystemList}>
-            {systems.map(
-              (system) =>
-                system.scene ? (
-                  <a
-                    className={styles.homeSystemItem}
-                    key={system.number}
-                    href={system.href}
-                  >
-                    <span
-                      className={
-                        styles.homeSystemItemNumber
-                      }
-                    >
-                      {system.number}
-                    </span>
-
-                    <div>
-                      <h3>
-                        {system.title}
-                      </h3>
-
-                      <p>
-                        {system.copy}
-                      </p>
-                    </div>
-
-                    <span
-                      className={
-                        styles.homeSystemItemArrow
-                      }
-                      aria-hidden="true"
-                    >
-                      →
-                    </span>
-                  </a>
-                ) : (
-                  <Link
-                    className={styles.homeSystemItem}
-                    key={system.number}
-                    href={system.href}
-                    prefetch={false}
-                  >
-                    <span
-                      className={
-                        styles.homeSystemItemNumber
-                      }
-                    >
-                      {system.number}
-                    </span>
-
-                    <div>
-                      <h3>
-                        {system.title}
-                      </h3>
-
-                      <p>
-                        {system.copy}
-                      </p>
-                    </div>
-
-                    <span
-                      className={
-                        styles.homeSystemItemArrow
-                      }
-                      aria-hidden="true"
-                    >
-                      →
-                    </span>
-                  </Link>
-                )
-            )}
+            {systems.map((system) => (
+              <HomeSystemItem key={system.number} system={system} />
+            ))}
           </div>
         </div>
       </section>
 
       {/*
-        * WRITING (v3.0) — the home scene's bridge into the knowledge
-        * graph. The entries are selected on the server from the real
-        * content index: the featured article first, then the most
-        * internally referenced. Everything links to a real route.
+        * WRITING — the home scene's bridge into the knowledge graph.
+        * The entries are selected on the server from the real content
+        * index: the featured article first, then the most internally
+        * referenced. Everything links to a real route.
         */}
       {writingPosts.length > 0 && (
-        <section
-          className={`section ${styles.homeWriting}`}
-        >
+        <section className={`section ${styles.homeWriting}`}>
           <div className="page-container">
-            <div className={styles.homeSectionIntro}>
-              <div>
-                <p className="kicker">
-                  WRITING
-                </p>
-
-                <h2 className="section-title">
+            <HomeSectionIntro
+              kicker="WRITING"
+              title={
+                <>
                   Field notes
                   <br />
                   from the laboratory
-                </h2>
-              </div>
-
-              <p
-                className={`body-large ${styles.homeSectionLead}`}
-              >
-                Research, engineering, and the
-                reasoning behind the systems —
-                written down and connected, not
-                left in commit logs.
-              </p>
-            </div>
+                </>
+              }
+              lead="Research, engineering, and the reasoning behind the systems — written down and connected, not left in commit logs."
+            />
 
             <div
               className={styles.homeWritingList}
               aria-label="Selected writing"
             >
-              {writingPosts.map(
-                (post, index) => (
-                  <Link
-                    className={
-                      styles.homeWritingItem
-                    }
-                    key={post.slug}
-                    href={`/blog/${post.slug}/`}
-                    prefetch={false}
-                  >
-                    <span
-                      className={
-                        styles.homeWritingMeta
-                      }
-                    >
-                      <span
-                        className={
-                          styles.homeWritingNumber
-                        }
-                      >
-                        {String(
-                          index + 1
-                        ).padStart(2, "0")}
-                      </span>
-
-                      <span
-                        className={
-                          styles.homeWritingCategory
-                        }
-                      >
-                        {post.category}
-                      </span>
-
-                      <span
-                        className={
-                          styles.homeWritingDate
-                        }
-                      >
-                        {formatBlogDate(
-                          post.date
-                        )}
-                      </span>
-                    </span>
-
-                    <span
-                      className={
-                        styles.homeWritingMain
-                      }
-                    >
-                      <strong
-                        className={
-                          styles.homeWritingTitle
-                        }
-                      >
-                        {post.title}
-                      </strong>
-
-                      <span
-                        className={
-                          styles.homeWritingExcerpt
-                        }
-                      >
-                        {post.excerpt}
-                      </span>
-
-                      <span
-                        className={
-                          styles.homeWritingFoot
-                        }
-                      >
-                        <span>
-                          {post.readingTime}
-                        </span>
-
-                        {post.inbound > 0 && (
-                          <span>
-                            ↩ {post.inbound}
-                            {" "}
-                            {post.inbound === 1
-                              ? "reference"
-                              : "references"}
-                          </span>
-                        )}
-                      </span>
-                    </span>
-
-                    <span
-                      className={
-                        styles.homeWritingArrow
-                      }
-                      aria-hidden="true"
-                    >
-                      →
-                    </span>
-                  </Link>
-                )
-              )}
+              {writingPosts.map((post, index) => (
+                <HomeWritingItem key={post.slug} post={post} index={index} />
+              ))}
             </div>
 
             <Link
-              className={
-                styles.homeWritingArchive
-              }
+              className={styles.homeWritingArchive}
               href="/blog/"
               prefetch={false}
             >
-              <span>
-                ALL WRITING
-              </span>
+              <span>ALL WRITING</span>
 
               <strong>
                 Open the Blog
-                <span aria-hidden="true">
-                  {" "}
-                  →
-                </span>
+                <span aria-hidden="true"> →</span>
               </strong>
             </Link>
           </div>
         </section>
       )}
 
-      <section
-        className={`section ${styles.homeDirection}`}
-      >
+      {/* ---------------------------------------------- DIRECTION */}
+      <section className={`section ${styles.homeDirection}`}>
         <div className="page-container">
           <div className={styles.homeDirectionGrid}>
-            <div
-              className={
-                styles.homeDirectionHeading
-              }
-            >
-              <p className="kicker">
-                DIRECTION
-              </p>
+            <div className={styles.homeDirectionHeading}>
+              <p className="kicker">DIRECTION</p>
 
               <h2 className="section-title">
                 Understand
@@ -1177,91 +883,53 @@ export default function HomeScene({
               </h2>
             </div>
 
-            <div
-              className={styles.homeDirectionCopy}
-            >
+            <div className={styles.homeDirectionCopy}>
               <p className="body-large">
-                The work is an ongoing attempt to{" "}
-                understand intelligence, strengthen{" "}
-                reasoning, and turn ideas into systems{" "}
-                that can be tested and improved.
+                The work is an ongoing attempt to understand intelligence,
+                strengthen reasoning, and turn ideas into systems that can
+                be tested and improved.
               </p>
 
-              <div
-                className={
-                  styles.homeDirectionStages
-                }
-              >
-                {directionStages.map(
-                  (
-                    stage,
-                    index
-                  ) => (
-                    <div
-                      className={
-                        styles.homeDirectionStage
-                      }
-                      key={stage.label}
-                    >
-                      <div
-                        className={
-                          styles.homeDirectionStageMain
-                        }
-                      >
-                        <div
-                          className={
-                            styles.homeDirectionStageIndex
-                          }
-                        >
-                          {String(
-                            index + 1
-                          ).padStart(
-                            2,
-                            "0"
-                          )}
-                        </div>
-
-                        <div>
-                          <strong>
-                            {stage.label}
-                          </strong>
-
-                          <p>
-                            {stage.copy}
-                          </p>
-                        </div>
+              <div className={styles.homeDirectionStages}>
+                {directionStages.map((stage, index) => (
+                  <div
+                    className={styles.homeDirectionStage}
+                    key={stage.label}
+                  >
+                    <div className={styles.homeDirectionStageMain}>
+                      <div className={styles.homeDirectionStageIndex}>
+                        {String(index + 1).padStart(2, "0")}
                       </div>
 
-                      {index <
-                        directionStages.length -
-                          1 && (
-                        <span
-                          className={
-                            styles.homeDirectionStageArrow
-                          }
-                          aria-hidden="true"
-                        >
-                          →
-                        </span>
-                      )}
+                      <div>
+                        <strong>{stage.label}</strong>
+
+                        <p>{stage.copy}</p>
+                      </div>
                     </div>
-                  )
-                )}
+
+                    {index < directionStages.length - 1 && (
+                      <span
+                        className={styles.homeDirectionStageArrow}
+                        aria-hidden="true"
+                      >
+                        →
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section
-        className={`section ${styles.homeFinal}`}
-      >
+      {/* ------------------------------------------------- CONNECT */}
+      <section className={`section ${styles.homeFinal}`}>
         <div className="page-container">
           <div className={styles.homeFinalFrame}>
             <div>
-              <p className="kicker">
-                KEEP EXPLORING
-              </p>
+              <p className="kicker">KEEP EXPLORING</p>
 
               <h2 className="section-title">
                 Research
@@ -1273,18 +941,14 @@ export default function HomeScene({
             </div>
 
             <p className="body-large">
-              The website is a living index of the{" "}
-              systems, experiments, writing, and art{" "}
-              that come out of that process.
+              The website is a living index of the systems, experiments,
+              writing, and art that come out of that process.
             </p>
           </div>
         </div>
       </section>
 
-      <PublicLinks
-        compact
-        title="CONNECT"
-      />
+      <PublicLinks compact title="CONNECT" />
     </div>
   );
 }

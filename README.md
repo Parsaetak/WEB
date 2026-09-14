@@ -1,785 +1,220 @@
-# PARSA TAK — WEB
+# Parsa Tak — WEB
 
-Live site: https://parsaetak.github.io/WEB/
+A statically exported Next.js portfolio that behaves like a living system: six hash-navigated scenes, a markdown-driven blog, a generated SEO graph, and a canvas organism that loads only when the browser can afford it.
 
-Repository: https://github.com/Parsaetak/WEB
+**Live Site:** https://parsaetak.github.io/WEB/
+**Repository:** https://github.com/Parsaetak/WEB
 
-Version: 2.7 — visible SEO, content hierarchy, the Work
-portfolio, and blog editorial coherence, on top of the v2.6.1
-mobile-navigation / blog-control / project-connected-articles
-base, the v2.5 RSS-removal / related-content / SEO-link-graph /
-reading-motion base, and the v2.5.1–v2.5.7 reading-instrument
-rounds. New in 2.7: the home scene is server-rendered into the
-static export (one crawlable h1, the capability vocabulary, the
-featured project names, the workflow stages, and repository
-links now exist in index.html instead of appearing only after
-client JavaScript); the home page is restructured around
-information priority — hero (identity + capability) → "What I
-can do" capabilities grid → "What I have actually built" featured
-projects → "How I work" nine-stage workflow → frameworks →
-direction; the Work scene becomes a full portfolio/research
-index (four featured systems plus four grouped sections, 13
-verified project entries, every card carrying real repository /
-notes / live destinations); the article cover joins the reading
-column (720px, centered — the 980px drift is gone) and gains a
-reversible enter/exit scroll reveal (the flow variant in the one
-MotionReveal observer — transform/opacity only, no layout shift,
-reduced-motion and print safe); the blog index cards carry
-clickable PROJECT · name chips that ride the existing deep-link
-project filter; the FreeIran article ships its designed cover;
-and verify:seo grows a home-content pass that reads the exported
-HTML exactly as a crawler receives it.
+---
 
-## Stack
+## What this is
 
-- Next.js 16 (App Router, `output: "export"`, static only)
-- React 19, TypeScript
-- GitHub Pages deployment (no server, no runtime backend)
-- Zero runtime content dependencies — the data layer is custom and typed
+This is the personal website of **Parsa Tak** — researcher, builder, programmer, writer, and artist. It presents the work in one place: AI systems, reasoning and evaluation, software engineering, and creative technology. The site itself is also a project: it is built as a static-first Next.js application that demonstrates how far a static export can go before it needs a server.
 
-## High-refresh strategy (2.2)
+Everything a visitor and every search crawler receives is pre-rendered HTML. There is no server runtime, no database, and no client-rendered content gate: the homepage's full semantic content — identity, capabilities, featured work, method, systems, writing, and links — ships in the initial HTML.
 
-The target is 120 Hz-class smoothness **where the display supports
-it** — never a guaranteed frame-rate claim:
+## Why it exists
 
-- **Delta-time simulation.** Every animated system advances by frame
-  timestamps, never per-frame constants; extreme deltas are capped
-  after tab switches. Motion is near-identical at 60/90/120/144 Hz.
-- **Refresh-rate estimation.** `RedMagic` derives the display's native
-  rate from its fastest sustained `requestAnimationFrame` interval and
-  judges itself relative to it — a 60 Hz panel holding 60 keeps full
-  quality; a 120 Hz panel losing a third of its frames is demoted.
-- **Hysteresis.** Quality changes require sustained windows (2 bad to
-  demote, 3 clean to promote) plus a cooldown, so tiers never
-  oscillate.
-- **Frame-budget hygiene.** Zero steady-state allocation in hot loops
-  (cached sprites/gradients, quantised bounded colour-string cache),
-  RAF-coalesced pointer input, CSS-first animation everywhere else.
-- **Honest telemetry.** The RED MAGIC console reports measured frame
-  rate against the measured refresh rate and the active quality tier.
-  It never claims "120 FPS achieved".
+The site has three jobs. First, it is the professional index of the work: every project, article, and experiment is reachable from a public, permanent URL. Second, it is an engineering demonstration: static export, crawlability, performance budgets, accessibility, and verification gates are all treated as first-class features rather than afterthoughts. Third, it is the substrate for RED MAGIC, a long-running computational-organism experiment that needed a real website as its host.
 
-## Motion system (2.2)
+## What you will find here
 
-One transition vocabulary, defined as CSS custom properties in
-`app/globals.css` (MICRO/SHORT/MEDIUM/LONG durations + easings +
-stagger unit):
+### Work
+The **Work scene** (the `#work` hash scene) is the full portfolio: projects with their repositories, categories, and real destinations. The homepage carries the featured subset.
 
-- **Reveal system.** Elements opt in with `data-reveal`; a single
-  IntersectionObserver controller (`components/MotionReveal.tsx`,
-  mounted once per route tree) marks them revealed with deterministic
-  grid-position stagger. One-shot, self-draining, zero rAF loops.
-- **No-JS safety.** The hidden state exists only under a pre-paint
-  `reveal-js` class; without JavaScript nothing is ever hidden.
-- **Scene transitions.** Outgoing scenes fade through the transition
-  layer; incoming scenes settle with a keyed one-shot animation; the
-  organism pulses once per scene change.
-- **Blog filtering.** Cards enter with grid-position stagger; cards
-  that survive a filter keep their state; new matches fade in via the
-  same observer (no exit-animation framework).
-- **Reduced motion.** Every reveal and transition degrades to a
-  minimal crossfade with no travel; the organism keeps only its
-  slowest breathing layers.
+### Research
+The **Systems scene** (`#systems`) presents the framework family — AI Instructions, REP (Reasoning & Evaluation Protocol), and USEF (Unified System Evolution Framework) — plus the measurement programme behind UHIT/AIST. The **Library scene** (`#library`) hosts longer-form documents and PDFs.
 
-## Interaction law (2.4)
+### Writing
+The **blog** is real content, not a stub: markdown articles under `content/blog/` become fully static `/blog/<slug>/` routes with generated metadata, related-article graphs, and structured data. The homepage's Writing section links the strongest articles, selected on the server at build time.
 
-Every visible affordance must tell the truth:
+### RED MAGIC
+RED MAGIC is the site's living-layer experiment: a canvas-based computational organism with adaptation, perception, and visible state. It is deliberately **not** part of the critical path — visitors receive a CSS-only seed first, and the organism loads at idle time only when motion is permitted and the device can afford it.
 
-- **Buttons act, links navigate.** A `<button>` performs a UI action
-  (state change, modal, filter); navigation destinations are real
-  `<a>`/`<Link>` elements. No clickable `<div>`s where a semantic
-  button or link exists.
-- **No dead affordances.** An element with hover motion, an arrow
-  glyph, or a "link" shape must navigate somewhere real. Cards
-  without destinations are informational panels and carry no
-  hover-lift/arrow affordance (see `data-linked` / `data-article`
-  scoping in the Work and Systems scenes).
-- **Full-card links.** Where a card's summary and its destination
-  coincide, the whole card is one link (no nested `<a>` inside
-  `<a>`) — Home system rows, the Systems AI-INSTRUCTIONS module,
-  and the linked Work project cards (RED MAGIC → the Magic scene;
-  UHIT, RED THEORY, and AI SYSTEMS → their field-notes articles,
-  with plain anchors carrying the deployment basePath explicitly).
-- **No untruthful status text.** Loading/error surfaces only claim
-  what the code actually offers (the ERROR phase suggests a reload
-  because that is the real recovery path).
-- **Keyboard parity.** Every newly-linked card has a
-  `:focus-visible` outline in the site's quiet outline language.
+## Key projects
 
-## Responsive navigation (2.6.1)
+| Project | What it is | Where |
+| --- | --- | --- |
+| **SHEYTAN** | A local-first AI laboratory: managed llama.cpp (local LLM runtime) inference, a real agent loop, isolated coding workspaces, objective verification | [GitHub repository](https://github.com/Parsaetak/SHEYTAN-local-agent) + [field notes](https://parsaetak.github.io/WEB/blog/sheytan-the-local-first-laboratory/) |
+| **UHIT** | The Universal Human Intelligence Test — measurement programme realised as the AIST-2026.09 standard and the ASI-100-Elite benchmark | [Specifications](https://github.com/Parsaetak/Contents/tree/AI-Tests) + [article](https://parsaetak.github.io/WEB/blog/measuring-machine-intelligence/) |
+| **FreeIran** | Free, open-source VPN configuration manager for Windows: a Go multi-core runtime that discovers, tests, maintains, and runs public proxy configurations | [GitHub repository](https://github.com/Parsaetak/FreeIran) + [engineering notes](https://parsaetak.github.io/WEB/blog/freeiran-engineering-notes/) |
+| **RED MAGIC** | The living canvas organism experiment hosted by this website | [Live experiment](https://parsaetak.github.io/WEB/#magic) + [article](https://parsaetak.github.io/WEB/blog/why-the-website-is-a-living-system/) |
+| **WEB** | This website itself — a statically exported living system | [This repository](https://github.com/Parsaetak/WEB) + [how it works](https://parsaetak.github.io/WEB/blog/the-anatomy-of-a-fast-static-site/) |
 
-One navigation system, two honest modes, switched by viewport
-capability (media queries only — no user-agent detection):
+## Experience architecture
 
-- **Compact mode (≤860px — phones and narrow portrait tablets).**
-  The horizontal scene track stands down and a shared
-  `CompactMenu` island appears in the HUD (world shell) or the blog
-  header: one 44px trigger expanding a dark panel with the scene
-  list, BLOG, and GITHUB. Real buttons and links only —
-  `aria-expanded` / `aria-controls` / `aria-haspopup` on the
-  trigger, `aria-current="page"` on the active entry. Opening
-  focuses the active entry; Arrow keys / Home / End rove focus;
-  Escape closes and restores the trigger; pointer-down outside
-  closes; selecting an entry always closes; Tab-past closes. No
-  scroll locking, ever. Motion is opacity + transform through the
-  global motion tokens and collapses under `prefers-reduced-motion`.
-- **Full mode (>860px).** The desktop scene track and the
-  full header rows render exactly as before — tablet landscape and
-  desktop keep the existing navigation untouched.
-- **Blog header parity.** The blog header uses the same compact
-  mode; GITHUB rides inside the menu on phones, BLOG stays visible
-  as the working area control, and safe-area insets join the
-  ≤760px header widths on both shells.
-
-## Text style rule (2.4)
-
-One editorial rule, applied site-wide and enforced by
-`verify-seo.mjs` on the exported HTML:
-
-- **Short UI / labels** (kickers, buttons, nav, status chips,
-  uppercase metadata, stacked display headings): no terminal `.`.
-- **Full prose sentences** (body copy, article text): normal
-  punctuation.
-- **Technical values / versions / statuses**: the component's
-  intended format.
-
-## Brand & asset system (2.9)
-
-The site's identity mark is a **mathematically exact 13-point star** —
-the regular star polygon `{13/5}`, generated in polar coordinates
-(13 outer + 13 inner vertices, 26 alternating vertices, 360/26°
-angular step, inner radius `R · cos(5π/13)/cos(4π/13)`). It is never
-hand-drawn: `scripts/generate-brand.mjs` is the single source of the
-geometry, and `scripts/verify-brand.mjs` re-proves every emitted path
-mathematically (vertex angles, exact radii, 13-fold rotational
-symmetry, byte-identical geometry across colour variants).
-
-### Identity law
-
-- **13-point star = Parsa Tak / site identity** — world-shell HUD,
-  blog header, footer, loading surface, favicon set, OG artwork.
-- **Red Eye = RED MAGIC** — the artistic system experience, now
-  rendered only inside the RED MAGIC scene (its sigil) and article
-  context. The two identities are never merged.
-
-### Asset layers
-
-- `assets/` is the canonical, documented source of truth
-  (`brand/`, `icons/`, `illustrations/`, `social/`, plus
-  `brand/manifest.json` and `assets/README.md` conventions).
-- `public/brand/` + `public/images/projects/` are byte-identical
-  runtime copies; `verify-brand.mjs` fails if the layers drift.
-- Generated outputs are committed — builds never require a hidden
-  local step. Generators: `generate-brand.mjs` (stars, glyphs,
-  favicon SVG), `generate-project-art.mjs` (project diagrams),
-  `generate-brand-raster.py` (favicon PNG/ICO, Apple touch icon,
-  OG images).
-
-### Runtime rules
-
-- The logo is a static asset referenced by URL (`lib/brand.ts`),
-  never an inline React component — no hydration for a logo.
-- Decorative renderings are `aria-hidden`; accessible names live on
-  the wrapping link. Project artwork carries descriptive alt text,
-  intrinsic 1200×630 dimensions, and lazy loading below the fold.
-- Weight budgets are enforced: star SVGs ≤ 6KB, glyphs ≤ 4KB,
-  project diagrams ≤ 8KB, OG PNG ≤ 300KB.
-- The favicon family lives in `public/` (`icon.svg`, `icon.png`,
-  `favicon.ico`, `apple-icon.png`) and is linked via explicit
-  `metadata.icons` — deterministic in every build mode.
-
-## SEO architecture (2.3)
-
-Principle: **technical SEO improves machine understanding without
-damaging human understanding.** No keyword walls, no hidden text, no
-SEO-only sections — every signal corresponds to real content, and
-all of it is generated at build time into static HTML (no client
-SEO framework, no backend).
-
-### Canonical strategy
-
-- One canonical base for the whole site: `metadataBase =
-  https://parsaetak.github.io/WEB/` (absolute, HTTPS, stable,
-  `/WEB`-aware).
-- Every indexable route emits exactly one canonical URL: `/`,
-  `/blog/`, and each `/blog/<slug>/` — absolute, trailing-slash,
-  production host. Hash scenes are interaction states of `/`, never
-  separate documents; concepts that deserve indexing get real
-  `/blog/<slug>/` routes instead.
-- Root-relative metadata URLs resolve against `metadataBase`; only
-  article-page `<img>` srcs are basePath-prefixed (by the blog
-  pipeline, which mirrors `next.config.ts`).
-
-### Entity identity (lib/seo.tsx)
-
-One coherent entity model for the whole site, emitted once in the
-root layout as a `@graph` of `Person` + `WebSite`:
-
-- `Person` @id `…/WEB/#person` — name, URL, description, `sameAs`
-  (selected from `lib/links.ts` profile URLs only — nothing
-  invented; contact channels are deliberately excluded).
-- `WebSite` @id `…/WEB/#website` — references the Person as
-  author/publisher.
-- Route-specific objects interlock through these @id anchors
-  instead of redefining entities: home adds `WebPage`, `/blog/` adds
-  `Blog` (with `BlogPosting` stubs whose @ids match the article
-  graphs), articles add `BlogPosting` + `BreadcrumbList`.
-- Article `BlogPosting` carries headline, description, url, real
-  `datePublished`/`dateModified` (from the content model — ISO
-dates, never manufactured), author/publisher (Person @id + name),
-  cover image, keywords, wordCount, articleSection, inLanguage.
-  `BreadcrumbList` mirrors the real navigation: Home → Blog →
-  article.
-
-### Sitemap + robots
-
-Both are generated from the SAME content index that produces
-the routes (`scripts/build-blog.mjs`) — there is no separately
-maintained URL list:
-
-- `public/sitemap.xml`: `/`, `/blog/`, every `/blog/<slug>/`.
-  `lastmod` is the article's own `updated ?? date` (the blog index
-  reflects the newest article date); the home route omits `lastmod`
-  rather than fake freshness. No priority/changefreq speculation.
-- `public/robots.txt`: standard directives only (`User-agent: *`,
-  `Allow: /`, `Sitemap:` absolute production URL). CSS/JS/images
-  stay crawlable.
-- **No RSS.** v2.5 removed the feed from the product and the
-  pipeline entirely — no route, no autodiscovery link, no metadata,
-  no build output. `verify:seo` positively verifies the ABSENCE of
-  any feed artifact or reference. Discovery happens through the
-  sitemap, the internal link graph, and social metadata.
-
-Generated SEO files are committed (like posts.json/sitemap.xml) and
-regenerated on every build; the workflow validates them after the
-export.
-
-### Social previews
-
-- Every route emits `og:image` + `twitter:card` metadata. Articles
-  use their cover; home and blog index use `public/og-default.png`
-  (1200×630).
-- Cover convention: each `public/blog/images/<name>.svg` cover has
-  a PNG twin at the same path (1200×630) — social crawlers render
-  PNG, not SVG. The build validates the twin exists and fails
-  loudly otherwise; the twin path is exposed as `cover.ogSrc`
-  (root-relative, metadata-only) in posts.json.
-- Image URLs in metadata are production-absolute under
-  `metadataBase`; JSON-LD images are explicitly absolute.
-
-### Identity keywords (2.4)
-
-SHEYTAN and "Red illuminati" are legitimate identity terms for this
-project (claimed marks / artistic labels). They are integrated
-truthfully and sparsely:
-
-- **SHEYTAN** — one mention in the site `<meta name="keywords">`,
-  one in the `Person` entity description (as part of the real
-  framework/experiment family). It corresponds to a mark claimed in
-  `TRADEMARKS.md`.
-- **Red illuminati** — one mention in the site keywords and one
-  visible tag on the RED MAGIC article (which the term actually
-  labels). It appears in the article's visible tag list, JSON-LD
-  `keywords`, and Open Graph `article:tag` — all generated from the
-  same single source of truth.
-- **Never** as hidden text, off-screen text, opacity-0 keyword
-  blocks, or repeated dozens of times. Every term names something
-  the site actually presents.
-
-### Verification
-
-`npm run verify:seo` (scripts/verify-seo.mjs, zero dependencies)
-inspects the EXPORTED artifacts after `next build`: exactly one
-`<title>` per route, meta descriptions, canonical/og URLs
-(production HTTPS, `/WEB`-aware), JSON-LD parses with expected
-types, article dates/author match the content index, sitemap URL
-set equals the exported route set, robots references the sitemap,
-RSS absence everywhere (no feed.xml, no autodiscovery, no
-references), no `localhost` / `/blog/undefined`
-anywhere — plus, since 2.4, an **interaction audit** (no `href="#"`,
-no empty `href`, no `javascript:` URLs, and every root-relative
-href resolves to an exported route) and a **text-QA audit** (no
-uppercase label-style text ending in a terminal period). Since 2.9,
-`verify-seo.mjs` also proves the **Google Search Console
-verification meta tag** on every canonical page (exact token,
-context-preserved — the build fails if it disappears or changes),
-the complete **favicon family** (SVG + 192px PNG + multi-size ICO +
-180px Apple touch icon, all linked from the home head), and the
-presence of the generated brand assets in the export. CI runs it
-on every deploy.
-
-The site is Search-Console-ready (sitemap submission, URL
-inspection, rich-results testing), but indexing itself is a
- crawler-side decision that happens after deployment.
-
-## Architecture
-
-### World shell (scenes)
-
-The home experience is a single route (`/`) driven by hash-based scene
-routing inside `components/LivingShell.tsx`:
-
-- `SceneRegistry` renders the active scene through `next/dynamic`
-- `ScenePreloader` owns **the only dynamic import site per scene** —
-  the registry's lazy components resolve through the same loader, so
-  scene chunks exist exactly once and never download twice
-- `SceneUrlSync` keeps scenes and browser history in sync
-- `SceneLoadingScreen` exposes honest load phases
-  (`INITIALIZING / LOADING / PREPARING / READY / ERROR`) and never
-  fakes progress percentages
-- `WorldBackground` (CSS ambient), `RedCursor` (native CSS cursor),
-  and `MotionReveal` (the one reveal observer) are mounted once from
-  the shell
-
-### Blog (routes)
-
-`/blog/` and `/blog/<slug>/` are real statically exported routes:
-
-- `app/blog/layout.tsx` — shared shell (background, cursor, reveal
-  controller, header, footer)
-- `app/blog/page.tsx` — index: featured article + search/tag island
-- `app/blog/[slug]/page.tsx` — article pages with full metadata,
-  Open Graph/Twitter cards, JSON-LD `BlogPosting`, prev/next and
-  the tiered related-articles section
-- `components/blog/BlogIndex.tsx` — the only client island on the
-  index; it receives article **metadata only** (no HTML bodies)
-- **Context chips + deep-link filters (2.5.2).** Every article
-  header renders its `project` and `topics` as real links into a
-  pre-filtered index (`/blog/?project=…`, `/blog/?topic=…`). The
-  index reads those parameters as external URL state
-  (`useSyncExternalStore` — no effect-time setState, no hydration
-  mismatch), combines them with search and tag filters under AND
-  semantics, ignores unknown values, and shows the active
-  dimensions as removable chips; clearing rewrites the URL with
-  `replaceState` so shareable links never lie.
-- Related content: a build-time deterministic relationship graph
-  (see "Related content model (2.5)" below) — no runtime scoring
-- Reading motion: build-time reveal choreography on article blocks,
-  a reading-progress instrument, and the organism's reading-focus
-  mood (see "Reading motion system (2.5)" below)
-
-Ordering law: posts are sorted date-descending with **slug-ascending
-as the deterministic tiebreak**, so the September 10, 2026 edition
-(all articles share one date) can never reorder randomly.
-
-### Related content model (2.5)
-
-Related articles are computed ONCE at build time by a deterministic
-scoring model — no ML, no runtime work, no randomness:
-
-1. **Explicit relationships** (frontmatter `related:`) are
-   author-guaranteed and always come first, in the author's order.
-   They are validated: unknown slugs, self-links, and duplicates fail
-   the build with the file and the reason.
-2. **Scored candidates** then fill the set (up to six related
-   articles when the catalogue allows). A candidate qualifies only
-   through a real relevance signal — never recency alone:
-   - shared tags ×3 each (capped at three)
-   - same category ×4
-   - same `project` ×3
-   - shared `topics` ×2 each (capped at three)
-   - shared significant terms from title/subtitle/excerpt/topics
-     (stopword-filtered, plural-folded, ×1 each, capped at four)
-   - recency: a bounded tie-break (≤1 point) that can only reorder
-     already-qualified candidates
-3. The article page splits the set into two readable tiers:
-   **primary** cards (author-explicit or scored ≥ 8, with excerpt,
-   category, date, reading time) and **secondary** compact rows.
-   Nothing is shown that a human would not understand.
-
-Optional frontmatter (all non-mandatory, all build-validated):
-
-- `related: ["slug-a", "slug-b"]` — guaranteed connections
-- `project: "project-name"` — the system the article belongs to
-- `topics: ["topic", "topic"]` — editorial subject tags beyond the
-  public `tags`
-
-### Internal link graph (2.5)
-
-Every internal link in article content is validated at build time:
-
-- `/blog/<slug>/` must exist, and an optional `#fragment` must match
-  a real heading id of the target article
-- `/#<scene>` must match a real hash scene of the world shell
-- external links must use `https://` (never `http`, never localhost)
-- root-relative links must NOT repeat the deployment base path —
-  content is written root-relative; the pipeline adds the base
-
-Anchor text is descriptive ("REP's reasoning protocol", "the OWASP
-Top 10 for LLM Applications") — no "click here", no keyword stuffing:
-links exist where a reader would genuinely want to follow them.
-External links point at primary sources only (official documentation,
-standards bodies, the canonical repository).
-
-The export verifier closes the loop (2.5.2): every in-page
-`href="#section"` on an exported page must match a real `id` in that
-same document — a heading rename that breaks a deep-link is now a
-build failure, not a silent dead anchor.
-
-### Reading motion system (2.5)
-
-Reading is animated through the SAME one-observer philosophy as the
-rest of the site (MotionReveal) — no new observers, no scroll loops:
-
-- **Build-time choreography.** The blog pipeline annotates every
-  top-level article block with `data-reveal` and a chunked
-  `data-reveal-order` that restarts at every h2 — a section enters
-  as heading first, supporting content settling after (orders 1–4,
-  capped). Paragraphs rise, blockquotes settle laterally, code fades
-  with a slower ramp, figures scale in, rules simply fade.
-- **Solo batches skip stagger.** The controller applies stagger only
-  when several elements intersect together; a paragraph scrolling in
-  alone never waits for a delay that was meant for a grid.
-- **Reading progress.** `components/ReadingProgress.tsx` is a 2px
-  fixed bar driven by `transform: scaleX()` — geometry is measured
-  once per layout event (never per frame), the scroll handler is
-  rAF-coalesced and reads only `scrollY`, and the same controller
-  publishes `--reading-progress` + `data-reading` on `<html>`.
-- **Reading focus organism mood.** With `data-reading` set, the
-  WorldBackground pulls wisps/sparks/particles below their archive
-  base — the article owns the reader's attention; leaving article
-  pages restores the ambient mood. Opacity-only, existing 1.6s
-  transitions smooth both directions.
-- **Image parallax.** Figure images drift ±2.2% (±0.8% on small
-  screens) via CSS scroll-linked animation (`animation-timeline:
-  view()`), using the independent `translate` property so it composes
-  with reveal transforms. Browsers without support — and
-  reduced-motion users — simply get static images.
-- **Route settle.** `app/blog/template.tsx` gives every incoming
-  blog page one quiet opacity settle; navigation is never delayed.
-- **Table of contents (2.5.1).** `components/blog/ArticleToc.tsx`
-  turns the build-time `headings` data into a fixed right-rail
-  instrument (≥1280px, geometry chosen so it can never overlap the
-  860px content column) and a native `<details>` disclosure on
-  smaller screens. ONE IntersectionObserver scroll-spies the active
-  section; clicks smooth-scroll (reduced-motion aware); without JS
-  the links remain ordinary anchors.
-- **Print (2.5.1).** A full print stylesheet: screen chrome
-  (organism, header, progress bar, TOC, navigation blocks) steps
-  aside and the article prints as a clean document, with external
-  link URLs surfaced after their anchors.
-- **Heading anchors (2.5.2).** Every h2–h4 renders a server-side
-  `#` self-link (build time, zero JS). It appears on heading
-  hover/focus and stays quietly visible on touch devices; headings
-  that themselves contain a link skip the anchor (no nested `<a>`).
-  All heading levels now carry `scroll-margin-top`, so anchored
-  landings (TOC clicks, off-site section links) clear the fixed
-  header at every level — previously only h4 did.
-- **Code block instruments (2.5.2).** Generated fences are wrapped
-  in `.code-block`: the box carries the frame and a build-time
-  `data-language` label (pure CSS `::after`), while a silent
-  `CodeCopy` island (`components/blog/CodeCopy.tsx`) adds one COPY
-  button per block after hydration — clipboard API with a legacy
-  fallback, "COPIED" feedback, no re-renders. Both instruments pin
-  to the wrapper, so wide code scrolls UNDER them instead of
-  carrying them away; without JS the code is untouched and fully
-  readable.
-- **Back to top (2.5.2).** A circular control fixed to the
-  bottom-right corner (safe-area aware on mobile) appears past 12%
-  reading progress. It reuses the progress controller's rAF tick —
-  visibility is one data-attribute write in the same frame as the
-  bar, no second loop — and its scroll honors
-  `prefers-reduced-motion`.
-- **Keyboard article navigation (2.5.3).** `J` follows the NEXT
-  link, `K` follows PREVIOUS — the same adjacent-article data the
-  visible nav renders, passed as props so the island cannot drift.
-  Keys are ignored while typing and with modifiers held; navigation
-  goes through the App Router (same client-side transition as
-  in-site links). The visible affordance is server-rendered
-  `aria-hidden` keycap hints inside the nav labels; on touch devices
-  the hints leave the labels entirely.
-- **Copy-link instrument (2.5.3).** The article tags row reserves a
-  right-hand actions slot; the `ShareLink` island docks a quiet COPY
-  LINK button into it after hydration (no button exists without JS).
-  It copies the live URL — including any heading hash the reader
-  chose to share — with the same COPIED/FAILED feedback vocabulary
-  as the code-copy instrument. Hidden in print.
-- **Search hotkey (2.5.3).** On the blog index, `/` jumps focus into
-  the search field (scroll-into-view, reduced-motion aware), Escape
-  inside it clears and blurs. The input carries
-  `aria-keyshortcuts="/"`; a decorative keycap chip sits beside it.
-- **Category accents (2.5.3).** The three categories carry a
-  deterministic color code — systems stays on the brand red,
-  research is amber, engineering is teal — applied through
-  `data-category` attributes and `currentColor` dots on index cards,
-  related cards/rows, and the article header. Color is always
-  decorative: the category name is spelled out beside the dot, and
-  print re-points the accents at neutral ink.
-- **"Referenced by" reverse link graph (2.5.4).** The build scans
-  every article's rendered HTML for internal `/blog/<slug>/` links
-  and inverts the graph into a `linksHere` index. Articles with
-  inbound prose links render a REFERENCED BY section — compact rows
-  (red ↩ glyph, accent-dotted category, title, reading time) — so a
-  two-way relationship becomes discoverable in both directions and
-  the internal link graph a search engine walks is also one a reader
-  can walk. Deterministic order, runtime-validated, print-hidden.
-- **Inbound-reference badges (2.5.5).** The same validated graph,
-  surfaced at a glance: every blog-index card shows a quiet
-  "↩ N" badge (red glyph, muted count, tooltip + screen-reader text)
-  next to the reading time, and every article header carries an
-  "↩ N" pill that fragment-links to its REFERENCED BY section
-  (`#referenced-by` — build-verified like every fragment, landing
-  below the fixed header, hidden in print where the section does
-  not exist). Zero JS — the counts ride the server-rendered data.
-- **Shared-signal hints (2.5.5).** Related articles explain WHY they
-  are related: the scorer now emits the strongest concrete overlaps
-  behind each scored entry (project, then tags, then topics, then
-  significant terms — the same authority order as the weights,
-  capped at 3), rendered as one quiet mono hint line on primary
-  cards and compact rows ("↔ verification · systems-thinking").
-  Author-curated frontmatter picks are marked "★ author-curated"
-  instead — provenance, honestly labeled. Plain text, never links.
-- **Reader text-size control (2.5.7).** The reading column bends to
-  the reader: a three-step instrument (A− / A / A+) docks into the
-  article tags row beside COPY LINK (after hydration only — without
-  JS there is no control and no promise). It writes a single CSS
-  custom property (`--reader-scale`, 0.95 … 1.2) that the article
-  body and headings multiply — one variable, nothing else on the
-  site consumes it, so the preference cannot leak outside the
-  article. The choice persists in localStorage (guarded like the
-  audio settings, re-validated on read), the range ends disable
-  their buttons instead of looping, a visually hidden live region
-  announces each step, and the reset button marks the calibrated
-  default. Print hides the whole slot, as before.
-- **Enter-to-open search (2.5.7).** A type-and-go search now ends
-  the way a reader expects: Enter inside the search field opens the
-  top visible result — the keyboard twin of clicking the first
-  card. It rides the index's existing "/" handler (no new listener
-  budget), stands down during IME composition and modified
-  keystrokes, and only fires while focus is genuinely in the field.
-  An "↵" keycap hint joins "/" in the search wrap (both hidden on
-  touch devices), and the "?" reference documents the shortcut on
-  the index route.
-- **Keyboard shortcuts dialog (2.5.4).** A fixed "?" trigger
-  (bottom-left, after hydration only — without JS there is no button
-  and no promise) opens a native `<dialog>` listing the shortcuts
-  that work on the current route: J/K article navigation on articles,
-  `/` search focus on the index, `?` itself, Escape. The platform
-  provides focus trapping, Escape, backdrop dismissal, and focus
-  restoration; the entrance transition is gated behind
-  `prefers-reduced-motion: no-preference`; print hides it. The J/K,
-  `/`, and `?` handlers share one `isTypingTarget` guard
-  (`lib/keyboard.ts`) so no single-key shortcut ever fires while the
-  reader is typing.
-- **Reduced motion / no-JS / SEO.** All hidden states exist only
-  under the pre-paint `reveal-js` class; reduced motion removes
-  travel and stagger; the static HTML always contains the complete
-  article — animations are presentation, never a gate.
-
-### Data pipeline
+The whole site is one route with six hash-navigated scenes, wrapped in a persistent "world shell":
 
 ```
-content/blog/*.md  (source of truth)
-  scripts/build-blog.mjs
-    → PARSE frontmatter
-    → VALIDATE (fail loudly: file + reason)
-    → RENDER markdown → HTML (escaped, subset)
-    → NORMALIZE (reading time, covers, basePath-aware URLs)
-    → INDEX (tags, categories, related, links-here, prev/next)
-    → PRECOMPUTE (per-post search haystack for the client island)
-    → EMIT data/blog/posts.json + public/sitemap.xml (same route source)
-  lib/blog.ts (server-side typed access layer — imports posts.json)
-    → app/blog/* pages (metadata as serialized props, article HTML
-      rendered into static HTML at build time)
-  lib/blogFormat.ts (client-safe: types + formatters, imports nothing)
-    → components/blog/BlogIndex.tsx
+one canonical URL ( / )
+├── #home      ← statically rendered into the HTML (crawlable)
+├── #about     ← lazily loaded scene
+├── #systems   ← lazily loaded scene
+├── #magic     ← lazily loaded scene (RED MAGIC)
+├── #work      ← lazily loaded scene
+└── #library   ← lazily loaded scene
+/blog/          ← real routes, one static page per article
 ```
 
-**Client boundary law:** `data/blog/posts.json` is server-side only.
-Client blog components import from `lib/blogFormat.ts` exclusively, so
-no article body ever ships in a client bundle. The island filters
-against the build-time `search` haystack instead of re-deriving it per
-keystroke.
+Scene changes are URL-addressable (`#systems` is a shareable state), handled by the shell's navigation, and never produce separate documents — only the blog earns separate indexable routes.
 
-The Library follows the same build-once shape: the manifest is synced
-from [Parsaetak/Contents](https://github.com/Parsaetak/Contents)
-(branch `Projects`) during CI, validated in the workflow, and
-normalized exactly once at module scope in `lib/contentRepository.ts`.
+## Technical architecture
 
-### Resource store and memory policy
+- **Next.js 16** (App Router, Turbopack builds) with **React 19** and **TypeScript**
+- **Static export** (`output: "export"`) — the entire site compiles to plain files in `out/`
+- **GitHub Pages** hosting behind the `/WEB` basePath, deployed by GitHub Actions
+- Server components pick content at build time; client components receive only minimal serializable props
+- Blog bodies exist only in generated static HTML — never in client JavaScript bundles
+- Zero runtime dependencies beyond React/Next; the build, blog, brand, and verification tooling is dependency-free Node.js
 
-`lib/resourceStore.ts` is the single async resource manager with an
-explicit lifetime policy:
+## Repository structure
 
-- `immutable` (default) — build-stamped data; retained until LRU eviction
-- `short-lived` — refreshable metadata; requires `staleAfter` TTL
-- `transient` — prediction/preload scratch; requires `staleAfter`
+```
+app/                 routes: home, blog index, blog articles, 404
+components/          world shell, scenes, navigation, RED MAGIC systems
+components/scenes/   the six scene components (HomeScene is static)
+content/blog/        markdown article source (frontmatter + body)
+lib/                 data access, SEO graph, brand, schedulers, links
+scripts/             build-blog, brand generators, verification suite
+data/blog/           GENERATED posts.json (never edited by hand)
+public/              static assets: brand art, icons, sitemap, robots
+assets/              brand system source (star variants, glyphs, social)
+.github/workflows/   the Pages deployment pipeline
+out/                 GENERATED static export (deployed artifact)
+```
 
-Guarantees: in-flight deduplication, failure cleanup with safe retry,
-abort-aware entry dropping, TTL expiry sweeps, LRU bounding
-(`RESOURCE_STORE_MAX_ENTRIES`), explicit invalidation, and
-`releaseSettledResources()` for memory-pressure degradation.
-Observability via `getResourceStoreStats()` (hits / misses / evictions
-/ expiries, bounded counters only).
+## Blog/content pipeline
 
-### Background scheduler
+`scripts/build-blog.mjs` runs before every build:
 
-`lib/backgroundScheduler.ts` is the ONE coherent queue for all
-non-urgent work (scene preload prediction lives there today):
+1. **Parse** markdown + frontmatter from `content/blog/*.md`
+2. **Validate** records and the relationship graph (a malformed article fails the build with the file and reason)
+3. **Render** a trusted markdown subset to fully escaped HTML
+4. **Normalize** reading time, cover URLs, and link base paths
+5. **Index** tags, categories, related articles (explicit `related` frontmatter plus a deterministic scoring model), and prev/next adjacency
+6. **Emit** `data/blog/posts.json` (content + indexes) and `public/sitemap.xml`
 
-- tasks carry `id` (dedup), `priority` (USER_NAVIGATION / NEAR_TERM /
-  PREDICTIVE / BACKGROUND), and `owner` (wholesale cancellation)
-- one idle pump executes at most one task per idle gap, then yields
-- hidden tab → pump suspended; visible → resumed automatically
-- save-data / 2G / constrained device memory drop speculative tasks
-  at enqueue time — core work is never degraded
-- user intent always wins: scene changes cancel the previous owner's
-  speculative queue before anything new is considered
+The sitemap is generated from the **same** content index that produces the routes, so it can never disagree with the site. `lastmod` values come from the articles' own dates — freshness is never faked.
 
-Scene prediction (`components/ScenePreloader.tsx`) is a small
-deterministic frequency heuristic over recent transitions with
-hit/miss counters (`getScenePredictionStats()`). Scene chunks are
-code-split exactly once and cached intentionally (cheap code, not
-runtime state).
+## SEO
 
-### Living organism (WorldBackground)
+- Every canonical route ships exactly one `<title>`, meta description, canonical link, Open Graph image, and robots directive
+- JSON-LD structured data: `Person` + `WebSite` anchors in the root layout, plus `WebPage`, `Blog`, `BlogPosting`, and `BreadcrumbList` on the right routes — all cross-referenced by `@id`, never duplicated
+- Google Search Console ownership meta tag emitted once per route and byte-verified on every build
+- `sitemap.xml` + `robots.txt` generated and verified against the actual export
+- Social metadata (OG/Twitter) with stable, production-absolute image URLs
+- RSS is **intentionally absent** — the export must contain no feed and no residual feed references, and verification enforces that
 
-The global background is ONE continuous living system with layered
-looped timescales — all compositor-friendly CSS animation:
+`scripts/verify-seo.mjs` checks all of the above against the generated HTML in `out/` — the same artifacts crawlers receive.
 
-- MICRO — particles / sparks (6–17 s, per-element phase offsets)
-- SHORT — energy wisps (31–61 s, alternating directions, phase-shifted)
-- MEDIUM — orbital rings (34–82 s, mixed directions, phase-shifted)
-- LONG — atmospheric masses + aura (28–57 s)
-- HEART — core + nucleus breathing (8.5–19 s)
-- EVENT — transition pulse + click ripples (controller-triggered)
-- RESONANCE (2.2) — two energy-scaled heartbeat-echo rings; invisible
-  while calm, hidden on low quality and reduced motion
+## Brand system
 
-Coherence and state flow through one attribute set on the root
-(`data-scene` mood, `data-quality` tier, `data-hidden`, `data-reduced`)
-plus shared CSS variables (`--organism-energy`,
-`--organism-pointer-x/y`) written by a single self-suspending rAF
-controller in `lib/worldSignals.ts` + `WorldBackground.tsx`. The
-controller writes CSS custom properties only (transform/opacity
-consumers), allocates nothing per frame, and stops entirely when the
-organism settles — a calm organism costs zero JavaScript per frame.
+- The **13-point star** is the primary site identity: favicon family (SVG + PNG + ICO + Apple touch), hero mark, and brand assets — all generated by `scripts/generate-brand.mjs` and `scripts/generate-brand-raster.py`
+- The **Red Eye** belongs to RED MAGIC and is used within that system's surfaces
+- Glyph library and project artwork are generated, deterministic, and verified: CI regenerates them and fails if anything drifts
+- Source assets live in `assets/`; runtime assets ship from `public/`
 
-Scene moods (home balanced / about calmer / systems structured / magic
-high energy / work focused / library + blog archival) are static
-attribute selectors — no remount, no per-frame cost. Layer groups
-declare their mood base through `--mood-opacity`, and the shared
-energy modulates the whole field around that base, so interaction
-visibly wakes the organism as ONE system. Hidden tabs pause the whole
-organism; `prefers-reduced-motion` keeps the slowest breathing layers
-at reduced amplitude and disables interaction layers (calm, not dead).
-Quality tiers (low / medium / high) trim peripheral layers on
-constrained devices while preserving identity.
+## Performance architecture
 
-### Loading priorities
+The loading strategy is static-first with intent-gated enhancement:
 
-Defined in `lib/loadPhase.ts`:
+```
+static HTML + CSS seed
+→ hydration of the shell
+→ idle time / interaction
+→ heavy enhancement (canvas organism, secondary scenes)
+```
 
-- **P0** critical — shell, current scene, essential CSS
-- **P1** near-critical — most probable next scene (after first idle)
-- **P2** predictive — adjacent previous scene (after second idle)
-- **P3** background — secondary metadata (nothing schedules this yet)
-- **P4** user-triggered — PDFs / audio / video; **never** loaded
-  without explicit intent
+- The **home scene is statically imported** — its content is the initial HTML, never behind a Suspense gate
+- The five **secondary scenes are dynamically imported** one at a time, on navigation
+- The **RED MAGIC organism loads at idle** and only when reduced-motion, save-data, and memory constraints allow; otherwise the CSS seed stays permanently
+- Motion is CSS-first (transform/opacity), driven by one shared IntersectionObserver with one-shot reveals — no per-frame React state, no scroll listeners
+- Images carry intrinsic dimensions, lazy-load below the fold, and use stable static URLs
+- Blog route payloads are prefetched on intent (hover/focus), not automatically
 
-Background preloading is bounded, skips hidden tabs, and respects
-`save-data` / 2G connections.
+## Accessibility
 
-## Blog content policy (2026 edition)
+- Semantic HTML: one `<h1>` inside `<main>`, real headings, real links and buttons, landmark structure
+- Full keyboard operability for menus, scenes, and interactive surfaces; visible focus states
+- `prefers-reduced-motion` is honoured everywhere — reveals flatten and the heavy organism never mounts
+- Without JavaScript, content stays fully visible: the reveal system hides nothing unless its pre-paint gate class is present
+- Decorative visuals are `aria-hidden`; icon-only controls carry accessible names
 
-The five September 10, 2026 foundation articles — `date` and
-`updated` set to `2026-09-10` — are written around one thesis: **AI
-supplies capability, Will supplies direction, Systems convert the two
-into execution.** Each has a distinct purpose (reasoning
-frameworks / AI Instructions architecture / living-interface
-philosophy / time architecture / constraint-first system building),
-draws its factual claims about the 2026 AI landscape from attributed
-public sources, and separates FACT from ANALYSIS from POSITION in
-the text. The AI Instructions article summarises the canonical
-source `Parsaetak/Contents@AI-frameworks/Ai-instructions-Sep2026.md`
-and links to it.
+## Local development
 
-The four v2.6.1 articles (September 12, 2026) extend the same
-convention to the actual public project ecosystem, one article per
-`project`: **Measuring Machine Intelligence** (project `uhit` — the
-AIST-2026.09 / ASI-100-Elite-2026.09 specifications in
-`Parsaetak/Contents@AI-Tests`), **Red Theory and the Living Web**
-(project `red-theory` — the five-dynamics model, with the honest
-boundary that the demonstrated instance is this repository),
-**SHEYTAN: The Local-First Engineering Laboratory** (project
-`sheytan-local-agent` — the public v1.1.5Z repository, including its
-stated slower-than-llama.cpp native-engine status), and **FreeIran
-Engineering Notes** (project `freeiran` — the v0.5.0 Go repository).
-Every project claim in these articles is checkable in the linked
-public repository; nothing is claimed beyond what the repositories
-and this codebase demonstrate. The Work scene's project cards route
-to the matching field-notes article where a real destination exists
-(see Interaction law) — project → article, article → project
-context, article → related article, through the one deterministic
-related-content system.
-
-## Writing an article
-
-1. Create `content/blog/<slug>.md` (slug: lowercase kebab-case).
-2. Frontmatter requires `title`, `excerpt`, `date` (YYYY-MM-DD),
-   `author`, `category` (kebab-case), and optionally `subtitle`,
-   `description`, `updated`, `tags`, `featured`, `cover`
-   (`src` under `/blog/images/`, `alt`, `width`, `height`), plus the
-   relationship metadata `related`, `project`, and `topics`
-   (see "Related content model (2.5)").
-3. If the cover is an SVG, commit a 1200×630 PNG twin at the same
-   path (`<name>.png`) — the build fails without it because
-   `og:image` needs a crawler-renderable format. The twin is used
-   for social metadata only; the visible page keeps the SVG.
-4. Markdown subset supported: `##`–`####` headings, paragraphs,
-   **bold**, *italic*, `` `code` ``, fenced code blocks, links,
-   images, blockquotes, lists, `---` rules.
-5. Internal links point at real routes (`/blog/<slug>/`, `/`,
-   `/#scenes` for scenes) with descriptive anchors — the build
-   validates `/blog/…` links against known slugs AND heading
-   fragments, `/#…` links against real scenes, and fails on any
-   dead link, http:// external URL, or repeated base path.
-6. Run `npm run build` (or `npm run blog`). A malformed article fails
-   the build with the file and reason.
-7. Commit the article and the regenerated
-   `data/blog/posts.json` / `public/sitemap.xml`.
-
-Generated files (`data/blog/posts.json`, `public/sitemap.xml`) are
-committed so a fresh clone works
-immediately; CI regenerates them on every build, so production never
-serves a stale hand-edited copy.
-
-## Development
+Requires Node.js 22+ (the version GitHub Actions uses).
 
 ```bash
-npm ci                # install
-npm run dev           # blog pipeline + next dev (http://localhost:3000)
-npm run lint          # eslint
-npm run blog          # regenerate blog data only
-npm run build         # blog pipeline + static export into out/
+npm install
+npm run dev
 ```
 
-The deployment environment is detected via `GITHUB_ACTIONS=true`
-(→ `basePath: "/WEB"`), mirroring `next.config.ts` and
-`scripts/build-blog.mjs`.
+`npm run dev` regenerates blog data first, then serves at `http://localhost:3000` with no base path.
 
-## Deployment
+## Production build
 
-`.github/workflows/deploy.yml`: checkout → Node 22 + caches →
-`npm ci` → Pages setup → Library manifest sync + validation →
-blog content validation (posts.json + sitemap + no feed) → Next.js
-build → static SEO verification (`verify-seo.mjs`) → brand asset
-verification (`verify-brand.mjs`, plus a generator determinism
-re-run: regenerating the asset system must change nothing) → export
-verification (blog routes, sitemap, robots, og image present, feed
-absent; sitemap URL count matches article count) → deployment
-manifest → Pages artifact → deploy → deployed-revision verification.
+```bash
+npm run build
+```
+
+Runs the blog pipeline, then `next build`, producing the static export in `out/`. Locally the export uses root-relative URLs; in CI (`GITHUB_ACTIONS=true`) every href carries the `/WEB` base path — the deployment target's shape.
 
 ## Verification
 
 ```bash
-npm ci
-npm run lint
-npm run build
-npm run verify        # verify:seo + verify:brand, both against real artifacts
-npm run verify:seo    # static SEO checks against out/
-npm run verify:brand  # mathematical star geometry + asset system coherence
-npm run brand         # regenerate the SVG asset system (deterministic)
-npm run brand:raster  # regenerate favicon rasters + OG images (Pillow)
-ls out/blog/ out/blog/<any-slug>/ out/sitemap.xml out/robots.txt
+npm run verify
 ```
+
+Runs the two gates CI enforces:
+
+- `verify:seo` — static SEO/export verification against `out/` (page metadata, structured data, homepage crawlability, writing links, interaction anchors, link graph, sitemap, robots, RSS absence, favicon family, brand assets)
+- `verify:brand` — brand asset coherence and determinism
+
+Both read only generated artifacts, so they check what actually ships.
+
+## Deployment
+
+GitHub Actions (`.github/workflows/deploy.yml`) deploys `main` to GitHub Pages:
+
+Pages source check → dependencies → Library manifest fetch + validation → blog pipeline validation → `next build` → SEO verification → brand verification (with regeneration/drift check) → static export validation → deployment manifests → Pages upload → deploy → live revision probe.
+
+The pipeline is concurrency-gated and verifies the deployed revision is publicly observable before reporting success.
+
+## For developers and AI agents
+
+Read this section before changing anything. It is the safety net that keeps the site's guarantees intact.
+
+**Source of truth (edit these):**
+`app/` (routes and metadata) · `components/` (shell, scenes, systems) · `lib/` (data access, SEO, brand, schedulers) · `content/blog/` (articles) · `scripts/` (pipeline, generators, verification)
+
+**Generated (never hand-edit):**
+`data/blog/posts.json` · `public/sitemap.xml` · `public/brand/` and `public/images/projects/` (regenerate with `npm run brand`) · `out/` (build artifact)
+
+**Static export:**
+`out/` is the whole site. If a change works in `next dev` but breaks the export, the export is right and the change is wrong — `npm run build && npm run verify` decides.
+
+**Deployment base:**
+`/WEB`. Determined in three mirrored places — `next.config.ts`, `scripts/build-blog.mjs`, and `scripts/verify-seo.mjs` — all keyed off `GITHUB_ACTIONS === "true"`. If you add href-building code, derive the prefix from `NEXT_PUBLIC_BASE_PATH` or the existing `BASE_PATH` constants; never hard-code `/WEB` a second time.
+
+**Critical invariants:**
+- Home is statically crawlable: one `<h1>` inside `<main>`, full semantic content in the visible HTML, no Suspense loading gate
+- Secondary scenes remain lazy; the home scene never regresses to a dynamic import
+- RED MAGIC and its subsystems stay out of the critical path (CSS seed → idle import)
+- Client components must not import `lib/blog` (it contains article HTML); they receive metadata as serializable props via `lib/homeWriting`
+- The Google verification meta tag must remain byte-exact; canonical URLs use production `/WEB` URLs
+- RSS is intentionally absent — do not add a feed or references to one
+- The 13-point star is the site identity; the Red Eye belongs to RED MAGIC
+- The SEO verifier requires ≥3 crawlable, resolvable article links on the home route, detected in a base-path-aware way
+
+**Verification law:** a change is not done until `npm run build` and `npm run verify` pass and the generated `out/` has been inspected.
+
+## Project status
+
+- Next.js 16.3.4 / React 19.2.8 / TypeScript 5.9, static export, Node 22 in CI
+- 9 published articles; the Writing section links them from the homepage
+- Full verification suite green: SEO + brand gates pass on every build
+- Known limitations: GitHub Pages serves the site under `/WEB`, so the bare root URL redirects; hash-scene states are not individually indexable documents by design (articles carry the indexable concepts)
+
+## Licence
+
+Original design, writing, artwork, and creative materials are licensed under the terms of [`LICENSE.md`](LICENSE.md) — all rights reserved by Parsa Tak. Brand and trademark notices live in [`TRADEMARKS.md`](TRADEMARKS.md). Third-party runtime libraries are governed by their own licences.

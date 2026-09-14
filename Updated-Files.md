@@ -1,4 +1,86 @@
-# Updated-Files.md — WEB 3.0.0 Professional SEO, Content Graph, Readability, Performance & Interaction Upgrade
+# Updated-Files.md — WEB release history
+
+## Release: CI basePath fix + Next.js 16.3.4 upgrade (2026-09-14)
+
+Base commit: `e74b05a938366081a158c8c1a3462a2ca21abe8b` ("2026-09-14")
+
+### Root cause fixed
+
+CI failed on `e74b05a` with:
+
+```
+✗ home: expected ≥3 crawlable article links from the Writing section, found 0
+```
+
+`scripts/verify-seo.mjs` matched Writing links with a hard-coded
+`/blog/<slug>/` pattern. Under GitHub Pages the exported hrefs carry
+the `/WEB` basePath (`/WEB/blog/<slug>/`), so the check found 0 links
+in CI while the same build passed locally. The application itself was
+correct — the verifier was blind to the deployment shape.
+
+### Files changed
+
+- `scripts/verify-seo.mjs`
+  - Writing-link check rebuilt on the script's existing `BASE_PATH`
+    constant (single source of truth): detects article hrefs in both
+    shapes, keeps the ≥3 requirement, and now also verifies every
+    detected target resolves to a real exported article route
+    (rejects `/blog/undefined`, localhost, and stale slugs).
+  - Consolidated duplicated constants: the internal-link-graph audit
+    reuses `BASE_PATH` and the shared `SCENE_HASHES` set instead of
+    private copies.
+  - Extracted `toVisibleText()` (shared crawler-view projection) and
+    `verifyWritingLinks()`; document header now indexes the check
+    groups. `verifyHomeContent()` receives the already-collected
+    article routes instead of re-scanning the export.
+- `package.json` / `package-lock.json`
+  - `next` and `eslint-config-next` 16.3.3 → **16.3.4**. React stays
+    at 19.2.8 (no compatibility issue). Lockfile updated by npm.
+  - New `build:next` script (`next build` alone); `npm run build`
+    composes blog pipeline + `build:next`.
+- `.github/workflows/deploy.yml`
+  - The blog pipeline previously ran twice per build (validation step
+    and again inside `npm run build`). The validation step still runs
+    first and fails fast; the build step now runs `npm run build:next`
+    so the deterministic pipeline is evaluated once.
+  - Inline Library-manifest validation heredoc moved to
+    `scripts/validate-library-manifest.mjs` (same gate, now runnable
+    locally, clearer failure messages).
+- `components/scenes/HomeScene.tsx`
+  - Readability refactor, no markup/CSS/behavior change: extracted
+    `HomeSectionIntro`, `HomeProjectCard`, `HomeSystemItem` (also
+    deduplicates the anchor/Link branch), and `HomeWritingItem`.
+    Module comment states the static-render and import-boundary
+    laws; version-number chatter removed from comments.
+- `README.md`
+  - Rewritten as a project homepage for visitors, recruiters/clients,
+    developers, and AI agents (architecture invariants, source-of-
+    truth map, verification law). Detailed historical releases remain
+    in this file and worklog.md.
+- `worklog.md`
+  - Added Law 66 (Base-Path Verification) and Law 67 (Single Pipeline
+    Evaluation).
+
+### Verified
+
+- CI-mode export: `GITHUB_ACTIONS=true npm run build` then
+  `node scripts/verify-seo.mjs` → 100 checks passed, Writing links
+  detected and resolved (`/WEB/blog/…`).
+- Local-mode export: same without the env var → passes.
+- `npm run lint` → 0 errors (16 pre-existing intentional
+  `no-img-element` warnings; images are unoptimized by design under
+  static export).
+- Home critical-path JS: 11 chunks, unchanged mass (≈643 KB raw,
+  Turbopack, uncompressed on-disk) — no secondary scene, no RED MAGIC
+  subsystem, no blog body in the initial graph (verified by scanning
+  the loaded chunks).
+- Clean-room check: archive extracted to an empty directory, fresh
+  `npm install`, build, lint, verify all pass; `next` resolves to
+  16.3.4 in the extracted copy.
+
+---
+
+# WEB 3.0.0 Professional SEO, Content Graph, Readability, Performance & Interaction Upgrade
 
 ## Release
 
