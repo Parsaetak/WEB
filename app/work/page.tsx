@@ -392,7 +392,7 @@ export default function WorkPage() {
               {
                 label: "About Parsa Tak",
                 href: "/about/",
-                note: "The researcher and builder behind the systems",
+                note: "Who I am, how I work, and what I build",
                 external: false
               }
             ]}

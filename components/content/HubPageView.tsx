@@ -22,7 +22,7 @@ import styles from "@/components/content/content.module.css";
  * HUB PAGE VIEW (v3.1) — the shared renderer for the six topic hubs.
  *
  * Every hub renders the same honest structure: H1 + lead, what
- * Parsa Tak actually works on in the area, the systems built here,
+ * I actually work on in the area, the systems built here,
  * genuinely related field notes, related destinations, and a next
  * exploration path. All content comes from the hub's definition in
  * lib/hubs.ts — real site material only, nothing fabricated.
@@ -31,6 +31,19 @@ import styles from "@/components/content/content.module.css";
  * component owns the document structure once, so hubs can never
  * drift apart structurally.
  */
+
+/*
+ * Topic name in mid-sentence casing: lowercase every word except
+ * acronyms (AI), so the focus section title reads naturally —
+ * "What I work on in local AI", "What I work on in AI reasoning".
+ */
+function topicInSentence(topic: string): string {
+  return topic
+    .split(" ")
+    .map((word) => (word === "AI" ? word : word.toLowerCase()))
+    .join(" ");
+}
+
 export default function HubPageView({ hub }: { hub: HubDefinition }) {
   const metaList = getBlogMetaList();
 
@@ -73,7 +86,7 @@ export default function HubPageView({ hub }: { hub: HubDefinition }) {
         crumbs={crumbs}
         lead={hub.lead}
       >
-        <Section title={`What Parsa Tak works on in ${hub.topicName.toLowerCase()}`}>
+        <Section title={`What I work on in ${topicInSentence(hub.topicName)}`}>
           <FocusList items={hub.focus} />
         </Section>
 

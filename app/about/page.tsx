@@ -31,8 +31,8 @@ import styles from "@/components/content/content.module.css";
  * /about/ — the entity/author page (v3.2, ProfilePage).
  *
  * The first screen answers the four questions a professional profile
- * must answer immediately: who Parsa Tak is, what he builds, what he
- * researches, and how someone can work with him. The document then
+ * must answer immediately: who I am, what I build, what I research,
+ * and how to work with me. The document then
  * walks the full identity in order: what I do, how I work (the
  * research → product direction → architecture → implementation →
  * testing → verification → delivery pipeline), research, engineering,
@@ -259,25 +259,25 @@ export default function AboutPage() {
         crumbs={crumbs}
         activeHref="/about/"
         lead={[
-          `${AUTHOR_TAGLINE} He builds local-first AI systems and the frameworks that govern them — the SHEYTAN local-agent laboratory, the UHIT/AIST machine-intelligence measurement programme, the FreeIran VPN manager, and this website — and researches how intelligence systems can be structured, measured, and verified.`,
-          "The work follows one pipeline: research → product direction → architecture → implementation → testing → verification → delivery. Every system in that chain is public — the repositories, the specifications, the benchmarks, the writing — so the claims can be checked against the artifacts.",
-          "To work together — research collaboration on reasoning and evaluation, or an engineering engagement on AI systems and products — write to the email on the contact page or start from the Contact section below."
+          `${AUTHOR_TAGLINE} I build local-first AI systems and the frameworks that govern them — the SHEYTAN local-agent laboratory, the UHIT/AIST machine-intelligence measurement programme, the FreeIran VPN manager, and this website — and I research how intelligence systems can be structured, measured, and verified.`,
+          "My work follows one pipeline: research → product direction → architecture → implementation → testing → verification → delivery. Every system in that chain is public — the repositories, the specifications, the benchmarks, the writing — so the claims can be checked against the artifacts.",
+          "To work with me — research collaboration on reasoning and evaluation, or an engineering engagement on AI systems and products — write to the email on the contact page or start from the Contact section below."
         ]}
       >
         <Section title="What I do">
           <Prose>
             <p>
-              Three tracks, one practice. The research track asks how
+              Three tracks, one practice. In research, I ask how
               intelligence systems should be structured, measured, and
-              governed — and publishes its answers as frameworks and
-              specifications. The engineering track builds the systems those
+              governed — and publish the answers as frameworks and
+              specifications. In engineering, I build the systems those
               answers describe: local AI agents, network software, and this
-              statically engineered website. The product track turns both
+              statically engineered website. In product work, I turn both
               into things people can actually run — scoping the problem,
               shaping the interface, and carrying the work through delivery.
             </p>
             <p>
-              The tracks are deliberately not separated: a framework that has
+              I deliberately keep the tracks together: a framework that has
               never run a real task is a draft, a system without measurement
               is a demo, and a product without engineering is a landing page.
               {AUTHOR_RESEARCH_LINE}
@@ -288,11 +288,11 @@ export default function AboutPage() {
         <Section title="How I work">
           <Prose>
             <p>
-              One pipeline from research to delivery, applied to research
-              papers, products, and experiments alike. The stages are visible
-              in the repository history of every system below — direction
-              before architecture, testing before verification, verification
-              before shipping.
+              I work one pipeline from research to delivery, and I apply it
+              to research papers, products, and experiments alike. The stages
+              are visible in the repository history of every system below —
+              direction before architecture, testing before verification,
+              verification before shipping.
             </p>
           </Prose>
 
@@ -302,9 +302,9 @@ export default function AboutPage() {
         <Section title="Research">
           <Prose>
             <p>
-              Six areas carry the research. Each one has a topic hub on
-              this site — a real document that defines the area, lists
-              the systems built in it, and connects the related writing.
+              My research runs across six areas. Each one has a topic hub
+              on this site — a real document that defines the area, lists
+              the systems I built in it, and connects the related writing.
               The hubs are the fastest way into any part of the work, and
               the{" "}
               <a href={routeHref("/research/")}>Research page</a> maps them
@@ -332,7 +332,7 @@ export default function AboutPage() {
         <Section title="Engineering">
           <Prose>
             <p>
-              The engineering practice is easiest to describe through what
+              My engineering practice is easiest to describe through what
               the shipped systems enforce. The examples below are not
               aspirations — each one is a contract the public repositories
               and this website&#39;s own build pipeline demonstrate.
@@ -345,7 +345,7 @@ export default function AboutPage() {
         <Section title="Product building">
           <Prose>
             <p>
-              Product building is treated as a discipline of its own, not a
+              I treat product building as a discipline of its own, not a
               side effect of coding. The evidence is in the shipped products:
               each one states the problem it addresses, the audience it
               refuses to serve, and the decisions that kept it small enough
@@ -359,8 +359,8 @@ export default function AboutPage() {
         <Section title="Selected systems">
           <Prose>
             <p>
-              The most significant public systems, each documented in its
-              own repository or on this site. The full portfolio — what
+              The most significant systems I have shipped in public, each
+              documented in its own repository or on this site. The full portfolio — what
               each system addresses, why it matters, and where it lives —
               is collected on the{" "}
               <a href={routeHref("/work/")}>Selected Work page</a>.
@@ -395,7 +395,7 @@ export default function AboutPage() {
         <Section title="Current direction">
           <Prose>
             <p>
-              The near-term work continues along the same lines: deepening
+              My near-term work continues along the same lines: deepening
               the SHEYTAN agent loop (more governed tools, stronger
               verification gates), extending the UHIT/AIST measurement
               programme as an open specification, iterating the framework
@@ -425,7 +425,7 @@ export default function AboutPage() {
             </p>
             <p>
               Replication attempts, methodological criticism, and joint
-              evaluation work are all interesting; email is the fastest
+              evaluation work are all interesting to me; email is the fastest
               channel and every specification is linked from the{" "}
               <a href={routeHref("/research/")}>Research page</a>.
             </p>
@@ -435,15 +435,15 @@ export default function AboutPage() {
         <Section title="Business and engineering collaboration">
           <Prose>
             <p>
-              The same pipeline — research, product direction, architecture,
-              implementation, testing, verification, delivery — is available
-              for engagements: building AI systems and local agents,
+              The same pipeline I use everywhere — research, product
+              direction, architecture, implementation, testing, verification,
+              delivery — is available for engagements: building AI systems and local agents,
               evaluating models and systems, engineering fast static web
               products, or reviewing architecture before commitments harden.
             </p>
             <p>
               A useful first email names the problem, the constraints, and
-              the deadline; a short answer comes back quickly, including
+              the deadline; I answer quickly, including
               &quot;this is not a good fit&quot; when it is true. Start
               from the{" "}
               <a href={routeHref("/contact/")}>Contact page</a>.
@@ -454,8 +454,8 @@ export default function AboutPage() {
         <Section title="Writing">
           <Prose>
             <p>
-              Field notes from the laboratory: architecture stories,
-              engineering discipline, and the reasoning behind the
+              I write field notes from the laboratory: architecture
+              stories, engineering discipline, and the reasoning behind the
               frameworks. These five are the strongest starting points;
               the full catalogue lives in the{" "}
               <a href={routeHref("/blog/")}>blog</a>.

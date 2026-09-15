@@ -1326,7 +1326,7 @@ export default function LibraryScene() {
                           <p>
                             {
                               selected.description ??
-                              "An original work from the Parsa Tak archive."
+                              "An original work from my archive."
                             }
                           </p>
 

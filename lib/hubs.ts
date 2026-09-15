@@ -19,8 +19,8 @@ import {
  * repositories.
  *
  * Laws:
- * - No thin pages: every hub defines the topic, states what Parsa
- *   Tak actually builds in that area, lists real projects, links
+ * - No thin pages: every hub defines the topic, states what I
+ *   actually build in that area, lists real projects, links
  *   genuinely related articles, and offers a next exploration path.
  * - Article relationships must be real. An article appears on a hub
  *   only when its subject matter genuinely belongs there.
@@ -76,7 +76,7 @@ export type HubDefinition = {
   h1: string;
   /** Lead paragraphs directly under the H1. */
   lead: readonly string[];
-  /** "What Parsa Tak works on here" — titled focus areas. */
+  /** "What I work on here" — titled focus areas. */
   focus: readonly { title: string; body: string }[];
   projects: readonly HubProject[];
   articles: readonly HubArticleRef[];

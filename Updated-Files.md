@@ -1,5 +1,68 @@
 # Updated-Files.md — WEB release history
 
+## Release: v3.3 — First-Person Voice (2026-09-15)
+
+Mission: make all user-facing personal/author writing read as Parsa Tak
+speaking directly in first person, while preserving project/system voice,
+the SEO/entity architecture, static export, and every verification gate.
+Base version: v3.2 (package.json 3.2.0).
+
+### Voice rule applied
+
+- Personal self-description in visible prose → first person
+  ("I build…", "My research…", "I write…").
+- Projects/systems keep natural entity voice ("SHEYTAN runs…",
+  "FreeIran provides…").
+- SEO/entity surfaces stay technically correct third person: meta
+  titles/descriptions, ogAlt, Person/ProfilePage/JSON-LD, bylines,
+  legal lines, and the "Email Parsa Tak" CTA (asserted by verify-seo).
+
+### Files changed
+
+- `app/about/page.tsx` — lead and all body sections converted to
+  natural first person ("He builds… and researches…" → "I build… and I
+  research…", "The work follows" → "My work follows", "To work
+  together" → "To work with me", "The research track asks…" → "In
+  research, I ask…", etc.); module comment updated. Structure,
+  sections, facts, and ProfilePage JSON-LD unchanged.
+- `app/contact/page.tsx` — lead rewritten to first person ("I am an
+  independent software engineer… all reach me in one place…").
+- `components/content/HubPageView.tsx` — the six topic hubs' focus
+  section title is now "What I work on in <topic>" (was "What Parsa
+  Tak works on in <topic>"); new `topicInSentence()` helper lowercases
+  the topic for mid-sentence use while preserving the "AI" acronym
+  (also fixes the old "local ai" casing quirk).
+- `app/work/page.tsx` — About cross-link note is now "Who I am, how I
+  work, and what I build" (was "The researcher and builder behind the
+  systems").
+- `components/scenes/LibraryScene.tsx` — library preview fallback
+  description is now "An original work from my archive."
+- `lib/hubs.ts` — comments updated to the first-person reading; all
+  metaTitles/metaDescriptions untouched (SEO surface).
+- `README.md` — hub description updated; new "Site voice (v3.3)"
+  paragraph in the developer section documents the rule.
+- `worklog.md` — content-route invariant wording updated; v3.3 entry
+  added.
+- `package.json` — version 3.2.0 → 3.3.0.
+
+### Intentional third-person occurrences that remain
+
+Meta titles/descriptions and ogAlt across all routes; Person /
+ProfilePage / WebSite JSON-LD descriptions; bylines and the article
+author box; "Email Parsa Tak" CTAs; footer copyright, trademark, and
+legal lines; brand wordmarks in headers; historical changelog entries
+(v3.2 and earlier in this file, PUSH-NOTES.txt).
+
+### Verification
+
+`npm ci`, `npm run blog`, `npm run build`, `npm run lint`, and
+`npm run verify` (seo + brand + export) all pass. Exported HTML
+inspected directly: about and contact leads are first person, all six
+hubs render "What I work on in …", zero he/him/his matches in `out/`,
+JSON-LD/sitemap/canonical/base-path architecture unchanged.
+
+---
+
 ## Release: v3.2 — Professional Identity (2026-09-15)
 
 Mission: make the site read as the portfolio of an independent software

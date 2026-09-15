@@ -2290,7 +2290,7 @@ The site has two URL kinds and the distinction is permanent:
 Content-route invariants:
 
 - Every content route is a real, independently useful document:
-  definition, what Parsa Tak works on, real projects, genuinely
+  definition, what I work on, real projects, genuinely
   related articles, cross-links, next path. If a topic does not have
   real material, the hub is not created. Thin pages are worse than
   no pages.
@@ -2404,3 +2404,78 @@ Known limitations:
   labels; if the pipeline copy changes again, update those expectations.
 - The 404/_not-found mirrors do not render the shared footer (pre-existing).
 - Push to origin/main and Search Console re-crawl are owner actions.
+
+---
+
+## 2026-09-15 — v3.3 FIRST-PERSON VOICE
+
+Mission: make every user-facing personal/author surface read as Parsa
+Tak speaking directly in first person, while keeping project/system
+voice, the SEO/entity architecture, and all verification gates intact.
+
+Voice law (now also documented in README "Site voice"):
+- Personal self-description in visible prose → first person ("I
+  build…", "My research…", "I write…").
+- Projects and systems keep their natural entity voice ("SHEYTAN
+  runs…", "FreeIran provides…"); technical explanation is not forced
+  into first person.
+- Structured data and SEO surfaces stay in technically correct
+  third-person/entity form: meta titles/descriptions, ogAlt, Person /
+  ProfilePage / JSON-LD, bylines ("By Parsa Tak"), footer copyright
+  and trademark lines, and the visitor-facing CTA wording ("Email
+  Parsa Tak" — also asserted by verify-seo).
+
+Copy changes:
+- app/about/page.tsx — lead rewritten ("He builds… and researches…" →
+  "I build… and I research…"; "The work follows" → "My work follows";
+  "To work together" → "To work with me"); body sections converted
+  from impersonal to direct first person (What I do, How I work,
+  Research, Engineering, Product building, Selected systems, Current
+  direction, both collaboration sections, Writing); module comment
+  updated ("who I am, what I build, what I research, and how to work
+  with me"). Structure and all facts unchanged.
+- app/contact/page.tsx — lead rewritten ("Parsa Tak is an independent
+  software engineer…" → "I am an independent software engineer… all
+  reach me in one place…").
+- components/content/HubPageView.tsx — focus section title on all six
+  hubs: "What Parsa Tak works on in <topic>" → "What I work on in
+  <topic>", with a topicInSentence() helper that lowercases the topic
+  for mid-sentence use while preserving the "AI" acronym (fixes the
+  old "local ai" casing quirk); comment updated to match.
+- app/work/page.tsx — About cross-link note "The researcher and
+  builder behind the systems" → "Who I am, how I work, and what I
+  build".
+- components/scenes/LibraryScene.tsx — book-preview fallback
+  description "An original work from the Parsa Tak archive." → "An
+  original work from my archive."
+- lib/hubs.ts — type/law comments updated to the first-person reading
+  ("what I actually build in that area", "What I work on here").
+  metaTitles and metaDescriptions untouched (SEO surface).
+
+Intentional third-person occurrences that remain:
+- All meta titles/descriptions, ogAlt text, and og/twitter metadata.
+- Person / ProfilePage / WebSite JSON-LD descriptions (entity data).
+- Bylines and author boxes ("By Parsa Tak", AUTHOR_TAGLINE fragment),
+  the "Email Parsa Tak" CTAs, footer copyright/trademark/legal lines,
+  and the ContentShell/BlogHeader/LivingShell brand wordmark.
+- Historical changelog entries (Updated-Files.md v3.2 and earlier,
+  PUSH-NOTES.txt) — history is not rewritten.
+
+Docs and housekeeping:
+- README.md — hub description now reads "what I work on in the area";
+  new "Site voice (v3.3)" paragraph in the developer section records
+  the rule for future agents.
+- worklog.md — content-route invariant line updated to first person;
+  this entry added.
+- Updated-Files.md — v3.3 release entry added on top of the history.
+- package.json — version 3.2.0 → 3.3.0.
+
+Verification (all passing):
+- npm ci clean install; npm run blog → 21-URL sitemap unchanged;
+  npm run build → static export succeeds; npm run lint → 0 errors
+  (pre-existing warnings only); npm run verify → seo + brand + export
+  suites green in both plain and GITHUB_ACTIONS basePath modes.
+- Exported HTML inspected directly: about/contact leads are first
+  person; all six hubs render "What I work on in …"; zero he/him/his
+  matches across out/; JSON-LD ProfilePage/Person intact; "Email
+  Parsa Tak" CTA intact; /WEB base paths intact; sitemap unchanged.

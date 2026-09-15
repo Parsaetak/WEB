@@ -35,7 +35,7 @@ Beyond the living-world homepage, the site carries real indexable documents that
 - `/work/` — the canonical professional portfolio: every significant system with what it is, the problem it addresses, why it matters, and real destinations
 - `/research/` — the research programme: the questions, the six topic hubs as the research map, the framework family, the UHIT/AIST measurement programme, and selected research writing
 - `/contact/` — the single honest contact document: primary CTA **Email Parsa Tak** (resolved from `lib/links.ts`), secondary GitHub/LinkedIn, and the four collaboration types (academic/research, business/engineering, project collaboration, open technical collaboration). No form, no backend
-- `/local-ai/`, `/ai-systems/`, `/ai-reasoning/`, `/ai-evaluation/`, `/software-engineering/`, `/creative-technology/` — six topic hubs, each a self-contained document: topic definition, what Parsa Tak works on, the systems built in the area, genuinely related articles, and a next exploration path
+- `/local-ai/`, `/ai-systems/`, `/ai-reasoning/`, `/ai-evaluation/`, `/software-engineering/`, `/creative-technology/` — six topic hubs, each a self-contained document: topic definition, what I work on in the area, the systems built in the area, genuinely related articles, and a next exploration path
 
 The distinction between URL kinds is deliberate: a **real URL** (`/about/`, `/work/`, `/research/`, `/contact/`, hubs, blog) is an indexable document; a **hash** (`/#work`, `/#magic`) is an interactive scene state of the living world, not a separate page. Every content route is statically rendered from server components with zero route-specific client JavaScript — they are the lightest pages on the site.
 
@@ -233,6 +233,9 @@ Read this section before changing anything. It is the safety net that keeps the 
 - RSS is intentionally absent — do not add a feed or references to one
 - The 13-point star is the site identity; the Red Eye belongs to RED MAGIC
 - The SEO verifier requires ≥3 crawlable, resolvable article links on the home route, detected in a base-path-aware way
+
+**Site voice (v3.3):**
+All user-facing personal and author copy speaks in first person ("I build…", "My research…", "I write…") — the site is Parsa Tak speaking directly. The rule splits by subject: personal story is first person; projects and systems keep their natural entity voice ("SHEYTAN runs…", "FreeIran provides…"); structured data and SEO surfaces (meta descriptions, page titles, `Person`/JSON-LD, bylines, ogAlt) stay in technically correct third-person/entity form, as do legal attribution and CTA wording ("Email Parsa Tak"). Do not reintroduce he/him/his for Parsa in visible prose, and do not force first person into machine-readable entity data.
 
 **Verification law:** a change is not done until `npm run build` and `npm run verify` pass and the generated `out/` has been inspected.
 

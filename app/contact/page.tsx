@@ -89,7 +89,7 @@ export default function ContactPage() {
         crumbs={crumbs}
         activeHref="/contact/"
         lead={[
-          "Parsa Tak is an independent software engineer, product builder, and AI systems researcher. Inquiries about research collaboration, engineering engagements, project contributions, and open technical collaboration all reach the same place — and the fastest one is a direct email.",
+          "I am an independent software engineer, product builder, and AI systems researcher. Inquiries about research collaboration, engineering engagements, project contributions, and open technical collaboration all reach me in one place — and the fastest one is a direct email.",
           "There is no form and no backend on this page: contact is a plain mailto link you can see and verify, plus the public profiles where the work already lives."
         ]}
       >
