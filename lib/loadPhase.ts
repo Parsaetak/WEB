@@ -61,8 +61,13 @@ export const BACKGROUND_PRELOAD_BUDGET = 2;
 export const BACKGROUND_IDLE_TIMEOUT_MS = 1800;
 
 /*
- * Scene transitions faster than this never paint the loading overlay.
- * Preloaded (cached) scene chunks complete inside the minimum
- * transition window, so the overlay stays invisible for them.
+ * Grace period before the scene loading overlay may appear (v3.5).
+ *
+ * Scene transitions no longer carry a minimum duration. The overlay
+ * is shown ONLY when the destination module is genuinely still being
+ * fetched after this delay — warmed/cached scenes swap in before the
+ * next paint and never paint a loader. Keep this value in sync with
+ * the scene-variant transition delay in
+ * components/SceneLoadingScreen.module.css.
  */
 export const SCENE_OVERLAY_DELAY_MS = 180;

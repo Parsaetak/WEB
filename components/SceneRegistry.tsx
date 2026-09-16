@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState
 } from "react";
@@ -22,6 +23,7 @@ import type {
 } from "@/lib/homeWriting";
 
 import {
+  isSceneModuleReady,
   loadSceneModule
 } from "@/components/ScenePreloader";
 
@@ -98,21 +100,44 @@ const SCENE_COMPONENTS:
   library: LibraryScene
 };
 
-const MIN_TRANSITION_MS =
-  160;
+/*
+ * TRANSITION MODEL (v3.5) — requested → load → render when ready.
+ *
+ * There is NO minimum transition time. A timer can never make a
+ * transition feel faster; it can only make a ready destination feel
+ * slower. The two paths:
+ *
+ * FAST PATH — the destination module is already resident (warmed by
+ * hover/focus intent, predicted by the background preloader, or
+ * visited earlier in the session). The registry swaps it in inside a
+ * layout effect, i.e. BEFORE the browser paints the transitioning
+ * state: no blocking loader, no blank frame, no artificial wait.
+ * The keyed scene-enter host still plays its short settle animation,
+ * which is the visible "navigation pulse" of a cached transition.
+ *
+ * SLOW PATH — the module genuinely needs a network fetch. The current
+ * scene dips out through the transition layer while the request runs;
+ * the SceneLoadingScreen overlay fades in only after
+ * SCENE_OVERLAY_DELAY_MS, so a fetch that lands quickly never shows a
+ * loader, and one that lands slowly shows the honest loading surface
+ * (indeterminate signal motion around the 13-point star — never a
+ * fake percentage).
+ *
+ * RACE PROTECTION — the monotonic transitionId plus the effect
+ * cleanup keep rapid navigation correct: only the LATEST requested
+ * scene may commit, and a superseded load can never render.
+ */
 
-function wait(
-  milliseconds: number
-): Promise<void> {
-  return new Promise(
-    (resolve) => {
-      window.setTimeout(
-        resolve,
-        milliseconds
-      );
-    }
-  );
-}
+/*
+ * useLayoutEffect runs only on the client; the static prerender of
+ * this component never takes a transition (initial scene === rendered
+ * scene), so the effect body is a no-op during export. The
+ * isomorphic alias simply keeps React's server warning quiet.
+ */
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined"
+    ? useLayoutEffect
+    : useEffect;
 
 type SceneRegistryProps = {
   scene: SceneId;
@@ -147,7 +172,7 @@ export default function SceneRegistry({
   const transitioning =
     scene !== renderedScene;
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (
       scene === renderedScene
     ) {
@@ -157,26 +182,33 @@ export default function SceneRegistry({
     const currentTransitionId =
       ++transitionId.current;
 
-    let cancelled = false;
-
     /*
-     * P0 — the scene the user asked for. preloadScene deduplicates
-     * with any warming request already in flight.
+     * FAST PATH — destination already resident. Commit the swap in
+     * the layout-effect phase so the browser never paints a
+     * transitioning frame for a cached scene.
      */
-    const loadScene =
-      loadSceneModule(
+    if (
+      isSceneModuleReady(
+        scene
+      )
+    ) {
+      setRenderedScene(
         scene
       );
 
-    const minimumTransition =
-      wait(
-        MIN_TRANSITION_MS
-      );
+      return;
+    }
 
-    void Promise.allSettled([
-      loadScene,
-      minimumTransition
-    ]).then(() => {
+    /*
+     * SLOW PATH — P0 fetch of the requested scene. preloadScene
+     * deduplicates with any warming request already in flight.
+     * Render the moment the module lands; no timer is involved.
+     */
+    let cancelled = false;
+
+    void loadSceneModule(
+      scene
+    ).then(() => {
       if (
         cancelled ||
         currentTransitionId !==
@@ -216,6 +248,12 @@ export default function SceneRegistry({
       loading={
         transitioning
       }
+      /*
+       * v3.5: `loading` now means "the requested module is genuinely
+       * being fetched". On the fast path this flag never survives a
+       * paint, so the loading overlay stays invisible for cached
+       * destinations exactly as designed.
+       */
       /*
        * P0 (v3.0): the home scene is statically rendered — it must
        * not sit behind a Suspense boundary, or static export streams

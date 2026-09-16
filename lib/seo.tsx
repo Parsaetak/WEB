@@ -128,10 +128,12 @@ const PROFILE_URLS: readonly string[] = [
  * v3.2 positioning: jobTitle mirrors the home hero kicker
  * ("SOFTWARE ENGINEER · PRODUCT BUILDER · AI SYSTEMS RESEARCHER")
  * in plain, crawlable wording; knowsAbout lists the capability
- * vocabulary the home scene presents in its capabilities grid —
- * now including product building, which the shipped systems
- * (SHEYTAN's product decisions, FreeIran's packaging, this
- * website's design) demonstrate.
+ * vocabulary the site presents — the home capabilities grid plus
+ * the topic hubs (now including product building, which the shipped
+ * systems (SHEYTAN's product decisions, FreeIran's packaging, this
+ * website's design) demonstrate. Since v3.5 the home grid is exactly
+ * eight entries and "Creative technology" is backed by its
+ * /creative-technology/ hub and RED MAGIC presentations instead.
  */
 export function personEntity() {
   return {

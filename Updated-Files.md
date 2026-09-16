@@ -1,5 +1,133 @@
 # Updated-Files.md — WEB release history
 
+## Release: v3.5 — Fast Navigation (2026-09-16)
+
+Mission: clicking a navigation tab should feel immediate. The
+loading/navigation path is rebuilt around two honest paths — fast
+(warmed/cached destination renders before the next paint, no loader)
+and slow (genuine fetch keeps the current scene dipped and shows the
+viewport loading surface only when the fetch runs long) — plus a
+content consolidation on the home capabilities grid. Base version:
+v3.4 (package.json 3.5.0). No visual identity changed: the six hover
+identities, accents, geometry and labels of the v3.4 unified
+navigation are untouched.
+
+### Route loading — intent-based warming
+
+- `components/UnifiedSiteNav.tsx` — internal route links keep
+  `prefetch={false}` (nothing is fetched continuously, per site law)
+  but now warm ON INTENT: `pointerenter` + `focus` (desktop) and
+  `pointerdown` (touch/press) call `router.prefetch(href)` through a
+  single deduplicated entry point (a per-instance `Set`; a failed
+  warm evicts so a later intent can retry). Applies to both the
+  desktop track and the ≤860px disclosure menu; scene "action"
+  entries keep the existing immediate `onActionWarm` →
+  `preloadScene` contract. In the static export a warm costs one
+  small RSC payload text file per intended destination — verified in
+  the browser: hover on RESEARCH fetched `/research/__next.*.txt`,
+  the subsequent click re-fetched nothing and landed from the router
+  cache.
+- `components/blog/BlogHeader.tsx`, `components/content/ContentShell.tsx`
+  — no source change needed; they render the same `UnifiedSiteNav`
+  and inherit the warming contract through hydration.
+
+### Scene transitions — no artificial delay
+
+- `components/SceneRegistry.tsx` — REMOVED `MIN_TRANSITION_MS = 160`
+  and its `wait()` timer. Transition model is now
+  requested → load → render when ready. The effect became an
+  isomorphic layout effect: when `isSceneModuleReady(scene)` reports
+  the module resident, `setRenderedScene` commits inside the layout
+  phase — before the browser paints — so a cached scene never paints
+  a transitioning frame, a blank frame, or a loader. Otherwise the
+  module is fetched at P0 and rendered the moment it lands. The
+  monotonic `transitionId` + effect-cleanup race protection is
+  preserved: rapid navigation can only ever commit the latest
+  requested scene.
+- `components/ScenePreloader.tsx` — new synchronous readiness map
+  (`resolvedModules`) filled when an import promise resolves, and
+  the exported `isSceneModuleReady(scene)` predicate (home is always
+  ready — it ships in the main bundle). `preloadScene` keeps its
+  dedupe + failed-import eviction; successful imports now also
+  publish readiness for the registry's fast path.
+
+### Loading animation — layered, honest, alive
+
+- `components/SceneLoadingScreen.module.css` — scene variant is now
+  a lightweight transition surface instead of a wall: lighter
+  background with a red radial focus, a `--scene-overlay-delay`-driven
+  fade (in sync with `SCENE_OVERLAY_DELAY_MS`), and a new SIGNAL ARC
+  — a thin conic sweep orbiting the 13-point star (compositor-only
+  transform, scene variant only, boot gate identity unchanged) that
+  reads as transfer-in-motion rather than a spinner. No fake
+  percentage anywhere; the indeterminate bar stays. Under
+  `prefers-reduced-motion` the arc collapses to a static thin ring
+  and all fades go effectively instant.
+- `components/SceneLoadingScreen.tsx` + `lib/loadPhase.ts` —
+  documentation of the layered model
+  (intent → transfer → ready): the overlay is shown only when the
+  destination module is genuinely still being fetched after
+  `SCENE_OVERLAY_DELAY_MS`; warmed/cached transitions never paint
+  it. The overlay never blocks pointer interaction (unchanged).
+
+### Flash/jank audit (no code defects found, fast path hardened)
+
+- Single `sceneEnterHost` (no double scene mount), single
+  `sceneLoadingScreen` per viewport (no duplicate overlays), keyed
+  remount per rendered scene (no stale previous scene), overlay is
+  absolutely positioned (no layout shift), Suspense fallback rides
+  the same delayed-fade surface (no visible blank frame), and the
+  fast path swaps before paint so the slow-path animation never
+  penalises it. Verified in a real browser across first visit,
+  hover→click, rapid tab racing, back/forward, mobile menu, and
+  repeated navigation.
+
+### Content — capabilities 9 → 8
+
+- `components/scenes/HomeScene.tsx` — the visible capability set is
+  exactly eight objects (4 + 4 desktop grid; no orphan card, no CSS
+  hiding). "Creative technology" (09) was consolidated out: the
+  discipline already owns dedicated presentation surfaces — the
+  `/creative-technology/` topic hub and the RED MAGIC scene/article —
+  so the home grid repeated it without adding signal. It was chosen
+  over the alternatives because every other capability names work
+  with no separate home presentation.
+- `scripts/verify-seo.mjs` — the home required-phrase check swaps
+  "Creative technology" for "System architecture" (a grid term that
+  must remain visible), with a comment explaining the v3.5
+  consolidation.
+- `app/layout.tsx` — keywords keep "creative technology" (still
+  backed by the hub + RED MAGIC presentations); the keyword-
+  discipline comment now documents that the home grid is exactly
+  eight entries since v3.5.
+- `lib/seo.tsx` — `knowsAbout` keeps "Creative technology" (the
+  person still practises it and the hub presents it); comment updated
+  to name the topic hubs as its backing surface.
+- Grid math (`components/scenes/HomeScene.module.css`) needed no
+  change: desktop `repeat(4, minmax(0,1fr))` renders
+  [1][2][3][4]/[5][6][7][8]; ≤1100px two columns render four even
+  rows; the smallest breakpoint stacks one column. `min-height`
+  (not fixed height) means no text clipping at any width. Verified
+  computed column counts at 1440/900/390px with no horizontal
+  scroll.
+
+### Housekeeping
+
+- `package.json` — version 3.5.0.
+- `README.md` — navigation and performance architecture sections
+  document intent warming and the fast/slow transition model.
+
+### Verification
+
+- `npm ci` ✓ · `npm run blog` ✓ · `npm run build` ✓ (23 static
+  routes) · `npm run lint` ✓ (0 errors; pre-existing `<img>`
+  warnings only) · `npm run verify` ✓ (SEO + brand + export gates)
+- Browser navigation test pass: HOME/WORK/RESEARCH/WRITING/ABOUT/
+  CONTACT and SYSTEMS/RED MAGIC/LIBRARY all reach their destinations
+  with warmed-first loads; no console errors; no duplicate overlays;
+  no double mounts; back/forward and the ≤860px disclosure menu
+  behave.
+
 ## Release: v3.4 — Unified Navigation (2026-09-16)
 
 Mission: one navigation system for the whole website — every surface

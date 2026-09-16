@@ -39,7 +39,7 @@ Beyond the living-world homepage, the site carries real indexable documents that
 
 The distinction between URL kinds is deliberate: a **real URL** (`/about/`, `/work/`, `/research/`, `/contact/`, hubs, blog) is an indexable document; a **hash** (`/#work`, `/#magic`) is an interactive scene state of the living world, not a separate page. Every content route is statically rendered from server components — the document bodies ship as static semantic HTML with zero route-specific content JavaScript, and the shared navigation is each route's one small client island that still renders as complete server-side markup (crawlers and no-JS readers get the full navigation). They remain the lightest pages on the site.
 
-### Navigation (v3.4 — one system everywhere)
+### Navigation (v3.4, fast paths in v3.5 — one system everywhere)
 The site-wide navigation leads with the professional destinations and keeps the experimental world one click away:
 
 ```
@@ -48,6 +48,8 @@ WORLD:    SYSTEMS · RED MAGIC · LIBRARY   (quieter, contextual)
 ```
 
 One navigation system renders every surface: `components/UnifiedSiteNav.tsx` consumes `lib/navigation.ts` (the single source of truth) and drives the world HUD desktop track, the blog header, the content-shell header on every content document and topic hub, and their shared ≤860px disclosure menu — desktop and mobile are two responsive modes of the same component, same labels, same ordering, same accents, same active/focus language. The numbered HUD labels (`01 HOME` … `06 LIBRARY`) are gone: hierarchy is carried by spacing, typography, and active states. The six-scene world is unchanged internally — scene ids (`home / about / systems / magic / work / library`), hash routing, browser history, and hover-to-preload all behave exactly as before.
+
+v3.5 adds **intent warming** to the same component without touching its visual identity: pointer enter, focus, or pointer-down on an entry fetches its destination before the click commits. Scene actions preload their module immediately through `preloadScene` (unchanged contract, deduplicated by the scene preloader); internal route links prefetch their RSC payload once through `router.prefetch()` with viewport prefetch still disabled — nothing is fetched continuously and no heavy page asset is pulled, so a warmed tab click is a router-cache hit.
 
 Each primary tab also carries its own ~1-second hover identity, replayed on every re-enter: **HOME** ignites an orbit ring with a core flash · **WORK** sweeps a construction scanline over a building tick grid · **RESEARCH** expands staggered radar pings over a drawing data trace · **WRITING** sweeps a type caret as the ink line writes itself · **ABOUT** swings open an identity halo with an aura bloom · **CONTACT** radiates transmission ripples with an outbound packet. All effects are compositor-only (`transform`/`opacity`/`clip-path` on dedicated decorative layers — the label never moves), gated behind `(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)`, and collapse to static state changes under reduced motion.
 
@@ -157,6 +159,8 @@ static HTML + CSS seed
 
 - The **home scene is statically imported** — its content is the initial HTML, never behind a Suspense gate
 - The five **secondary scenes are dynamically imported** one at a time, on navigation
+- **Scene transitions have no minimum duration (v3.5)** — the registry renders the destination the moment its module is resident. A warmed/cached scene swaps in before the next paint (fast path, no loader ever painted); a genuinely slow fetch keeps the current scene dipped and shows the viewport loading surface only after `SCENE_OVERLAY_DELAY_MS` (slow path). Race protection keeps rapid navigation correct: only the latest requested scene may commit
+- **Route navigation warms on intent (v3.5)** — hover/focus/press prefetches the destination's RSC payload once (deduplicated); no continuous prefetching of every page
 - The **RED MAGIC organism loads at idle** and only when reduced-motion, save-data, and memory constraints allow; otherwise the CSS seed stays permanently
 - Motion is CSS-first (transform/opacity), driven by one shared IntersectionObserver with one-shot reveals — no per-frame React state, no scroll listeners
 - Images carry intrinsic dimensions, lazy-load below the fold, and use stable static URLs

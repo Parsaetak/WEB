@@ -10,6 +10,8 @@ import {
 
 import Link from "next/link";
 
+import { useRouter } from "next/navigation";
+
 import styles from "@/components/UnifiedSiteNav.module.css";
 
 /*
@@ -35,12 +37,20 @@ import styles from "@/components/UnifiedSiteNav.module.css";
  *
  * Entry kinds:
  * - "link":   a real destination. Internal routes render as
- *             next/link with prefetch disabled (routes load on
- *             intent, per site law; basePath is applied by Next).
- *             External links render as plain anchors.
+ *             next/link with viewport prefetch disabled (no page is
+ *             fetched continuously in the background, per site law);
+ *             instead v3.5 warms the route ON INTENT — pointer enter,
+ *             focus, or pointer-down fetches the destination's RSC
+ *             payload through router.prefetch() once, deduplicated,
+ *             so the click itself is a cache hit. Static-export
+ *             payloads are tiny text files; no heavy page assets are
+ *             pulled by warming. External links render as plain
+ *             anchors.
  * - "action": an in-shell interaction state (the world scenes),
  *             switched through onSelect with the same preloading
- *             contract as before (onActionWarm).
+ *             contract as before (onActionWarm — immediate, bypasses
+ *             the background scheduler, deduplicated by the scene
+ *             preloader cache).
  *
  * Accessibility contract (every surface):
  * - semantic <nav> with accessible names
@@ -100,6 +110,80 @@ export default function UnifiedSiteNav({
   onActionWarm,
   className
 }: UnifiedSiteNavProps) {
+  /*
+   * INTENT WARMING (v3.5) — the mechanism that makes clicking a tab
+   * feel immediate. Hover/focus/press on an entry fetches its
+   * destination BEFORE the click commits:
+   * - scene actions warm their module through onActionWarm
+   *   (preloadScene — immediate, deduplicated by the preloader).
+   * - internal route links warm through router.prefetch(), the
+   *   framework's own mechanism: in this static export it fetches
+   *   the route's RSC payload exactly once, and the client router
+   *   reuses the cache on navigation. Viewport prefetch stays off
+   *   (prefetch={false}), so nothing is fetched continuously and no
+   *   heavy page asset is pulled — warming costs one small text
+   *   file per intended destination.
+   */
+  const router = useRouter();
+
+  const warmedRoutes =
+    useRef<Set<string>>(new Set());
+
+  const warmRoute = useCallback(
+    (href: string) => {
+      if (
+        warmedRoutes.current.has(
+          href
+        )
+      ) {
+        return;
+      }
+
+      warmedRoutes.current.add(
+        href
+      );
+
+      /*
+       * router.prefetch is typed as void in the current Next types,
+       * but failures surface as promise rejections internally — wrap
+       * defensively so a failed warm evicts the entry and a later
+       * intent can retry. The click itself always navigates normally.
+       */
+      void Promise.resolve(
+        router.prefetch(href)
+      ).catch(() => {
+        warmedRoutes.current.delete(
+          href
+        );
+      });
+    },
+    [router]
+  );
+
+  const warmEntry = useCallback(
+    (entry: UnifiedNavEntry) => {
+      if (
+        entry.kind === "action"
+      ) {
+        if (!entry.active) {
+          onActionWarm?.(
+            entry.id
+          );
+        }
+
+        return;
+      }
+
+      if (
+        entry.kind === "link" &&
+        !entry.external
+      ) {
+        warmRoute(entry.href);
+      }
+    },
+    [onActionWarm, warmRoute]
+  );
+
   const primary = entries.filter(
     (entry) => entry.group === "primary"
   );
@@ -136,8 +220,8 @@ export default function UnifiedSiteNav({
                 entry={
                   entry
                 }
-                onActionWarm={
-                  onActionWarm
+                onWarm={
+                  warmEntry
                 }
               />
             )
@@ -162,8 +246,8 @@ export default function UnifiedSiteNav({
                 entry={
                   entry
                 }
-                onActionWarm={
-                  onActionWarm
+                onWarm={
+                  warmEntry
                 }
               />
             )
@@ -179,8 +263,8 @@ export default function UnifiedSiteNav({
         entries={
           entries
         }
-        onActionWarm={
-          onActionWarm
+        onWarm={
+          warmEntry
         }
       />
     </div>
@@ -193,21 +277,20 @@ export default function UnifiedSiteNav({
 
 function NavEntry({
   entry,
-  onActionWarm
+  onWarm
 }: {
   entry: UnifiedNavEntry;
-  onActionWarm?: (id: string) => void;
+  onWarm?: (entry: UnifiedNavEntry) => void;
 }) {
+  /*
+   * WARM ON INTENT (v3.5): pointerenter + focus cover the desktop
+   * contract (hover, keyboard); pointerdown covers touch — a finger
+   * pressing the tab fetches the destination during the ~100ms
+   * before the click event commits, with or without hover support.
+   * All three share one deduplicated entry point.
+   */
   const warm = () => {
-    if (
-      entry.kind ===
-        "action" &&
-      !entry.active
-    ) {
-      onActionWarm?.(
-        entry.id
-      );
-    }
+    onWarm?.(entry);
   };
 
   const body = (
@@ -277,6 +360,8 @@ function NavEntry({
     "aria-label": `Open ${entry.label}`,
     onPointerEnter:
       warm,
+    onPointerDown:
+      warm,
     onFocus: warm
   };
 
@@ -345,12 +430,12 @@ function NavMenu({
   menuId,
   label,
   entries,
-  onActionWarm
+  onWarm
 }: {
   menuId: string;
   label: string;
   entries: readonly UnifiedNavEntry[];
-  onActionWarm?: (id: string) => void;
+  onWarm?: (entry: UnifiedNavEntry) => void;
 }) {
   const [open, setOpen] =
     useState(false);
@@ -726,6 +811,18 @@ function NavMenu({
                       </>
                     );
 
+                  /*
+                   * WARM ON INTENT (v3.5) — the disclosure panel warms
+                   * exactly like the desktop track: pointerenter for
+                   * hover-capable pointers, focus for keyboard users,
+                   * pointerdown for touch. Scene actions preload their
+                   * module; internal links prefetch their route. One
+                   * deduplicated contract, no hover requirement.
+                   */
+                  const warm = () => {
+                    onWarm?.(entry);
+                  };
+
                   return (
                     <Fragment
                       key={
@@ -769,15 +866,15 @@ function NavMenu({
                                 ? "page"
                                 : undefined
                             }
-                            onPointerEnter={() => {
-                              if (
-                                !entry.active
-                              ) {
-                                onActionWarm?.(
-                                  entry.id
-                                );
-                              }
-                            }}
+                            onPointerEnter={
+                              warm
+                            }
+                            onPointerDown={
+                              warm
+                            }
+                            onFocus={
+                              warm
+                            }
                             onClick={() => {
                               entry.onSelect();
 
@@ -854,6 +951,15 @@ function NavMenu({
                             }
                             prefetch={
                               false
+                            }
+                            onPointerEnter={
+                              warm
+                            }
+                            onPointerDown={
+                              warm
+                            }
+                            onFocus={
+                              warm
                             }
                             onClick={
                               close

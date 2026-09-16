@@ -67,11 +67,14 @@
 }
 
 /*
- * Scene variant: an overlay inside the viewport that never blocks
- * interaction and never flashes for fast (preloaded) transitions.
- * The fade-in is delayed so cached scene chunks — which resolve
- * inside the minimum transition window — complete before the
- * overlay becomes visible.
+ * Scene variant (v3.5): a lightweight transition surface inside the
+ * viewport, not a blocking wall. It never blocks interaction and
+ * never appears for fast transitions: the fade-in is delayed by
+ * SCENE_OVERLAY_DELAY_MS, so warmed/cached scene chunks — which swap
+ * in before the next paint — never flash a loader. When a fetch
+ * genuinely runs long, the surface fades in quickly and cleanly
+ * (no slide, no scale on the panel itself) and communicates one
+ * honest state: intent → transfer → ready.
  */
 .sceneLoadingScreen[data-variant="scene"] {
   position: absolute;
@@ -81,20 +84,25 @@
   pointer-events: none;
 
   background:
+    radial-gradient(
+      circle at 50% 42%,
+      rgba(255, 32, 32, 0.05),
+      transparent 42%
+    ),
     rgba(
       5,
       5,
       6,
-      0.88
+      0.78
     );
 
   opacity: 0;
 
   transition:
-    opacity 160ms ease
-      180ms,
-    visibility 160ms ease
-      180ms;
+    opacity 200ms ease
+      var(--scene-overlay-delay, 180ms),
+    visibility 200ms ease
+      var(--scene-overlay-delay, 180ms);
 
   visibility: hidden;
 }
@@ -113,8 +121,8 @@
 
 .sceneLoadingScreen[data-variant="scene"][data-visible="false"] {
   transition:
-    opacity 120ms ease,
-    visibility 120ms ease;
+    opacity 140ms ease,
+    visibility 140ms ease;
 
   opacity: 0;
 
@@ -163,6 +171,59 @@
   height: 54px;
 
   margin: 0 0 14px;
+
+  position: relative;
+}
+
+/*
+ * SIGNAL ARC (v3.5) — the “transfer in motion” cue. A thin conic
+ * sweep orbits the 13-point star exactly once per cycle: the loading
+ * state reads as movement of the signal itself, not as a spinner and
+ * never as a fake percentage. Compositor-only (transform), and it
+ * exists only on the scene variant so the boot gate keeps its
+ * original identity.
+ */
+.sceneLoadingScreen[data-variant="scene"] .mark::after {
+  content: "";
+
+  position: absolute;
+
+  inset: -7px;
+
+  border-radius: 50%;
+
+  background:
+    conic-gradient(
+      from 0deg,
+      rgba(255, 32, 32, 0) 0deg,
+      rgba(255, 32, 32, 0) 288deg,
+      rgba(255, 70, 56, 0.85) 348deg,
+      rgba(255, 255, 255, 0.9) 360deg
+    );
+
+  mask-image:
+    radial-gradient(
+      circle at center,
+      transparent 0%,
+      transparent 62%,
+      black 66%,
+      black 100%
+    );
+
+  -webkit-mask-image:
+    radial-gradient(
+      circle at center,
+      transparent 0%,
+      transparent 62%,
+      black 66%,
+      black 100%
+    );
+
+  animation:
+    sceneLoadingScreenSignal
+    1.6s
+    linear
+    infinite;
 }
 
 .sceneLoadingScreen[data-variant="scene"] .meta {
@@ -570,6 +631,16 @@
   }
 }
 
+@keyframes sceneLoadingScreenSignal {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes sceneLoadingScreenProgress {
   0% {
     transform:
@@ -605,6 +676,26 @@
 
   .mark {
     animation: none;
+  }
+
+  /*
+   * The signal arc is motion: under reduced-motion it collapses to
+   * a static thin ring around the star (visible state, no sweep).
+   */
+  .sceneLoadingScreen[data-variant="scene"] .mark::after {
+    animation: none;
+
+    background:
+      radial-gradient(
+        circle at center,
+        transparent 62%,
+        rgba(255, 32, 32, 0.55) 66%,
+        rgba(255, 32, 32, 0.55) 100%
+      );
+
+    mask-image: none;
+
+    -webkit-mask-image: none;
   }
 
   .progress span {

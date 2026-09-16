@@ -127,6 +127,18 @@ const preloadCache =
     Promise<SceneModule>
   >();
 
+/*
+ * SYNCHRONOUS READINESS MAP (v3.5): modules whose import() promise has
+ * already resolved. SceneRegistry consults this map to take the fast
+ * transition path — a warmed or previously visited scene swaps into the
+ * viewport before the next paint instead of waiting on any timer.
+ */
+const resolvedModules =
+  new Map<
+    SceneId,
+    SceneModule
+  >();
+
 /* -------------------------------------------------------------------------- */
 /* Prediction history                                                         */
 /* -------------------------------------------------------------------------- */
@@ -279,7 +291,18 @@ export function preloadScene(
   /*
    * Failed imports are evicted so a later attempt can retry —
    * a network hiccup once must not disable a scene forever.
+   * Successful imports land in the readiness map so the registry
+   * can render them synchronously on the fast path.
    */
+  promise.then(
+    (module) => {
+      resolvedModules.set(
+        scene,
+        module
+      );
+    }
+  );
+
   promise.catch(
     () => {
       preloadCache.delete(
@@ -289,6 +312,29 @@ export function preloadScene(
   );
 
   return promise;
+}
+
+/*
+ * True when the scene module is already resident — preloaded by a
+ * warming request, visited earlier in the session, or statically
+ * bundled (home). The registry uses this to distinguish the FAST
+ * path (render immediately, before paint) from the SLOW path
+ * (fetch, then render; overlay only if the fetch is genuinely slow).
+ */
+export function isSceneModuleReady(
+  scene: SceneId
+): boolean {
+  /*
+   * The home scene ships inside the main bundle (static import in
+   * SceneRegistry), so it can always render without suspense.
+   */
+  if (scene === "home") {
+    return true;
+  }
+
+  return resolvedModules.has(
+    scene
+  );
 }
 
 /*

@@ -2591,3 +2591,118 @@ Verification (all passing):
   restores the trigger, entry click navigates + menu auto-closes;
   hover state transitions verified (color + underline); focus-visible
   accent verified; no console errors.
+
+## 2026-09-16 — v3.5 Fast Navigation (route warming, zero-delay transitions, capabilities 9→8)
+
+Task ID: 1 (single-agent run)
+Scope guard: v3.4 unified navigation preserved byte-for-byte in
+visual identity — all six hover identities, geometry, accents,
+labels, and the accessibility contract untouched. No unrelated area
+redesigned.
+
+Work Log:
+- INSPECT: confirmed all four suspected problems in the
+  loading/navigation path. (1) internal route links disabled Next
+  prefetch entirely (prefetch={false} on every track + menu link)
+  with no warming for WORK/RESEARCH/WRITING/ABOUT/CONTACT; (2)
+  SceneRegistry imposed MIN_TRANSITION_MS = 160 via
+  Promise.allSettled([loadScene, wait(160)]) — even a cached scene
+  waited a fixed timer; (3) scene chunks loaded only at committed
+  navigation or hover-warm (no route warming at all); (4) loading UI
+  (SceneLoadingScreen, CSS-delayed fade) and transition animation
+  (sceneTransitionLayer dip) ran as separate untimed systems.
+- FIX ROUTE LOADING FIRST: UnifiedSiteNav now warms destinations on
+  intent. Desktop: pointerenter + focus. Touch: pointerdown. Scene
+  actions keep onActionWarm → preloadScene (immediate, deduped);
+  internal links call router.prefetch(href) through one deduplicated
+  per-instance Set (failed warm evicts, later intent retries).
+  Viewport prefetch stays OFF — nothing is fetched continuously, no
+  heavy page assets pulled. Verified in-browser: hover on RESEARCH
+  fetched /research/__next._tree.txt + page payload (+1 route chunk);
+  the click re-fetched nothing (router-cache hit). Mobile menu tap
+  on WRITING warmed /blog/index.txt before navigation.
+- REMOVE ARTIFICIAL DELAY: SceneRegistry dropped MIN_TRANSITION_MS
+  and wait() entirely. New model: requested → start loading → render
+  when ready. The transition effect became an isomorphic layout
+  effect; isSceneModuleReady(scene) (new export from ScenePreloader,
+  backed by a resolvedModules map filled on import success; home
+  always ready — statically bundled) triggers setRenderedScene
+  inside the layout phase, BEFORE paint: cached/preloaded
+  destinations swap with no transitioning frame, no loader, no blank
+  frame. Uncached destinations fetch at P0 and render the moment the
+  module lands — no timer ever gates rendering. Rapid-navigation
+  race protection preserved (monotonic transitionId + cleanup).
+- LOADING ANIMATION: scene-variant SceneLoadingScreen is now a
+  lightweight transfer surface: lighter scrim (0.88 → 0.78 with red
+  radial focus), fade delay driven by --scene-overlay-delay synced
+  to SCENE_OVERLAY_DELAY_MS (180ms), and a SIGNAL ARC — thin conic
+  sweep orbiting the 13-point star (compositor-only transform,
+  scene variant only; boot gate untouched). No fake percentage;
+  indeterminate bar retained; prefers-reduced-motion collapses the
+  arc to a static ring and all fades effectively instant. The
+  layered model reads intent → transfer → ready; the fast path
+  never paints it.
+- FLASH/JANK AUDIT: verified single sceneEnterHost (no double
+  mount), single scene overlay (no duplicates), keyed remount per
+  scene (no stale scene), absolute overlay (no layout shift),
+  Suspense fallback rides the same delayed surface (no visible
+  blank). Fast path pre-paint swap ensures slow-path animation
+  never penalises cached transitions.
+- CAPABILITIES 9 → 8: removed "Creative technology" (09) from the
+  HomeScene capabilities source data — exactly 8 rendered objects,
+  no CSS hiding. Chosen as the least-redundant item: the discipline
+  owns a dedicated /creative-technology/ topic hub and the RED MAGIC
+  scene/article, so the home grid repeated it without adding
+  signal. Audited every dependency: verify-seo.mjs home required
+  phrase swapped to "System architecture" (grid term) with rationale
+  comment; app/layout.tsx keyword comment updated ("creative
+  technology" keyword kept — still backed by hub + RED MAGIC);
+  lib/seo.tsx knowsAbout comment updated (term kept, hub-backed);
+  no stale "9 capabilities" references anywhere (README never
+  counted the grid; about/work/research pages carry their own
+  independent lists, untouched by design).
+- GRID LOGIC: HomeScene.module.css needed no change. Desktop
+  repeat(4, minmax(0,1fr)) → [1][2][3][4]/[5][6][7][8];
+  nth-child(4n+1) border reset correct for rows 1 and 5; ≤1100px
+  2-col → four even rows; smallest breakpoint stacks 1-col;
+  min-height (not fixed height) prevents clipping. Verified computed
+  columns in-browser at 1440 (4), 900 (2), 390 (1) with no
+  horizontal scroll.
+- VERIFY PERFORMANCE: npm ci ✓; npm run blog ✓; npm run build ✓
+  (23 routes exported); npm run lint ✓ (0 errors, 18 pre-existing
+  no-img warnings); npm run verify ✓ (seo + brand + export green).
+  Exported HTML inspected: capability numbers 01–08 only, "Creative
+  technology" absent from home <main>, "System architecture"
+  present.
+- NAVIGATION TESTS (headless Chromium against served export):
+  first visit (boot gate → hydration, no errors); hover→click
+  (warm fetches payloads, click = cache hit); focus→activate (same
+  code path); rapid tab racing (only latest commit wins); scene
+  cycle home→systems→magic→library→systems (each commit ~60ms,
+  previously ≥160ms floor); back/forward on both shells; mobile
+  390px menu (tap warms + navigates); repeated/cached navigation
+  (instant, overlay data-visible="false" throughout); all-chunks-
+  blocked control (boot gate holds — no-JS safety law intact);
+  HTTP-cache repeat visit correctly takes the fast path (module
+  resident → no loader). Slow-path overlay logic verified by code
+  audit + blocked-chunk behaviour; localhost latency makes a real
+  >180ms scene fetch unreachable without throttling.
+
+Stage Summary:
+- Navigation now feels immediate on every surface: warmed route
+  clicks land from the router cache with zero payload re-fetch;
+  warmed scene transitions commit before the next paint (was: fixed
+  160ms + overlay risk). The loading overlay appears only for
+  genuinely slow fetches and communicates transfer-in-motion around
+  the 13-point star.
+- Home capabilities grid is exactly 8 (4+4); creative technology
+  remains fully presented by its dedicated hub and RED MAGIC
+  surfaces; SEO gate re-pinned accordingly; no stale count
+  references.
+- Files changed: components/UnifiedSiteNav.tsx,
+  components/SceneRegistry.tsx, components/ScenePreloader.tsx,
+  components/SceneLoadingScreen.tsx,
+  components/SceneLoadingScreen.module.css, lib/loadPhase.ts,
+  components/scenes/HomeScene.tsx, scripts/verify-seo.mjs,
+  app/layout.tsx, lib/seo.tsx, package.json (3.5.0), README.md,
+  Updated-Files.md, worklog.md.

@@ -51,13 +51,17 @@ export const metadata: Metadata = {
   creator: "Parsa Tak",
   publisher: "Parsa Tak",
   /*
-   * Keyword discipline (v2.7): every term names something the site
-   * actually presents or owns and is visible in the rendered home
-   * scene. SHEYTAN and Red illuminati are claimed brand/artistic
-   * identity terms (see TRADEMARKS.md and the RED MAGIC article) —
-   * each appears exactly once, in visible-backed metadata, never
-   * in hidden text. The capability terms mirror the visible
-   * capabilities grid and featured projects section.
+   * Keyword discipline (v2.7, updated v3.5): every term names
+   * something the site actually presents or owns and is visible in
+   * the rendered pages. SHEYTAN and Red illuminati are claimed
+   * brand/artistic identity terms (see TRADEMARKS.md and the RED
+   * MAGIC article) — each appears exactly once, in visible-backed
+   * metadata, never in hidden text. The capability terms mirror the
+   * visible capabilities grid and featured projects section;
+   * "creative technology" is backed by its dedicated
+   * /creative-technology/ topic hub and the RED MAGIC presentations
+   * (since v3.5 it is intentionally not repeated in the home
+   * capabilities grid, which is exactly eight entries).
    */
   keywords: [
     "Parsa Tak",

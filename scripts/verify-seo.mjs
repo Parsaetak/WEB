@@ -735,7 +735,14 @@ async function verifyHomeContent(articleRoutes) {
     ["capability", "Product building"],
     ["capability section", "What I can do"],
     ["capability term", "Local AI"],
-    ["capability term", "Creative technology"],
+    /*
+     * v3.5: the home capabilities grid is exactly eight entries
+     * (4 + 4). "Creative technology" was consolidated out of the
+     * grid — it keeps its dedicated /creative-technology/ topic hub
+     * and RED MAGIC presentation — so this check pins "System
+     * architecture", a term that must remain visible in the grid.
+     */
+    ["capability term", "System architecture"],
     ["projects section", "What I have actually built"],
     ["project name", "SHEYTAN Local Agent"],
     ["project name", "Universal Human Intelligence Test"],

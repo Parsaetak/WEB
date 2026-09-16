@@ -17,10 +17,13 @@ import styles from "@/components/SceneLoadingScreen.module.css";
  *   percentage that does not correspond to a measurable process
  * - `boot` variant: full-screen gate used once while the application
  *   becomes interactive
- * - `scene` variant: overlay inside the scene viewport. It fades in
- *   only after SCENE_OVERLAY_DELAY_MS, so preloaded (cached) scene
- *   chunks — which transition inside the minimum window — never flash
- *   a loader, and it never blocks pointer interaction
+ * - `scene` variant (v3.5): the transfer surface of the layered
+ *   transition — intent (tab hover identity) → transfer (this
+ *   surface: 13-point star with a subtle orbiting signal arc)
+ *   → ready (the keyed settle-in). It fades in only after
+ *   SCENE_OVERLAY_DELAY_MS, so warmed/cached scene transitions never
+ *   flash it, it never blocks pointer interaction, and the
+ *   indeterminate signal motion stays honest — no fake percentage.
  */
 
 type SceneLoadingScreenProps = {

@@ -39,6 +39,13 @@ import styles from "./HomeScene.module.css";
  * FreeIran, the framework family, this website, RED MAGIC).
  * v3.2: product building sits alongside engineering and research —
  * evidenced by the shipped products themselves.
+ * v3.5: the grid is exactly eight capabilities (4 + 4 on desktop).
+ * "Creative technology" left the home grid by consolidation, not
+ * deletion — the discipline already owns a dedicated presentation
+ * surface: the /creative-technology/ topic hub and the RED MAGIC
+ * scene/article, so the home page repeated it without adding
+ * signal. The capability vocabulary remains fully represented
+ * across the site.
  */
 const capabilities = [
   {
@@ -88,12 +95,6 @@ const capabilities = [
     title: "Web engineering",
     copy:
       "Engineering the web: static-first Next.js, performance budgets, accessibility, and honest, crawlable SEO."
-  },
-  {
-    number: "09",
-    title: "Creative technology",
-    copy:
-      "Making technology expressive: canvas organisms, living interfaces, simulation, and generative art."
   }
 ] as const;
 
