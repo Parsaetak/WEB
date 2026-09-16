@@ -43,7 +43,7 @@ import type {
  * Speculation yields to intent: every scene change first cancels all
  * queued tasks owned by this preloader, so background work that was
  * useful for the previous scene can never delay the scene the user
- * actually requested. Hover/focus warming in SceneNavigator bypasses
+ * actually requested. Hover/focus warming in UnifiedSiteNav bypasses
  * the queue entirely — explicit intent loads immediately.
  *
  * Prediction is a small deterministic frequency heuristic over recent

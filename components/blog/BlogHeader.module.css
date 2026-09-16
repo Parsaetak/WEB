@@ -122,85 +122,17 @@
       rgba(255, 32, 32, 0.72);
 }
 
-.sceneLinks {
-  display: flex;
-
-  flex: 1;
-
-  align-items: center;
-
-  justify-content: flex-end;
-
-  flex-wrap: wrap;
-
-  gap: 4px 14px;
-}
-
-.sceneLink {
-  display: inline-block;
-
-  padding: 10px 0;
-
-  color: var(--text-muted);
-
-  font-family: var(--font-mono);
-
-  font-size: 9px;
-
-  font-weight: 700;
-
-  letter-spacing: 0.14em;
-
-  text-transform: uppercase;
-
-  transition: color 160ms ease;
-}
-
-.sceneLink:hover,
-.sceneLink:focus-visible {
-  color: var(--text);
-}
-
 /*
- * Active area (v3.2) — WRITING is the blog header's current entry.
- * State styling lives on the link itself; no separate island, no
- * dead span: the active area is navigable with mouse, touch and
- * keyboard like every other entry.
+ * UNIFIED NAVIGATION (v3.4) — placement only. The navigation's own
+ * geometry, modes and animations live in UnifiedSiteNav.module.css;
+ * the header gives the nav the flexible middle slot the old scene
+ * link row owned. The track centers itself in that slot, exactly
+ * like the world HUD.
  */
-.sceneLink[data-active="true"] {
-  color: var(--red-hot);
-}
+.blogNav {
+  flex: 1 1 auto;
 
-/*
- * World group (v3.2) — the experimental scenes (SYSTEMS, RED MAGIC,
- * LIBRARY) trail the primary row behind a quiet divider, with
- * reduced weight. Hierarchy through typography, not numbers.
- */
-.sceneNavDivider {
-  flex: 0 0 auto;
-
-  align-self: center;
-
-  width: 1px;
-
-  height: 14px;
-
-  margin: 0 6px;
-
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.sceneLinkWorld {
-  color: color-mix(
-    in srgb,
-    var(--text-muted) 72%,
-    transparent
-  );
-}
-
-.sceneLinkWorld:hover,
-.sceneLinkWorld:focus-visible {
-  color: var(--text-muted);
+  min-width: 0;
 }
 
 .headerActions {
@@ -211,16 +143,6 @@
   gap: 16px;
 
   min-width: max-content;
-}
-
-/*
- * COMPACT MODE (v2.6.1) — the blog header's touch-first navigation
- * island. Hidden on desktop (the scene-link row + GitHub own that
- * space); revealed at ≤860px where a wrapped row of 9px links stops
- * being honest touch UI.
- */
-.headerMenu {
-  display: none;
 }
 
 .githubLink {
@@ -257,41 +179,31 @@
 }
 
 @media (max-width: 1100px) {
-  .sceneLinks {
-    justify-content: flex-start;
-
-    order: 5;
-
-    flex-basis: 100%;
-
-    padding-top: 2px;
+  /*
+   * The BLOG status chip stands down with the world HUD's status
+   * label, freeing the middle slot for the unified track.
+   */
+  .status {
+    display: none;
   }
 }
 
 /*
- * COMPACT NAVIGATION MODE (v2.6.1) — ≤860px (phones and narrow
- * portrait tablets). The wrapped scene-link row and the GitHub text
- * link stand down; the header row keeps brand + BLOG control + the
- * compact menu trigger. GITHUB and every scene ride inside the
- * menu panel, so nothing is lost — only un-crowded.
+ * COMPACT NAVIGATION MODE (v3.4) — ≤860px (phones and narrow
+ * portrait tablets). The unified track stands down (the component
+ * hides it itself) and its disclosure trigger takes over; the GitHub
+ * text link joins the menu panel as a utility entry, so nothing is
+ * lost — only un-crowded.
  */
 @media (max-width: 860px) {
-  .sceneLinks {
-    display: none;
-  }
-
   .githubLink {
     display: none;
   }
 
-  .headerMenu {
-    display: inline-flex;
-  }
-
   /*
-   * The scene-link row carried flex: 1 (it pushed the actions to the
-   * right edge on desktop). With it hidden, the actions group takes
-   * over that job explicitly.
+   * The nav slot carries the disclosure trigger end-aligned (the
+   * component right-aligns its own trigger); the actions group
+   * keeps the row's right edge job explicit.
    */
   .headerActions {
     gap: 12px;

@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 import { BRAND_STAR } from "@/lib/brand";
-import CompactMenu, {
-  type CompactMenuEntry
-} from "@/components/CompactMenu";
+import UnifiedSiteNav, {
+  type UnifiedNavEntry
+} from "@/components/UnifiedSiteNav";
 import { PRIMARY_NAV, WORLD_NAV } from "@/lib/navigation";
 
 import { GITHUB_LINK } from "@/lib/links";
@@ -13,36 +13,36 @@ import styles from "./BlogHeader.module.css";
 /*
  * Blog header — server-rendered shell with one small client island.
  *
- * v3.2 navigation: the header carries the professional primary nav
- * (HOME, WORK, RESEARCH, WRITING, ABOUT, CONTACT) with WRITING as
- * the active area, and the experimental world scenes (SYSTEMS,
- * RED MAGIC, LIBRARY) as a quieter secondary row. The numbered
- * scene-link row (01 HOME … 06 LIBRARY) and the separate BLOG area
- * control are retired — WRITING is the primary entry now.
- *
- * COMPACT MODE: on phones and narrow portrait tablets the link rows
- * stand down and a shared CompactMenu island takes over — the same
- * primary/world split, plus GitHub. The island is the only client
- * JavaScript here; the rest of the header remains static markup.
+ * v3.4 navigation: the header carries the UNIFIED navigation system
+ * (UnifiedSiteNav) — the same renderer, data source, geometry,
+ * accents, active states and animation language as the world HUD,
+ * the content documents and the topic hubs. WRITING is the active
+ * area; the experimental world scenes (SYSTEMS, RED MAGIC, LIBRARY)
+ * follow as the quieter secondary group; GitHub rides as a utility
+ * entry inside the ≤860px disclosure menu. The separate scene-link
+ * row and the standalone CompactMenu island are retired — the
+ * disclosure trigger is the unified navigation's own compact mode.
  */
 
-const MENU_ENTRIES: readonly CompactMenuEntry[] = [
+const NAV_ENTRIES: readonly UnifiedNavEntry[] = [
   ...PRIMARY_NAV.map(
-    (entry): CompactMenuEntry => ({
+    (entry): UnifiedNavEntry => ({
       kind: "link",
-      id: `blog-menu-${entry.id}`,
+      group: "primary",
+      id: entry.id,
       label: entry.label,
-      scene: entry.id,
+      shortLabel: entry.shortLabel,
       href: entry.href,
       active: entry.id === "writing"
     })
   ),
   ...WORLD_NAV.map(
-    (entry): CompactMenuEntry => ({
+    (entry): UnifiedNavEntry => ({
       kind: "link",
-      id: `blog-menu-${entry.id}`,
+      group: "world",
+      id: entry.id,
       label: entry.label,
-      scene: entry.id,
+      shortLabel: entry.shortLabel,
       href: entry.href
     })
   ),
@@ -50,9 +50,10 @@ const MENU_ENTRIES: readonly CompactMenuEntry[] = [
     ? [
         {
           kind: "link" as const,
-          id: "blog-menu-github",
-          label: "GitHub",
-          scene: "github",
+          group: "utility" as const,
+          id: "github",
+          label: GITHUB_LINK.label,
+          shortLabel: "GITHUB",
           href: GITHUB_LINK.href,
           external: true
         }
@@ -103,48 +104,15 @@ export default function BlogHeader() {
           <span>BLOG</span>
         </div>
 
-        <nav
-          className={styles.sceneLinks}
-          aria-label="Site areas"
-        >
-          {PRIMARY_NAV.map((entry) => (
-            <Link
-              key={entry.id}
-              className={styles.sceneLink}
-              href={entry.href}
-              data-active={
-                entry.id === "writing"
-                  ? "true"
-                  : "false"
-              }
-              aria-current={
-                entry.id === "writing"
-                  ? "true"
-                  : undefined
-              }
-              prefetch={false}
-            >
-              {entry.shortLabel}
-            </Link>
-          ))}
-
-          <span
-            className={styles.sceneNavDivider}
-            aria-hidden="true"
-          />
-
-          {WORLD_NAV.map((entry) => (
-            <Link
-              key={entry.id}
-              className={`${styles.sceneLink} ${styles.sceneLinkWorld}`}
-              href={entry.href}
-              data-active="false"
-              prefetch={false}
-            >
-              {entry.shortLabel}
-            </Link>
-          ))}
-        </nav>
+        {/*
+         * The unified navigation (v3.4): desktop track + ≤860px
+         * disclosure trigger from one component, one data source.
+         */}
+        <UnifiedSiteNav
+          className={styles.blogNav}
+          menuId="blog-unified-nav"
+          entries={NAV_ENTRIES}
+        />
 
         <div className={styles.headerActions}>
           {github && (
@@ -157,20 +125,6 @@ export default function BlogHeader() {
               GitHub ↗
             </a>
           )}
-
-          <div
-            className={styles.headerMenu}
-          >
-            <CompactMenu
-              id="blog-compact-menu"
-              label="Site navigation"
-              entries={MENU_ENTRIES}
-              dividerBefore={[
-                "blog-menu-systems",
-                "blog-menu-github"
-              ]}
-            />
-          </div>
         </div>
       </div>
     </header>

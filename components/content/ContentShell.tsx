@@ -4,29 +4,32 @@ import { BRAND_STAR } from "@/lib/brand";
 
 import { routeHref } from "@/lib/hubs";
 
-import { PRIMARY_NAV } from "@/lib/navigation";
+import { PRIMARY_NAV, WORLD_NAV } from "@/lib/navigation";
+
+import { GITHUB_LINK } from "@/lib/links";
+
+import UnifiedSiteNav, {
+  type UnifiedNavEntry
+} from "@/components/UnifiedSiteNav";
 
 import SiteFooter from "@/components/SiteFooter";
 
 import styles from "@/components/content/content.module.css";
 
 /*
- * CONTENT SHELL (v3.2) — the shared server-rendered frame for the
- * static content documents: /about/, /work/, /research/, /contact/,
- * and the topic hubs.
+ * CONTENT SHELL (v3.4) — the shared frame for the static content
+ * documents: /about/, /work/, /research/, /contact/, and the topic
+ * hubs.
  *
- * It is deliberately minimal: a light header (13-point star + name +
- * the primary navigation), a breadcrumb, the document H1 block, the
- * page sections, and the shared site footer. No canvas organism, no
- * cursor, no reveal observer, no client components — a content
- * route ships as static semantic HTML with zero route JavaScript,
- * while the living-world homepage remains the high-experience
- * route.
- *
- * v3.2: the header renders the professional primary navigation from
- * lib/navigation.ts with a per-route active state (data-active +
- * aria-current), replacing the old four-link HOME/WORK/ABOUT/BLOG
- * row.
+ * v3.4 navigation: the header renders the UNIFIED navigation system
+ * (UnifiedSiteNav) — the same renderer, data source, geometry,
+ * accents, active states and hover identities as the world HUD and
+ * the blog header. The separate light-weight headerNav row (which
+ * carried only the primary links, no world group, no mobile menu)
+ * is retired. The nav is the page's one small client island; the
+ * document body below it remains static semantic HTML, and the nav
+ * itself still ships as complete server-rendered markup for crawlers
+ * and no-JS readers.
  *
  * The 13-point star, mono kickers, and red accents are reused so
  * every content document reads as the same website, not a template.
@@ -58,6 +61,51 @@ export default function ContentShell({
   activeHref,
   children
 }: ContentShellProps) {
+  /*
+   * UNIFIED NAVIGATION (v3.4): same entries on every content route —
+   * the primary destinations (active state resolved per route), the
+   * world scenes as plain hash links into the living shell, and
+   * GitHub as a utility entry in the disclosure menu. Serializable
+   * data only: the server renders the full nav markup and the client
+   * island hydrates the interaction on top.
+   */
+  const navEntries: readonly UnifiedNavEntry[] = [
+    ...PRIMARY_NAV.map(
+      (entry): UnifiedNavEntry => ({
+        kind: "link",
+        group: "primary",
+        id: entry.id,
+        label: entry.label,
+        shortLabel: entry.shortLabel,
+        href: entry.href,
+        active: activeHref === entry.href
+      })
+    ),
+    ...WORLD_NAV.map(
+      (entry): UnifiedNavEntry => ({
+        kind: "link",
+        group: "world",
+        id: entry.id,
+        label: entry.label,
+        shortLabel: entry.shortLabel,
+        href: entry.href
+      })
+    ),
+    ...(GITHUB_LINK
+      ? [
+          {
+            kind: "link" as const,
+            group: "utility" as const,
+            id: "github",
+            label: GITHUB_LINK.label,
+            shortLabel: "GITHUB",
+            href: GITHUB_LINK.href,
+            external: true
+          }
+        ]
+      : [])
+  ];
+
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
@@ -81,23 +129,11 @@ export default function ContentShell({
             <span className={styles.brandName}>Parsa Tak</span>
           </a>
 
-          <nav className={styles.headerNav} aria-label="Site">
-            {PRIMARY_NAV.map((entry) => {
-              const active = activeHref === entry.href;
-
-              return (
-                <a
-                  key={entry.id}
-                  className={styles.headerLink}
-                  href={routeHref(entry.href)}
-                  data-active={active ? "true" : "false"}
-                  aria-current={active ? "page" : undefined}
-                >
-                  {entry.shortLabel}
-                </a>
-              );
-            })}
-          </nav>
+          <UnifiedSiteNav
+            className={styles.contentNav}
+            menuId="content-unified-nav"
+            entries={navEntries}
+          />
         </div>
       </header>
 

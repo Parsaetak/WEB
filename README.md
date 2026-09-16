@@ -37,9 +37,9 @@ Beyond the living-world homepage, the site carries real indexable documents that
 - `/contact/` — the single honest contact document: primary CTA **Email Parsa Tak** (resolved from `lib/links.ts`), secondary GitHub/LinkedIn, and the four collaboration types (academic/research, business/engineering, project collaboration, open technical collaboration). No form, no backend
 - `/local-ai/`, `/ai-systems/`, `/ai-reasoning/`, `/ai-evaluation/`, `/software-engineering/`, `/creative-technology/` — six topic hubs, each a self-contained document: topic definition, what I work on in the area, the systems built in the area, genuinely related articles, and a next exploration path
 
-The distinction between URL kinds is deliberate: a **real URL** (`/about/`, `/work/`, `/research/`, `/contact/`, hubs, blog) is an indexable document; a **hash** (`/#work`, `/#magic`) is an interactive scene state of the living world, not a separate page. Every content route is statically rendered from server components with zero route-specific client JavaScript — they are the lightest pages on the site.
+The distinction between URL kinds is deliberate: a **real URL** (`/about/`, `/work/`, `/research/`, `/contact/`, hubs, blog) is an indexable document; a **hash** (`/#work`, `/#magic`) is an interactive scene state of the living world, not a separate page. Every content route is statically rendered from server components — the document bodies ship as static semantic HTML with zero route-specific content JavaScript, and the shared navigation is each route's one small client island that still renders as complete server-side markup (crawlers and no-JS readers get the full navigation). They remain the lightest pages on the site.
 
-### Navigation (v3.2)
+### Navigation (v3.4 — one system everywhere)
 The site-wide navigation leads with the professional destinations and keeps the experimental world one click away:
 
 ```
@@ -47,7 +47,9 @@ PRIMARY:  HOME · WORK · RESEARCH · WRITING · ABOUT · CONTACT
 WORLD:    SYSTEMS · RED MAGIC · LIBRARY   (quieter, contextual)
 ```
 
-Both rows render from one source of truth (`lib/navigation.ts`) across every surface — the desktop track, the CompactMenu, the blog header, the content-shell header, and the shared footer. The numbered HUD labels (`01 HOME` … `06 LIBRARY`) are gone: hierarchy is carried by spacing, typography, and active states. The six-scene world is unchanged internally — scene ids (`home / about / systems / magic / work / library`), hash routing, and preloading all behave exactly as before.
+One navigation system renders every surface: `components/UnifiedSiteNav.tsx` consumes `lib/navigation.ts` (the single source of truth) and drives the world HUD desktop track, the blog header, the content-shell header on every content document and topic hub, and their shared ≤860px disclosure menu — desktop and mobile are two responsive modes of the same component, same labels, same ordering, same accents, same active/focus language. The numbered HUD labels (`01 HOME` … `06 LIBRARY`) are gone: hierarchy is carried by spacing, typography, and active states. The six-scene world is unchanged internally — scene ids (`home / about / systems / magic / work / library`), hash routing, browser history, and hover-to-preload all behave exactly as before.
+
+Each primary tab also carries its own ~1-second hover identity, replayed on every re-enter: **HOME** ignites an orbit ring with a core flash · **WORK** sweeps a construction scanline over a building tick grid · **RESEARCH** expands staggered radar pings over a drawing data trace · **WRITING** sweeps a type caret as the ink line writes itself · **ABOUT** swings open an identity halo with an aura bloom · **CONTACT** radiates transmission ripples with an outbound packet. All effects are compositor-only (`transform`/`opacity`/`clip-path` on dedicated decorative layers — the label never moves), gated behind `(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)`, and collapse to static state changes under reduced motion.
 
 ### RED MAGIC
 RED MAGIC is the site's living-layer experiment: a canvas-based computational organism with adaptation, perception, and visible state. It is deliberately **not** part of the critical path — visitors receive a CSS-only seed first, and the organism loads at idle time only when motion is permitted and the device can afford it.

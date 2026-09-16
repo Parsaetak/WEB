@@ -283,6 +283,7 @@ export default function WorkPage() {
         kicker="SELECTED WORK"
         title="Selected Work"
         crumbs={crumbs}
+        activeHref="/work/"
         lead={[
           "The significant public systems of the laboratory: local AI agents, machine-intelligence measurement, production software under hostile constraints, static-site engineering, and the creative line. Each entry states what the system is, the problem it addresses, and why it matters — with the repository or destination where the work is real.",
           "The interactive Work scene on the homepage presents the same portfolio as part of the living world; this document is the clean, indexable counterpart. Field notes for each system are linked from its entry."

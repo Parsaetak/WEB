@@ -1,5 +1,87 @@
 # Updated-Files.md — WEB release history
 
+## Release: v3.4 — Unified Navigation (2026-09-16)
+
+Mission: one navigation system for the whole website — every surface
+renders its navigation from one renderer and one data source — plus a
+distinct ~1-second hover identity animation for each primary tab.
+Base version: v3.3 (package.json 3.3.0).
+
+### The unified navigation
+
+- `components/UnifiedSiteNav.tsx` (new) — THE navigation renderer.
+  Renders both responsive modes of the same system from the same
+  entries: the desktop track (primary + world groups with a divider)
+  and the ≤860px disclosure menu (primary → world → utility with
+  structural dividers). Entry kinds: "link" (next/link, prefetch off,
+  basePath-safe; external = plain anchor) and "action" (in-shell
+  scene switch with the preload-on-intent warming hook). Full
+  accessibility contract: aria-current="page" + data-active, semantic
+  nav, aria-expanded/controls/haspopup trigger, roving
+  ArrowUp/ArrowDown/Home/End focus, Escape close + focus restore,
+  outside pointer-down close, focusout close, no scroll locking.
+- `components/UnifiedSiteNav.module.css` (new) — one geometry, one
+  typography, one accent map (data-id based, identical on track and
+  menu), active/focus/hover states, the six hover identities, the
+  860px mode switch, and the reduced-motion collapse.
+- Deleted: `components/SceneNavigator.tsx` + `.module.css`
+  (desktop track) and `components/CompactMenu.tsx` + `.module.css`
+  (touch disclosure) — both superseded by UnifiedSiteNav. No route
+  uses an older menu.
+
+### Surfaces migrated
+
+- `components/LivingShell.tsx` — world HUD renders UnifiedSiteNav
+  (scene actions + route links + GitHub utility) via one memoized
+  entries list; scene warming (`preloadScene`) preserved through the
+  `onActionWarm` hook; `LivingShell.module.css` drops the
+  `.livingShellMenu` island rules.
+- `components/blog/BlogHeader.tsx` — the separate scene-link row and
+  the standalone CompactMenu island are replaced by UnifiedSiteNav
+  (WRITING active; GitHub rides in the disclosure panel);
+  `BlogHeader.module.css` drops `.sceneLinks/.sceneLink/
+  .sceneLinkWorld/.sceneNavDivider/.headerMenu` and adds the
+  `.blogNav` placement slot; the BLOG status chip stands down at
+  ≤1100px matching the world HUD.
+- `components/content/ContentShell.tsx` — the separate light headerNav
+  row is replaced by UnifiedSiteNav: world navigation (/#systems,
+  /#magic, /#library) and the mobile disclosure menu are newly
+  available on /about/, /work/, /research/, /contact/ and the six
+  hubs; per-route active state preserved via `activeHref`;
+  `content.module.css` drops `.headerNav/.headerLink` and adds the
+  `.contentNav` placement slot. The nav is the content routes' one
+  small client island; document bodies remain static HTML and the nav
+  ships fully server-rendered.
+- `app/work/page.tsx` — now passes `activeHref="/work/"` (pre-existing
+  gap: WORK was never highlighted on its own document).
+- `lib/navigation.ts` + `components/ScenePreloader.tsx` — comments
+  refreshed to name the unified renderer; data model unchanged.
+
+### Six hover identities (~1s, compositor-only)
+
+HOME — ignition (orbit ring + core flash) · WORK — construction
+(scanline sweep + tick-grid build) · RESEARCH — signal (staggered
+radar pings + data trace) · WRITING — typography (caret sweep + self-
+writing ink + end caret blink) · ABOUT — identity (halo swing + aura
+bloom) · CONTACT — transmission (staggered ripples + outbound packet).
+Transform/opacity/clip-path only; the label never moves (no layout
+shift); effects replay on every re-enter; gated behind
+`(hover: hover) and (pointer: fine) and (prefers-reduced-motion:
+no-preference)` so touch devices and reduced-motion readers get the
+static state changes only.
+
+### Verification
+
+- npm ci / npm run blog / npm run build / npm run lint (0 errors) /
+  npm run verify — all green; exported HTML inspected on every route
+  (nav present, aria-current correct, world links present, zero old
+  nav markup, 15 keyframes compiled with gates).
+- Live browser checks: desktop track + active states; scene switch
+  via nav with hash + history; mobile panel (focus, roving, Escape,
+  auto-close, navigation); hover + focus-visible states; no console
+  errors.
+- `package.json` — version 3.3.0 → 3.4.0.
+
 ## Release: v3.3 — First-Person Voice (2026-09-15)
 
 Mission: make all user-facing personal/author writing read as Parsa Tak

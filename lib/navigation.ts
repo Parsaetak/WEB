@@ -11,9 +11,10 @@
  * (home / about / systems / magic / work / library) are internal
  * interaction states and are NOT renamed. The experimental
  * destinations — Systems, RED MAGIC, Library — become secondary
- * "world" navigation, carried by the same surfaces (desktop track,
- * CompactMenu, blog header, content-shell header, footer) with
- * quieter styling instead of numbered labels.
+ * "world" navigation, carried by the same unified renderer
+ * (UnifiedSiteNav) on every surface — world HUD, blog header,
+ * content-shell header, footer — with quieter styling instead of
+ * numbered labels.
  *
  * Every surface renders from these two lists, so the navigation can
  * never drift between the world shell, the blog, the content

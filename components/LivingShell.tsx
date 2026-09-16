@@ -10,16 +10,15 @@ import {
 
 import styles from "@/components/LivingShell.module.css";
 
-import CompactMenu, {
-  type CompactMenuEntry
-} from "@/components/CompactMenu";
+import UnifiedSiteNav, {
+  type UnifiedNavEntry
+} from "@/components/UnifiedSiteNav";
 import { BRAND_STAR } from "@/lib/brand";
 import SceneLoadingScreen from "@/components/SceneLoadingScreen";
-import SceneNavigator, {
-  type SceneNavEntry
-} from "@/components/SceneNavigator";
 import { PRIMARY_NAV, WORLD_NAV } from "@/lib/navigation";
-import ScenePreloader from "@/components/ScenePreloader";
+import ScenePreloader, {
+  preloadScene
+} from "@/components/ScenePreloader";
 import SceneRegistry from "@/components/SceneRegistry";
 import SceneUrlSync from "@/components/SceneUrlSync";
 import SiteFooter from "@/components/SiteFooter";
@@ -292,27 +291,32 @@ export default function LivingShell({
   const github = GITHUB_LINK;
 
   /*
-   * NAVIGATION (v3.2) — the desktop track leads with the
-   * professional primary nav. HOME stays an in-shell scene action
-   * (a same-route link could not switch the hash scene); WORK,
-   * RESEARCH, WRITING, ABOUT and CONTACT are real routes. The
-   * experimental scenes (SYSTEMS, RED MAGIC, LIBRARY) follow as the
-   * quieter world group — the six-scene world stays one click away.
+   * NAVIGATION (v3.4) — one unified navigation system (see
+   * UnifiedSiteNav). The desktop track leads with the professional
+   * primary nav; HOME stays an in-shell scene action (a same-route
+   * link could not switch the hash scene); WORK, RESEARCH, WRITING,
+   * ABOUT and CONTACT are real routes. The experimental scenes
+   * (SYSTEMS, RED MAGIC, LIBRARY) follow as the quieter world group,
+   * and GitHub rides as a utility entry in the disclosure menu. The
+   * ≤860px disclosure panel is the same component's compact mode —
+   * same labels, ordering, accents and animation language.
    */
-  const navigatorEntries = useMemo<readonly SceneNavEntry[]>(
+  const navEntries = useMemo<readonly UnifiedNavEntry[]>(
     () => [
       ...PRIMARY_NAV.map(
-        (entry): SceneNavEntry =>
+        (entry): UnifiedNavEntry =>
           entry.id === "home"
             ? {
-                kind: "scene",
+                kind: "action",
                 group: "primary",
                 id: "home",
                 label: entry.label,
-                shortLabel: entry.shortLabel
+                shortLabel: entry.shortLabel,
+                active: activeScene === "home",
+                onSelect: () => changeScene("home")
               }
             : {
-                kind: "route",
+                kind: "link",
                 group: "primary",
                 id: entry.id,
                 label: entry.label,
@@ -321,79 +325,45 @@ export default function LivingShell({
               }
       ),
       ...WORLD_NAV.map(
-        (entry): SceneNavEntry => ({
-          kind: "scene",
+        (entry): UnifiedNavEntry => ({
+          kind: "action",
           group: "world",
-          id: entry.id as SceneId,
+          id: entry.id,
           label: entry.label,
-          shortLabel: entry.shortLabel
+          shortLabel: entry.shortLabel,
+          active: entry.id === activeScene,
+          onSelect: () =>
+            changeScene(
+              entry.id as SceneId
+            )
         })
-      )
+      ),
+      ...(github
+        ? [
+            {
+              kind: "link" as const,
+              group: "utility" as const,
+              id: "github",
+              label: github.label,
+              shortLabel: "GITHUB",
+              href: github.href,
+              external: true
+            }
+          ]
+        : [])
     ],
-    []
+    [activeScene, changeScene, github]
   );
 
   /*
-   * COMPACT MENU (v3.2) — the touch-first navigation mode for
-   * viewports where the full scene track stops being honest touch
-   * UI. Same primary/world split as the desktop track, no numbered
-   * index glyphs. HOME switches the scene in-shell, the other
-   * primary entries are links, the world scenes follow, and GitHub
-   * rides last as an external link.
+   * Scene warming (v3.4): hover/focus on a scene action preloads
+   * that scene's module immediately, bypassing the background
+   * scheduler — the same explicit-intent contract SceneNavigator
+   * honored, now carried by the unified navigation.
    */
-  const compactMenuEntries =
-    useMemo<readonly CompactMenuEntry[]>(
-      () => [
-        ...PRIMARY_NAV.map(
-          (entry): CompactMenuEntry =>
-            entry.id === "home"
-              ? {
-                  kind: "action" as const,
-                  id: `compact-${entry.id}`,
-                  label: entry.label,
-                  scene: entry.id,
-                  active:
-                    activeScene === "home",
-                  onSelect: () =>
-                    changeScene("home")
-                }
-              : {
-                  kind: "link" as const,
-                  id: `compact-${entry.id}`,
-                  label: entry.label,
-                  scene: entry.id,
-                  href: entry.href
-                }
-        ),
-        ...WORLD_NAV.map(
-          (entry): CompactMenuEntry => ({
-            kind: "action" as const,
-            id: `compact-${entry.id}`,
-            label: entry.label,
-            scene: entry.id,
-            active:
-              entry.id === activeScene,
-            onSelect: () =>
-              changeScene(
-                entry.id as SceneId
-              )
-          })
-        ),
-        ...(github
-          ? [
-              {
-                kind: "link" as const,
-                id: "compact-github",
-                label: "GitHub",
-                scene: "github",
-                href: github.href,
-                external: true
-              }
-            ]
-          : [])
-      ],
-      [activeScene, changeScene, github]
-    );
+  const warmScene = useCallback((id: string) => {
+    void preloadScene(id as SceneId);
+  }, []);
 
   return (
     <div
@@ -511,15 +481,13 @@ export default function LivingShell({
             </span>
           </div>
 
-          <SceneNavigator
+          <UnifiedSiteNav
+            menuId="world-unified-nav"
             entries={
-              navigatorEntries
+              navEntries
             }
-            activeScene={
-              activeScene
-            }
-            onSceneChange={
-              changeScene
+            onActionWarm={
+              warmScene
             }
           />
 
@@ -542,24 +510,6 @@ export default function LivingShell({
                 GitHub ↗
               </a>
             )}
-
-            <div
-              className={
-                styles.livingShellMenu
-              }
-            >
-              <CompactMenu
-                id="world-compact-menu"
-                label="Site navigation"
-                entries={
-                  compactMenuEntries
-                }
-                dividerBefore={[
-                  "compact-systems",
-                  "compact-github"
-                ]}
-              />
-            </div>
           </div>
         </div>
       </header>

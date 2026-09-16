@@ -2479,3 +2479,115 @@ Verification (all passing):
   person; all six hubs render "What I work on in …"; zero he/him/his
   matches across out/; JSON-LD ProfilePage/Person intact; "Email
   Parsa Tak" CTA intact; /WEB base paths intact; sitemap unchanged.
+
+---
+
+## 2026-09-16 — v3.4 UNIFIED NAVIGATION
+
+Mission: unify the entire website into ONE navigation system — one
+renderer, one data source, one visual identity on every surface — and
+give each primary tab its own ~1-second hover identity animation,
+while preserving the six-scene world, hash routing, preloading, and
+every verification gate.
+
+Navigation (the unification):
+- UnifiedSiteNav (components/UnifiedSiteNav.tsx + module CSS) is now
+  THE navigation renderer for every surface: world HUD desktop track,
+  world HUD ≤860px disclosure menu, blog header (desktop + mobile),
+  ContentShell header on /about/ /work/ /research/ /contact/ and the
+  six topic hubs. Two responsive modes render from the same entries
+  and the same component; the ≤860px switch is CSS-only (media
+  queries, no user-agent detection).
+- SceneNavigator and CompactMenu are retired and deleted
+  (components/SceneNavigator.tsx/.module.css,
+  components/CompactMenu.tsx/.module.css). The full CompactMenu
+  interaction contract (aria-expanded/controls/haspopup, roving
+  ArrowUp/ArrowDown/Home/End focus, Escape close + focus restore,
+  pointer-down outside close, focusout close, no scroll locking)
+  moved into UnifiedSiteNav's menu mode unchanged.
+- Entry kinds: "link" (route / external) and "action" (in-shell scene
+  switch). The world shell passes scene actions (home, systems, magic,
+  library) plus route links; blog and content routes pass pure links
+  (world scenes become real /#systems /#magic /#library hrefs) and a
+  GitHub utility entry inside the disclosure panel. Group dividers
+  (primary → world → utility) are structural, not per-entry props.
+- Scene warming contract preserved: onActionWarm fires preloadScene on
+  pointer enter/focus of scene actions (explicit intent bypasses the
+  background scheduler, as before).
+- Active state: aria-current="page" + data-active on the active entry
+  on every surface; /work/ now passes activeHref="/work/" (pre-existing
+  gap — WORK was never highlighted on its own document).
+- Content routes: the unified nav is their one small client island;
+  the document body remains static semantic HTML and the nav itself
+  ships as complete server-rendered markup (crawlers and no-JS readers
+  get the full navigation). World navigation is newly available on
+  content routes and the disclosure menu is newly available on
+  content routes — no route uses an older menu anymore.
+
+Six hover identities (~1s each, compositor-only):
+- Every primary tab carries three decorative layers (.fx, .fx2, ::after)
+  plus the shared accent underline; the label never moves (zero layout
+  shift).
+- HOME — ignition: an orbit ring spins up (-70°→130°, scale 0.5→1.4)
+  while a radial core flashes and settles (navHomeOrbit + navHomeCore).
+- WORK — construction: a scanline sweeps the tab (translateY ±13px)
+  while a tick-grid underline builds in via clip-path
+  (navWorkScan + navWorkBuild).
+- RESEARCH — signal: two staggered radar pings expand (scale 0.4→2.4)
+  over a dashed data trace that draws left→right
+  (navResearchPing ×2 + navResearchTrace).
+- WRITING — typography: a caret sweeps the tab (translateX ±14px) as
+  the ink line writes itself (scaleX 0→1) and an end-of-line caret
+  blinks (navWritingCaret + navWritingInk + navWritingBlink).
+- ABOUT — identity: a halo ellipse swings open (-40°→30°, scale
+  0.45→1.5) with a second delayed halo and an aura bloom
+  (navAboutHalo ×2 + navAboutAura).
+- CONTACT — transmission: two staggered ripples radiate (scale 0.4→2.1)
+  as a glowing packet transmits left→right (navContactRipple ×2 +
+  navContactPacket).
+- Animation law: transform/opacity/clip-path only; no layout
+  properties; no canvas, no RAF, no JS animation, no hover React
+  state; effects run only while :hover/:focus-visible holds (reset on
+  leave → replay on re-enter). The whole block is gated behind
+  (hover: hover) and (pointer: fine) and (prefers-reduced-motion:
+  no-preference) — touch devices never depend on hover; under
+  prefers-reduced-motion the static state changes (color, underline,
+  active highlight) remain and decorative motion (including the
+  indicator pulse and panel travel) is removed.
+
+Files:
+- Added: components/UnifiedSiteNav.tsx,
+  components/UnifiedSiteNav.module.css.
+- Deleted: components/SceneNavigator.tsx,
+  components/SceneNavigator.module.css, components/CompactMenu.tsx,
+  components/CompactMenu.module.css.
+- Migrated: components/LivingShell.tsx (+ module CSS: livingShellMenu
+  rules removed), components/blog/BlogHeader.tsx (+ module CSS:
+  sceneLinks/sceneLink/sceneLinkWorld/sceneNavDivider/headerMenu
+  removed), components/content/ContentShell.tsx (+ module CSS:
+  headerNav/headerLink removed; contentNav placement added).
+- Fixed: app/work/page.tsx passes activeHref="/work/".
+- Comments refreshed in lib/navigation.ts and ScenePreloader.tsx
+  (SceneNavigator → UnifiedSiteNav).
+- package.json — version 3.3.0 → 3.4.0.
+
+Verification (all passing):
+- npm ci clean install; npm run blog → 21-URL sitemap unchanged;
+  npm run build → static export succeeds (23 pages); npm run lint →
+  0 errors (18 pre-existing no-img-element warnings, unchanged);
+  npm run verify → seo + brand + export suites green.
+- Exported HTML inspected directly: the unified nav (data-id entries,
+  track + disclosure trigger) renders on /, /about/, /work/,
+  /research/, /contact/, /blog/, all six hubs, and blog articles;
+  aria-current resolves per route (about/work/research/contact/blog
+  verified); world hash links present on content routes; zero old
+  nav markup (no sceneLinks/headerNav/CompactMenu) in any artifact;
+  all 15 nav keyframes compiled with the hover/pointer/motion gates.
+- Live browser checks (static export served locally): desktop track
+  visible with HOME active; scene switch via nav (click SYSTEMS →
+  #systems active) with browser Back restoring HOME; mobile 390px →
+  track stands down, 44px trigger visible, panel opens with focus on
+  the active entry, ArrowDown roving works, Escape closes and
+  restores the trigger, entry click navigates + menu auto-closes;
+  hover state transitions verified (color + underline); focus-visible
+  accent verified; no console errors.
