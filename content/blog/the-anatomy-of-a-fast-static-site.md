@@ -7,6 +7,7 @@ date: "2026-09-10"
 updated: "2026-09-10"
 author: "Parsa Tak"
 category: "engineering"
+type: "work"
 tags: ["performance", "architecture", "loading", "120Hz", "frame budget", "static export"]
 featured: false
 project: "web-platform"

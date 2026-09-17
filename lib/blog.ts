@@ -3,8 +3,11 @@ import blogData from "@/data/blog/posts.json";
 import type {
   BlogPost,
   BlogPostMeta,
+  ContentType,
   RelatedPostEntry
 } from "@/lib/blogFormat";
+
+import { CONTENT_TYPE_ORDER } from "@/lib/blogFormat";
 
 /*
  * BLOG DATA ACCESS LAYER — SERVER SIDE.
@@ -96,6 +99,15 @@ function isPostRecord(
     isNonEmptyString(candidate.date) &&
     isNonEmptyString(candidate.author) &&
     isNonEmptyString(candidate.category) &&
+    /*
+     * CONTENT TYPE (v3.7): required and build-validated. A record
+     * without a known type would break the Blog content modes, so
+     * normalization drops it rather than rendering a typeless card.
+     */
+    typeof candidate.type === "string" &&
+    (CONTENT_TYPE_ORDER as readonly string[]).includes(
+      candidate.type
+    ) &&
     typeof candidate.html === "string" &&
     Array.isArray(candidate.tags) &&
     candidate.tags.every(isNonEmptyString)
@@ -190,6 +202,32 @@ export function getPostsByCategory(
     .map((slug) => BY_SLUG.get(slug))
     .filter((post): post is BlogPost => post !== undefined)
     .map(toMeta);
+}
+
+/*
+ * CONTENT-TYPE ACCESS (v3.7) — the Blog content modes resolve their
+ * streams from the same normalized catalogue every other view uses.
+ * Counts are derived from the generated data, never hardcoded, so a
+ * new article appears in the modes the moment it is classified.
+ */
+export function getPostsByType(
+  type: ContentType
+): readonly BlogPostMeta[] {
+  return META_LIST.filter((post) => post.type === type);
+}
+
+export function getTypeCounts(): Record<ContentType, number> {
+  const counts: Record<ContentType, number> = {
+    article: 0,
+    work: 0,
+    research: 0
+  };
+
+  for (const post of META_LIST) {
+    counts[post.type] += 1;
+  }
+
+  return counts;
 }
 
 /*

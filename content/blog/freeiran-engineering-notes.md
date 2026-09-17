@@ -6,6 +6,7 @@ description: "Inside FreeIran's architecture: a Go orchestration engine with Xra
 date: "2026-09-12"
 author: "Parsa Tak"
 category: "engineering"
+type: "work"
 tags: ["FreeIran", "Go", "systems", "storage", "testing", "2026"]
 featured: false
 project: "freeiran"

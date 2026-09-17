@@ -1,5 +1,127 @@
 # Updated-Files.md — WEB release history
 
+## Release: v3.7.0 — VISUAL UX + BLOG-CENTERED CONTENT ARCHITECTURE + SEO GRAPH (2026-09-18)
+
+Mission: make the site feel like a visual laboratory rather than a
+collection of long text documents, and simplify the information
+architecture around the Blog — without destroying the SEO value of the
+existing /work/ and /research/ routes.
+
+### Information architecture
+
+- Primary navigation is now `HOME · ABOUT · BLOG · CONTACT`
+  (`lib/navigation.ts`). BLOG is the site's main content discovery
+  surface; WORK and RESEARCH left the primary tabs and became CONTENT
+  NAV "collections" — canonical deep landing pages kept crawlable
+  site-wide by the footer document nav's new Collections row
+  (`components/SiteDocNav.tsx`) and by the Blog's lab map. The
+  experiential `#work` living-world scene is untouched.
+- `app/blog/page.tsx` is the content hub: a visual hero (positioning
+  copy left, live instrument panel right — featured cover, real
+  per-type count readouts, latest signal), the featured card with its
+  content type, the content-mode discovery grid, and a new LAB MAP —
+  six territory cards (each linking its topic hub and key system
+  article) plus the two canonical collection cards (/work/,
+  /research/).
+- `components/blog/BlogIndex.tsx`: content-mode selector
+  (ALL · ARTICLES · WORK · RESEARCH) with real counts, `aria-pressed`,
+  URL state `?type=work|research|article` riding the existing
+  replaceState URL store (shareable, reload-safe, Back-safe; unknown
+  values ignored); compact result summary renders the catalogue's real
+  per-type composition; cards gain a type badge and a type-tinted top
+  edge. Existing search/tag/project/topic filtering unchanged.
+- `app/work/page.tsx`: visual project cards — real article covers (or
+  a truthful 13-point-star geometric identity card for Contents; no
+  fabricated screenshots), one-sentence purpose, key signal, tech
+  stack, links including per-project "all writing in the Blog"
+  filters; the deep what/problem/why documentation moved below the
+  visual summary inside the same card.
+- `app/research/page.tsx`: three research modules rendered as
+  QUESTION → METHOD → FRAMEWORK → MEASUREMENT → ARTIFACT chains
+  (horizontal desktop, left-rail mobile), each step linking its real
+  framework/artifact; links into the Blog research mode.
+- `app/blog/[slug]/page.tsx`: the at-a-glance strip now leads with a
+  TYPE chip (tinted by content type, linking the matching Blog mode)
+  and renders unconditionally before the project/hub/topic chips.
+- `components/scenes/HomeScene.tsx` + `lib/homeWriting.ts`: the home
+  writing list carries the same content-type badge vocabulary.
+
+### Content-type model
+
+- All 9 articles in `content/blog/*.md` carry a new required
+  frontmatter field `type: article | work | research`, classified
+  from each article's own meaning: 1 article
+  (building-under-constraints), 4 work (freeiran-engineering-notes,
+  sheytan-the-local-first-laboratory, the-anatomy-of-a-fast-static-site,
+  why-the-website-is-a-living-system), 4 research (ai-instructions,
+  measuring-machine-intelligence, reasoning-is-a-system-property,
+  red-theory-and-the-living-web).
+- `scripts/build-blog.mjs` validates the type (unknown/missing fails
+  the build), emits it into `data/blog/posts.json` and the search
+  haystack, and logs the per-type counts.
+- `lib/blogFormat.ts` exports the shared ContentType model, labels,
+  and plural helpers (client-safe); `lib/blog.ts` adds
+  getPostsByType/getTypeCounts and drops typeless records during
+  normalization.
+
+### SEO graph
+
+- `app/blog/page.tsx` metadata rewritten for the discovery-surface
+  role (description, page-level openGraph/twitter with og:image); the
+  Blog JSON-LD keeps the Blog entity and adds a truthful ItemList of
+  the canonical content collections (no query URLs in structured data
+  or the sitemap).
+- `scripts/verify-seo.mjs`: `verifyWritingLinks` renamed
+  `verifyContentDiscoveryLinks`; new `verifyBlogContentDiscovery`
+  check group — ≥3 crawlable article links on /blog/, /work/ and
+  /research/ crawlable from the Blog, content-type model valid with no
+  orphaned mode, and the v3.7 four-entry primary-nav topology; the
+  link-graph fragment check now distinguishes `/#scene` links from
+  bare in-page `#fragment` anchors (validated against the page's own
+  element ids; index.html keeps scene-routing semantics).
+
+### Styling
+
+- `app/blog/page.module.css`: hero instrument (rings, cover panel,
+  readouts, latest line), hero actions, lab map grid, territory cards,
+  collection cards, responsive + reduced-motion rules.
+- `components/blog/BlogIndex.module.css`: type selector, mode counts,
+  result summary, card type badges and type variants, mobile
+  touch-target sizing.
+- `components/content/content.module.css`: visual project cards
+  (media cell, identity card, purpose/signal, detail block, responsive
+  rules) and research chain modules.
+- `app/blog/[slug]/article.module.css` and
+  `components/scenes/HomeScene.module.css`: type-chip and type-badge
+  tint variants.
+
+### Documentation
+
+- `README.md`: navigation section rewritten for the v3.7 topology
+  (primary/collections/world), new content-type model and
+  visual-laboratory sections.
+- `worklog.md`: v3.7 release entry (mission, decisions, measured
+  verification).
+- `Updated-Files.md`: this entry.
+- `package.json`: 3.6.1 → 3.7.0.
+
+### Verification
+
+- npm ci / npm run blog / npm run build / npm run lint: 0 errors
+  (21 pre-existing img warnings, unchanged).
+- npm run verify: 177 SEO + brand + export-route checks pass
+  (content types: 1 article · 4 work · 4 research; /work/ and
+  /research/ crawlable from the Blog; no orphaned content mode).
+- Browser verification over the static export (agent-browser):
+  9 routes × 6 viewports (1440×900, 1280×800, 1024×768, 430×932,
+  390×844, 360×800) — zero horizontal overflow, zero broken images,
+  zero console/page errors; content modes, deep links (?type=work,
+  ?type=research, ?type=invalid), and project filtering verified
+  interactively; mobile selector targets 46px; VLM screenshot audit
+  of the Blog/Work pages confirms composition and scannability.
+- No accidental client-bundle growth: the only interactive surface
+  remains the existing metadata-only BlogIndex island.
+
 ## Release: v3.6.1 — ALIGNMENT FIX: one unified page-frame contract (2026-09-17)
 
 Mission: eliminate the visual inconsistency between the six

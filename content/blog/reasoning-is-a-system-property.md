@@ -7,6 +7,7 @@ date: "2026-09-10"
 updated: "2026-09-11"
 author: "Parsa Tak"
 category: "research"
+type: "research"
 tags: ["AI", "reasoning", "systems", "REP", "USEF", "human will", "2026"]
 featured: false
 project: "ai-frameworks"

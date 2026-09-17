@@ -1,15 +1,24 @@
 /*
- * SITE NAVIGATION (v3.6) — the single source of truth for the
+ * SITE NAVIGATION (v3.7) — the single source of truth for the
  * site-wide navigation labels and destinations.
  *
- * v3.6 orders the professional primary navigation as a clear
- * identity-first flow:
+ * v3.7 orders the primary navigation around the Blog-centered
+ * content architecture:
  *
- *   HOME · ABOUT · WORK · RESEARCH · BLOG · CONTACT
+ *   HOME · ABOUT · BLOG · CONTACT
  *
- * identity → capability/work → research → writing → contact.
- * The public label for the writing archive is BLOG (the canonical
- * /blog/ URL and the internal blog article routes are unchanged).
+ * identity → the laboratory's publication surface → contact.
+ * BLOG is the main discovery surface for the whole content
+ * ecosystem: writing, work documentation, and research writing all
+ * live inside it as content modes (ALL · ARTICLES · WORK · RESEARCH).
+ *
+ * WORK and RESEARCH are no longer primary tabs. Their canonical
+ * routes remain real, crawlable documents (CONTENT_NAV below) — deep
+ * portfolio and research landing pages whose discovery increasingly
+ * happens through the Blog, the footer, the topic hubs, and each
+ * other. They are carried by every surface that renders
+ * CONTENT_NAV (the footer's document nav) so they can never become
+ * orphaned.
  *
  * The six-scene world stays intact: the scene ids
  * (home / about / systems / magic / work / library) are internal
@@ -18,9 +27,11 @@
  * "world" navigation, carried by the same unified renderer
  * (UnifiedSiteNav) on every surface — world HUD, blog header,
  * content-shell header, footer — with quieter styling instead of
- * numbered labels.
+ * numbered labels. The internal living-world #work scene remains an
+ * experiential portfolio scene, distinct from the /work/ canonical
+ * document.
  *
- * Every surface renders from these two lists, so the navigation can
+ * Every surface renders from these lists, so the navigation can
  * never drift between the world shell, the blog, the content
  * documents, and the footer.
  */
@@ -37,10 +48,8 @@ export type NavigationEntry = {
 };
 
 /*
- * PRIMARY NAVIGATION (v3.6) — professional destinations lead, in
- * the identity-first order: who (ABOUT) → what (WORK) → how it is
- * investigated (RESEARCH) → what is published (BLOG) → how to
- * reach me (CONTACT).
+ * PRIMARY NAVIGATION (v3.7) — four destinations: who (ABOUT), what
+ * is published and discovered (BLOG), and how to reach me (CONTACT).
  * HOME is special-cased inside the world shell as a scene action
  * (in-shell transition); from every other surface it is a plain
  * link to "/". All other primary entries are real, indexable routes.
@@ -59,18 +68,6 @@ export const PRIMARY_NAV: readonly NavigationEntry[] = [
     href: "/about/"
   },
   {
-    id: "work",
-    label: "Selected Work",
-    shortLabel: "WORK",
-    href: "/work/"
-  },
-  {
-    id: "research",
-    label: "Research",
-    shortLabel: "RESEARCH",
-    href: "/research/"
-  },
-  {
     id: "blog",
     label: "Blog",
     shortLabel: "BLOG",
@@ -81,6 +78,30 @@ export const PRIMARY_NAV: readonly NavigationEntry[] = [
     label: "Contact",
     shortLabel: "CONTACT",
     href: "/contact/"
+  }
+];
+
+/*
+ * CONTENT COLLECTIONS (v3.7) — the canonical deep documents that the
+ * Blog content ecosystem is built on. /work/ is the deep portfolio
+ * landing page; /research/ is the deep research landing page. Both
+ * remain indexable, crawlable, and cross-linked from the Blog's
+ * content modes — they are discovery destinations, not primary tabs.
+ * Carried by the footer document nav (and the Blog's lab map) so
+ * both routes keep their site-wide inbound edges.
+ */
+export const CONTENT_NAV: readonly NavigationEntry[] = [
+  {
+    id: "work",
+    label: "Selected Work",
+    shortLabel: "WORK",
+    href: "/work/"
+  },
+  {
+    id: "research",
+    label: "Research",
+    shortLabel: "RESEARCH",
+    href: "/research/"
   }
 ];
 

@@ -2834,3 +2834,123 @@ Stage Summary:
   consumers migrate without touching scene files; identities
   (accents, motifs, hover language) remain per-tab via
   data-page — same geometry, different identity.
+
+## 2026-09-18 — v3.7 VISUAL UX + BLOG-CENTERED CONTENT ARCHITECTURE + SEO GRAPH
+
+Task ID: 1 (single-agent run)
+Scope guard: canonical routes and URLs untouched (no redirects,
+no renames); /work/ and /research/ remain indexable documents;
+#work living-world scene preserved; static export + zero new
+client JavaScript law preserved (the BlogIndex island stays
+metadata-only); existing project/topic/tag filter system
+preserved; sitemap stays free of query URLs.
+
+Work Log:
+- INSPECT: read the full navigation/blog/content pipeline
+  (lib/navigation.ts, lib/blog.ts, lib/blogFormat.ts,
+  lib/hubs.ts, lib/seo.tsx, scripts/build-blog.mjs,
+  scripts/verify-seo.mjs, app/blog/*, app/work/,
+  app/research/, ContentShell/ContentBlocks, SiteDocNav,
+  UnifiedSiteNav, HomeScene, all 9 content/blog/*.md) and
+  browsed the live export at desktop + mobile before changing
+  the visual system.
+- ROOT CAUSE (UX): the site's value was communicated almost
+  entirely through paragraphs — Work/Research were long text
+  documents, the Blog hero was text-only, and no surface
+  oriented the visitor visually. Design principle applied:
+  TEXT EXPLAINS · VISUALS ORIENT · INTERACTION EXPLORES.
+- CONTENT-TYPE MODEL: new required frontmatter field `type`
+  (article | work | research) on all 9 posts, classified from
+  each article's own meaning (category + project-documentation
+  role): 1 article (building-under-constraints), 4 work
+  (freeiran, sheytan, anatomy-of-fast-static-site,
+  living-system), 4 research (ai-instructions, measuring,
+  reasoning, red-theory). build-blog.mjs validates the value
+  (unknown/missing fails the build), emits it into posts.json
+  and the search haystack, and logs per-type counts;
+  lib/blogFormat.ts exports the shared type/labels/plural
+  helpers; lib/blog.ts adds getPostsByType/getTypeCounts and
+  drops typeless records in normalization.
+- NAVIGATION: PRIMARY_NAV → HOME · ABOUT · BLOG · CONTACT;
+  new CONTENT_NAV (Selected Work, Research) carried by the
+  footer document nav's new "Collections" row so both canonical
+  routes keep site-wide inbound edges (≥3 pages, verified);
+  WORLD_NAV unchanged; the world #work scene untouched. All
+  surfaces update automatically through the single navigation
+  source of truth.
+- BLOG AS CONTENT HUB: content-mode selector (ALL · ARTICLES ·
+  WORK · RESEARCH) with real per-type counts, aria-pressed,
+  URL state ?type= via the existing replaceState store
+  (shareable, reload-safe, Back-safe); invalid type values
+  ignored; result summary line renders the catalogue's real
+  composition (01 ARTICLE · 04 WORK · 04 RESEARCH) from the
+  generated data; cards gain a type badge + type-tinted top
+  edge (one card architecture, controlled variants).
+- BLOG VISUAL SYSTEM: hero becomes a two-column composition —
+  positioning copy left, live instrument panel right (featured
+  cover in a framed panel with CSS signal rings, three type
+  readouts that link into the modes, latest-signal line);
+  featured card carries its content type; new LAB MAP section —
+  six territory cards (code, name → topic hub, key-system
+  signal, article link) plus two collection cards linking the
+  canonical /work/ and /research/ documents with descriptive
+  anchors. All CSS/DOM, reduced-motion-aware.
+- WORK PAGE: visual project cards — real article covers (or a
+  truthful 13-point-star geometric identity card for Contents,
+  never a fabricated screenshot), one-sentence purpose, key
+  signal, tech stack, links + "all <system> writing in the
+  Blog" project-filter links; the what/problem/why depth moves
+  below the visual summary inside the same card; new
+  "work documentation in the Blog" (?type=work) and research
+  cross-links.
+- RESEARCH PAGE: three research modules as QUESTION → METHOD →
+  FRAMEWORK → MEASUREMENT → ARTIFACT chains (horizontal at
+  desktop, left-rail stacked at mobile — one system), each step
+  linking its real framework/artifact; ?type=research links
+  into the Blog; detailed prose sections preserved below.
+- ARTICLE PAGES: the at-a-glance strip now leads with a TYPE
+  chip (tinted, linking /blog/?type=…) and renders
+  unconditionally; project/scene/topic-hub chips unchanged.
+- HOME: writing list entries gain the same type badge
+  (NOTE/WORK/RESEARCH); the Blog relationship ("Open the
+  Blog") unchanged.
+- SEO: Blog metadata rewritten for its discovery-surface role
+  (page-level openGraph/twitter now carry og:image explicitly);
+  JSON-LD adds a truthful ItemList of the canonical content
+  collections (work/research/blog — no query URLs); sitemap
+  untouched (21 URLs, no filter states). verify-seo.mjs:
+  verifyWritingLinks renamed verifyContentDiscoveryLinks; new
+  verifyBlogContentDiscovery — ≥3 crawlable article links on
+  /blog/, /work/ + /research/ crawlable from the Blog,
+  content-type model valid with no orphaned mode, v3.7
+  four-entry primary-nav topology; link-graph check now
+  distinguishes /#scene links (validated against the scene
+  set) from bare #fragment in-page anchors (validated against
+  the page's own element ids, with index.html keeping its
+  scene-routing semantics).
+- VERIFY (measured): npm ci / npm run blog / npm run build /
+  npm run lint (0 errors, 21 pre-existing img warnings
+  unchanged) / npm run verify — 177 SEO + brand + export-route
+  checks green. Browser (agent-browser over the static
+  export): 9 routes × 6 viewports (1440×900, 1280×800,
+  1024×768, 430×932, 390×844, 360×800) — zero horizontal
+  overflow, zero broken images, zero console/page errors; type
+  modes verified interactively (WORK → ?type=work → 4 cards;
+  research deep-link → 4 cards; invalid type ignored → 9
+  cards; project filter still works, removable chip present);
+  mobile type buttons 46px touch targets; VLM screenshot audit
+  of the Blog and Work pages confirms the two-column hero,
+  the mode buttons, the scannable project cards, and no
+  overlap/contrast defects.
+- Version 3.7.0; README (navigation + content-hub sections),
+  Updated-Files.md, worklog.md updated.
+
+Stage Summary:
+- Deliverable: WEB-v3.7-VISUAL-BLOG-UX.zip (repository
+  excluding .git, node_modules, caches, build output).
+- Key decision: Work/Research keep their canonical routes and
+  SEO value while ceding primary-navigation slots to the Blog —
+  the Blog's content modes (?type=work / ?type=research) plus
+  the footer Collections row and the Blog's lab map carry
+  discovery, and verify-seo.mjs enforces both directions of
+  the new graph.

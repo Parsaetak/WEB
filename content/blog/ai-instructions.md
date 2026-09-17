@@ -7,6 +7,7 @@ date: "2026-09-10"
 updated: "2026-09-10"
 author: "Parsa Tak"
 category: "research"
+type: "research"
 tags: ["AI Instructions", "AI agents", "governance", "verification", "REP", "USEF", "2026"]
 featured: false
 project: "ai-frameworks"

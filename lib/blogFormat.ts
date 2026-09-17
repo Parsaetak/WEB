@@ -43,6 +43,16 @@ export type BlogPostMeta = {
   tags: string[];
 
   /*
+   * CONTENT TYPE (v3.7): the formal content-mode classification —
+   * "article" (field notes / essays), "work" (built-system
+   * documentation), "research" (research-programme writing).
+   * Required and validated at build time; drives the Blog content
+   * modes (ALL · ARTICLES · WORK · RESEARCH), the card type badges,
+   * and the at-a-glance strip on article pages.
+   */
+  type: "article" | "work" | "research";
+
+  /*
    * Optional relationship metadata (v2.5): the project/system the
    * article belongs to and the editorial topics it covers. Both feed
    * the deterministic related-content model at build time; they are
@@ -86,6 +96,47 @@ export type BlogPost = BlogPostMeta & {
   html: string;
   headings: { id: string; text: string; level: number }[];
 };
+
+/*
+ * CONTENT TYPES (v3.7) — the three formal content modes of the Blog
+ * discovery surface. Order matches the selector UI (ALL is not a
+ * type; it is the unfiltered mode).
+ */
+export const CONTENT_TYPE_ORDER = [
+  "article",
+  "work",
+  "research"
+] as const;
+
+export type ContentType = (typeof CONTENT_TYPE_ORDER)[number];
+
+export const CONTENT_TYPE_LABELS: Record<
+  ContentType,
+  string
+> = {
+  article: "ARTICLE",
+  work: "WORK",
+  research: "RESEARCH"
+};
+
+/*
+ * Pluralised label for result summaries — truthful counts rendered
+ * from the generated data, never hardcoded.
+ */
+export function contentTypePlural(
+  type: ContentType,
+  count: number
+): string {
+  const plural: Record<ContentType, string> = {
+    article: "ARTICLES",
+    work: "WORK",
+    research: "RESEARCH"
+  };
+
+  return count === 1
+    ? CONTENT_TYPE_LABELS[type]
+    : plural[type];
+}
 
 /*
  * Format an ISO date (YYYY-MM-DD) for display without depending on

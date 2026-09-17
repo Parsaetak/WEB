@@ -13,10 +13,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import type {
-  BlogPostMeta
+  BlogPostMeta,
+  ContentType
 } from "@/lib/blogFormat";
 
 import {
+  CONTENT_TYPE_LABELS,
+  CONTENT_TYPE_ORDER,
+  contentTypePlural,
   formatBlogDate,
   formatBlogDateShort
 } from "@/lib/blogFormat";
@@ -85,9 +89,27 @@ type BlogIndexProps = {
 };
 
 /*
- * DEEP-LINK FILTERS (v2.5.2): article context chips link here as
- * /blog/?project=<name> and /blog/?topic=<name>. The URL is the
- * single source of truth for both dimensions — read through
+ * CONTENT MODES (v3.7): the Blog is the site's content discovery
+ * surface. WORK and RESEARCH stopped being primary-navigation
+ * destinations — inside the Blog they are content modes over the
+ * same catalogue, selected here and mirrored in the URL (?type=)
+ * so a filtered view is shareable and browser-history safe.
+ */
+const TYPE_MODES: readonly {
+  value: ContentType | null;
+  label: string;
+}[] = [
+  { value: null, label: "ALL" },
+  { value: "article", label: "ARTICLES" },
+  { value: "work", label: "WORK" },
+  { value: "research", label: "RESEARCH" }
+];
+
+/*
+ * DEEP-LINK FILTERS (v2.5.2 + v3.7): article context chips link here
+ * as /blog/?project=<name> and /blog/?topic=<name>; the content
+ * modes link as /blog/?type=work and /blog/?type=research. The URL
+ * is the single source of truth for every dimension — read through
  * useSyncExternalStore (no effect-time setState, no hydration
  * mismatch: the server snapshot is ""), so a chip clear rewrites
  * the address and the store notifies in one motion. An unknown
@@ -102,11 +124,13 @@ function readDeepLinkFilters(
 ): {
   project: string | null;
   topic: string | null;
+  type: ContentType | null;
 } {
   if (search === "") {
     return {
       project: null,
-      topic: null
+      topic: null,
+      type: null
     };
   }
 
@@ -117,6 +141,8 @@ function readDeepLinkFilters(
     params.get("project");
 
   const topic = params.get("topic");
+
+  const type = params.get("type");
 
   const validProject =
     project &&
@@ -135,9 +161,22 @@ function readDeepLinkFilters(
       ? topic
       : null;
 
+  /*
+   * The type mode qualifies only when the catalogue actually
+   * contains the content type — an empty mode would render an
+   * empty-looking state from a hand-edited URL.
+   */
+  const validType =
+    type &&
+    (CONTENT_TYPE_ORDER as readonly string[]).includes(type) &&
+    posts.some((post) => post.type === type)
+      ? (type as ContentType)
+      : null;
+
   return {
     project: validProject,
-    topic: validTopic
+    topic: validTopic,
+    type: validType
   };
 }
 
@@ -184,11 +223,14 @@ function getServerUrlSearchSnapshot(): string {
  * URL sync for the deep-link dimensions: clearing a filter chip
  * rewrites the address with replaceState so a shareable URL never
  * advertises a filter that is no longer active. History is left
- * alone — filter state is view state, not navigation.
+ * alone — filter state is view state, not navigation, and the
+ * popstate listener keeps the Back button coherent with what is
+ * rendered.
  */
 function writeDeepLinkFilters(
   project: string | null,
-  topic: string | null
+  topic: string | null,
+  type: ContentType | null = null
 ) {
   if (
     typeof window === "undefined" ||
@@ -217,6 +259,12 @@ function writeDeepLinkFilters(
     params.set("topic", topic);
   } else {
     params.delete("topic");
+  }
+
+  if (type) {
+    params.set("type", type);
+  } else {
+    params.delete("type");
   }
 
   const query =
@@ -271,7 +319,7 @@ export default function BlogIndex({
       getServerUrlSearchSnapshot
     );
 
-  const { project: activeProject, topic: activeTopic } =
+  const { project: activeProject, topic: activeTopic, type: activeType } =
     useMemo(
       () =>
         readDeepLinkFilters(
@@ -281,10 +329,28 @@ export default function BlogIndex({
       [urlSearch, posts]
     );
 
+  /*
+   * CONTENT-MODE SWITCH (v3.7): one URL write per selection — the
+   * same replaceState channel the project/topic chips use, so the
+   * mode is shareable, Back-safe, and survives a page reload. The
+   * ALL mode clears the parameter instead of writing ?type=all,
+   * keeping the canonical URL clean.
+   */
+  const setTypeMode = (
+    type: ContentType | null
+  ) => {
+    writeDeepLinkFilters(
+      activeProject,
+      activeTopic,
+      type
+    );
+  };
+
   const clearProject = () => {
     writeDeepLinkFilters(
       null,
-      activeTopic
+      activeTopic,
+      activeType
     );
   };
 
@@ -303,16 +369,40 @@ export default function BlogIndex({
         project
         ? null
         : project,
-      activeTopic
+      activeTopic,
+      activeType
     );
   };
 
   const clearTopic = () => {
     writeDeepLinkFilters(
       activeProject,
-      null
+      null,
+      activeType
     );
   };
+
+  /*
+   * TYPE COUNTS (v3.7) — real counts derived from the generated
+   * catalogue (never hardcoded), recomputed only when the posts
+   * prop changes. Drives both the selector's per-mode counts and
+   * the compact result summary line.
+   */
+  const typeCounts = useMemo(() => {
+    const counts = new Map<
+      ContentType,
+      number
+    >();
+
+    for (const post of posts) {
+      counts.set(
+        post.type,
+        (counts.get(post.type) ?? 0) + 1
+      );
+    }
+
+    return counts;
+  }, [posts]);
 
   const visibleTags =
     useMemo(
@@ -332,6 +422,8 @@ export default function BlogIndex({
               post,
               query
             ) &&
+            (activeType === null ||
+              post.type === activeType) &&
             (activeTag === null ||
               post.tags.includes(
                 activeTag
@@ -348,6 +440,7 @@ export default function BlogIndex({
       [
         posts,
         query,
+        activeType,
         activeTag,
         activeProject,
         activeTopic
@@ -356,6 +449,7 @@ export default function BlogIndex({
 
   const hasFilters =
     query !== "" ||
+    activeType !== null ||
     activeTag !== null ||
     activeProject !== null ||
     activeTopic !== null;
@@ -386,6 +480,7 @@ export default function BlogIndex({
     );
 
     writeDeepLinkFilters(
+      null,
       null,
       null
     );
@@ -524,6 +619,51 @@ export default function BlogIndex({
 
   return (
     <div className={styles.blogIndex}>
+      {/**
+        * CONTENT-MODE SELECTOR (v3.7) — the Blog's primary
+        * discovery control. Four modes over one catalogue; the
+        * active mode is mirrored in the URL (?type=…), announced
+        * with aria-pressed, and visually unmistakable. Counts are
+        * the real per-type catalogue counts (never hardcoded). A
+        * mode whose type is absent from the catalogue is disabled —
+        * it can never strand the reader in an empty view.
+        */}
+      <div
+        className={styles.typeSelector}
+        role="group"
+        aria-label="Browse by content type"
+      >
+        {TYPE_MODES.map((mode) => {
+          const active = activeType === mode.value;
+
+          const count =
+            mode.value === null
+              ? posts.length
+              : typeCounts.get(mode.value) ?? 0;
+
+          return (
+            <button
+              key={mode.label}
+              type="button"
+              className={styles.typeMode}
+              data-active={active ? "true" : "false"}
+              data-type={mode.value ?? "all"}
+              aria-pressed={active}
+              disabled={count === 0}
+              onClick={() => setTypeMode(mode.value)}
+            >
+              <span className={styles.typeModeLabel}>
+                {mode.label}
+              </span>
+
+              <span className={styles.typeModeCount}>
+                {String(count).padStart(2, "0")}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       <div className={styles.controls}>
         <div
           className={styles.searchWrap}
@@ -673,12 +813,36 @@ export default function BlogIndex({
         <span>
           {filteredPosts.length}
           {" "}
-          ARTICLE
-          {filteredPosts.length ===
-          1
-            ? ""
-            : "S"}
+          VISIBLE
         </span>
+
+        {/**
+          * COMPACT RESULT SUMMARY (v3.7) — the catalogue's real
+          * per-type composition, one quiet mono line. Counts come
+          * from the generated posts (typeCounts memo above), never
+          * from a hardcoded string.
+          */}
+        <span className={styles.typeSummary}>
+          {CONTENT_TYPE_ORDER.map((type, index) => (
+            <span key={type}>
+              {index > 0 && (
+                <span aria-hidden="true"> · </span>
+              )}
+
+              {String(typeCounts.get(type) ?? 0).padStart(2, "0")}{" "}
+              {contentTypePlural(
+                type,
+                typeCounts.get(type) ?? 0
+              )}
+            </span>
+          ))}
+        </span>
+
+        {activeType && (
+          <span className={styles.typeSummaryActive}>
+            MODE · {CONTENT_TYPE_LABELS[activeType]}
+          </span>
+        )}
 
         {activeTag && (
           <span>
@@ -758,6 +922,16 @@ export default function BlogIndex({
                     ? "true"
                     : "false"
                 }
+                /*
+                 * CARD VARIANT (v3.7): the content type drives the
+                 * card's accent variant — one shared card
+                 * architecture, four controlled looks (FEATURED
+                 * rides on top of the type variant via the
+                 * data-featured attribute above).
+                 */
+                data-type={
+                  post.type
+                }
                 data-category={
                   post.category
                 }
@@ -815,6 +989,24 @@ export default function BlogIndex({
                         styles.cardKickerLeft
                       }
                     >
+                      {/**
+                        * TYPE BADGE (v3.7) — primary hierarchy slot:
+                        * TYPE before category/project, the quiet
+                        * mono vocabulary of the content modes. Plain
+                        * text: readable by assistive tech, styled by
+                        * the data-type variant below.
+                        */}
+                      <span
+                        className={styles.cardType}
+                        data-type={post.type}
+                      >
+                        {
+                          CONTENT_TYPE_LABELS[
+                            post.type
+                          ]
+                        }
+                      </span>
+
                       <span
                         className={
                           styles.cardCategory

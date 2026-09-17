@@ -1,17 +1,23 @@
 import { routeHref } from "@/lib/hubs";
 
-import { PRIMARY_NAV, WORLD_NAV } from "@/lib/navigation";
+import {
+  CONTENT_NAV,
+  PRIMARY_NAV,
+  WORLD_NAV
+} from "@/lib/navigation";
 
 import styles from "@/components/SiteDocNav.module.css";
 
 /*
- * SITE DOCUMENT NAV (v3.2) — crawlable links to the real, indexable
+ * SITE DOCUMENT NAV (v3.7) — crawlable links to the real, indexable
  * documents, carried by the shared SiteFooter on every page.
  *
- * Three rows, in priority order:
- * - Site: the professional primary navigation (HOME, ABOUT, WORK,
- *   RESEARCH, BLOG, CONTACT) — the canonical evidence chain
- *   PERSON → ABOUT → WORK → RESEARCH → BLOG → GITHUB → CONTACT;
+ * Four rows, in priority order:
+ * - Site: the primary navigation (HOME, ABOUT, BLOG, CONTACT) — the
+ *   Blog-centered information architecture;
+ * - Collections: the canonical deep documents the Blog content
+ *   ecosystem is built on (SELECTED WORK, RESEARCH) — kept crawlable
+ *   site-wide so neither route can become orphaned;
  * - World: the experimental scenes (SYSTEMS, RED MAGIC, LIBRARY) as
  *   contextual destinations;
  * - Topics: the six topic hubs — the research map, one hop from
@@ -25,6 +31,12 @@ import styles from "@/components/SiteDocNav.module.css";
 
 const DOCUMENT_LINKS: readonly { label: string; href: string }[] =
   PRIMARY_NAV.map((entry) => ({
+    label: entry.label,
+    href: entry.href
+  }));
+
+const COLLECTION_LINKS: readonly { label: string; href: string }[] =
+  CONTENT_NAV.map((entry) => ({
     label: entry.label,
     href: entry.href
   }));
@@ -72,6 +84,8 @@ export default function SiteDocNav() {
   return (
     <nav className={styles.nav} aria-label="Site documents and topics">
       <NavRow heading="Site" links={DOCUMENT_LINKS} />
+
+      <NavRow heading="Collections" links={COLLECTION_LINKS} />
 
       <NavRow heading="World" links={WORLD_LINKS} />
 

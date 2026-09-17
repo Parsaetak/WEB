@@ -919,3 +919,217 @@
     transform: none;
   }
 }
+
+/*
+ * ------------------------------------------------------------------
+ * CONTENT MODES (v3.7)
+ * ------------------------------------------------------------------
+ */
+
+/*
+ * The content-type selector: the Blog's primary discovery control.
+ * ALL · ARTICLES · WORK · RESEARCH — four modes over one catalogue.
+ * Touch-friendly (min-height 44px), keyboard-complete (buttons with
+ * aria-pressed), and visually unambiguous about the active mode.
+ */
+.typeSelector {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 10px;
+}
+
+.typeMode {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  min-height: 44px;
+
+  padding: 0 18px;
+
+  border: 1px solid var(--line);
+
+  border-radius: 4px;
+
+  background:
+    linear-gradient(
+      160deg,
+      rgba(20, 22, 30, 0.55),
+      rgba(10, 11, 15, 0.5)
+    );
+
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.14em;
+
+  cursor: pointer;
+
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.typeMode:hover {
+  color: var(--text);
+
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.typeMode:focus-visible {
+  outline: 2px solid var(--red);
+
+  outline-offset: 2px;
+}
+
+.typeMode:disabled {
+  opacity: 0.4;
+
+  cursor: not-allowed;
+}
+
+/*
+ * The active mode: red identity — the same accent vocabulary the
+ * tag chips use, so "active" reads identically everywhere on the
+ * page. The count keeps its quieter tint; the label carries the
+ * state.
+ */
+.typeMode[data-active="true"] {
+  color: #ffffff;
+
+  border-color: rgba(255, 64, 54, 0.65);
+
+  background:
+    linear-gradient(
+      160deg,
+      rgba(255, 32, 32, 0.18),
+      rgba(120, 10, 10, 0.16)
+    );
+
+  box-shadow:
+    0 0 0 1px
+      rgba(255, 32, 32, 0.18),
+    0 8px 24px
+      rgba(255, 32, 32, 0.08);
+}
+
+.typeModeCount {
+  padding: 2px 7px;
+
+  border: 1px solid var(--line);
+
+  border-radius: 3px;
+
+  color: var(--text-muted);
+
+  font-size: 10px;
+
+  letter-spacing: 0.06em;
+}
+
+.typeMode[data-active="true"] .typeModeCount {
+  color: #ffffff;
+
+  border-color:
+    rgba(255, 64, 54, 0.45);
+}
+
+/*
+ * Compact result summary: the catalogue's real per-type composition
+ * as one quiet mono line beside the visible count.
+ */
+.typeSummary {
+  display: inline-flex;
+
+  flex-wrap: wrap;
+
+  gap: 2px;
+}
+
+.typeSummaryActive {
+  color: var(--red-hot);
+}
+
+/*
+ * Card type badge: the primary hierarchy slot. Same geometry as the
+ * category label, tinted by content type so the grid is scannable
+ * by color AND text (never color alone).
+ */
+.cardType {
+  margin-right: 8px;
+
+  padding: 2px 6px;
+
+  border: 1px solid
+    rgba(255, 64, 54, 0.28);
+
+  border-radius: 3px;
+
+  color: var(--red-hot);
+
+  font-size: 9px;
+
+  letter-spacing: 0.16em;
+}
+
+.cardType[data-type="work"] {
+  border-color:
+    rgba(255, 150, 60, 0.32);
+
+  color: #ffa259;
+}
+
+.cardType[data-type="research"] {
+  border-color:
+    rgba(120, 160, 255, 0.3);
+
+  color: #93adff;
+}
+
+/*
+ * Card type variants: one shared card architecture with a quiet
+ * accent difference per content type — the top edge carries a 2px
+ * type-colored signal line, reinforcing the badge without turning
+ * the grid into confetti.
+ */
+.card[data-type="work"] {
+  border-top-color:
+    rgba(255, 150, 60, 0.35);
+}
+
+.card[data-type="research"] {
+  border-top-color:
+    rgba(120, 160, 255, 0.32);
+}
+
+.card[data-type="article"] {
+  border-top-color:
+    rgba(255, 32, 32, 0.35);
+}
+
+@media (max-width: 760px) {
+  .typeMode {
+    flex: 1 1 auto;
+
+    justify-content: center;
+
+    min-height: 46px;
+
+    padding: 0 12px;
+  }
+
+  .typeSelector {
+    gap: 8px;
+  }
+}

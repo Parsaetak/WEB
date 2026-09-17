@@ -23,14 +23,23 @@ import { getBlogMetaList } from "@/lib/blog";
 import styles from "@/components/content/content.module.css";
 
 /*
- * /research/ (v3.2) — the research programme document.
+ * /research/ (v3.7) — the research programme document.
  *
- * The primary-navigation RESEARCH destination. It is NOT a thin SEO
- * page: it states the research questions, the method, the frameworks,
- * the measurement programme, and — critically — it maps the six topic
- * hubs as the research territory, so every hub is one hop from the
- * primary navigation. Every claim links to a real artifact: a public
- * specification, a repository, or a field-note article.
+ * ROLE (v3.7): Research is no longer a primary-navigation tab — it
+ * is the CANONICAL DEEP RESEARCH LANDING PAGE of the Blog content
+ * ecosystem: the search-engine landing document and detailed
+ * reference, while discovery of the research writing increasingly
+ * happens through the Blog's content modes (see
+ * /blog/?type=research). This route stays indexable, crawlable,
+ * and cross-linked in both directions.
+ *
+ * PRESENTATION (v3.7): the page opens with RESEARCH MODULES — each
+ * research line rendered as a QUESTION → METHOD → FRAMEWORK →
+ * MEASUREMENT → ARTIFACT chain, the actual structure of the
+ * programme, readable in seconds. The detailed prose (territory,
+ * frameworks, measurement, selected writing) follows below. It is
+ * NOT a thin SEO page: every claim links to a real artifact — a
+ * public specification, a repository, or a field-note article.
  *
  * Structured data: one WebPage about the research topics, referencing
  * the stable site-wide @id anchors (never a duplicate Person).
@@ -123,6 +132,75 @@ const SELECTED_ARTICLE_SLUGS: readonly string[] = [
   "building-under-constraints"
 ];
 
+/*
+ * RESEARCH MODULES (v3.7) — the programme's three active research
+ * lines, each rendered as the chain it actually follows: QUESTION →
+ * METHOD → FRAMEWORK → MEASUREMENT → ARTIFACT. Every step is real:
+ * the frameworks, systems, and articles named below exist on this
+ * site or in the public repositories. A navigation surface first,
+ * a documentation page second.
+ */
+const RESEARCH_MODULES: readonly {
+  title: string;
+  question: string;
+  method: string;
+  framework: { label: string; href: string };
+  measurement: string;
+  artifact: { label: string; href: string };
+}[] = [
+  {
+    title: "Reasoning",
+    question:
+      "How should reasoning be structured so a system can inspect and correct it?",
+    method:
+      "Protocol engineering — decomposition, verification, critique, adversarial checking.",
+    framework: {
+      label: "REP — the Reasoning Enhancement Protocol",
+      href: "/blog/reasoning-is-a-system-property/"
+    },
+    measurement:
+      "Reasoning claims feed the UHIT batteries instead of trusting themselves.",
+    artifact: {
+      label: "Reasoning Is a System Property",
+      href: "/blog/reasoning-is-a-system-property/"
+    }
+  },
+  {
+    title: "Evaluation",
+    question:
+      "Can machine intelligence be measured honestly, before the word intelligence is allowed near a score?",
+    method:
+      "Engineered items, multiplicative scoring, verification as a load-bearing factor.",
+    framework: {
+      label: "UHIT / AIST-2026.09 / ASI-100-Elite",
+      href: "/ai-evaluation/"
+    },
+    measurement:
+      "Zero-collapse defense factors; an ungameable benchmark or none at all.",
+    artifact: {
+      label: "Measuring Machine Intelligence",
+      href: "/blog/measuring-machine-intelligence/"
+    }
+  },
+  {
+    title: "Local AI",
+    question:
+      "What becomes possible when the whole intelligence stack runs on your own machine?",
+    method:
+      "Local-first architecture — managed llama.cpp, governed tools, local memory.",
+    framework: {
+      label: "SHEYTAN's plan-verify agent loop",
+      href: "/local-ai/"
+    },
+    measurement:
+      "Objective verification gates — the model is never the judge of its own work.",
+    artifact: {
+      label: "SHEYTAN: A Local-First AI Agent Laboratory",
+      href: "/blog/sheytan-the-local-first-laboratory/"
+    }
+  }
+];
+
 export default function ResearchPage() {
   const metaList = getBlogMetaList();
 
@@ -165,6 +243,128 @@ export default function ResearchPage() {
           "The programme is independent and artifact-first: research is answered with public specifications, working systems, and benchmarks rather than only papers — and every claim is marked as fact or analysis. The method is the same pipeline the systems follow: research → product direction → architecture → implementation → testing → verification → delivery."
         ]}
       >
+        {/**
+          * RESEARCH MODULES (v3.7) — the first impression of the
+          * programme: three research lines as QUESTION → METHOD →
+          * FRAMEWORK → MEASUREMENT → ARTIFACT chains. Real
+          * structure, real links — the map before the prose.
+          */}
+        <Section title="The research lines">
+          <div className={styles.researchModules}>
+            {RESEARCH_MODULES.map((line) => (
+              <article
+                key={line.title}
+                className={styles.researchModule}
+                aria-label={`${line.title} research line`}
+              >
+                <h3 className={styles.researchModuleTitle}>
+                  {line.title}
+                </h3>
+
+                <div className={styles.researchChain}>
+                  <div className={styles.researchStep}>
+                    <span className={styles.researchStepLabel}>
+                      Question
+                    </span>
+
+                    <p className={styles.researchStepBody}>
+                      {line.question}
+                    </p>
+                  </div>
+
+                  <span
+                    className={styles.researchArrow}
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+
+                  <div className={styles.researchStep}>
+                    <span className={styles.researchStepLabel}>
+                      Method
+                    </span>
+
+                    <p className={styles.researchStepBody}>
+                      {line.method}
+                    </p>
+                  </div>
+
+                  <span
+                    className={styles.researchArrow}
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+
+                  <div className={styles.researchStep}>
+                    <span className={styles.researchStepLabel}>
+                      Framework
+                    </span>
+
+                    <p className={styles.researchStepBody}>
+                      <a href={routeHref(line.framework.href)}>
+                        {line.framework.label}
+                      </a>
+                    </p>
+                  </div>
+
+                  <span
+                    className={styles.researchArrow}
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+
+                  <div className={styles.researchStep}>
+                    <span className={styles.researchStepLabel}>
+                      Measurement
+                    </span>
+
+                    <p className={styles.researchStepBody}>
+                      {line.measurement}
+                    </p>
+                  </div>
+
+                  <span
+                    className={styles.researchArrow}
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+
+                  <div className={styles.researchStep}>
+                    <span className={styles.researchStepLabel}>
+                      Artifact
+                    </span>
+
+                    <p className={styles.researchStepBody}>
+                      <a href={routeHref(line.artifact.href)}>
+                        {line.artifact.label}
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <LinkCardRow
+            links={[
+              {
+                label: "Research writing in the Blog",
+                href: "/blog/?type=research",
+                note: "The full research stream, one filter away",
+                external: false
+              },
+              {
+                label: "Selected Work — the systems behind the research",
+                href: "/work/",
+                note: "What is built, why it matters, where it lives",
+                external: false
+              }
+            ]}
+          />
+        </Section>
         <Section title="The research map — six topic hubs">
           <Prose>
             <p>
@@ -270,8 +470,12 @@ export default function ResearchPage() {
             <p>
               The arguments, in long form. These four articles carry the
               programme&#39;s core positions and their engineering consequences;
-              the full catalogue lives in the{" "}
-              <a href={routeHref("/blog/")}>writing index</a>.
+              the full research stream lives in the{" "}
+              <a href={routeHref("/blog/?type=research")}>
+                Blog&#39;s research mode
+              </a>
+              , and the complete catalogue in the{" "}
+              <a href={routeHref("/blog/")}>Blog index</a>.
             </p>
           </Prose>
 

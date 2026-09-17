@@ -19,6 +19,8 @@ import {
 
 import { getHubForArticle } from "@/lib/hubs";
 
+import { CONTENT_TYPE_LABELS } from "@/lib/blogFormat";
+
 import {
   AUTHOR_RESEARCH_LINE,
   AUTHOR_TAGLINE,
@@ -505,17 +507,40 @@ export default async function ArticlePage({
             </span>
           </div>
 
-          {((post.project &&
-            post.project.length >
-              0) ||
-            post.topics.length >
-              0) && (
-            <div
-              className={
-                styles.contextChips
-              }
-              data-reveal="instant"
-            >
+          {/*
+           * AT A GLANCE (v3.7): the type chip always renders — every
+           * article has a classified content type. Project, hub, and
+           * topic chips follow when their metadata exists.
+           */}
+          <div
+            className={
+              styles.contextChips
+            }
+            data-reveal="instant"
+          >
+              {/**
+                * TYPE CHIP (v3.7) — the at-a-glance strip leads with
+                * the content type: what the reader is about to enter
+                * (ARTICLE / WORK / RESEARCH documentation), linking
+                * into the Blog's matching content mode.
+                */}
+              <Link
+                className={`${styles.contextChip} ${styles.contextChipType}`}
+                href={`/blog/?type=${post.type}`}
+                data-type={post.type}
+                title={`More ${CONTENT_TYPE_LABELS[post.type].toLowerCase()} content in the Blog`}
+              >
+                <span
+                  className={
+                    styles.contextChipLabel
+                  }
+                >
+                  TYPE
+                </span>
+
+                {CONTENT_TYPE_LABELS[post.type]}
+              </Link>
+
               {post.project && (
                 <Link
                   className={`${styles.contextChip} ${styles.contextChipProject}`}
@@ -619,8 +644,7 @@ export default async function ArticlePage({
                   </Link>
                 )
               )}
-            </div>
-          )}
+          </div>
         </header>
 
         {/*

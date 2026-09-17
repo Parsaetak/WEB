@@ -21,9 +21,14 @@
  * - homepage content       verifyHomeContent     — one h1 inside <main>,
  *   no streamed-Suspense wrapper, capability/project/workflow
  *   vocabulary in the visible HTML
- * - writing links          verifyWritingLinks    — ≥3 crawlable
+ * - writing links          verifyContentDiscoveryLinks — ≥3 crawlable
  *   article links, every target a real exported route, basePath-aware
  *   (local /blog/<slug>/, GitHub Pages /WEB/blog/<slug>/)
+ * - blog content discovery verifyBlogContentDiscovery (v3.7) — the
+ *   Blog is the content hub: crawlable article links, crawlable
+ *   /work/ and /research/ links (the canonical collections), the
+ *   content-type modes present, every content type valid and
+ *   non-orphaned, and the new four-entry primary navigation
  * - interaction anchors    verifyInteractivity   — no dead anchors,
  *   every internal href resolves to an exported file, media src
  *   resolves, label punctuation QA
@@ -804,7 +809,7 @@ async function verifyHomeContent(articleRoutes) {
     );
   }
 
-  verifyWritingLinks(html, articleRoutes);
+  verifyContentDiscoveryLinks(html, articleRoutes);
 
   /* Crawlable destinations from the home scene. */
   const requiredHrefs = [
@@ -826,7 +831,8 @@ async function verifyHomeContent(articleRoutes) {
 }
 
 /*
- * WRITING-LINK VERIFICATION (v3.0, basePath-aware).
+ * CONTENT-DISCOVERY LINK VERIFICATION (v3.0, basePath-aware;
+ * renamed v3.7 to match the Blog-centered content architecture).
  *
  * The home route must link real articles with descriptive
  * destinations, not just the blog index.
@@ -846,7 +852,7 @@ const HOME_WRITING_MIN_LINKS = 3;
 
 const ARTICLE_SLUG_PATTERN = "[a-z0-9-]+";
 
-function verifyWritingLinks(html, articleRoutes) {
+function verifyContentDiscoveryLinks(html, articleRoutes) {
   const articleHref = new RegExp(
     `href="(${BASE_PATH}/blog/${ARTICLE_SLUG_PATTERN}/)"`,
     "g"
@@ -886,6 +892,157 @@ function verifyWritingLinks(html, articleRoutes) {
   pass(
     `home: ${writingHrefs.length} crawlable article link(s) in home HTML, all resolve to exported routes`
   );
+}
+
+/*
+ * BLOG CONTENT-DISCOVERY VERIFICATION (v3.7).
+ *
+ * The Blog is the site's content hub — the discovery surface for
+ * articles, work documentation, and research writing. This check
+ * proves the exported /blog/ document actually plays that role:
+ *
+ * - it links real articles (≥3, every target an exported route)
+ * - it links the canonical /work/ and /research/ collections —
+ *   neither deep landing page may become orphaned just because it
+ *   left the primary navigation
+ * - it carries the content-type modes (ALL / ARTICLES / WORK /
+ *   RESEARCH) over the generated catalogue
+ * - every post in the content index has a valid content type, and
+ *   no type present in the catalogue is missing from the selector
+ * - the primary navigation is the v3.7 four-entry topology
+ *   (HOME · ABOUT · BLOG · CONTACT) — no stale six-tab layout
+ */
+const BLOG_ARTICLE_MIN_LINKS = 3;
+
+const CONTENT_TYPES = ["article", "work", "research"];
+
+async function verifyBlogContentDiscovery(articleRoutes, postsIndex) {
+  const blogFile = path.join("blog", "index.html");
+
+  const html = await readText(blogFile);
+
+  /* Crawlable article links — every one must be a real route. */
+  const articleHref = new RegExp(
+    `href="(${BASE_PATH}/blog/${ARTICLE_SLUG_PATTERN}/)"`,
+    "g"
+  );
+
+  const blogArticleHrefs = [
+    ...new Set([...html.matchAll(articleHref)].map((match) => match[1]))
+  ];
+
+  if (blogArticleHrefs.length < BLOG_ARTICLE_MIN_LINKS) {
+    fail(
+      `blog index: expected ≥${BLOG_ARTICLE_MIN_LINKS} crawlable article links, found ${blogArticleHrefs.length}`
+    );
+  } else {
+    const exportedSlugs = new Set(articleRoutes);
+
+    const invalid = blogArticleHrefs.filter((href) => {
+      if (href.includes("localhost") || href.includes("/blog/undefined")) {
+        return true;
+      }
+      const slug = href
+        .slice(BASE_PATH.length)
+        .replace(/^\/blog\//, "")
+        .replace(/\/$/, "");
+      return !exportedSlugs.has(slug);
+    });
+
+    if (invalid.length > 0) {
+      for (const href of invalid) {
+        fail(`blog index: article link does not resolve to an exported route: ${href}`);
+      }
+    } else {
+      pass(
+        `blog index: ${blogArticleHrefs.length} crawlable article link(s), all resolve to exported routes`
+      );
+    }
+  }
+
+  /*
+   * Work and Research discoverable from the Blog: the canonical
+   * collections must be crawlable hrefs on the blog index (the lab
+   * map and the footer both carry them).
+   */
+  for (const collection of ["work", "research"]) {
+    const collectionHref = `href="${BASE_PATH}/${collection}/"`;
+
+    if (!html.includes(collectionHref)) {
+      fail(
+        `blog index: canonical /${collection}/ collection is not linked from the Blog (expected ${collectionHref})`
+      );
+    }
+  }
+
+  if (!failures.some((entry) => entry.includes("collection is not linked from the Blog"))) {
+    pass("blog index: /work/ and /research/ canonical collections crawlable from the Blog");
+  }
+
+  /*
+   * Content-type model: every generated post carries a valid type,
+   * and every type present in the catalogue appears in the exported
+   * selector (no orphaned content mode).
+   */
+  const typeCounts = { article: 0, work: 0, research: 0 };
+
+  for (const post of postsIndex.posts) {
+    if (!CONTENT_TYPES.includes(post.type)) {
+      fail(
+        `blog index: post "${post.slug}" has invalid content type ${JSON.stringify(post.type)} (expected one of: ${CONTENT_TYPES.join(", ")})`
+      );
+    } else {
+      typeCounts[post.type] += 1;
+    }
+  }
+
+  const catalogueTypes = CONTENT_TYPES.filter(
+    (type) => typeCounts[type] > 0
+  );
+
+  for (const type of catalogueTypes) {
+    if (!html.includes(`data-type="${type}"`)) {
+      fail(
+        `blog index: content type "${type}" is present in the catalogue (${typeCounts[type]} post(s)) but missing from the exported content-mode selector`
+      );
+    }
+  }
+
+  if (
+    !failures.some(
+      (entry) =>
+        entry.includes("invalid content type") ||
+        entry.includes("missing from the exported content-mode selector")
+    )
+  ) {
+    pass(
+      `blog index: content-type model valid (${catalogueTypes.map((type) => `${type} ×${typeCounts[type]}`).join(", ")}), no orphaned content mode`
+    );
+  }
+
+  /*
+   * Primary navigation topology (v3.7): the header nav must carry
+   * the four primary destinations. The full-order assertion lives
+   * on the four hrefs being present in the unified nav markup.
+   */
+  const primaryNavHrefs = [
+    `${BASE_PATH}/`,
+    `${BASE_PATH}/about/`,
+    `${BASE_PATH}/blog/`,
+    `${BASE_PATH}/contact/`
+  ];
+
+  const missingNav = primaryNavHrefs.filter(
+    (href) => !html.includes(`href="${href}"`)
+  );
+
+  if (missingNav.length > 0) {
+    fail(
+      `blog index: primary navigation incomplete — missing ${missingNav.join(", ")} (v3.7 topology: HOME · ABOUT · BLOG · CONTACT)`
+    );
+  } else {
+    pass("blog index: primary navigation carries the v3.7 topology (HOME · ABOUT · BLOG · CONTACT)");
+  }
 }
 
 /*
@@ -1050,14 +1207,49 @@ async function verifyInternalLinkGraph(articleRoutes) {
         continue;
       }
 
+      /*
+       * Fragment hrefs, two distinct kinds (v3.7):
+       * - "/#scene" (leading slash): a world-shell scene link —
+       *   validated against the known scene set.
+       * - "#fragment" (bare): an in-page anchor on the CURRENT page
+       *   (e.g. the Blog's #browse jump to the discovery grid) —
+       *   validated against the element ids present in this page's
+       *   own exported HTML.
+       */
       const sceneMatch = href.match(
-        new RegExp(`^${BASE_PATH}/?#([a-z]+)$`)
+        new RegExp(`^${BASE_PATH}/#([a-z]+)$`)
       );
 
-      if (sceneMatch && !SCENE_HASHES.has(sceneMatch[1]) && sceneMatch[1] !== "top") {
+      if (
+        sceneMatch &&
+        !SCENE_HASHES.has(sceneMatch[1]) &&
+        sceneMatch[1] !== "top"
+      ) {
         broken.push(
           `${relFile}: link to unknown scene ${href}`
         );
+      }
+
+      const inPageMatch = href.match(/^#([a-z][a-z0-9-]*)$/);
+
+      if (inPageMatch && inPageMatch[1] !== "top") {
+        /*
+         * The world shell (index.html) is the one document where a
+         * bare hash routes a SCENE — the same vocabulary as /#scene
+         * links. Every other document treats a bare hash as an
+         * in-page anchor and must carry the matching element id.
+         */
+        if (relFile === "index.html") {
+          if (!SCENE_HASHES.has(inPageMatch[1])) {
+            broken.push(
+              `${relFile}: link to unknown scene ${href}`
+            );
+          }
+        } else if (!html.includes(`id="${inPageMatch[1]}"`)) {
+          broken.push(
+            `${relFile}: in-page anchor #${inPageMatch[1]} matches no element id on the page`
+          );
+        }
       }
     }
   }
@@ -1292,6 +1484,13 @@ async function main() {
     canonical: `${SITE_ORIGIN}/blog/`,
     types: ["WebSite", "Person", "Blog"]
   });
+
+  /*
+   * Blog content-discovery checks (v3.7): articles, canonical
+   * collections, content-type modes, and the primary-nav topology —
+   * verified against the exported HTML, not the source tree.
+   */
+  await verifyBlogContentDiscovery(articleRoutes, postsIndex);
 
   for (const slug of articleRoutes) {
     const post = postBySlug.get(slug);

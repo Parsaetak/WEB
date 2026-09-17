@@ -6,6 +6,7 @@ description: "How SHEYTAN Local Agent is built: Go orchestration under a Wails v
 date: "2026-09-12"
 author: "Parsa Tak"
 category: "engineering"
+type: "work"
 tags: ["SHEYTAN", "local-first", "agents", "Go", "llama.cpp", "verification", "2026"]
 featured: false
 project: "sheytan-local-agent"

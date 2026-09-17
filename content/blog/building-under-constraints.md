@@ -7,6 +7,7 @@ date: "2026-09-10"
 updated: "2026-09-10"
 author: "Parsa Tak"
 category: "systems"
+type: "article"
 tags: ["architecture", "static export", "content pipeline", "AI systems", "human will", "2026"]
 featured: false
 project: "web-platform"

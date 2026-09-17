@@ -493,6 +493,23 @@ function HomeWritingItem({
           {String(index + 1).padStart(2, "0")}
         </span>
 
+        {/*
+         * TYPE BADGE (v3.7) — the home writing list speaks the same
+         * content-type vocabulary as the Blog: field note, system
+         * documentation, or research writing, one glance before the
+         * title.
+         */}
+        <span
+          className={styles.homeWritingType}
+          data-type={post.type}
+        >
+          {post.type === "article"
+            ? "NOTE"
+            : post.type === "work"
+              ? "WORK"
+              : "RESEARCH"}
+        </span>
+
         <span className={styles.homeWritingCategory}>{post.category}</span>
 
         <span className={styles.homeWritingDate}>

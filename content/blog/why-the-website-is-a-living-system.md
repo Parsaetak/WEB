@@ -7,6 +7,7 @@ date: "2026-09-10"
 updated: "2026-09-11"
 author: "Parsa Tak"
 category: "engineering"
+type: "work"
 tags: ["RED MAGIC", "Red illuminati", "interfaces", "systems", "performance", "AI-assisted engineering", "2026"]
 featured: true
 project: "red-magic"

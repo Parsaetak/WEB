@@ -6,6 +6,7 @@ description: "The RED THEORY model explained: emergence, adaptation, competition
 date: "2026-09-12"
 author: "Parsa Tak"
 category: "research"
+type: "research"
 tags: ["RED THEORY", "emergence", "adaptation", "living systems", "simulation", "2026"]
 featured: false
 project: "red-theory"

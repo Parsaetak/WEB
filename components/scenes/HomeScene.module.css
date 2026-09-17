@@ -3409,3 +3409,37 @@ strong i {
   outline-offset:
     2px;
 }
+
+/*
+ * TYPE BADGE (v3.7) — the home writing list's content-type marker,
+ * the same quiet mono vocabulary and tint set as the Blog cards.
+ */
+.homeWritingType {
+  padding: 2px 6px;
+
+  border: 1px solid rgba(255, 64, 54, 0.3);
+
+  border-radius: 3px;
+
+  color: var(--red-hot);
+
+  font-family: var(--font-mono);
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.16em;
+}
+
+.homeWritingType[data-type="work"] {
+  border-color: rgba(255, 150, 60, 0.34);
+
+  color: #ffa259;
+}
+
+.homeWritingType[data-type="research"] {
+  border-color: rgba(120, 160, 255, 0.32);
+
+  color: #93adff;
+}

@@ -1528,3 +1528,451 @@
 
   margin: 20px 0 8px;
 }
+
+/* ------------------------------------------------------------------
+ * VISUAL PROJECT CARDS (v3.7) — /work/ presentation upgrade
+ * ------------------------------------------------------------------
+ */
+
+/*
+ * The visual project list: each system leads with its real visual
+ * identity (committed article cover, or the truthful geometric
+ * identity card), then the scannable summary, then the deep
+ * documentation — inside one card, one column of meaning.
+ */
+.projectVisualList {
+  display: grid;
+
+  gap: 18px;
+
+  margin-top: 22px;
+}
+
+.projectVisualCard {
+  display: grid;
+
+  grid-template-columns:
+    minmax(220px, 0.9fr)
+    minmax(0, 1.1fr);
+
+  overflow: hidden;
+
+  border: 1px solid var(--line-soft);
+
+  border-radius: 12px;
+
+  background: linear-gradient(
+    145deg,
+    rgba(18, 20, 27, 0.82),
+    rgba(9, 10, 14, 0.74)
+  );
+
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.projectVisualCard:hover {
+  border-color: rgba(255, 32, 32, 0.28);
+
+  box-shadow: var(--shadow-red);
+}
+
+/*
+ * The media cell: aspect-locked cover, object-fit cover, lazy after
+ * the first two cards (the eager ones are the first impression).
+ */
+.projectVisualMedia {
+  display: block;
+
+  min-height: 240px;
+
+  overflow: hidden;
+
+  border-right: 1px solid var(--line-soft);
+
+  background: #070707;
+}
+
+.projectVisualMedia img {
+  width: 100%;
+
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+/*
+ * Truthful identity card for systems without a dedicated cover:
+ * the 13-point star identity over a technical grid, with the
+ * system's own type vocabulary as the label. Never a fake
+ * screenshot.
+ */
+.projectVisualIdentity {
+  position: relative;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 16px;
+
+  background:
+    radial-gradient(
+      90% 70% at 50% 30%,
+      rgba(255, 32, 32, 0.07),
+      transparent 60%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 23px,
+      rgba(255, 255, 255, 0.025) 23px 24px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 23px,
+      rgba(255, 255, 255, 0.025) 23px 24px
+    ),
+    #07080a;
+}
+
+.projectVisualIdentity img {
+  width: 54px;
+
+  height: 54px;
+
+  object-fit: contain;
+}
+
+.projectVisualIdentityLabel {
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.26em;
+
+  line-height: 1.9;
+
+  text-align: center;
+
+  text-transform: uppercase;
+}
+
+.projectVisualContent {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+  padding: 26px 28px;
+}
+
+.projectVisualHead {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: baseline;
+
+  justify-content: space-between;
+
+  gap: 8px;
+}
+
+.projectVisualName {
+  margin: 0;
+
+  font-size: 21px;
+
+  font-weight: 800;
+
+  letter-spacing: -0.02em;
+}
+
+/*
+ * One-sentence purpose — the scannable summary line.
+ */
+.projectPurpose {
+  margin: 0;
+
+  color: var(--text);
+
+  font-size: 15px;
+
+  line-height: 1.65;
+}
+
+/*
+ * Key signal — a measured or structural fact, mono, red-accented.
+ */
+.projectSignal {
+  margin: 0;
+
+  padding: 8px 12px;
+
+  border-left: 2px solid
+    rgba(255, 32, 32, 0.55);
+
+  background:
+    rgba(255, 32, 32, 0.045);
+
+  border-radius: 0 4px 4px 0;
+
+  color: var(--red-hot);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.14em;
+
+  line-height: 1.7;
+}
+
+/*
+ * Deep documentation below the visual summary — same card, quieter
+ * register. Spanning the full width under the two-column head.
+ */
+.projectVisualDetail {
+  grid-column: 1 / -1;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+  padding: 20px 28px 24px;
+
+  border-top: 1px solid var(--line-soft);
+
+  background:
+    rgba(255, 255, 255, 0.012);
+}
+
+@media (max-width: 880px) {
+  .projectVisualCard {
+    grid-template-columns: 1fr;
+  }
+
+  .projectVisualMedia {
+    min-height: 190px;
+
+    border-right: none;
+
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .projectVisualContent {
+    padding: 20px;
+  }
+
+  .projectVisualDetail {
+    padding: 18px 20px 22px;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * RESEARCH MODULES (v3.7) — /research/ presentation upgrade
+ * ------------------------------------------------------------------
+ */
+
+/*
+ * The research map as modules: each research line renders as a
+ * QUESTION → METHOD → FRAMEWORK → MEASUREMENT → ARTIFACT chain —
+ * the actual structure of the programme, readable in seconds before
+ * the prose begins.
+ */
+.researchModules {
+  display: grid;
+
+  gap: 16px;
+
+  margin-top: 22px;
+}
+
+.researchModule {
+  padding: 24px;
+
+  border: 1px solid var(--line-soft);
+
+  border-radius: 12px;
+
+  background: linear-gradient(
+    150deg,
+    rgba(18, 20, 27, 0.82),
+    rgba(9, 10, 14, 0.74)
+  );
+
+  transition: border-color 160ms ease;
+}
+
+.researchModule:hover {
+  border-color: rgba(255, 32, 32, 0.28);
+}
+
+.researchModuleTitle {
+  margin: 0 0 18px;
+
+  font-size: 20px;
+
+  font-weight: 800;
+
+  letter-spacing: -0.02em;
+}
+
+/*
+ * The chain: five labeled steps with connector arrows. Desktop is
+ * one horizontal row; mobile stacks the SAME nodes vertically with
+ * a left rail — one system, two layouts, no separate mobile build.
+ */
+.researchChain {
+  display: grid;
+
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+
+  gap: 10px;
+}
+
+.researchStep {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+
+  min-width: 0;
+}
+
+.researchStepLabel {
+  color: var(--red-hot);
+
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.2em;
+
+  text-transform: uppercase;
+}
+
+.researchStepBody {
+  color: var(--text);
+
+  font-size: 13px;
+
+  line-height: 1.55;
+}
+
+.researchStepBody a {
+  color: var(--red-hot);
+
+  text-decoration: none;
+}
+
+.researchStepBody a:hover {
+  color: #ffffff;
+
+  text-decoration: underline;
+
+  text-decoration-color: rgba(255, 32, 32, 0.5);
+}
+
+/*
+ * The connector between steps — a quiet red arrow that reflows
+ * into a left rail on narrow screens.
+ */
+.researchArrow {
+  align-self: center;
+
+  color: rgba(255, 64, 54, 0.65);
+
+  font-family: var(--font-mono);
+
+  font-size: 13px;
+
+  user-select: none;
+}
+
+@media (max-width: 920px) {
+  .researchChain {
+    grid-template-columns: 1fr;
+
+    gap: 0;
+  }
+
+  .researchStep {
+    position: relative;
+
+    padding: 10px 0 10px 26px;
+  }
+
+  .researchStep::before {
+    content: "";
+
+    position: absolute;
+
+    left: 6px;
+
+    top: 0;
+
+    bottom: 0;
+
+    width: 1px;
+
+    background:
+      rgba(255, 32, 32, 0.22);
+  }
+
+  .researchStep:first-child::before {
+    top: 14px;
+  }
+
+  .researchStep:last-child::before {
+    bottom: auto;
+
+    height: 14px;
+  }
+
+  .researchStep::after {
+    content: "";
+
+    position: absolute;
+
+    left: 3px;
+
+    top: 15px;
+
+    width: 7px;
+
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: var(--red-hot);
+
+    box-shadow:
+      0 0 8px
+        rgba(255, 64, 54, 0.55);
+  }
+
+  .researchArrow {
+    display: none;
+  }
+}

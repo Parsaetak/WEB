@@ -6,6 +6,7 @@ description: "Inside the UHIT measurement programme: the AIST-2026.09 standard a
 date: "2026-09-12"
 author: "Parsa Tak"
 category: "research"
+type: "research"
 tags: ["UHIT", "AIST", "ASI-100", "measurement", "verification", "benchmarks", "2026"]
 featured: false
 project: "uhit"

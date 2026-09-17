@@ -67,6 +67,18 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const WORDS_PER_MINUTE = 200;
 
 /*
+ * CONTENT-TYPE MODEL (v3.7): every article carries one of three
+ * formal content types — `article` (field notes / essays), `work`
+ * (documentation of a built system or project), `research`
+ * (research-programme writing). The type is REQUIRED frontmatter:
+ * the classification is the author's own statement of what the
+ * article means, never inferred from its title, and an unknown or
+ * missing value fails the build so the Blog content modes can never
+ * silently orphan a post.
+ */
+const CONTENT_TYPES = new Set(["article", "work", "research"]);
+
+/*
  * Related-content model (v2.5). Up to six related articles when the
  * catalogue is large enough; candidates qualify only through a real
  * relevance signal — never through recency alone.
@@ -174,6 +186,7 @@ function buildSearchHaystack(record) {
     record.subtitle,
     record.excerpt,
     record.category,
+    record.type,
     record.author,
     record.project,
     ...(Array.isArray(record.tags) ? record.tags : []),
@@ -764,6 +777,20 @@ function validatePost(record, file) {
     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(record.category)
   ) {
     problems.push("category is required (lowercase kebab-case)");
+  }
+
+  /*
+   * CONTENT-TYPE MODEL (v3.7) — required, one of the three formal
+   * content types. Validated here so the Blog content modes and the
+   * SEO content-discovery checks can trust it without a fallback.
+   */
+  if (
+    typeof record.type !== "string" ||
+    !CONTENT_TYPES.has(record.type)
+  ) {
+    problems.push(
+      `type is required and must be one of: ${[...CONTENT_TYPES].join(", ")} (got ${JSON.stringify(record.type)})`
+    );
   }
 
   if (
@@ -1368,6 +1395,7 @@ async function main() {
         typeof record.updated === "string" ? record.updated : null,
       author: String(record.author).trim(),
       category: record.category,
+      type: record.type,
       tags,
 
       /*
@@ -1575,6 +1603,10 @@ async function main() {
   const featuredCount = posts.filter((post) => post.featured).length;
   const tagCount = Object.keys(tagIndex).length;
   const categoryCount = Object.keys(categoryIndex).length;
+  const typeCounts = { article: 0, work: 0, research: 0 };
+  for (const post of posts) {
+    typeCounts[post.type] += 1;
+  }
   const relatedCount = Object.values(data.indexes.related).reduce(
     (sum, entries) => sum + entries.length,
     0
@@ -1582,6 +1614,9 @@ async function main() {
 
   console.log(
     `[blog] ${posts.length} article(s) · ${tagCount} tag(s) · ${categoryCount} category(ies) · ${featuredCount} featured`
+  );
+  console.log(
+    `[blog] content types: ${typeCounts.article} article · ${typeCounts.work} work · ${typeCounts.research} research`
   );
   console.log(`[blog] wrote data/blog/posts.json (${posts.length} posts)`);
   console.log(

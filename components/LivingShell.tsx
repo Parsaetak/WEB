@@ -291,11 +291,14 @@ export default function LivingShell({
   const github = GITHUB_LINK;
 
   /*
-   * NAVIGATION (v3.4) — one unified navigation system (see
-   * UnifiedSiteNav). The desktop track leads with the professional
+   * NAVIGATION (v3.7) — one unified navigation system (see
+   * UnifiedSiteNav). The desktop track leads with the four-entry
    * primary nav; HOME stays an in-shell scene action (a same-route
-   * link could not switch the hash scene); ABOUT, WORK, RESEARCH,
-   * BLOG and CONTACT are real routes. The experimental scenes
+   * link could not switch the hash scene); ABOUT, BLOG and CONTACT
+   * are real routes. The canonical /work/ and /research/ documents
+   * live in the Blog content ecosystem (footer collections row and
+   * the Blog's lab map), while the experiential #work scene remains
+   * reachable through its in-content links. The experimental scenes
    * (SYSTEMS, RED MAGIC, LIBRARY) follow as the quieter world group,
    * and GitHub rides as a utility entry in the disclosure menu. The
    * ≤860px disclosure panel is the same component's compact mode —

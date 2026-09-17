@@ -1713,3 +1713,27 @@
     padding: 16px;
   }
 }
+
+/*
+ * TYPE CHIP (v3.7) — the at-a-glance strip's leading chip. Tinted
+ * by content type with the same quiet vocabulary the Blog cards
+ * use (red = article, amber = work, blue = research), always paired
+ * with a text label so color is never the only signal.
+ */
+.contextChipType {
+  border-color: rgba(255, 64, 54, 0.4);
+
+  color: var(--red-hot);
+}
+
+.contextChipType[data-type="work"] {
+  border-color: rgba(255, 150, 60, 0.42);
+
+  color: #ffa259;
+}
+
+.contextChipType[data-type="research"] {
+  border-color: rgba(120, 160, 255, 0.4);
+
+  color: #93adff;
+}

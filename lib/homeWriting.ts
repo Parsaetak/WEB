@@ -30,6 +30,8 @@ export type HomeWritingPost = {
   excerpt: string;
   date: string;
   category: string;
+  /* Content type (v3.7) — the Blog content-mode classification. */
+  type: "article" | "work" | "research";
   readingTime: string;
   /* Real inbound internal-link count from the site's own graph. */
   inbound: number;
@@ -52,6 +54,7 @@ function toHomeWritingPost(
         : post.excerpt,
     date: post.date,
     category: post.category,
+    type: post.type,
     readingTime: post.readingTime,
     inbound
   };
