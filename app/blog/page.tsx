@@ -110,12 +110,18 @@ export default function BlogPage() {
         <div className="page-container">
           <header className={styles.blogHeroHeader} data-reveal="instant">
             <div className={styles.blogHeroCopy}>
-              <p className="kicker">
+              { /*
+                  * v3.6.1: kicker + H1 use the shared document-tab
+                  * geometry (accent kicker spacing + --page-h1-scale)
+                  * via the module classes below — no competing global
+                  * typography on the first composition.
+                  */ }
+              <p className={styles.blogHeroKicker}>
                 07 / BLOG
               </p>
 
               <h1
-                className={`section-title ${styles.blogHeroTitle}`}
+                className={styles.blogHeroTitle}
               >
                 Notes from
                 <br />

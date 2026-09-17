@@ -1,6 +1,15 @@
 .livingShell {
   position: relative;
 
+  /*
+   * PAGE-FRAME CONTRACT (v3.6.1): the world shell is the same flex
+   * column page-frame as every other tab — sticky header, growing
+   * main, footer — so footer behavior is identical site-wide.
+   */
+  display: flex;
+
+  flex-direction: column;
+
   min-height: 100vh;
 
   min-height: 100svh;
@@ -10,23 +19,27 @@
   isolation: isolate;
 
   /*
-   * Keyboard focus and anchor scrolling must clear the fixed HUD:
+   * Keyboard focus and anchor scrolling must clear the sticky HUD:
    * without this, tab-focused elements land underneath it when
    * scrolled into view.
    */
   scroll-padding-top:
     calc(
-      var(--shell-header) + 20px
+      var(--page-header-height) + 20px
     );
 }
 
 .livingShellHud {
-  position: fixed;
+  /*
+   * HEADER CONTRACT (v3.6.1): sticky in-flow, exactly like the
+   * content-tab and blog headers — same height contract, same rail,
+   * same z-index. The world canvas stays fixed behind it, so the
+   * living-world look is unchanged while scrolling composition now
+   * matches every other tab.
+   */
+  position: sticky;
 
-  inset:
-    0
-    0
-    auto;
+  top: 0;
 
   z-index: 1000;
 
@@ -45,13 +58,19 @@
 }
 
 .livingShellHudInner {
+  /*
+   * HEADER CONTRACT (v3.6.1): the shared alignment rail + shared
+   * header height. The HUD's 1px red bottom edge lives INSIDE the
+   * border-box height, so the HUD is exactly --page-header-height
+   * tall — identical to the content and blog headers.
+   */
   width:
     min(
-      calc(100% - 32px),
-      var(--shell-width)
+      calc(100% - 2 * var(--page-gutter)),
+      var(--page-content-width)
     );
 
-  min-height: var(--shell-header);
+  min-height: var(--page-header-height);
 
   margin: 0 auto;
 
@@ -85,8 +104,9 @@
 }
 
 .livingShellBrandEye {
-  width: 36px;
-  height: 36px;
+  /* Header brand contract (v3.6.1): 32px star on every tab. */
+  width: 32px;
+  height: 32px;
 
   display: inline-flex;
 
@@ -99,8 +119,8 @@
 .livingShellBrandEye img {
   display: block;
 
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
 }
 
 /*
@@ -240,13 +260,19 @@
 .livingShellViewport {
   position: relative;
 
-  min-height: 100vh;
+  /*
+   * v3.6.1: the HUD is sticky (in-flow), so the viewport no longer
+   * needs padding-top compensation — the first screen is simply
+   * header + scene, exactly like every other tab. Scenes size
+   * themselves with calc(100svh − var(--page-header-height)) via
+   * the shared token alias.
+   */
+  flex: 1;
 
-  min-height: 100svh;
+  width: 100%;
 
-  min-height: 100dvh;
-
-  padding-top: var(--shell-header);
+  /* Footer spacing is contract-owned: identical on all six tabs. */
+  padding-bottom: var(--page-footer-spacing);
 }
 
 .livingShellGithub {
@@ -327,10 +353,11 @@
 }
 
 .livingShellLegalInner {
+  /* Footer rail = the shared alignment rail (v3.6.1). */
   width:
     min(
-      calc(100% - 32px),
-      var(--shell-width)
+      calc(100% - 2 * var(--page-gutter)),
+      var(--page-content-width)
     );
 
   margin: 0 auto;
@@ -522,48 +549,26 @@
 }
 
 @media (max-width: 760px) {
+  /*
+   * v3.6.1: header height (68px) and gutters are token-owned
+   * (--page-header-height / --page-gutter at ≤860px) — no literal
+   * overrides here anymore. Safe-area insets still apply on the
+   * notched-edge devices the tokens cannot know about.
+   */
   .livingShellHudInner {
-    width: calc(
-      100% - 20px -
-      env(safe-area-inset-left, 0px) -
-      env(safe-area-inset-right, 0px)
-    );
-
-    min-height:
-      68px;
-
-    grid-template-columns:
-      auto
-      minmax(
-        0,
-        1fr
-      )
-      auto;
+    width:
+      min(
+        calc(
+          100% - 2 * var(--page-gutter) -
+          env(safe-area-inset-left, 0px) -
+          env(safe-area-inset-right, 0px)
+        ),
+        var(--page-content-width)
+      );
   }
 
   .livingShellBrandName {
     font-size: 14px;
-  }
-
-  .livingShellBrandEye {
-    width: 34px;
-    height: 34px;
-  }
-
-  .livingShellBrandEye img {
-    width: 34px;
-    height: 34px;
-  }
-
-  .livingShellViewport {
-    padding-top: 68px;
-  }
-
-  .livingShellLegalInner {
-    width:
-      calc(
-        100% - 24px
-      );
   }
 
   .livingShellLegalBottom {
@@ -582,16 +587,6 @@
     display: none;
   }
 
-  .livingShellBrandEye {
-    width: 32px;
-    height: 32px;
-  }
-
-  .livingShellBrandEye img {
-    width: 32px;
-    height: 32px;
-  }
-
   /*
    * At phone widths the GitHub link lives inside the compact menu
    * panel (one discoverable place, zero header crowding); the Blog
@@ -599,13 +594,6 @@
    */
   .livingShellGithub {
     display: none;
-  }
-
-  .livingShellLegalInner {
-    width:
-      calc(
-        100% - 20px
-      );
   }
 
   .livingShellFooterMain {

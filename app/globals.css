@@ -39,9 +39,42 @@
     0 0 45px
     rgba(255, 32, 32, 0.14);
 
-  --content-width: 1240px;
-  --shell-width: 1440px;
-  --shell-header: 74px;
+  /*
+   * UNIFIED PAGE-FRAME CONTRACT (v3.6.1) — the one geometry system
+   * every primary tab (HOME · ABOUT · WORK · RESEARCH · BLOG ·
+   * CONTACT) composes from. Six tabs, six identities, ONE set of
+   * layout primitives: no page may introduce its own width, header
+   * height, gutter, hero height, section rhythm, or footer spacing.
+   */
+  --page-content-width: 1240px;
+
+  /* Long-form reading measure (document body below the hero). */
+  --page-doc-width: 860px;
+
+  /* Lead paragraph measure — shared "maximum readable" lead width. */
+  --page-lead-measure: 720px;
+
+  /* Shared H1 scale for document tabs (home keeps its own identity scale). */
+  --page-h1-scale: clamp(34px, 6vw, 58px);
+
+  --page-gutter: 32px;
+
+  --page-header-height: 76px;
+
+  --page-hero-min-height: 440px;
+
+  --page-section-gap: 64px;
+
+  --page-footer-spacing: 88px;
+
+  /*
+   * Legacy token aliases — every pre-existing reference
+   * (scenes, blog, TOC, article scroll-margins) now resolves to the
+   * unified contract instead of an independent value.
+   */
+  --content-width: var(--page-content-width);
+  --shell-width: var(--page-content-width);
+  --shell-header: var(--page-header-height);
 
   --font-sans:
     Inter,
@@ -382,10 +415,16 @@ kbd {
 /* -------------------------------------------------------------------------- */
 
 .page-container {
+  /*
+   * THE SHARED ALIGNMENT RAIL (v3.6.1): one formula — every rail
+   * consumer (header, hero, document sections, footer) starts at
+   * x = max(var(--page-gutter), (viewport − --page-content-width)/2)
+   * at every viewport, on every tab.
+   */
   width:
     min(
-      calc(100% - 32px),
-      var(--content-width)
+      calc(100% - 2 * var(--page-gutter)),
+      var(--page-content-width)
     );
 
   margin:
@@ -584,9 +623,30 @@ span {
     relative;
 
   min-height:
-    calc(
-      100vh -
-      var(--shell-header)
+    max(
+      var(--page-hero-min-height),
+      calc(
+        100vh -
+        var(--page-header-height)
+      )
+    );
+
+  min-height:
+    max(
+      var(--page-hero-min-height),
+      calc(
+        100svh -
+        var(--page-header-height)
+      )
+    );
+
+  min-height:
+    max(
+      var(--page-hero-min-height),
+      calc(
+        100dvh -
+        var(--page-header-height)
+      )
     );
 
   display:
@@ -1133,6 +1193,21 @@ span {
 /* Shared responsive layout                                                   */
 /* -------------------------------------------------------------------------- */
 
+/*
+ * RESPONSIVE TOKEN SCALE (v3.6.1) — one breakpoint strategy for the
+ * whole site. Tokens (not per-page literals) carry the responsive
+ * changes, so every consumer reflows together:
+ *   ≤860px  — compact navigation mode + tablet gutter + mobile header
+ *   ≤560px  — phone gutter + phone hero floor
+ */
+@media (max-width: 860px) {
+  :root {
+    --page-gutter: 24px;
+
+    --page-header-height: 68px;
+  }
+}
+
 @media (max-width: 1100px) {
   .hero-grid {
     grid-template-columns:
@@ -1144,13 +1219,6 @@ span {
 }
 
 @media (max-width: 760px) {
-  .page-container {
-    width:
-      calc(
-        100% - 20px
-      );
-  }
-
   .section {
     padding:
       84px 0;
@@ -1162,12 +1230,6 @@ span {
   }
 
   .hero {
-    min-height:
-      calc(
-        100vh -
-        68px
-      );
-
     padding:
       54px 0 72px;
   }
@@ -1184,11 +1246,8 @@ span {
 }
 
 @media (max-width: 560px) {
-  .page-container {
-    width:
-      calc(
-        100% - 16px
-      );
+  :root {
+    --page-hero-min-height: 380px;
   }
 
   .section {

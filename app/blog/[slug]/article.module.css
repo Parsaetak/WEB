@@ -1,5 +1,12 @@
 .article {
   width: 100%;
+
+  /*
+   * v3.6.1: editorial breathing room below the (now sticky) blog
+   * header. This is design spacing, not viewport compensation —
+   * the header is in normal flow, so no offset math exists here.
+   */
+  padding-top: clamp(40px, 7vh, 72px);
 }
 
 /*

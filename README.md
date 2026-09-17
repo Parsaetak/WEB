@@ -53,6 +53,22 @@ v3.5 adds **intent warming** to the same component without touching its visual i
 
 Each primary tab also carries its own ~1-second hover identity, replayed on every re-enter: **HOME** ignites an orbit ring with a core flash · **WORK** sweeps a construction scanline over a building tick grid · **RESEARCH** expands staggered radar pings over a drawing data trace · **BLOG** sweeps a type caret as the ink line writes itself · **ABOUT** swings open an identity halo with an aura bloom · **CONTACT** radiates transmission ripples with an outbound packet. All effects are compositor-only (`transform`/`opacity`/`clip-path` on dedicated decorative layers — the label never moves), gated behind `(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)`, and collapse to static state changes under reduced motion.
 
+### The unified page-frame contract (v3.6.1)
+Every primary tab composes from ONE set of layout primitives, declared once in `app/globals.css` and consumed everywhere (no per-page literals):
+
+```
+--page-content-width: 1240px   the shared alignment rail (header, heroes, footer)
+--page-doc-width:      860px   the long-form reading measure below the hero
+--page-lead-measure:   720px   the shared lead paragraph measure
+--page-h1-scale:               one shared H1 scale for document tabs
+--page-gutter:         32/24/20px  one responsive gutter scale (≤860/≤560)
+--page-header-height:  76/68px     one header height contract (≤860)
+--page-hero-min-height: 440/380px  one first-screen content floor
+--page-footer-spacing:  88px    one footer spacing value
+```
+
+The rail formula is `x = max(--page-gutter, (viewport − --page-content-width)/2)` — at 1440×900 the header brand, the H1 of every tab, the blog hero, and the footer all start at x=100; at 390×844 they all start at x=24. All three headers (world HUD, content header, blog header) are `position: sticky`, in normal flow at z-index 1000, so the first screen is exactly `header + hero` on every tab and no page carries scroll-compensation padding. The first-screen formula is one token-owned stack: `min-height = max(--page-hero-min-height, 100vh/svh/dvh − --page-header-height)`. Full-screen means composition, not confinement: the first composition fills the viewport consistently and expands naturally when content is longer (HOME's living-world hero does exactly that). Per-tab identity (`data-page` accents, hero motif fields, hover identities) is layered on top of the shared geometry — same geometry, different identity. BLOG rides the same contract with its editorial voice intact, article routes are untouched, and v3.5 scene navigation/preloading is unaffected.
+
 ### RED MAGIC
 RED MAGIC is the site's living-layer experiment: a canvas-based computational organism with adaptation, perception, and visible state. It is deliberately **not** part of the critical path — visitors receive a CSS-only seed first, and the organism loads at idle time only when motion is permitted and the device can afford it.
 

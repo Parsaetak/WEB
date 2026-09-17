@@ -219,7 +219,14 @@ export default function ContentShell({
             />
           </div>
 
-          <div className={styles.doc}>
+          {/*
+           * HERO RAIL (v3.6.1) — the hero text block sits on the same
+           * shared alignment rail as the header brand, the home hero,
+           * the blog hero and the footer (styles.heroDoc). The
+           * document body below the fold keeps the narrower readable
+           * measure (styles.doc).
+           */}
+          <div className={styles.heroDoc}>
             <nav
               className={styles.crumbs}
               aria-label="Breadcrumb"

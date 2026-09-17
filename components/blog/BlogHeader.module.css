@@ -1,10 +1,14 @@
+/*
+ * HEADER CONTRACT (v3.6.1) — the blog header is the same header
+ * system as the world HUD and the content tabs: sticky (in-flow, so
+ * no page needs padding compensation), z-index 1000, shared rail,
+ * shared height (--page-header-height). The gradient face is the
+ * blog's editorial identity; the geometry underneath is shared.
+ */
 .blogHeader {
-  position: fixed;
+  position: sticky;
 
-  inset:
-    0
-    0
-    auto;
+  top: 0;
 
   z-index: 1000;
 
@@ -23,11 +27,14 @@
 }
 
 .blogHeaderInner {
+  /* The shared alignment rail — identical to hero/footer rails. */
   width:
     min(
-      calc(100% - 32px),
-      var(--shell-width)
+      calc(100% - 2 * var(--page-gutter)),
+      var(--page-content-width)
     );
+
+  min-height: var(--page-header-height);
 
   display: flex;
 
@@ -36,10 +43,6 @@
   gap: 22px;
 
   margin: 0 auto;
-
-  padding:
-    15px 0
-    21px;
 
   pointer-events: auto;
 }
@@ -126,13 +129,22 @@
  * UNIFIED NAVIGATION (v3.4) — placement only. The navigation's own
  * geometry, modes and animations live in UnifiedSiteNav.module.css;
  * the header gives the nav the flexible middle slot the old scene
- * link row owned. The track centers itself in that slot, exactly
- * like the world HUD.
+ * link row owned.
+ *
+ * v3.6.1: the slot is a FLEX row that centers the track on desktop,
+ * exactly like the content header's .contentNav slot. Without flex,
+ * the ≤860px disclosure trigger could not keep the unified nav's
+ * end-alignment contract (the trigger hugged the brand on phones —
+ * a Blog-only nav misalignment).
  */
 .blogNav {
   flex: 1 1 auto;
 
   min-width: 0;
+
+  display: flex;
+
+  justify-content: center;
 }
 
 .headerActions {
@@ -213,16 +225,23 @@
 }
 
 @media (max-width: 760px) {
+  /*
+   * v3.6.1: height (68px) and gutter are token-owned; only the
+   * safe-area insets stay local — the tokens cannot know about
+   * notched edges.
+   */
   .blogHeaderInner {
-    width: calc(
-      100% - 20px -
-      env(safe-area-inset-left, 0px) -
-      env(safe-area-inset-right, 0px)
-    );
+    width:
+      min(
+        calc(
+          100% - 2 * var(--page-gutter) -
+          env(safe-area-inset-left, 0px) -
+          env(safe-area-inset-right, 0px)
+        ),
+        var(--page-content-width)
+      );
 
     gap: 14px;
-
-    padding: 11px 0 17px;
   }
 
   .status {

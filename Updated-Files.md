@@ -1,5 +1,127 @@
 # Updated-Files.md — WEB release history
 
+## Release: v3.6.1 — ALIGNMENT FIX: one unified page-frame contract (2026-09-17)
+
+Mission: eliminate the visual inconsistency between the six
+primary tabs. The site already had `FullScreenPageShell`, but the
+tabs still rendered through three competing page-frame systems.
+v3.6.1 repairs the underlying layout contract so every tab
+composes from the same primitives — same geometry, different
+identity. Base version: v3.6 (package.json 3.6.0 → 3.6.1).
+
+### Root cause (measured, not assumed)
+
+Browser measurement at identical viewports (e.g. 1440×900) found:
+
+- THREE header systems: HOME HUD fixed/74px/1440px rail/36px star;
+  content header sticky/85px/1240px rail + 32px padding/30px star;
+  blog header fixed/92px/1440px rail/15+21px padding. Brand x:
+  16 / 132 / 16. Two positioning modes changed the effective
+  first-screen composition.
+- BLOG-only compensations: `.blogMain` padding-top
+  `calc(var(--shell-header) + 46px)` = 120px (mobile literal
+  `68px + 38px`), existing on no other tab, offsetting the fixed
+  header plus extra lead-in.
+- BLOG hero rail break: `.blogHero > .page-container { width: 100% }`
+  pushed the blog hero text to x=0 — zero gutter at every
+  viewport — while every other rail sat at 8–322px.
+- First-screen math off by the real header height: content hero
+  used `100svh − 74px` while the actual header rendered 85px →
+  first screen = 911px on a 900px viewport.
+- Three content rails (1240 / 1240+32 / full-bleed), three footer
+  spacings (0 / 88 / 96), four mobile gutter systems, three H1
+  scales (34–58 / 36.8–76.8 / 52–124.8).
+
+### The fix — tokens, one header contract, one rail, one hero formula
+
+- `app/globals.css` — NEW canonical page-frame tokens:
+  `--page-content-width` (1240), `--page-doc-width` (860),
+  `--page-lead-measure` (720), `--page-h1-scale`, `--page-gutter`
+  (32 → 24 @≤860 → 20 @≤560), `--page-header-height`
+  (76 → 68 @≤860), `--page-hero-min-height` (440 → 380 @≤560),
+  `--page-section-gap` (64), `--page-footer-spacing` (88).
+  Legacy tokens (`--content-width`, `--shell-width`,
+  `--shell-header`) are now ALIASES of the canonical tokens, so
+  all 48 pre-existing references (scenes, blog, TOC, article
+  scroll-margins) resolve to the unified contract automatically.
+  `.page-container` is the shared alignment rail:
+  `min(calc(100% − 2*gutter), content-width)` — no per-breakpoint
+  width overrides anymore.
+- `components/content/content.module.css` — header contract
+  (sticky, z-index 1000, rail width, min-height
+  `calc(header − 1px)` so the border lives inside the contract,
+  brand normalized to 32px star + 15px/800 name); `.main`
+  padding-bottom → `--page-footer-spacing`; `.doc` → tokenized
+  860px document measure; NEW `.heroDoc` hero-rail container;
+  `.hero` min-height → `max(--page-hero-min-height, 100vh/svh/dvh
+  − --page-header-height)`; `.title` → `--page-h1-scale` +
+  doc-width cap; `.lead` → `--page-lead-measure`; mobile
+  overrides deduplicated (gutters are token-owned now).
+- `components/ContentShell.tsx` — hero text block moved from
+  `.doc` to the new `.heroDoc` rail (hero starts on the shared
+  rail; the document body keeps the readable measure).
+- `components/LivingShell.module.css` — world shell is now the
+  same flex-column page-frame (footer behavior unified); HUD
+  fixed → STICKY (same visual, in-flow, zero-compensation
+  scroll composition); HUD inner → shared rail + full
+  `--page-header-height` (border inside border-box); brand star
+  36 → 32; `.livingShellViewport` drops `min-height` + the 74px/
+  68px `padding-top` compensation, gains `flex: 1` + footer
+  spacing token; legal footer inner → shared rail; ≤760 block
+  rewritten around tokens (safe-area insets kept).
+- `components/blog/BlogHeader.module.css` — fixed → STICKY,
+  z-index 1000; inner → shared rail + full header height (the
+  15/21px padding removed); ≤760 rewritten around tokens.
+- `app/blog/layout.module.css` — the Blog-only padding-top
+  compensations DELETED (both the `+46px` and the mobile
+  `68px + 38px` literals); `.blogMain` keeps flex:1 + footer
+  spacing token; scroll-padding-top tokenized.
+- `app/blog/page.module.css` — hero min-height → the ONE shared
+  first-screen formula (the `− 46px` magic and the mobile
+  `− 68px − 96px` literals removed); the `width: 100%` rail
+  override REMOVED (hero text back on the shared rail); blog
+  hero H1 → shared `--page-h1-scale` + doc-width cap; lead →
+  shared lead measure; kicker → shared document-kicker geometry
+  (accent color, 10px/0.26em) via new `.blogHeroKicker`.
+- `app/blog/page.tsx` — hero h1/kicker stop competing with
+  global `section-title`/`kicker` classes; module classes own
+  the first composition (same geometry as document tabs).
+- `app/blog/[slug]/article.module.css` — article top spacing is
+  now a design clamp on `.article` (the header is in flow; no
+  viewport compensation math anywhere).
+- `components/FullScreenPageShell.module.css` — comment updated
+  to document the v3.6.1 token contract (shell rules unchanged).
+
+### Not changed (regression guard)
+
+- v3.5 intent-based route warming, scene preloading, zero-delay
+  scene transitions, RED MAGIC organism + one SOUND ON/OFF
+  system, SEO/static export, canonical `/blog/` URLs, article
+  routes, accessibility, reduced-motion behavior, page content,
+  visual identity, UnifiedSiteNav internals (one nav component
+  everywhere; the blog nav slot now merely provides the same
+  flex context the content header already had, so the ≤860px
+  trigger keeps its end-alignment contract).
+
+### Verification (performed)
+
+- Automated geometry comparison, 6 tabs × 6 viewports
+  (1440×900, 1280×800, 1024×768, 768×1024, 390×844, 360×800),
+  before/after: header height 76/68 on ALL tabs (was
+  74/85/92); brand x = H1 rail x = 100/32/32/24/24/24 on ALL
+  tabs (was 16/132/16 vs 100/322/0); first-screen bottom =
+  exact viewport height on all one-screen tabs (was 911/900);
+  uniform 88px footer spacing; zero horizontal overflow.
+- No hydration layout shift (header/rail identical at 250ms and
+  2.2s); hash scene routing works (`/#work` → work scene);
+  ≤860px disclosure menu opens with all six primary tabs +
+  GITHUB; article geometry verified; zero console errors/page
+  errors on all primary routes + article + hub.
+- npm ci / npm run blog / npm run build / npm run lint
+  (0 errors, pre-existing img warnings only) / npm run verify
+  (seo + brand + export) all green. No WRITING label; no active
+  DRIFT / LISTEN / SURGE references.
+
 ## Release: v3.6 — BLOG rename, one RED MAGIC sound, full-screen tabs (2026-09-17)
 
 Mission: professional ordering and terminology, one honest RED

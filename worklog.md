@@ -2767,3 +2767,70 @@ Work Log:
 Stage Summary:
 - Deliverable: WEB-v3.6.zip (repository excluding .git,
   node_modules, caches, build output).
+
+---
+
+## 2026-09-17 — v3.6.1 ALIGNMENT FIX — one unified page-frame contract
+
+Task ID: 1 (single-agent run)
+Scope guard: v3.5 intent warming / scene preloading / zero-delay
+transitions preserved; RED MAGIC + one SOUND ON/OFF preserved;
+SEO/static-export law preserved; canonical /blog/ URLs and
+article routes untouched; no unrelated redesign.
+
+Work Log:
+- REPRODUCE (measured, not assumed): agent-browser measurements
+  of the deployed site across 6 tabs × 6 viewports. At
+  1440×900: header heights 74/85/92 (home/content/blog), brand
+  x 16/132/16, H1 rail x 100/322/0, first-screen bottoms
+  1178/911/900 — three competing page-frame systems.
+- ROOT CAUSE: (1) three header systems with different
+  positioning (fixed vs sticky), rails (1440 vs 1240+32),
+  heights and brand geometry; (2) Blog-only padding-top
+  compensation calc(--shell-header + 46px) (+ mobile 68+38
+  literals) offsetting the fixed header; (3) .blogHero >
+  .page-container { width: 100% } putting blog hero text at
+  x=0 (zero gutter); (4) hero formulas subtracting the token
+  header height (74) instead of the real rendered header (85);
+  (5) three footer spacings (0/88/96), four mobile gutter
+  systems, three H1 scales.
+- FIX: canonical page-frame tokens in globals.css
+  (--page-content-width/doc-width/lead-measure/h1-scale/gutter/
+  header-height/hero-min-height/section-gap/footer-spacing)
+  with legacy tokens as aliases (48 references auto-migrated);
+  .page-container = the shared alignment rail
+  min(100% - 2*gutter, 1240); all three headers sticky in-flow
+  at z-1000 with the same rail/height/brand contract (76/68);
+  one first-screen formula max(floor, 100vh/svh/dvh - header)
+  on content hero, blog hero and world scenes (via alias);
+  Blog-only compensations deleted; .heroDoc hero rail added to
+  ContentShell; blog H1/kicker/lead moved onto shared scales;
+  article top spacing is design padding, not compensation;
+  footer spacing token (88px) on all tabs; HUD star 36→32;
+  brand name 15/800 everywhere; blog nav slot flexed so the
+  ≤860px trigger keeps its end-alignment (mobile menu now
+  right-aligned like HOME/content tabs).
+- VERIFY: after-fix table — header 76/68 identical on all 6
+  tabs; brand x = H1 x = 100/32/32/24/24/24 identical; hero
+  bottom = exact viewport height on all one-screen tabs (home
+  expands only as its living content requires); uniform footer
+  spacing; no horizontal overflow anywhere; no hydration
+  layout shift (250ms vs 2.2s identical); #work hash scene
+  routes correctly; disclosure menu lists all six tabs +
+  GITHUB; zero console/page errors on all routes; article +
+  hub geometry verified.
+- VALIDATE: npm ci / npm run blog / npm run build / npm run
+  lint (0 errors) / npm run verify (seo + brand + export) all
+  green. No WRITING label; no active DRIFT/LISTEN/SURGE
+  references (only retirement notes in comments).
+- Version 3.6.1; README (new "unified page-frame contract"
+  section), Updated-Files.md, worklog.md updated.
+
+Stage Summary:
+- Deliverable: WEB-v3.6.1-ALIGNMENT-FIX.zip (repository
+  excluding .git, node_modules, caches, build output).
+- Key decision: geometry unification via token ALIASES so the
+  48 existing var(--shell-header)/--shell-width/--content-width
+  consumers migrate without touching scene files; identities
+  (accents, motifs, hover language) remain per-tab via
+  data-page — same geometry, different identity.

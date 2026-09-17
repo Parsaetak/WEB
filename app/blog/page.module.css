@@ -5,10 +5,11 @@
 }
 
 /*
- * FULL-SCREEN FIRST COMPOSITION (v3.6): the blog hero occupies the
- * first screen (minus the fixed header and the shell's lead-in
- * padding), with a content floor so short viewports scroll instead
- * of squeezing the title block.
+ * FULL-SCREEN FIRST COMPOSITION (v3.6.1): the blog hero uses the
+ * ONE shared first-screen formula — token-owned floor + viewport
+ * stack minus the shared header height. The sticky header is
+ * in-flow, so header + hero compose exactly one viewport, the same
+ * as every other tab. No magic offsets remain.
  */
 .blogHero {
   position: relative;
@@ -17,7 +18,8 @@
 
   align-items: center;
 
-  padding-top: 64px;
+  /* Neutralize the global .section padding: the hero owns rhythm. */
+  padding-top: 0;
 
   padding-bottom:
     clamp(
@@ -28,41 +30,39 @@
 
   min-height:
     max(
-      360px,
+      var(--page-hero-min-height),
       calc(
         100vh -
-          var(--shell-header) -
-          46px
+          var(--page-header-height)
       )
     );
 
   min-height:
     max(
-      360px,
+      var(--page-hero-min-height),
       calc(
         100svh -
-          var(--shell-header) -
-          46px
+          var(--page-header-height)
       )
     );
 
   min-height:
     max(
-      360px,
+      var(--page-hero-min-height),
       calc(
         100dvh -
-          var(--shell-header) -
-          46px
+          var(--page-header-height)
       )
     );
 }
 
-.blogHero
-  > :global(
-      .page-container
-    ) {
-  width: 100%;
-}
+/*
+ * v3.6.1 ALIGNMENT FIX: the old `width: 100%` override on the
+ * hero's .page-container (which pushed the hero text to x=0 with
+ * NO gutter at every viewport) is removed. The blog hero text now
+ * sits on the same shared alignment rail as the header brand, the
+ * home hero, the content-tab heroes and the footer.
+ */
 
 .blogHeroHeader {
   display: flex;
@@ -78,12 +78,55 @@
   max-width: 760px;
 }
 
+/*
+ * SHARED KICKER GEOMETRY (v3.6.1) — the same mono/10px/0.26em
+ * accent pattern the document tabs use, so the first compositions
+ * read as one system (the "07 / BLOG" numbering stays editorial).
+ */
+.blogHeroKicker {
+  margin: 0 0 14px;
+
+  color:
+    var(
+      --page-accent,
+      var(--red-hot)
+    );
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.26em;
+
+  text-transform: uppercase;
+}
+
 .blogHeroTitle {
-  max-width: 700px;
+  /*
+   * SHARED H1 SCALE (v3.6.1): the blog hero title uses the same
+   * token as every document tab's H1 — one scale, editorial voice
+   * kept via weight/spacing. Same readable measure cap as well.
+   */
+  margin: 0;
+
+  font-size: var(--page-h1-scale);
+
+  font-weight: 800;
+
+  letter-spacing: -0.03em;
+
+  line-height: 1.12;
+
+  max-width: var(--page-doc-width);
+
+  text-wrap: balance;
 }
 
 .blogHeroLead {
-  max-width: 620px;
+  /* Shared lead measure (v3.6.1) — same cap as home + content tabs. */
+  max-width: var(--page-lead-measure);
 
   margin-top: 20px;
 }
@@ -285,29 +328,13 @@
 }
 
 @media (max-width: 760px) {
+  /*
+   * v3.6.1: the phone hero floor is token-owned
+   * (--page-hero-min-height at ≤560px); no per-page viewport math.
+   */
   .blogHero {
     align-items:
       flex-start;
-
-    min-height:
-      max(
-        320px,
-        calc(
-          100svh -
-            68px -
-            96px
-        )
-      );
-
-    min-height:
-      max(
-        320px,
-        calc(
-          100dvh -
-            68px -
-            96px
-        )
-      );
   }
 
   .blogHeroHeader {
