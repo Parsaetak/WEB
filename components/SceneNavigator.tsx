@@ -15,8 +15,8 @@ import styles from "@/components/SceneNavigator.module.css";
 /*
  * SCENE NAVIGATOR (v3.2) — the desktop navigation track.
  *
- * v3.2 leads with the professional primary navigation (HOME, WORK,
- * RESEARCH, WRITING, ABOUT, CONTACT) and demotes the experimental
+ * v3.2 leads with the professional primary navigation (HOME, ABOUT,
+ * WORK, RESEARCH, BLOG, CONTACT) and demotes the experimental
  * scenes (SYSTEMS, RED MAGIC, LIBRARY) to a quieter "world" group
  * after a divider. The numbered HUD labels (01–06) are gone:
  * hierarchy is carried by spacing, typography and active states.

@@ -341,8 +341,8 @@
   --nav-accent: #ff7847;
 }
 
-.item[data-id="writing"],
-.menuEntry[data-id="writing"] {
+.item[data-id="blog"],
+.menuEntry[data-id="blog"] {
   --nav-accent: #ff5c5c;
 }
 
@@ -561,7 +561,7 @@
 /* HOME     — ignition: an orbit ring spins up while the core flashes          */
 /* WORK     — construction: a scanline sweeps over a building tick grid        */
 /* RESEARCH — signal: two radar pings expand over a drawing data trace         */
-/* WRITING  — typography: a caret sweeps the line as the ink writes itself     */
+/* BLOG     — typography: a caret sweeps the line as the ink writes itself     */
 /* ABOUT    — identity: a halo ellipse swings open with an aura bloom          */
 /* CONTACT  — transmission: two ripples radiate as a packet transmits out      */
 /* -------------------------------------------------------------------------- */
@@ -800,10 +800,10 @@
   }
 
   /* ---------------------------------------------------------------- */
-  /* WRITING — type caret                                              */
+  /* BLOG — type caret                                                 */
   /* ---------------------------------------------------------------- */
 
-  .item[data-id="writing"] .fx {
+  .item[data-id="blog"] .fx {
     width: 2px;
     height: 13px;
 
@@ -812,10 +812,10 @@
     border-radius: 1px;
   }
 
-  .item[data-id="writing"]:hover .fx,
-  .item[data-id="writing"]:focus-visible .fx {
+  .item[data-id="blog"]:hover .fx,
+  .item[data-id="blog"]:focus-visible .fx {
     animation:
-      navWritingCaret
+      navBlogCaret
       1s
       cubic-bezier(
         0.4,
@@ -826,7 +826,7 @@
       both;
   }
 
-  .item[data-id="writing"] .fx2 {
+  .item[data-id="blog"] .fx2 {
     left: 16%;
 
     width: 68%;
@@ -854,10 +854,10 @@
     transform: scaleX(0);
   }
 
-  .item[data-id="writing"]:hover .fx2,
-  .item[data-id="writing"]:focus-visible .fx2 {
+  .item[data-id="blog"]:hover .fx2,
+  .item[data-id="blog"]:focus-visible .fx2 {
     animation:
-      navWritingInk
+      navBlogInk
       1s
       cubic-bezier(
         0.22,
@@ -868,7 +868,7 @@
       both;
   }
 
-  .item[data-id="writing"]::after {
+  .item[data-id="blog"]::after {
     left: auto;
 
     right: 16%;
@@ -881,10 +881,10 @@
     border-radius: 1px;
   }
 
-  .item[data-id="writing"]:hover::after,
-  .item[data-id="writing"]:focus-visible::after {
+  .item[data-id="blog"]:hover::after,
+  .item[data-id="blog"]:focus-visible::after {
     animation:
-      navWritingBlink
+      navBlogBlink
       1s
       steps(
         1,
@@ -1238,7 +1238,7 @@
   }
 }
 
-@keyframes navWritingCaret {
+@keyframes navBlogCaret {
   0% {
     opacity: 0;
 
@@ -1270,7 +1270,7 @@
   }
 }
 
-@keyframes navWritingInk {
+@keyframes navBlogInk {
   0% {
     opacity: 0.95;
 
@@ -1284,7 +1284,7 @@
   }
 }
 
-@keyframes navWritingBlink {
+@keyframes navBlogBlink {
   0%,
   68% {
     opacity: 0;
@@ -1441,7 +1441,7 @@
 
   min-height: 44px;
 
-  padding: 0 14px;
+  padding: 0 16px;
 
   border: 1px solid rgba(255, 32, 32, 0.24);
 
@@ -1455,7 +1455,7 @@
 
   font-family: var(--font-mono);
 
-  font-size: 9px;
+  font-size: 10px;
 
   font-weight: 800;
 
@@ -1588,7 +1588,11 @@
 
   border-radius: 14px;
 
-  background: rgba(7, 8, 10, 0.96);
+  /*
+   * v3.6: near-opaque — the panel reads as a solid surface; the
+   * page behind it belongs to the scrim, not to the card.
+   */
+  background: rgba(6, 7, 9, 0.985);
 
   backdrop-filter: blur(14px);
 
@@ -1632,6 +1636,48 @@
   );
 }
 
+/*
+ * Focus scrim (v3.6 mobile): the page behind an open panel dims so
+ * the entries own the layer. z-index sits just below the panel.
+ */
+.menuScrim {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 1190;
+
+  background:
+    rgba(
+      3,
+      3,
+      4,
+      0.58
+    );
+
+  backdrop-filter:
+    blur(3px);
+
+  -webkit-backdrop-filter:
+    blur(3px);
+
+  animation:
+    menuScrimIn
+    var(--motion-short)
+    ease
+    both;
+}
+
+@keyframes menuScrimIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* Panel entries — same labels, ordering, accents, animation language          */
 /* -------------------------------------------------------------------------- */
@@ -1649,7 +1695,7 @@
 
   gap: 12px;
 
-  padding: 10px 12px;
+  padding: 11px 12px;
 
   border: 1px solid transparent;
 
@@ -1663,7 +1709,7 @@
 
   font-family: var(--font-mono);
 
-  font-size: 10px;
+  font-size: 11px;
 
   font-weight: 800;
 
@@ -1785,6 +1831,10 @@
   }
 
   .menuPanel {
+    animation: none;
+  }
+
+  .menuScrim {
     animation: none;
   }
 

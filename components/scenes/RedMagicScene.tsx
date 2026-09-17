@@ -159,11 +159,12 @@ export default function RedMagicScene() {
               className={`body-large ${styles.magicLabIntroCopy}`}
             >
               This is the organism itself, running{" "}
-              in front of you. Choose a behaviour{" "}
-              and move through its field: every{" "}
-              change you see is computed live, from{" "}
-              the pulse of the core to the reach of{" "}
-              the membrane.
+              in front of you. Move through its{" "}
+              field and touch it: every change you{" "}
+              see is computed live, from the pulse{" "}
+              of the core to the reach of the{" "}
+              membrane — and with sound on, the{" "}
+              same motion drives its voice.
             </p>
           </div>
 

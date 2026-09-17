@@ -117,7 +117,7 @@ export default function BlogPage() {
               <h1
                 className={`section-title ${styles.blogHeroTitle}`}
               >
-                Writing from
+                Notes from
                 <br />
                 the laboratory
               </h1>

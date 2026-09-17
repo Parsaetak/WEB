@@ -134,7 +134,7 @@ export default function AboutScene() {
                 <strong className={styles.aboutIdentityCardValue}>
                   <span>SOFTWARE</span>
                   <i>·</i>
-                  <span>WRITING</span>
+                  <span>BLOG</span>
                   <i>·</i>
                   <span>ART</span>
                 </strong>

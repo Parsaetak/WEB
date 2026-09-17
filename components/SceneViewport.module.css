@@ -7,6 +7,18 @@
       var(--shell-header)
     );
 
+  min-height:
+    calc(
+      100svh -
+      var(--shell-header)
+    );
+
+  min-height:
+    calc(
+      100dvh -
+      var(--shell-header)
+    );
+
   isolation: isolate;
 
   transition:
@@ -170,6 +182,18 @@
     min-height:
       calc(
         100vh -
+        68px
+      );
+
+    min-height:
+      calc(
+        100svh -
+        68px
+      );
+
+    min-height:
+      calc(
+        100dvh -
         68px
       );
   }

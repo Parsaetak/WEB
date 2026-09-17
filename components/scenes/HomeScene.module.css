@@ -19,6 +19,18 @@
       var(--shell-header)
     );
 
+  min-height:
+    calc(
+      100svh -
+      var(--shell-header)
+    );
+
+  min-height:
+    calc(
+      100dvh -
+      var(--shell-header)
+    );
+
   display: grid;
 
   align-items: center;
@@ -2593,6 +2605,18 @@ strong i {
     min-height:
       calc(
         100vh -
+        var(--shell-header)
+      );
+
+    min-height:
+      calc(
+        100svh -
+        var(--shell-header)
+      );
+
+    min-height:
+      calc(
+        100dvh -
         var(--shell-header)
       );
 

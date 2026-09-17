@@ -12,24 +12,36 @@ import UnifiedSiteNav, {
   type UnifiedNavEntry
 } from "@/components/UnifiedSiteNav";
 
+import FullScreenPageShell, {
+  type FullScreenPageId
+} from "@/components/FullScreenPageShell";
+
 import SiteFooter from "@/components/SiteFooter";
 
 import styles from "@/components/content/content.module.css";
 
 /*
- * CONTENT SHELL (v3.4) — the shared frame for the static content
+ * CONTENT SHELL (v3.6) — the shared frame for the static content
  * documents: /about/, /work/, /research/, /contact/, and the topic
  * hubs.
+ *
+ * v3.6 full-screen architecture: the shell is now a
+ * FullScreenPageShell — every tab BEGINS as a full-screen
+ * composition (crumbs, kicker, title and lead composed against a
+ * per-tab identity field), and the document below it scrolls
+ * naturally for as long as it needs. Full-screen is composition,
+ * not confinement: no fixed heights, no clipping, no squeezed
+ * text — the hero simply refuses to be shorter than one viewport
+ * (with a content floor so short screens scroll instead of
+ * cramping).
  *
  * v3.4 navigation: the header renders the UNIFIED navigation system
  * (UnifiedSiteNav) — the same renderer, data source, geometry,
  * accents, active states and hover identities as the world HUD and
- * the blog header. The separate light-weight headerNav row (which
- * carried only the primary links, no world group, no mobile menu)
- * is retired. The nav is the page's one small client island; the
- * document body below it remains static semantic HTML, and the nav
- * itself still ships as complete server-rendered markup for crawlers
- * and no-JS readers.
+ * the blog header. The nav is the page's one small client island;
+ * the document body below it remains static semantic HTML, and the
+ * nav itself still ships as complete server-rendered markup for
+ * crawlers and no-JS readers.
  *
  * The 13-point star, mono kickers, and red accents are reused so
  * every content document reads as the same website, not a template.
@@ -52,6 +64,38 @@ type ContentShellProps = {
   activeHref?: string;
   children: ReactNode;
 };
+
+/*
+ * Tab identity from the active route — the same href the nav uses
+ * for its active state. Unknown routes (the topic hubs) fall back
+ * to the neutral "hub" identity of the shared shell.
+ */
+function pageIdFromHref(
+  href: string | undefined
+): FullScreenPageId {
+  switch (href) {
+    case "/":
+      return "home";
+
+    case "/about/":
+      return "about";
+
+    case "/work/":
+      return "work";
+
+    case "/research/":
+      return "research";
+
+    case "/blog/":
+      return "blog";
+
+    case "/contact/":
+      return "contact";
+
+    default:
+      return "hub";
+  }
+}
 
 export default function ContentShell({
   kicker,
@@ -107,7 +151,10 @@ export default function ContentShell({
   ];
 
   return (
-    <div className={styles.shell}>
+    <FullScreenPageShell
+      page={pageIdFromHref(activeHref)}
+      className={styles.shell}
+    >
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <a className={styles.brand} href={routeHref("/")}>
@@ -138,59 +185,120 @@ export default function ContentShell({
       </header>
 
       <main className={styles.main} id="content">
-        <div className={styles.doc}>
-          <nav className={styles.crumbs} aria-label="Breadcrumb">
-            {crumbs.map((crumb, index) => {
-              const isLast = index === crumbs.length - 1;
-
-              return (
-                <Fragment key={crumb.name}>
-                  {index > 0 && (
-                    <span
-                      className={styles.crumbSeparator}
-                      aria-hidden="true"
-                    >
-                      /
-                    </span>
-                  )}
-
-                  {crumb.href && !isLast ? (
-                    <a
-                      className={styles.crumbLink}
-                      href={routeHref(crumb.href)}
-                    >
-                      {crumb.name}
-                    </a>
-                  ) : (
-                    <span
-                      className={styles.crumbCurrent}
-                      aria-current={isLast ? "page" : undefined}
-                    >
-                      {crumb.name}
-                    </span>
-                  )}
-                </Fragment>
-              );
-            })}
-          </nav>
-
-          <p className={styles.docKicker}>{kicker}</p>
-
-          <h1 className={styles.title}>{title}</h1>
-
-          <div className={styles.lead}>
-            {lead.map((paragraph, index) => (
-              <p key={index} className={styles.leadParagraph}>
-                {paragraph}
-              </p>
-            ))}
+        {/*
+         * FULL-SCREEN HERO (v3.6) — the first screen of every tab.
+         * The identity field behind it is decorative (aria-hidden,
+         * pointer-transparent) and themed per tab through the
+         * shell's data-page accent tokens. The cue line at the
+         * bottom says what the composition does: the document
+         * continues below the fold.
+         */}
+        <section
+          className={styles.hero}
+          aria-label={title}
+        >
+          <div
+            className={styles.heroField}
+            aria-hidden="true"
+          >
+            <span
+              className={`${styles.heroRing} ${styles.heroRingOne}`}
+            />
+            <span
+              className={`${styles.heroRing} ${styles.heroRingTwo}`}
+            />
+            <span
+              className={`${styles.heroRing} ${styles.heroRingThree}`}
+            />
+            <span className={styles.heroAxis} />
+            <span
+              className={`${styles.heroNode} ${styles.heroNodeOne}`}
+            />
+            <span
+              className={`${styles.heroNode} ${styles.heroNodeTwo}`}
+            />
           </div>
 
+          <div className={styles.doc}>
+            <nav
+              className={styles.crumbs}
+              aria-label="Breadcrumb"
+            >
+              {crumbs.map((crumb, index) => {
+                const isLast =
+                  index === crumbs.length - 1;
+
+                return (
+                  <Fragment key={crumb.name}>
+                    {index > 0 && (
+                      <span
+                        className={styles.crumbSeparator}
+                        aria-hidden="true"
+                      >
+                        /
+                      </span>
+                    )}
+
+                    {crumb.href && !isLast ? (
+                      <a
+                        className={styles.crumbLink}
+                        href={routeHref(crumb.href)}
+                      >
+                        {crumb.name}
+                      </a>
+                    ) : (
+                      <span
+                        className={styles.crumbCurrent}
+                        aria-current={
+                          isLast
+                            ? "page"
+                            : undefined
+                        }
+                      >
+                        {crumb.name}
+                      </span>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </nav>
+
+            <p className={styles.docKicker}>
+              {kicker}
+            </p>
+
+            <h1 className={styles.title}>
+              {title}
+            </h1>
+
+            <div className={styles.lead}>
+              {lead.map((paragraph, index) => (
+                <p
+                  key={index}
+                  className={styles.leadParagraph}
+                >
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          <div
+            className={styles.heroCue}
+            aria-hidden="true"
+          >
+            <span>SCROLL</span>
+
+            <i className={styles.heroCueLine} />
+          </div>
+        </section>
+
+        <div className={styles.doc}>
           {children}
         </div>
       </main>
 
       <SiteFooter />
-    </div>
+    </FullScreenPageShell>
   );
 }

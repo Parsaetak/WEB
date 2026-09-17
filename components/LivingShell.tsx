@@ -294,8 +294,8 @@ export default function LivingShell({
    * NAVIGATION (v3.4) — one unified navigation system (see
    * UnifiedSiteNav). The desktop track leads with the professional
    * primary nav; HOME stays an in-shell scene action (a same-route
-   * link could not switch the hash scene); WORK, RESEARCH, WRITING,
-   * ABOUT and CONTACT are real routes. The experimental scenes
+   * link could not switch the hash scene); ABOUT, WORK, RESEARCH,
+   * BLOG and CONTACT are real routes. The experimental scenes
    * (SYSTEMS, RED MAGIC, LIBRARY) follow as the quieter world group,
    * and GitHub rides as a utility entry in the disclosure menu. The
    * ≤860px disclosure panel is the same component's compact mode —

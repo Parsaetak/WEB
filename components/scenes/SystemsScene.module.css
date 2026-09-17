@@ -13,6 +13,18 @@
       var(--shell-header)
     );
 
+  min-height:
+    calc(
+      100svh -
+      var(--shell-header)
+    );
+
+  min-height:
+    calc(
+      100dvh -
+      var(--shell-header)
+    );
+
   overflow: clip;
 
   border-bottom:

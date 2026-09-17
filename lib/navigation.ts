@@ -1,16 +1,20 @@
 /*
- * SITE NAVIGATION (v3.2) — the single source of truth for the
+ * SITE NAVIGATION (v3.6) — the single source of truth for the
  * site-wide navigation labels and destinations.
  *
- * v3.2 replaces the numbered HUD navigation (01 HOME … 06 LIBRARY)
- * with a professional primary navigation:
+ * v3.6 orders the professional primary navigation as a clear
+ * identity-first flow:
  *
- *   HOME · WORK · RESEARCH · WRITING · ABOUT · CONTACT
+ *   HOME · ABOUT · WORK · RESEARCH · BLOG · CONTACT
+ *
+ * identity → capability/work → research → writing → contact.
+ * The public label for the writing archive is BLOG (the canonical
+ * /blog/ URL and the internal blog article routes are unchanged).
  *
  * The six-scene world stays intact: the scene ids
  * (home / about / systems / magic / work / library) are internal
  * interaction states and are NOT renamed. The experimental
- * destinations — Systems, RED MAGIC, Library — become secondary
+ * destinations — Systems, RED MAGIC, Library — remain secondary
  * "world" navigation, carried by the same unified renderer
  * (UnifiedSiteNav) on every surface — world HUD, blog header,
  * content-shell header, footer — with quieter styling instead of
@@ -33,7 +37,10 @@ export type NavigationEntry = {
 };
 
 /*
- * PRIMARY NAVIGATION (v3.2) — professional destinations lead.
+ * PRIMARY NAVIGATION (v3.6) — professional destinations lead, in
+ * the identity-first order: who (ABOUT) → what (WORK) → how it is
+ * investigated (RESEARCH) → what is published (BLOG) → how to
+ * reach me (CONTACT).
  * HOME is special-cased inside the world shell as a scene action
  * (in-shell transition); from every other surface it is a plain
  * link to "/". All other primary entries are real, indexable routes.
@@ -44,6 +51,12 @@ export const PRIMARY_NAV: readonly NavigationEntry[] = [
     label: "Home",
     shortLabel: "HOME",
     href: "/"
+  },
+  {
+    id: "about",
+    label: "About",
+    shortLabel: "ABOUT",
+    href: "/about/"
   },
   {
     id: "work",
@@ -58,16 +71,10 @@ export const PRIMARY_NAV: readonly NavigationEntry[] = [
     href: "/research/"
   },
   {
-    id: "writing",
-    label: "Writing",
-    shortLabel: "WRITING",
+    id: "blog",
+    label: "Blog",
+    shortLabel: "BLOG",
     href: "/blog/"
-  },
-  {
-    id: "about",
-    label: "About",
-    shortLabel: "ABOUT",
-    href: "/about/"
   },
   {
     id: "contact",

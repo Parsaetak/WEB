@@ -103,11 +103,6 @@ type QualityName =
   | "medium"
   | "low";
 
-export type RedMagicMode =
-  | "drift"
-  | "listen"
-  | "surge";
-
 type ModeProfile = {
   timeScale: number;
 
@@ -131,82 +126,34 @@ type ModeProfile = {
   globalPotentialGain: number;
 };
 
-const MODE_PROFILES:
-  Record<
-    RedMagicMode,
-    ModeProfile
-  > = {
-  drift: {
-    timeScale: 0.55,
+/*
+ * ONE ORGANISM, ONE PROFILE (v3.6): the DRIFT / LISTEN / SURGE
+ * modes are retired. The organism runs its balanced baseline and
+ * lets interaction energy do all the shaping — the same law the
+ * sound engine follows.
+ */
+const ORGANISM_PROFILE: ModeProfile = {
+  timeScale: 1,
 
-    energyCeiling: 0.55,
-    energyFloor: 0.06,
+  energyCeiling: 1,
+  energyFloor: 0,
 
-    pointerGain: 0.7,
-    coreGain: 0.85,
+  pointerGain: 1,
+  coreGain: 1,
 
-    responseLag: 0.008,
+  responseLag: 0.018,
 
-    particleImpulse: 0.42,
+  particleImpulse: 0.7,
 
-    turbulenceGain: 0.55,
+  turbulenceGain: 1,
 
-    shockwaveGain: 0.72,
+  shockwaveGain: 1,
 
-    recovery: 0.78,
+  recovery: 1,
 
-    gridConductance: 0.11,
+  gridConductance: 0.18,
 
-    globalPotentialGain: 0.025
-  },
-
-  listen: {
-    timeScale: 1,
-
-    energyCeiling: 1,
-    energyFloor: 0,
-
-    pointerGain: 1,
-    coreGain: 1,
-
-    responseLag: 0.018,
-
-    particleImpulse: 0.7,
-
-    turbulenceGain: 1,
-
-    shockwaveGain: 1,
-
-    recovery: 1,
-
-    gridConductance: 0.18,
-
-    globalPotentialGain: 0.045
-  },
-
-  surge: {
-    timeScale: 1.45,
-
-    energyCeiling: 1,
-    energyFloor: 0.42,
-
-    pointerGain: 1.45,
-    coreGain: 1.3,
-
-    responseLag: 0.028,
-
-    particleImpulse: 1.15,
-
-    turbulenceGain: 1.45,
-
-    shockwaveGain: 1.35,
-
-    recovery: 1.22,
-
-    gridConductance: 0.27,
-
-    globalPotentialGain: 0.075
-  }
+  globalPotentialGain: 0.045
 };
 
 type Quality = {
@@ -1773,25 +1720,12 @@ function buildGlobalPotentialWeights(
   };
 }
 
-export default function RedMagic({
-  mode = "listen"
-}: {
-  mode?: RedMagicMode;
-} = {}) {
+export default function RedMagic() {
   const canvasRef =
     useRef<HTMLCanvasElement | null>(
       null
     );
 
-  const modeRef =
-    useRef<RedMagicMode>(
-      mode
-    );
-
-  useEffect(() => {
-    modeRef.current =
-      mode;
-  }, [mode]);
 
   useEffect(() => {
     const canvas =
@@ -2176,10 +2110,8 @@ export default function RedMagic({
       "rgba(185, 16, 10, 0.72)"
     );
 
-    let profile =
-      MODE_PROFILES[
-        modeRef.current
-      ];
+    const profile =
+      ORGANISM_PROFILE;
 
     const buildBoundaryNetworkWeights =
       () => {
@@ -2815,8 +2747,8 @@ export default function RedMagic({
           );
 
         boundaryAngularLookup =
-          modeRef.current ===
-          "surge"
+          pointerEnergy >
+            0.7
             ? ANGULAR_FALLOFF_SURGE
             : ANGULAR_FALLOFF_NORMAL;
 
@@ -3264,8 +3196,8 @@ export default function RedMagic({
             localStrength;
 
           if (
-            modeRef.current ===
-            "surge"
+            detail.energy >
+            0.7
           ) {
             const rotational =
               Math.min(
@@ -3578,9 +3510,7 @@ export default function RedMagic({
           );
 
         const activeProfile =
-          MODE_PROFILES[
-            modeRef.current
-          ];
+          ORGANISM_PROFILE;
 
         const decay =
           Math.pow(
@@ -6443,11 +6373,6 @@ export default function RedMagic({
         lastTimestamp =
           timestamp;
 
-        profile =
-          MODE_PROFILES[
-            modeRef.current
-          ];
-
         const interactionScale =
           pointerActive
             ? 1
@@ -6573,7 +6498,7 @@ export default function RedMagic({
          * stop scheduling. Redrawing an identical frame at full
          * vsync is not reduced motion — it is the same cost with
          * time frozen. Event-driven state changes (pointer, click,
-         * resize, mode, visibility) call start() themselves, which
+         * resize, visibility) call start() themselves, which
          * produces one fresh static frame per event.
          */
         if (reducedMotion) {

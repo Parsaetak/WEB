@@ -5,9 +5,7 @@ import {
   useState
 } from "react";
 
-import RedMagic, {
-  type RedMagicMode
-} from "@/components/RedMagic";
+import RedMagic from "@/components/RedMagic";
 
 import MagicInteractionLayer from "@/components/MagicInteractionLayer";
 
@@ -20,36 +18,6 @@ import styles from "@/components/MagicConsole.module.css";
 
 const SOUND_STORAGE_KEY =
   "red-magic-sound-enabled";
-
-type BehaviourOption = {
-  id: RedMagicMode;
-  label: string;
-  note: string;
-};
-
-const BEHAVIOURS:
-  BehaviourOption[] = [
-  {
-    id: "drift",
-    label: "DRIFT",
-    note:
-      "Slow orbit. The organism rests inside itself and barely reacts."
-  },
-
-  {
-    id: "listen",
-    label: "LISTEN",
-    note:
-      "Balanced state. It follows your pointer and answers its motion."
-  },
-
-  {
-    id: "surge",
-    label: "SURGE",
-    note:
-      "Excited state. The core runs hot and the membrane reaches toward you."
-  }
-];
 
 function readSoundPreference() {
   if (
@@ -187,7 +155,7 @@ function signalLabel(
     return "AWAKE";
   }
 
-  return "SURGING";
+  return "ACTIVE";
 }
 
 function formLabel(
@@ -303,15 +271,16 @@ function MagicVitals() {
   );
 }
 
+/*
+ * MAGIC CONSOLE (v3.6) — one control surface, one sound.
+ *
+ * The v3.5 behaviour selector (DRIFT / LISTEN / SURGE) is retired:
+ * the organism is a single continuous system whose reactivity comes
+ * from interaction, not from a named mode. The only control is the
+ * master sound state — SOUND ON / SOUND OFF — wired directly to the
+ * RED MAGIC sound engine, which is genuinely audible when ON.
+ */
 export default function MagicConsole() {
-  const [
-    mode,
-    setMode
-  ] =
-    useState<RedMagicMode>(
-      "listen"
-    );
-
   const [
     soundEnabled,
     setSoundEnabled
@@ -348,16 +317,6 @@ export default function MagicConsole() {
       );
     };
 
-  const activeBehaviour =
-    BEHAVIOURS.find(
-      (
-        behaviour
-      ) =>
-        behaviour.id ===
-        mode
-    ) ??
-    BEHAVIOURS[1];
-
   return (
     <div
       className={
@@ -369,42 +328,16 @@ export default function MagicConsole() {
           styles.magicLabBar
         }
       >
-        <div
+        <p
           className={
-            styles.magicControls
+            styles.magicLabNote
           }
-          role="group"
-          aria-label="Organism behaviour"
+          aria-live="polite"
         >
-          {BEHAVIOURS.map(
-            (
-              behaviour
-            ) => (
-              <button
-                key={
-                  behaviour.id
-                }
-                type="button"
-                className={
-                  styles.magicControl
-                }
-                aria-pressed={
-                  behaviour.id ===
-                  mode
-                }
-                onClick={() =>
-                  setMode(
-                    behaviour.id
-                  )
-                }
-              >
-                {
-                  behaviour.label
-                }
-              </button>
-            )
-          )}
-        </div>
+          {soundEnabled
+            ? "Sound is on. The organism's ambient voice is live — move through its field and its intensity follows you."
+            : "Sound is off. Turn it on to hear the organism's ambient voice while you interact with it."}
+        </p>
 
         <div
           className={
@@ -419,6 +352,11 @@ export default function MagicConsole() {
             aria-pressed={
               soundEnabled
             }
+            aria-label={
+              soundEnabled
+                ? "Turn RED MAGIC sound off"
+                : "Turn RED MAGIC sound on"
+            }
             disabled={
               !soundHydrated
             }
@@ -431,17 +369,6 @@ export default function MagicConsole() {
               ? "ON"
               : "OFF"}
           </button>
-
-          <p
-            className={
-              styles.magicLabNote
-            }
-            aria-live="polite"
-          >
-            {
-              activeBehaviour.note
-            }
-          </p>
         </div>
       </div>
 
@@ -459,15 +386,8 @@ export default function MagicConsole() {
             soundEnabled={
               soundEnabled
             }
-            mode={
-              mode
-            }
           >
-            <RedMagic
-              mode={
-                mode
-              }
-            />
+            <RedMagic />
           </MagicInteractionLayer>
         </div>
       </div>

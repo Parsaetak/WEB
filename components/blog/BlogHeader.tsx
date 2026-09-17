@@ -16,7 +16,7 @@ import styles from "./BlogHeader.module.css";
  * v3.4 navigation: the header carries the UNIFIED navigation system
  * (UnifiedSiteNav) — the same renderer, data source, geometry,
  * accents, active states and animation language as the world HUD,
- * the content documents and the topic hubs. WRITING is the active
+ * the content documents and the topic hubs. BLOG is the active
  * area; the experimental world scenes (SYSTEMS, RED MAGIC, LIBRARY)
  * follow as the quieter secondary group; GitHub rides as a utility
  * entry inside the ≤860px disclosure menu. The separate scene-link
@@ -33,7 +33,7 @@ const NAV_ENTRIES: readonly UnifiedNavEntry[] = [
       label: entry.label,
       shortLabel: entry.shortLabel,
       href: entry.href,
-      active: entry.id === "writing"
+      active: entry.id === "blog"
     })
   ),
   ...WORLD_NAV.map(

@@ -4,8 +4,64 @@
   flex-direction: column;
 }
 
+/*
+ * FULL-SCREEN FIRST COMPOSITION (v3.6): the blog hero occupies the
+ * first screen (minus the fixed header and the shell's lead-in
+ * padding), with a content floor so short viewports scroll instead
+ * of squeezing the title block.
+ */
 .blogHero {
+  position: relative;
+
+  display: flex;
+
+  align-items: center;
+
   padding-top: 64px;
+
+  padding-bottom:
+    clamp(
+      40px,
+      7vh,
+      88px
+    );
+
+  min-height:
+    max(
+      360px,
+      calc(
+        100vh -
+          var(--shell-header) -
+          46px
+      )
+    );
+
+  min-height:
+    max(
+      360px,
+      calc(
+        100svh -
+          var(--shell-header) -
+          46px
+      )
+    );
+
+  min-height:
+    max(
+      360px,
+      calc(
+        100dvh -
+          var(--shell-header) -
+          46px
+      )
+    );
+}
+
+.blogHero
+  > :global(
+      .page-container
+    ) {
+  width: 100%;
 }
 
 .blogHeroHeader {
@@ -229,6 +285,31 @@
 }
 
 @media (max-width: 760px) {
+  .blogHero {
+    align-items:
+      flex-start;
+
+    min-height:
+      max(
+        320px,
+        calc(
+          100svh -
+            68px -
+            96px
+        )
+      );
+
+    min-height:
+      max(
+        320px,
+        calc(
+          100dvh -
+            68px -
+            96px
+        )
+      );
+  }
+
   .blogHeroHeader {
     flex-direction: column;
 

@@ -39,11 +39,11 @@ Beyond the living-world homepage, the site carries real indexable documents that
 
 The distinction between URL kinds is deliberate: a **real URL** (`/about/`, `/work/`, `/research/`, `/contact/`, hubs, blog) is an indexable document; a **hash** (`/#work`, `/#magic`) is an interactive scene state of the living world, not a separate page. Every content route is statically rendered from server components — the document bodies ship as static semantic HTML with zero route-specific content JavaScript, and the shared navigation is each route's one small client island that still renders as complete server-side markup (crawlers and no-JS readers get the full navigation). They remain the lightest pages on the site.
 
-### Navigation (v3.4, fast paths in v3.5 — one system everywhere)
-The site-wide navigation leads with the professional destinations and keeps the experimental world one click away:
+### Navigation (v3.6 order and labels, fast paths from v3.5 — one system everywhere)
+The site-wide navigation leads with the professional destinations in the identity-first order — who (About) → what (Work) → how it is investigated (Research) → what is published (Blog) → how to reach me (Contact) — and keeps the experimental world one click away. The public label for the writing archive is **BLOG** (v3.6, formerly WRITING); the canonical `/blog/` URL and the article routes are unchanged:
 
 ```
-PRIMARY:  HOME · WORK · RESEARCH · WRITING · ABOUT · CONTACT
+PRIMARY:  HOME · ABOUT · WORK · RESEARCH · BLOG · CONTACT
 WORLD:    SYSTEMS · RED MAGIC · LIBRARY   (quieter, contextual)
 ```
 
@@ -51,10 +51,12 @@ One navigation system renders every surface: `components/UnifiedSiteNav.tsx` con
 
 v3.5 adds **intent warming** to the same component without touching its visual identity: pointer enter, focus, or pointer-down on an entry fetches its destination before the click commits. Scene actions preload their module immediately through `preloadScene` (unchanged contract, deduplicated by the scene preloader); internal route links prefetch their RSC payload once through `router.prefetch()` with viewport prefetch still disabled — nothing is fetched continuously and no heavy page asset is pulled, so a warmed tab click is a router-cache hit.
 
-Each primary tab also carries its own ~1-second hover identity, replayed on every re-enter: **HOME** ignites an orbit ring with a core flash · **WORK** sweeps a construction scanline over a building tick grid · **RESEARCH** expands staggered radar pings over a drawing data trace · **WRITING** sweeps a type caret as the ink line writes itself · **ABOUT** swings open an identity halo with an aura bloom · **CONTACT** radiates transmission ripples with an outbound packet. All effects are compositor-only (`transform`/`opacity`/`clip-path` on dedicated decorative layers — the label never moves), gated behind `(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)`, and collapse to static state changes under reduced motion.
+Each primary tab also carries its own ~1-second hover identity, replayed on every re-enter: **HOME** ignites an orbit ring with a core flash · **WORK** sweeps a construction scanline over a building tick grid · **RESEARCH** expands staggered radar pings over a drawing data trace · **BLOG** sweeps a type caret as the ink line writes itself · **ABOUT** swings open an identity halo with an aura bloom · **CONTACT** radiates transmission ripples with an outbound packet. All effects are compositor-only (`transform`/`opacity`/`clip-path` on dedicated decorative layers — the label never moves), gated behind `(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)`, and collapse to static state changes under reduced motion.
 
 ### RED MAGIC
 RED MAGIC is the site's living-layer experiment: a canvas-based computational organism with adaptation, perception, and visible state. It is deliberately **not** part of the critical path — visitors receive a CSS-only seed first, and the organism loads at idle time only when motion is permitted and the device can afford it.
+
+**One organism, one sound (v3.6).** The RED MAGIC sound engine is a single ambient synthesis graph — a low body (52/78 Hz), a warm harmonic, a breathing shimmer, and an activity-driven noise texture — behind one master SOUND ON / SOUND OFF state. The former DRIFT / LISTEN / SURGE selector is retired: interaction changes intensity and timbre, never personality. The engine is browser-policy honest: the AudioContext is constructed only after a real user activation (never during hydration), the ON/OFF preference persists in localStorage, a hidden tab suspends the graph and a visible one resumes it, and OFF fades out before suspending. With sound on, the same pointer energy that drives the organism drives the voice.
 
 ## Key projects
 
@@ -201,7 +203,7 @@ npm run verify
 
 Runs the two gates CI enforces:
 
-- `verify:seo` — static SEO/export verification against `out/` (page metadata, structured data, homepage crawlability, writing links, interaction anchors, link graph, sitemap, robots, RSS absence, favicon family, brand assets)
+- `verify:seo` — static SEO/export verification against `out/` (page metadata, structured data, homepage crawlability, blog links, interaction anchors, link graph, sitemap, robots, RSS absence, favicon family, brand assets)
 - `verify:brand` — brand asset coherence and determinism
 
 Both read only generated artifacts, so they check what actually ships.
@@ -248,7 +250,7 @@ All user-facing personal and author copy speaks in first person ("I build…", "
 ## Project status
 
 - Next.js 16.3.4 / React 19.2.8 / TypeScript 5.9, static export, Node 22 in CI
-- 9 published articles; the Writing section links them from the homepage
+- 9 published articles; the home Blog section links them from the homepage
 - 8 static content documents (v3.1): `/about/`, `/work/`, and six topic hubs forming the site's knowledge base
 - Full verification suite green: SEO + brand gates pass on every build
 - Known limitations: GitHub Pages serves the site under `/WEB`, so the bare root URL redirects; hash-scene states are not individually indexable documents by design (the content routes and articles carry the indexable concepts)

@@ -1,12 +1,10 @@
+/*
+ * The full-screen min-height/flex contract and the data-page
+ * accent tokens are owned by FullScreenPageShell (v3.6); this
+ * layer keeps only the blog-specific positioning rules.
+ */
 .blogShell {
   position: relative;
-
-  min-height:
-    100vh;
-
-  display: flex;
-
-  flex-direction: column;
 
   overflow-x: clip;
 

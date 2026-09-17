@@ -408,23 +408,23 @@ shockwaves
 pointer interaction
 mode profiles
 telemetry
-12. RedMagic Modes
+12. RedMagic Organism Profile
 
-Supported modes:
+One organism, one profile (v3.6). The drift/listen/surge mode
+system is retired — there is no mode type, no mode table, no
+setMode, and no mode selector in the console. The visual organism
+runs one fixed balanced baseline (ORGANISM_PROFILE) and lets
+interaction energy shape everything: the angular-falloff swap and
+the rotational particle swirl are gated on pointer energy, not on
+a named state. The sound engine follows the same law — one
+ambient graph, one master sound state, intensity-driven.
 
-drift
-listen
-surge
-
-Default:
-
-listen
-
-The default listen profile must preserve Home compatibility.
-
-Mode changes must not remount the entire engine.
-
-Mode is delivered through stable runtime state/ref mechanisms as implemented by the current engine.
+The engine must never grow a second user-facing sound profile or
+a behaviour selector. Interaction changes intensity and timbre;
+it must never switch personality. The AudioContext may only be
+constructed after real user activation, ON must ramp the master
+gain to its designed level on every start, OFF must fade then
+suspend, and the enabled preference persists across reloads.
 
 13. RedMagic Quality
 
@@ -2706,3 +2706,64 @@ Stage Summary:
   components/scenes/HomeScene.tsx, scripts/verify-seo.mjs,
   app/layout.tsx, lib/seo.tsx, package.json (3.5.0), README.md,
   Updated-Files.md, worklog.md.
+
+## 2026-09-17 — v3.6 BLOG rename, one RED MAGIC sound, full-screen tabs
+
+Task ID: 1 (single-agent run)
+Scope guard: v3.5 fast navigation preserved — intent warming,
+scene preloading, zero-delay transitions, slow-load fallback and
+the loading surface untouched. Six-scene world, scene ids, SEO
+law, static-export law, and verification gates unchanged. No
+unrelated system redesigned.
+
+Work Log:
+- RENAME: lib/navigation.ts PRIMARY_NAV → HOME · ABOUT · WORK ·
+  RESEARCH · BLOG · CONTACT; writing entry id/label → blog.
+  CSS hover identities + accents renamed to data-id="blog";
+  BlogHeader active id; HomeScene kicker BLOG + ALL ARTICLES;
+  AboutScene output card; WorkScene card type PUBLICATION; blog
+  hero "Notes from the laboratory". No visible WRITING label
+  remains (grep-verified in components/app/lib/scripts).
+- AUDIO MODES REMOVED: RedMagicAudioMode, MODE_SETTINGS, setMode
+  deleted from RedMagicAudio.ts; mode prop deleted from
+  MagicInteractionLayer.tsx and RedMagic.tsx; DRIFT/LISTEN/SURGE
+  selector deleted from MagicConsole.tsx (+ its CSS); RedMagic
+  visual MODE_PROFILES replaced by one ORGANISM_PROFILE with
+  energy-gated surge flourishes; RedMagicScene copy updated.
+- AUDIO MADE REAL: single ambient graph (low body 52/78.2 Hz,
+  104 Hz harmonic, 416/624 Hz shimmer with tremolo, 0.045 Hz
+  breath LFO, pink-noise texture) → compressor → master 0.85.
+  Intensity (energy/proximity/charge) drives gains/filter/
+  shimmer/texture with self-decay; transients for impact/flick/
+  release/orbit/enter/leave. Autoplay-safe construction (context
+  only after user activation; one-shot gesture listeners for a
+  restored ON preference), master ramp on every start, fade+
+  suspend on OFF, visibility suspend/resume, localStorage
+  persistence. Browser-verified with an instrumented
+  AudioContext: gesture click ramps master to 0.85, pointer
+  interaction sweeps intensity params, OFF fades+suspends,
+  reload restores preference, no console output.
+- FULL-SCREEN TABS: new components/FullScreenPageShell.tsx
+  (min-height 100vh/svh/dvh stack, flex column, data-page
+  identity tokens). ContentShell restructured onto it with a
+  full-screen hero (crumbs/kicker/title/lead + per-tab identity
+  field + SCROLL cue; content floor prevents cramping); blog
+  layout wraps the same shell; blog hero fills the fold; all
+  world scene first screens and body/livingShell/viewport
+  upgraded to the svh/dvh stack.
+- MOBILE: disclosure panel near-opaque + fixed focus scrim
+  (reduced-motion safe); nav type 10/11px with 44/46px targets;
+  content doc padding 20px, section rhythm 48px, lead 16px at
+  ≤560px; sound control 44px target; hero motif edge-aware at
+  narrow widths. Verified 390×844 + 320-class: no horizontal
+  overflow on any primary tab; VLM visual review PASS.
+- VERIFY: npm ci / blog / build / lint (0 errors) / verify
+  (SEO 173 + brand + export 11) all green. Browser pass: nav
+  order+labels on every surface, six scenes switch, heroes fill
+  the first screen (hero bottom = fold), audio cycle verified,
+  zero page errors / console warnings. Version 3.6.0; README,
+  Updated-Files.md, worklog.md updated.
+
+Stage Summary:
+- Deliverable: WEB-v3.6.zip (repository excluding .git,
+  node_modules, caches, build output).

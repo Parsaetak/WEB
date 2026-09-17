@@ -27,7 +27,7 @@ import styles from "@/components/UnifiedSiteNav.module.css";
  * the same entries:
  *
  * - TRACK (desktop): the horizontal primary/world track, identical on
- *   every surface. Primary tabs (HOME, WORK, RESEARCH, WRITING, ABOUT,
+ *   every surface. Primary tabs (HOME, ABOUT, WORK, RESEARCH, BLOG,
  *   CONTACT) each carry their own ~1s hover identity animation; the
  *   world scenes (SYSTEMS, RED MAGIC, LIBRARY) follow a quiet divider.
  * - MENU (≤860px): a disclosure-panel mode of the same navigation —
@@ -743,6 +743,22 @@ function NavMenu({
           Menu
         </span>
       </button>
+
+      {/*
+       * Focus scrim (v3.6 mobile): the open panel is a surface, not
+       * a stencil — the page behind dims instead of competing with
+       * the entries. Purely decorative + click-through is already
+       * handled by the outside-pointerdown dismissal, so the scrim
+       * itself stays aria-hidden and pointer-transparent.
+       */}
+      {open && (
+        <div
+          className={
+            styles.menuScrim
+          }
+          aria-hidden="true"
+        />
+      )}
 
       {open && (
         <div

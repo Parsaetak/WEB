@@ -9,16 +9,14 @@
  * the pages work at 320px without a separate mobile system.
  */
 
+/*
+ * The full-screen contract (min-height stack, flex column, page
+ * accent tokens, data-page identity) is owned by
+ * FullScreenPageShell.module.css — this class only adds the
+ * document shell's local positioning context.
+ */
 .shell {
-  display: flex;
-
-  flex-direction: column;
-
-  min-height: 100vh;
-
-  background: var(--background);
-
-  color: var(--text);
+  position: relative;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -117,7 +115,7 @@
 
   width: 100%;
 
-  padding: 56px 0 88px;
+  padding: 0 0 88px;
 }
 
 .doc {
@@ -181,7 +179,11 @@
 .docKicker {
   margin: 0 0 14px;
 
-  color: var(--red-hot);
+  color:
+    var(
+      --page-accent,
+      var(--red-hot)
+    );
 
   font-family: var(--font-mono);
 
@@ -197,7 +199,7 @@
 .title {
   margin: 0;
 
-  font-size: clamp(30px, 5vw, 46px);
+  font-size: clamp(34px, 6vw, 58px);
 
   font-weight: 800;
 
@@ -223,12 +225,697 @@
 }
 
 @media (max-width: 560px) {
-  .main {
-    padding-top: 40px;
+  .doc {
+    padding: 0 20px;
   }
 
-  .doc {
-    padding: 0 16px;
+  /*
+   * Mobile stacking (v3.6): tighter section rhythm and one step
+   * down in lead size — comfortable reading without a separate
+   * mobile design system.
+   */
+  .section {
+    margin-top: 48px;
+  }
+
+  .leadParagraph {
+    font-size: 16px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Full-screen hero (v3.6) — the first screen of every tab.                    */
+/*                                                                             */
+/* min-height stack: 100vh fallback, then the small-viewport and               */
+/* dynamic-viewport units as engines support them. max() keeps a               */
+/* content floor so short screens scroll instead of squeezing text.            */
+/* -------------------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  min-height:
+    max(
+      440px,
+      calc(
+        100vh -
+          var(--shell-header)
+      )
+    );
+
+  min-height:
+    max(
+      440px,
+      calc(
+        100svh -
+          var(--shell-header)
+      )
+    );
+
+  min-height:
+    max(
+      440px,
+      calc(
+        100dvh -
+          var(--shell-header)
+      )
+    );
+
+  padding:
+    clamp(36px, 6vh, 80px)
+    0
+    clamp(64px, 10vh, 116px);
+
+  overflow: clip;
+}
+
+/*
+ * Identity field — decorative, pointer-transparent, themed per tab
+ * by the shell's data-page accent. Rings and axes reuse the world
+ * scene language at document scale.
+ */
+.heroField {
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  color:
+    var(
+      --page-accent,
+      var(--red-hot)
+    );
+}
+
+.heroRing,
+.heroAxis,
+.heroNode {
+  position: absolute;
+
+  display: none;
+}
+
+.heroRing {
+  border:
+    1px solid
+    currentColor;
+
+  border-radius: 50%;
+
+  opacity: 0.16;
+}
+
+.heroAxis {
+  background: currentColor;
+
+  opacity: 0.14;
+}
+
+.heroNode {
+  width: 5px;
+
+  height: 5px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+
+  opacity: 0.4;
+}
+
+/*
+ * ABOUT — portrait halo: one large ring off the right shoulder,
+ * a fine inner ring, a vertical plumb line, two orbit points.
+ */
+:global([data-page="about"])
+  .heroRingOne {
+  display: block;
+
+  top: 50%;
+
+  right: clamp(
+    -140px,
+    2vw,
+    60px
+  );
+
+  width:
+    min(
+      62vw,
+      560px
+    );
+
+  height:
+    min(
+      62vw,
+      560px
+    );
+
+  transform:
+    translateY(-50%);
+}
+
+:global([data-page="about"])
+  .heroRingTwo {
+  display: block;
+
+  top: 50%;
+
+  right: clamp(
+    -60px,
+    7vw,
+    130px
+  );
+
+  width:
+    min(
+      40vw,
+      350px
+    );
+
+  height:
+    min(
+      40vw,
+      350px
+    );
+
+  transform:
+    translateY(-50%);
+
+  opacity: 0.1;
+}
+
+:global([data-page="about"])
+  .heroAxis {
+  display: block;
+
+  top: 12%;
+
+  bottom: 12%;
+
+  left: clamp(
+    12px,
+    6vw,
+    84px
+  );
+
+  width: 1px;
+}
+
+:global([data-page="about"])
+  .heroNodeOne {
+  display: block;
+
+  top: 24%;
+
+  left: clamp(
+    12px,
+    6vw,
+    84px
+  );
+}
+
+:global([data-page="about"])
+  .heroNodeTwo {
+  display: block;
+
+  bottom: 20%;
+
+  left: clamp(
+    12px,
+    6vw,
+    84px
+  );
+}
+
+/*
+ * WORK — engineering evidence: a fine tick grid and one long
+ * construction line; a single large reference circle.
+ */
+:global([data-page="work"])
+  .heroField {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      color-mix(
+        in srgb,
+        currentColor
+          6%,
+        transparent
+      )
+        0,
+      color-mix(
+        in srgb,
+        currentColor
+          6%,
+        transparent
+      )
+        1px,
+      transparent
+        1px,
+      transparent
+        72px
+    );
+}
+
+:global([data-page="work"])
+  .heroRingOne {
+  display: block;
+
+  top: -180px;
+
+  left: -160px;
+
+  width: 480px;
+
+  height: 480px;
+
+  opacity: 0.1;
+}
+
+:global([data-page="work"])
+  .heroAxis {
+  display: block;
+
+  top: 58%;
+
+  right: 0;
+
+  left: 0;
+
+  height: 1px;
+}
+
+:global([data-page="work"])
+  .heroNodeOne {
+  display: block;
+
+  top: 58%;
+
+  left: 72px;
+
+  transform:
+    translateY(-50%);
+}
+
+:global([data-page="work"])
+  .heroNodeTwo {
+  display: block;
+
+  top: 58%;
+
+  right: 72px;
+
+  transform:
+    translateY(-50%);
+}
+
+/*
+ * RESEARCH — signal measurement: concentric radar rings around a
+ * crosshair, one marker lit.
+ */
+:global([data-page="research"])
+  .heroRingOne {
+  display: block;
+
+  top: 50%;
+
+  right: -170px;
+
+  width: 520px;
+
+  height: 520px;
+
+  transform:
+    translateY(-50%);
+
+  opacity: 0.14;
+}
+
+:global([data-page="research"])
+  .heroRingTwo {
+  display: block;
+
+  top: 50%;
+
+  right: -60px;
+
+  width: 300px;
+
+  height: 300px;
+
+  transform:
+    translateY(-50%);
+
+  opacity: 0.18;
+}
+
+:global([data-page="research"])
+  .heroRingThree {
+  display: block;
+
+  top: 50%;
+
+  right: 55px;
+
+  width: 120px;
+
+  height: 120px;
+
+  transform:
+    translateY(-50%);
+
+  opacity: 0.22;
+}
+
+:global([data-page="research"])
+  .heroAxis {
+  display: block;
+
+  top: 50%;
+
+  right: -170px;
+
+  left: -80px;
+
+  height: 1px;
+
+  transform:
+    translateY(-50%);
+}
+
+:global([data-page="research"])
+  .heroNodeOne {
+  display: block;
+
+  top: 50%;
+
+  right: 110px;
+
+  transform:
+    translate(
+      50%,
+      -50%
+    );
+}
+
+/*
+ * CONTACT — transmission: ripples radiating from the left edge
+ * toward the CTA copy.
+ */
+:global([data-page="contact"])
+  .heroRingOne {
+  display: block;
+
+  top: 50%;
+
+  left: -220px;
+
+  width: 560px;
+
+  height: 560px;
+
+  transform:
+    translateY(-50%);
+
+  opacity: 0.12;
+}
+
+:global([data-page="contact"])
+  .heroRingTwo {
+  display: block;
+
+  top: 50%;
+
+  left: -120px;
+
+  width: 360px;
+
+  height: 360px;
+
+  transform:
+    translateY(-50%);
+
+  opacity: 0.16;
+}
+
+:global([data-page="contact"])
+  .heroRingThree {
+  display: block;
+
+  top: 50%;
+
+  left: -20px;
+
+  width: 160px;
+
+  height: 160px;
+
+  transform:
+    translateY(-50%);
+
+  opacity: 0.2;
+}
+
+:global([data-page="contact"])
+  .heroAxis {
+  display: block;
+
+  top: 50%;
+
+  right: 0;
+
+  left: 0;
+
+  height: 1px;
+
+  transform:
+    translateY(-50%);
+}
+
+/*
+ * BLOG + hubs — editorial baseline rules under the title measure.
+ */
+:global([data-page="blog"])
+  .heroField,
+:global([data-page="hub"])
+  .heroField {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      color-mix(
+        in srgb,
+        currentColor
+          5%,
+        transparent
+      )
+        0,
+      color-mix(
+        in srgb,
+        currentColor
+          5%,
+        transparent
+      )
+        1px,
+      transparent
+        1px,
+      transparent
+        88px
+    );
+}
+
+:global([data-page="blog"])
+  .heroAxis,
+:global([data-page="hub"])
+  .heroAxis {
+  display: block;
+
+  top: 0;
+
+  bottom: 0;
+
+  left: clamp(
+    12px,
+    6vw,
+    84px
+  );
+
+  width: 1px;
+}
+
+/*
+ * One slow breath per page — decorative only, and only for
+ * motion-capable pointers and no-preference users.
+ */
+@media
+  (prefers-reduced-motion: no-preference) {
+  :global([data-page="about"])
+    .heroNodeOne,
+  :global([data-page="research"])
+    .heroNodeOne,
+  :global([data-page="contact"])
+    .heroRingThree,
+  :global([data-page="work"])
+    .heroNodeOne {
+    animation:
+      heroFieldPulse
+      5.2s
+      ease-in-out
+      infinite;
+  }
+}
+
+@keyframes
+  heroFieldPulse {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/*
+ * Scroll cue — the honest statement that the document continues.
+ */
+.heroCue {
+  position: absolute;
+
+  bottom: 26px;
+
+  left: 50%;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 8px;
+
+  transform:
+    translateX(-50%);
+
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size: 8px;
+
+  font-weight: 700;
+
+  letter-spacing:
+    0.22em;
+}
+
+.heroCueLine {
+  width: 1px;
+
+  height: 34px;
+
+  background:
+    linear-gradient(
+      180deg,
+      var(
+        --page-accent,
+        var(--red-hot)
+      ),
+      transparent
+    );
+}
+
+@media
+  (prefers-reduced-motion: no-preference) {
+  .heroCueLine {
+    animation:
+      heroCueTrace
+      2.6s
+      ease-in-out
+      infinite;
+  }
+}
+
+@keyframes
+  heroCueTrace {
+  0%,
+  100% {
+    transform:
+      scaleY(0.55);
+
+    transform-origin: top;
+  }
+
+  50% {
+    transform:
+      scaleY(1);
+
+    transform-origin: top;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero {
+    min-height:
+      max(
+        380px,
+        calc(
+          100svh -
+            var(--shell-header)
+        )
+      );
+
+    min-height:
+      max(
+        380px,
+        calc(
+          100dvh -
+            var(--shell-header)
+        )
+      );
+
+    padding-top: 30px;
+
+    padding-bottom: 84px;
+  }
+
+  .heroCue {
+    bottom: 18px;
+  }
+
+  /*
+   * Narrow screens: keep the identity but pull the motifs closer
+   * to the edges so they never fight the text measure.
+   */
+  :global([data-page="about"])
+    .heroRingOne {
+    right: -190px;
+  }
+
+  :global([data-page="research"])
+    .heroRingOne {
+    right: -260px;
+  }
+
+  :global([data-page="contact"])
+    .heroRingOne {
+    left: -300px;
+  }
+
+  :global([data-page="work"])
+    .heroField {
+    background-size: 48px
+      100%;
   }
 }
 

@@ -1,5 +1,173 @@
 # Updated-Files.md — WEB release history
 
+## Release: v3.6 — BLOG rename, one RED MAGIC sound, full-screen tabs (2026-09-17)
+
+Mission: professional ordering and terminology, one honest RED
+MAGIC sound engine, and a consistent full-screen presentation for
+every primary tab — without regressing the v3.5 fast-navigation
+paths or redesigning unrelated systems. Base version: v3.5
+(package.json 3.6.0).
+
+### Navigation — WRITING → BLOG + identity-first order
+
+- `lib/navigation.ts` — PRIMARY_NAV reordered to HOME · ABOUT ·
+  WORK · RESEARCH · BLOG · CONTACT (identity → capability →
+  research → writing → contact) and the writing entry renamed
+  (id `writing` → `blog`, label Writing → Blog, shortLabel
+  WRITING → BLOG). Canonical `/blog/` URL and article routes
+  unchanged; scene ids unchanged (v3.2 law).
+- `components/UnifiedSiteNav.module.css` — hover-identity
+  selectors and accents renamed `data-id="writing"` →
+  `data-id="blog"` (type caret, ink line, blink); keyframes
+  renamed navBlogCaret/navBlogInk/navBlogBlink.
+- `components/SceneNavigator.module.css` — scene-accent selector
+  `data-scene="writing"` → `data-scene="blog"`.
+- `components/blog/BlogHeader.tsx` — active entry id `blog`.
+- `components/scenes/HomeScene.tsx` — home section kicker
+  WRITING → BLOG, "ALL WRITING" → "ALL ARTICLES", aria-label
+  "Selected articles" (SEO-verified phrases "Field notes" and
+  "Open the Blog" preserved).
+- `components/scenes/AboutScene.tsx` — output card
+  SOFTWARE · WRITING · ART → SOFTWARE · BLOG · ART.
+- `components/scenes/WorkScene.tsx` — RED MAGIC BOOKS card type
+  WRITING → PUBLICATION.
+- `app/blog/page.tsx`, `app/blog/layout.tsx` — hero title
+  "Writing from the laboratory" → "Notes from the laboratory"
+  (+ matching OG alt text).
+- Comments updated in UnifiedSiteNav.tsx, SceneNavigator.tsx,
+  SiteDocNav.tsx, LivingShell.tsx, BlogHeader.tsx, navigation.ts.
+- Verified: no visible WRITING label remains in any component,
+  route, or style.
+
+### RED MAGIC — one sound engine (modes removed, real audio)
+
+- `components/RedMagicAudio.ts` — REWRITTEN as a single engine.
+  Removed: RedMagicAudioMode, MODE_SETTINGS, setMode(), all
+  drift/listen/surge profile data. New graph: low body (52 Hz +
+  78.2 Hz sines), warm harmonic (104 Hz triangle), breathing
+  shimmer (416/624 Hz + 0.06 Hz tremolo), 0.045 Hz breath LFO on
+  the body filter, and a pink-noise texture layer — all behind
+  one compressor → master → destination chain. Gain staging
+  rebuilt for audibility (master 0.85; the v3.5 engine topped
+  out near -50 dB and was effectively silent). Interaction
+  energy/proximity/charge drive one continuous intensity control
+  (gains, filter opening, shimmer brightness, texture level)
+  with a self-decay loop; impact/flick/release/orbit/enter/leave
+  transient envelopes layered over the bed. Autoplay policy:
+  the AudioContext is constructed only after real user
+  activation (toggle click, or one-shot document
+  pointerdown/keydown/touchend listeners armed when a stored ON
+  preference is restored) — never during hydration, so the
+  console stays clean. ON ramps master to level on every start
+  (no silently-stuck running context); OFF fades the master then
+  suspends after ~0.5 s. Hidden tab suspends, visible tab
+  resumes when enabled. Preference persists under
+  `red-magic-sound-enabled`.
+- `components/MagicConsole.tsx` — behaviour selector
+  (DRIFT/LISTEN/SURGE buttons + notes) removed; the control
+  surface is the single SOUND ON / SOUND OFF toggle with an
+  honest live note. Vitals readout kept; signal label SURGING →
+  ACTIVE.
+- `components/MagicInteractionLayer.tsx` — mode prop and
+  audio.setMode effect removed; soundEnabled wiring unchanged.
+- `components/RedMagic.tsx` — visual mode system removed:
+  RedMagicMode type, MODE_PROFILES, mode prop and modeRef are
+  gone; one fixed ORGANISM_PROFILE (balanced baseline). The
+  surge-gated behaviours became activity-gated (pointer energy >
+  0.7 drives the angular falloff swap and the rotational
+  particle swirl) — the organism stays interaction-driven.
+- `components/MagicConsole.module.css` — mode-control styles
+  retired; bar is note + single sound control (40px target,
+  44px on touch); focus-visible ring added.
+- `components/scenes/RedMagicScene.tsx` — console copy updated
+  (no behaviour chooser reference).
+- Browser-verified with a real click gesture: OFF→ON ramps
+  master to 0.85 and starts all ambient voices; pointer movement
+  over the organism sweeps intensity params (body gain
+  0.055→0.133, filter 130→1018 Hz, texture 0→0.054); ON→OFF
+  fades to zero and suspends; reload restores the preference;
+  zero console errors/warnings.
+
+### Full-screen tab architecture
+
+- `components/FullScreenPageShell.tsx` + `.module.css` — NEW
+  shared shell: one full-screen contract (min-height 100vh →
+  100svh → 100dvh stack, flex column, footer pinned on short
+  documents, natural scroll on long ones) + per-tab identity
+  tokens (`data-page` → `--page-accent`: about #ff8a5c, work
+  #ff6a3d, research #ff7847, blog #ff5c5c, contact red-hot,
+  home/hub red-hot).
+- `components/content/ContentShell.tsx` — restructured on the
+  shell: the document header (crumbs/kicker/title/lead) is now a
+  full-screen HERO section with a per-tab decorative identity
+  field (about: portrait halo; work: tick grid + construction
+  line; research: radar rings; blog/hubs: editorial baselines;
+  contact: transmission ripples) and a SCROLL cue. Content floor
+  (max()) keeps short viewports scrolling instead of cramping.
+  Applies automatically to /about/, /work/, /research/,
+  /contact/ and the six topic hubs.
+- `app/blog/layout.tsx` + `layout.module.css` — blog route rides
+  the FullScreenPageShell (page="blog").
+- `app/blog/page.module.css` — blog hero now fills the first
+  screen (minus fixed header), title block vertically composed.
+- Viewport unit stacks (100vh → 100svh → 100dvh) applied to:
+  `app/globals.css` (body), `components/LivingShell.module.css`
+  (.livingShell, .livingShellViewport),
+  `components/SceneViewport.module.css`,
+  `components/scenes/{HomeScene,AboutScene,WorkScene,SystemsScene,RedMagicScene}.module.css`
+  first-screen sections (and their ≤760px variants).
+
+### Mobile upgrade
+
+- `components/UnifiedSiteNav.module.css` — open disclosure panel
+  now renders on a near-opaque surface with a fixed focus scrim
+  behind it (page dims; compositor-only fade; reduced-motion
+  safe); trigger font 9→10px, entries 10→11px, entry padding up;
+  trigger/entries keep ≥44/46px touch targets.
+- `components/content/content.module.css` — mobile document
+  padding 16→20px, section rhythm 64→48px, lead 17→16px at
+  ≤560px; hero min-height floor 380px with edge-aware motif
+  positioning.
+- `components/MagicConsole.module.css` — sound control 44px
+  touch target at ≤760px.
+- Verified at 390×844 and 320px-class widths: zero horizontal
+  overflow on /, /about/, /work/, /research/, /blog/, /contact/.
+
+### Verification (all green)
+
+- `npm ci`, `npm run blog`, `npm run build`, `npm run lint`
+  (0 errors; 18 pre-existing no-img-element warnings),
+  `npm run verify` (SEO 173 checks, brand, export 11 checks).
+- Browser (Chromium) pass: primary nav order + labels on every
+  surface; all six world scenes (#home #about #systems #magic
+  #work #library) switch correctly; every primary tab begins as
+  a full-screen composition (hero bottom = fold); audio
+  gesture/suspend/persist cycle verified with an instrumented
+  AudioContext; reduced-motion rules preserved and new
+  animations gated; zero page errors and zero console
+  warnings across routes.
+
+### Files changed
+
+lib/navigation.ts; components/RedMagicAudio.ts;
+components/MagicConsole.tsx; components/MagicConsole.module.css;
+components/MagicInteractionLayer.tsx; components/RedMagic.tsx;
+components/scenes/RedMagicScene.tsx;
+components/scenes/HomeScene.tsx; components/scenes/AboutScene.tsx;
+components/scenes/WorkScene.tsx; components/FullScreenPageShell.tsx
+(new); components/FullScreenPageShell.module.css (new);
+components/content/ContentShell.tsx;
+components/content/content.module.css; app/blog/layout.tsx;
+app/blog/layout.module.css; app/blog/page.tsx;
+app/blog/page.module.css; components/UnifiedSiteNav.tsx;
+components/UnifiedSiteNav.module.css;
+components/SceneNavigator.tsx; components/SceneNavigator.module.css;
+components/SiteDocNav.tsx; components/LivingShell.tsx;
+components/LivingShell.module.css; components/SceneViewport.module.css;
+components/scenes/{HomeScene,AboutScene,WorkScene,SystemsScene,RedMagicScene}.module.css;
+app/globals.css; components/blog/BlogHeader.tsx; package.json
+(3.6.0); README.md; Updated-Files.md; worklog.md.
+
 ## Release: v3.5 — Fast Navigation (2026-09-16)
 
 Mission: clicking a navigation tab should feel immediate. The

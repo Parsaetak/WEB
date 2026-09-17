@@ -24,11 +24,6 @@ type MagicInteractionLayerProps = {
   children: React.ReactNode;
 
   soundEnabled: boolean;
-
-  mode:
-    | "drift"
-    | "listen"
-    | "surge";
 };
 
 const RIPPLE_COUNT = 8;
@@ -71,8 +66,7 @@ function angleDelta(
 
 export default function MagicInteractionLayer({
   children,
-  soundEnabled,
-  mode
+  soundEnabled
 }: MagicInteractionLayerProps) {
   const rootRef =
     useRef<HTMLDivElement | null>(
@@ -1220,14 +1214,11 @@ export default function MagicInteractionLayer({
     const audio =
       new RedMagicAudio();
 
-    audio.setMode(
-      mode
-    );
-
     /*
      * Deferred start (v2.8): restoring a stored ON preference here
      * must not construct the AudioContext before any user gesture —
-     * the first interaction event starts it instead.
+     * the engine's one-shot gesture listeners start it from the
+     * first real pointerdown / keydown instead.
      */
     audio.setEnabled(
       soundEnabled,
@@ -1323,19 +1314,6 @@ export default function MagicInteractionLayer({
         null;
     };
   }, []);
-
-  useEffect(() => {
-    const audio =
-      audioRef.current;
-
-    if (!audio) {
-      return;
-    }
-
-    audio.setMode(
-      mode
-    );
-  }, [mode]);
 
   useEffect(() => {
     /*

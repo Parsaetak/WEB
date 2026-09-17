@@ -9,9 +9,9 @@ import styles from "@/components/SiteDocNav.module.css";
  * documents, carried by the shared SiteFooter on every page.
  *
  * Three rows, in priority order:
- * - Site: the professional primary navigation (HOME, WORK, RESEARCH,
- *   WRITING, ABOUT, CONTACT) — the canonical evidence chain
- *   PERSON → WORK → RESEARCH → WRITING → GITHUB → CONTACT;
+ * - Site: the professional primary navigation (HOME, ABOUT, WORK,
+ *   RESEARCH, BLOG, CONTACT) — the canonical evidence chain
+ *   PERSON → ABOUT → WORK → RESEARCH → BLOG → GITHUB → CONTACT;
  * - World: the experimental scenes (SYSTEMS, RED MAGIC, LIBRARY) as
  *   contextual destinations;
  * - Topics: the six topic hubs — the research map, one hop from

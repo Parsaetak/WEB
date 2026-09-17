@@ -3,6 +3,10 @@
 
   min-height: 100vh;
 
+  min-height: 100svh;
+
+  min-height: 100dvh;
+
   isolation: isolate;
 
   /*
@@ -237,6 +241,10 @@
   position: relative;
 
   min-height: 100vh;
+
+  min-height: 100svh;
+
+  min-height: 100dvh;
 
   padding-top: var(--shell-header);
 }

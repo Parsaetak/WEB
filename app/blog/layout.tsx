@@ -8,6 +8,7 @@ import SiteFooter from "@/components/SiteFooter";
 import BlogHeader from "@/components/blog/BlogHeader";
 import MotionReveal from "@/components/MotionReveal";
 import ShortcutsDialog from "@/components/blog/ShortcutsDialog";
+import FullScreenPageShell from "@/components/FullScreenPageShell";
 
 import {
   getBlogInfo
@@ -28,7 +29,10 @@ import styles from "./layout.module.css";
  * The blog is a real route tree, not a scene. It shares the world's
  * ambient background, cursor, and legal footer, and renders entirely
  * statically — article HTML is produced at build time from the
- * generated content index.
+ * generated content index. v3.6: the route rides the shared
+ * FullScreenPageShell (full-screen contract + data-page identity),
+ * so BLOG begins as the same kind of full-screen composition as
+ * every other primary tab.
  */
 
 export function generateMetadata(): Metadata {
@@ -53,7 +57,7 @@ export function generateMetadata(): Metadata {
           url: SITE_OG_IMAGE_PATH,
           width: SITE_OG_IMAGE_WIDTH,
           height: SITE_OG_IMAGE_HEIGHT,
-          alt: "Parsa Tak — writing from the laboratory"
+          alt: "Parsa Tak — notes from the laboratory"
         }
       ]
     },
@@ -73,7 +77,10 @@ export default function BlogLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className={styles.blogShell}>
+    <FullScreenPageShell
+      page="blog"
+      className={styles.blogShell}
+    >
       {/*
         * The organism persists across the blog route tree with a
         * quiet archival mood — same single global background
@@ -108,6 +115,6 @@ export default function BlogLayout({
       </main>
 
       <SiteFooter />
-    </div>
+    </FullScreenPageShell>
   );
 }

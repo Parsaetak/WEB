@@ -831,7 +831,7 @@ export default function HomeScene({
       </section>
 
       {/*
-        * WRITING — the home scene's bridge into the knowledge graph.
+        * BLOG — the home scene's bridge into the knowledge graph.
         * The entries are selected on the server from the real content
         * index: the featured article first, then the most internally
         * referenced. Everything links to a real route.
@@ -840,7 +840,7 @@ export default function HomeScene({
         <section className={`section ${styles.homeWriting}`}>
           <div className="page-container">
             <HomeSectionIntro
-              kicker="WRITING"
+              kicker="BLOG"
               title={
                 <>
                   Field notes
@@ -853,7 +853,7 @@ export default function HomeScene({
 
             <div
               className={styles.homeWritingList}
-              aria-label="Selected writing"
+              aria-label="Selected articles"
             >
               {writingPosts.map((post, index) => (
                 <HomeWritingItem key={post.slug} post={post} index={index} />
@@ -865,7 +865,7 @@ export default function HomeScene({
               href="/blog/"
               prefetch={false}
             >
-              <span>ALL WRITING</span>
+              <span>ALL ARTICLES</span>
 
               <strong>
                 Open the Blog

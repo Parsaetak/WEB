@@ -401,7 +401,7 @@ const projectGroups: readonly ProjectGroup[] = [
         code: "RED MAGIC BOOKS",
         title:
           "The Book Series",
-        type: "WRITING",
+        type: "PUBLICATION",
         status: "PUBLISHED",
         copy:
           "RED MAGIC, MAGIC FOR KIDS, and THE BOOK OF THE DEMIURGE — the written form of the RED MAGIC ideas, readable in the Library scene.",
