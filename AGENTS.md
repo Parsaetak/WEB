@@ -40,7 +40,8 @@ violation as a bug to be justified, not a style preference.
   (derived from `content/blog/*.md`). World-shell hash scenes (`/#systems`,
   `/#magic`, `/#library`) are interaction states — never documents, never
   sitemap entries.
-- **RED MAGIC is lazy-loaded.** `components/RedMagic.tsx` (~7k lines) is
+- **RED MAGIC is lazy-loaded.** `components/RedMagic.tsx` (the ~6.5k-line
+  orchestrator + hot path) is
   dynamically imported at idle time (`components/HomeOriginOrganism.tsx`,
   MagicConsole usage) with a CSS seed fallback. Never move the organism into
   the main bundle; never convert the raw `import()` to `next/dynamic`/Suspense
@@ -52,9 +53,21 @@ violation as a bug to be justified, not a style preference.
   route list. The sitemap generator, the SEO verifier, and `lib/hubs.ts` all
   derive their route facts from it. Do not create parallel route lists.
 - Supporting engines: `lib/worldSignals.ts` (shared organism runtime state),
-  `components/redmagic/engineConfig.ts` (quality budget / runtime states /
-  adaptive-DPR policy / refresh estimator), `lib/backgroundScheduler.ts` +
+  `components/redmagic/engineConfig.ts` (quality budgets / runtime states /
+  adaptive-DPR + pressure-DPR policies / refresh estimator / settle
+  predicate), `components/redmagic/engineWorld.ts` (structural world
+  construction: grid, bounded potential field, boundary, influence
+  tables, flow geometry), `components/redmagic/engineSprites.ts`
+  (cached offscreen sprite factory), `lib/backgroundScheduler.ts` +
   `lib/idleScheduler.ts` (idle-time loading).
+- **RedMagic runtime shape (v2.1):** `RedMagic.tsx` is the orchestrator
+  and hot path (React lifecycle, canvas ownership, mutable runtime
+  state, simulation + render loop, adaptation controller). Stateless
+  build-time subsystems live in `redmagic/engineWorld.ts` and
+  `redmagic/engineSprites.ts`; pure policies live in
+  `redmagic/engineConfig.ts`. Do not split the hot path further
+  without a measured reason — module structure is not free when it
+  duplicates mutable state.
 
 ## Core rules
 
@@ -128,9 +141,17 @@ INSPECT → REPRODUCE → ROOT CAUSE → PLAN → IMPLEMENT → VERIFY → REGRE
   particle pools, influence tables) happens only on settled frames — never
   mid-interaction, never every frame.
 - **Avoid hot-path allocations and redundant scans.** Per-frame object
-  allocation in the render loop is a forbidden regression. Aggregates are
-  tracked where data is already in registers (e.g. highest node energy is
-  computed in `updateGrid`, not re-scanned in `drawCore`).
+  allocation in the render loop is a forbidden regression — the
+  interaction-signal record and the particle draw-options record are
+  stable closures mutated in place, and stroke styles are constant
+  strings with the dynamic part applied through `globalAlpha`. Aggregates
+  are tracked where data is already in registers (e.g. highest node
+  energy is computed in `updateGrid`, not re-scanned in `drawCore`).
+  Redundant per-frame work that v2.1 removed and must not return:
+  per-node `Math.pow` for frame-uniform decays, dead pre-computation
+  writes, zero-fills that the next loop overwrites, and re-scanning
+  the full edge array per stroke bucket (classify into per-bucket
+  index lists instead).
 - **Adaptive runtime behavior.** Explicit runtime states (reduced /
   suspended / idle / ambient / active / recovery) drive simulation scale and
   redraw cadence. Idle must be substantially cheaper than active; hidden must
@@ -139,9 +160,31 @@ INSPECT → REPRODUCE → ROOT CAUSE → PLAN → IMPLEMENT → VERIFY → REGRE
   (proximity, speed, dwell, impulse memory, charge) with rise/fall dynamics —
   never binary "pointer exists = maximum".
 - **Adaptive DPR + refresh estimation** are debounced policies in
-  `engineConfig.ts`; DPR never raises while the engine under-performs; the
-  refresh estimate initializes conservatively, adopts only sustained-faster
-  windows, decays on sustained collapse, and suspends with the tab.
+  `engineConfig.ts`. DPR never raises while the engine under-performs;
+  since v2.1 the DPR is ALSO re-evaluated on every performance
+  measurement boundary (`resolvePressureDpr`): sustained degradation
+  lowers the backing-store resolution one coarse step, sustained
+  recovery with a healthy measured fps/refresh ratio restores it one
+  fine step — no resize event required, floor 1×, always inside the
+  static tier/area ceiling, and every switch resets the measurement
+  windows (a DPR change is a structural event, applied through the
+  single `applyDpr` path).
+- **Refresh estimation (v2.1)** collects valid raw RAF intervals into a
+  bounded, reused typed-array buffer and takes a robust low-percentile
+  representative (rank ≥ 3) — one glitch-short interval can no longer
+  pin the estimate at a phantom refresh rate. The estimate adopts only
+  sustained-faster windows, decays on sustained collapse, suspends with
+  the tab, and resets on real geometry/DPR changes. It is a measurement
+  of the observed display, never presented as hardware truth.
+- **Hard-rebuild settle rule (v2.1):** a pointer resting motionless past
+  the stillness threshold with settled energy counts as settled — the
+  pre-v2.1 predicate waited for `pointerleave` and starved rebuilds
+  while a pointer simply parked on the canvas. The 12 s timeout is a
+  FULL escape that lets a long-pending rebuild through on any
+  non-active frame (`isSettledFrame` + the rebuild gate in
+  engineConfig/RedMagic) — a pointer parked on the organism core holds
+  proximity energy above the settle threshold by design, and that
+  canvas must still rebuild eventually.
 - **Shared visual/performance budget.** `WorldBackground` (low-cost ambient
   organism) and the `RedMagic` canvas (high-detail interactive organism)
   coordinate through `lib/worldSignals.ts` organism activity: the ambient
@@ -152,10 +195,17 @@ INSPECT → REPRODUCE → ROOT CAUSE → PLAN → IMPLEMENT → VERIFY → REGRE
 ## SEO rules
 
 - **Canonical registry**: route identity, SEO metadata, sitemap policy,
-  structured-data expectations, nav surfaces and hub relationships live in
-  `data/routes.json`. Sitemap (`build-blog.mjs`), verifier
-  (`verify-seo.mjs`), and route metadata (`lib/routes.ts` → `lib/hubs.ts`)
-  derive from it. Update the registry, never a derived copy.
+  structured-data expectations, nav surfaces and hub relationships live
+  in `data/routes.json`. Sitemap (`build-blog.mjs`), verifier
+  (`verify-seo.mjs`), and route metadata (`lib/routes.ts` →
+  `lib/hubs.ts`) derive from it. Since v2.1 the site ORIGIN, the
+  deployment BASE PATH and the world-shell scene vocabulary are ALSO
+  registry-derived: `lib/seo.tsx` (`SITE_URL`/`SITE_NAME`),
+  `next.config.ts` (basePath), `scripts/build-blog.mjs`,
+  `scripts/verify-seo.mjs` (origin, basePath, scene hashes) and
+  `scripts/verify-export-routes.mjs` all read `data/routes.json` —
+  no mirror literals anywhere. Update the registry, never a derived
+  copy.
 - **Crawlable internal architecture**: every document reachable through real,
   descriptive internal links; no orphan content; no generic anchor text
   ("read more"); collections discoverable from home AND blog index.
@@ -186,7 +236,16 @@ npm run lint           # eslint — must stay at 0 errors
 npm run verify         # verify:seo + verify:brand + verify:export
 ./node_modules/.bin/tsc --noEmit   # typecheck
 npm run verify:seo     # SEO verification alone (needs out/ from build)
+node scripts/bench-redmagic.mjs    # v2.1 micro-benchmark (Node/V8,
+                          # pure-function shapes + policy assertions)
 ```
+
+**Measurement builds (v2.1):** `NEXT_PUBLIC_RED_MAGIC_TIMING=1 npm run
+build` compiles the engine's subsystem profiling in and exposes the
+in-memory telemetry store as `window.__RED_MAGIC_TELEMETRY__` for
+browser harnesses. A default build inlines the gate to false and
+eliminates every timing call — nothing measurement-related ships in
+production or CI builds.
 
 `npm run verify:seo` runs against `out/` after `next build` and includes the
 v2 graph-depth group. `npm run verify:export` cross-checks the three-way
@@ -194,6 +253,14 @@ bijection: app routes == exported files == sitemap URLs.
 
 Manual/behavioral checklist for organism-affecting changes (desktop +
 mobile viewport, reduced motion, low-memory emulation, hidden/visible tab,
-pointer interaction, idle ~10s, resize, quality downgrade/recovery, route
-navigation, blog filters): console stays clean, no visual instability during
-quality changes, initial page load and lazy-loading path unchanged.
+pointer interaction, stationary pointer ~10 s — the still-pointer settle
+path — idle ~10 s, resize, quality downgrade/recovery, DPR pressure
+lowering under sustained load, route navigation, blog filters): console
+stays clean, no visual instability during quality or DPR changes, initial
+page load and lazy-loading path unchanged.
+
+**No fabricated metrics**: report only measured numbers with the method
+named (micro-benchmark on Node/V8, instrumented browser build in headless
+Chromium/SwiftShader, etc.). The micro-benchmark script prints its own
+numbers — never copy them into user-facing copy or commit messages as
+guarantees.

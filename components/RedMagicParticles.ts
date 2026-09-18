@@ -1261,6 +1261,29 @@ export function updateAndDrawParticles(
     pointer.y;
 
   /*
+   * V2.1 MICRO-COST REMOVAL: the normalized-center distance divided the
+   * half-extents for EVERY particle — with Math.max(width*0.5, 1)
+   * re-evaluated per particle and Math.hypot (which V8 implements far
+   * slower than a plain sqrt for two arguments). The half-extents are
+   * frame-uniform; hypot -> sqrt(dx*dx + dy*dy) is numerically
+   * equivalent at these magnitudes (no overflow domain) and measured
+   * materially faster in the repo micro-benchmark
+   * (scripts/bench-redmagic.mjs).
+   */
+  const halfWidth =
+    Math.max(
+      width * 0.5,
+      1
+    );
+
+  const halfHeight =
+    Math.max(
+      height * 0.5,
+      1
+    );
+
+
+  /*
    * Persistence only occurs after an actual new click.
    *
    * It is deliberately outside the hot particle loop.
@@ -1403,29 +1426,24 @@ export function updateAndDrawParticles(
         -PARTICLE_WRAP_MARGIN;
     }
 
+    const centerDx =
+      (particle.x -
+        centerX) /
+      halfWidth;
+
+    const centerDy =
+      (particle.y -
+        centerY) /
+      halfHeight;
+
     const normalizedCenterDistance =
       Math.min(
         1.6,
-        Math.hypot(
-          (
-            particle.x -
-            centerX
-          ) /
-            Math.max(
-              width *
-              0.5,
-              1
-            ),
-
-          (
-            particle.y -
-            centerY
-          ) /
-            Math.max(
-              height *
-              0.5,
-              1
-            )
+        Math.sqrt(
+          centerDx *
+            centerDx +
+          centerDy *
+            centerDy
         )
       );
 

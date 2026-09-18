@@ -1,5 +1,7 @@
 import { PUBLIC_LINKS } from "@/lib/links";
 
+import { ROUTE_REGISTRY } from "@/lib/routes";
+
 /*
  * SITE IDENTITY + STRUCTURED DATA — SERVER SIDE.
  *
@@ -12,6 +14,9 @@ import { PUBLIC_LINKS } from "@/lib/links";
  * - Production URL is the ONLY canonical base: absolute, HTTPS,
  *   stable, /WEB-aware. No localhost, no repository URLs, no
  *   alternate hosts ever appear in metadata or structured data.
+ * - The origin and site name are DERIVED from data/routes.json (the
+ *   canonical registry, via lib/routes.ts) — never re-declared here
+ *   as independent literals (SEO v2 hardening, v2.1).
  * - sameAs contains ONLY real public profile URLs that the site
  *   already links through lib/links.ts. Nothing invented.
  * - Every structured-data object must describe something that
@@ -22,10 +27,10 @@ import { PUBLIC_LINKS } from "@/lib/links";
  */
 
 export const SITE_URL =
-  "https://parsaetak.github.io/WEB";
+  ROUTE_REGISTRY.site.origin;
 
 export const SITE_NAME =
-  "Parsa Tak";
+  ROUTE_REGISTRY.site.name;
 
 /*
  * The person behind the site. One name, shared by metadata authors,

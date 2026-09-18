@@ -62,6 +62,12 @@ export type RedMagicPerformanceSample = {
 
   /** The most recent quality adaptation (soft = budget-only, hard = rebuild). */
   lastAdaptation?: RedMagicAdaptation;
+
+  /*
+   * Per-subsystem CPU cost (ms/drawn-frame averages for this window).
+   * Present only in NEXT_PUBLIC_RED_MAGIC_TIMING=1 measurement builds.
+   */
+  subsystems?: RedMagicSubsystemTimings;
 };
 
 export type RedMagicAdaptation = {
@@ -77,6 +83,64 @@ export type RedMagicAdaptation = {
   /** performance.now() at the change. */
   at: number;
 };
+
+/*
+ * SUBSYSTEM PROFILING (Runtime v2.1) — per-subsystem CPU cost in
+ * milliseconds per drawn frame, averaged over the sampling window.
+ * Only published by builds made with NEXT_PUBLIC_RED_MAGIC_TIMING=1
+ * (see the measurement note in RedMagic.tsx); absent otherwise.
+ */
+export type RedMagicSubsystemTimings = {
+  /** updatePhysicalState total (includes grid + shockwave aging). */
+  sim: number;
+
+  /** updateGrid alone (bounded potential, edges, routing, injection). */
+  grid: number;
+
+  /** Render loop total: clear + interaction + all draw passes. */
+  render: number;
+
+  /** Membrane boundary construction + fill/stroke passes. */
+  membrane: number;
+
+  /** Network bucket classification + edge/node draw passes. */
+  network: number;
+
+  /** Energy-flow curve stroke. */
+  flows: number;
+
+  /** Core sprites, nucleus, glow passes. */
+  core: number;
+
+  /** Particle update + draw. */
+  particles: number;
+};
+
+/*
+ * Measurement bridge (Runtime v2.1): exposes the in-memory telemetry
+ * store to automated browser measurement (Playwright/CDP harnesses)
+ * WITHOUT shipping anything in normal builds — the gate is inlined at
+ * build time, so a default `npm run build` compiles the entire block
+ * out. No network, no persistence, no analytics: the same in-memory
+ * development-facing samples the console already renders.
+ */
+if (
+  process.env.NEXT_PUBLIC_RED_MAGIC_TIMING ===
+    "1" &&
+  typeof window !== "undefined"
+) {
+  const measurementWindow = window as typeof window & {
+    __RED_MAGIC_TELEMETRY__?: {
+      subscribe: typeof subscribeRedMagicPerformance;
+      getLatest: typeof getLatestRedMagicPerformance;
+    };
+  };
+
+  measurementWindow.__RED_MAGIC_TELEMETRY__ = {
+    subscribe: subscribeRedMagicPerformance,
+    getLatest: getLatestRedMagicPerformance
+  };
+}
 
 type Listener =
   (

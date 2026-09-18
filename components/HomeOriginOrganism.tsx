@@ -22,7 +22,8 @@ import styles from "@/components/scenes/HomeScene.module.css";
  *
  * P0 performance law: the home scene now renders synchronously into
  * the exported HTML (see SceneRegistry), which put HomeScene inside
- * the initial page graph. RedMagic — a 6.8k-line canvas organism —
+ * the initial page graph. RedMagic — the multi-thousand-line canvas
+ * organism —
  * used to be statically imported here, so the initial payload paid
  * for the whole experimental layer before any user asked for it.
  *

@@ -45,13 +45,24 @@ const ROOT = path.resolve(SCRIPT_DIR, "..");
 const CONTENT_DIR = path.join(ROOT, "content", "blog");
 const DATA_DIR = path.join(ROOT, "data", "blog");
 
-const SITE_URL = "https://parsaetak.github.io/WEB";
-const SITE_NAME = "Parsa Tak";
+/*
+ * CANONICAL SITE FACTS (SEO v2 hardening, v2.1): the origin, the site
+ * name and the deployment basePath are DERIVED from data/routes.json —
+ * the single manually maintained registry. No script may re-declare
+ * them as independent literals; a change to the registry is the one
+ * place these facts move.
+ */
+const ROUTE_REGISTRY = JSON.parse(
+  readFileSync(path.join(ROOT, "data", "routes.json"), "utf8")
+);
+
+const SITE_URL = ROUTE_REGISTRY.site.origin;
+const SITE_NAME = ROUTE_REGISTRY.site.name;
 const SITE_DESCRIPTION =
   "Notes from an evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.";
 
 const IS_GITHUB_ACTIONS = process.env.GITHUB_ACTIONS === "true";
-const BASE_PATH = IS_GITHUB_ACTIONS ? "/WEB" : "";
+const BASE_PATH = IS_GITHUB_ACTIONS ? ROUTE_REGISTRY.site.basePath : "";
 
 /*
  * Root-relative site OG image. Validated below so a missing social
@@ -1232,17 +1243,14 @@ function buildLinksHere(posts) {
 
 /*
  * STATIC CONTENT ROUTES (SEO v2) — derived from data/routes.json, the
- * canonical route registry. The registry is the single manually
- * maintained route list; the sitemap, verify-seo.mjs and lib/hubs.ts
- * all read the same facts, so the sitemap can never disagree with the
- * verified route set. lastmod values are content-revision dates from
- * the registry — bumped only when a route's substantive content
- * changes, never the build date. Fake freshness is still banned.
+ * canonical route registry (read once at the top of this file). The
+ * registry is the single manually maintained route list; the sitemap,
+ * verify-seo.mjs and lib/hubs.ts all read the same facts, so the
+ * sitemap can never disagree with the verified route set. lastmod
+ * values are content-revision dates from the registry — bumped only
+ * when a route's substantive content changes, never the build date.
+ * Fake freshness is still banned.
  */
-const ROUTE_REGISTRY = JSON.parse(
-  readFileSync(path.join(ROOT, "data", "routes.json"), "utf8")
-);
-
 const STATIC_CONTENT_ROUTES = ROUTE_REGISTRY.routes
   .filter(
     (route) =>

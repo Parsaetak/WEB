@@ -48,12 +48,16 @@ const OUT_DIR = path.join(ROOT, "out");
 const APP_DIR = path.join(ROOT, "app");
 
 /*
- * Mirror of lib/seo.tsx SITE_URL and verify-seo.mjs SITE_ORIGIN. The
- * production origin is the only legal sitemap URL base; anything else
- * (localhost, http://, repository URLs, a missing /WEB basePath) is a
- * deployment bug and must fail CI.
+ * CANONICAL SITE ORIGIN (SEO v2 hardening, v2.1): derived from
+ * data/routes.json — the same registry lib/seo.tsx, build-blog.mjs and
+ * verify-seo.mjs read — instead of a mirror literal. The production
+ * origin is the only legal sitemap URL base; anything else (localhost,
+ * http://, repository URLs, a missing /WEB basePath) is a deployment
+ * bug and must fail CI.
  */
-const SITE_ORIGIN = "https://parsaetak.github.io/WEB";
+const SITE_ORIGIN = JSON.parse(
+  await readFile(path.join(ROOT, "data", "routes.json"), "utf8")
+).site.origin;
 
 /*
  * Exported routes that exist on disk but are deliberately NOT

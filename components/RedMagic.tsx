@@ -23,15 +23,49 @@ import {
   DWELL_SATURATION_MS,
   interactionTargetEnergy,
   resolveAdaptiveDpr,
+  resolvePressureDpr,
   dprCeilingFor,
   createRefreshEstimator,
   closeRefreshWindow,
   suspendRefreshWindow,
+  createRefreshDeltaSampler,
+  recordRefreshDelta,
+  resetRefreshDeltaSampler,
+  representativeWindowHz,
+  isSettledFrame,
   type QualityName,
   type QualityBudget,
   type RuntimeState,
-  type RefreshEstimator
+  type RefreshEstimator,
+  type RefreshDeltaSampler,
+  type InteractionSignals
 } from "@/components/redmagic/engineConfig";
+
+import {
+  createGlowSprite,
+  createNodeSprite,
+  createCoreSprite,
+  createCoreDetailSprite
+} from "@/components/redmagic/engineSprites";
+
+import {
+  qualityFromArea,
+  createBoundary,
+  buildFlowGeometry,
+  createGrid,
+  buildGlobalPotentialWeights,
+  buildBoundaryNetworkWeights,
+  sampleAngularLookup,
+  ANGULAR_FALLOFF_NORMAL,
+  ANGULAR_FALLOFF_ACTIVE,
+  MAX_NETWORK_INFLUENCES,
+  type GridNode,
+  type GridEdge,
+  type BoundaryPoint,
+  type FlowGeometry,
+  type GlobalPotentialField,
+  type BoundaryNetworkWeights
+} from "@/components/redmagic/engineWorld";
 
 import {
   RED_MAGIC_INTERACTION_EVENT,
@@ -46,55 +80,34 @@ import {
   type RedMagicParticle
 } from "@/components/RedMagicParticles";
 
+import {
+  type RedMagicSubsystemTimings
+} from "@/components/RedMagicTelemetry";
+
+/*
+ * SUBSYSTEM PROFILING (Runtime v2.1) — build-time-gated measurement of
+ * the engine's per-subsystem CPU cost, published through the in-memory
+ * telemetry store every sampling window.
+ *
+ * The gate is a BUILD-TIME constant: Next inlines
+ * NEXT_PUBLIC_RED_MAGIC_TIMING into the bundle, so a default
+ * `npm run build` compiles every timing call below out of existence
+ * (the branch folds to `false` before minification). Measurement
+ * builds (`NEXT_PUBLIC_RED_MAGIC_TIMING=1 npm run build`) keep it and
+ * add ~14 performance.now() calls per drawn frame — negligible next
+ * to the subsystems being measured, and identical in every measurement
+ * build, so before/after comparisons stay honest.
+ *
+ * This is diagnostics, not telemetry in the tracking sense: samples
+ * live in memory only and are never uploaded (see AGENTS.md).
+ */
+const RED_MAGIC_TIMING =
+  process.env.NEXT_PUBLIC_RED_MAGIC_TIMING ===
+  "1";
+
 type Point = {
   x: number;
   y: number;
-};
-
-type GridNode = {
-  homeX: number;
-  homeY: number;
-
-  x: number;
-  y: number;
-
-  energy: number;
-  velocity: number;
-
-  phase: number;
-
-  neighbors: number[];
-  neighborEdges: number[];
-};
-
-type GridEdge = {
-  a: number;
-  b: number;
-
-  restLength: number;
-  resistance: number;
-
-  flow: number;
-};
-
-type BoundaryPoint = {
-  sin: number;
-  cos: number;
-
-  sin3: number;
-  cos3: number;
-
-  sin7: number;
-  cos7: number;
-
-  sin11: number;
-  cos11: number;
-
-  sin13: number;
-  cos13: number;
-
-  angle: number;
-  fieldIndex: number;
 };
 
 type Shockwave = {
@@ -107,20 +120,6 @@ type Shockwave = {
   strength: number;
 
   angularInfluence: Float32Array;
-};
-
-type FlowGeometry = {
-  baseAngles: Float32Array;
-  directions: Int8Array;
-
-  distanceScales: Float32Array;
-  anglePhaseSin: Float32Array;
-  anglePhaseCos: Float32Array;
-
-  wavePhaseSin: Float32Array;
-  wavePhaseCos: Float32Array;
-
-  pointCount: number;
 };
 
 /*
@@ -188,15 +187,6 @@ const ORGANISM_PROFILE: ModeProfile = {
 const TAU =
   Math.PI * 2;
 
-const GLOW_SPRITE_SIZE =
-  256;
-
-const CORE_SPRITE_SIZE =
-  256;
-
-const NODE_SPRITE_SIZE =
-  64;
-
 const MAX_SHOCKWAVES =
   5;
 
@@ -245,9 +235,6 @@ const GRID_POINTER_RADIUS =
 const GRID_POINTER_CONTRIBUTION =
   0.025;
 
-const MAX_NETWORK_INFLUENCES =
-  14;
-
 const CORE_ROTATION_SPEED =
   0.00008;
 
@@ -275,100 +262,6 @@ const CLICK_LIGHT_DECAY =
 const CLICK_LIGHT_DECAY_REFERENCE_MS =
   16;
 
-/*
- * Boundary angular response is sampled from precomputed Gaussian
- * lookup tables rather than evaluating atan2/exp for every boundary
- * point on every animation frame.
- *
- * The visual profile remains Gaussian; only the sampling path changes.
- */
-const ANGULAR_LOOKUP_SIZE =
-  512;
-
-const ANGULAR_LOOKUP_SCALE =
-  ANGULAR_LOOKUP_SIZE /
-  Math.PI;
-
-function buildAngularLookup(
-  sigma: number
-) {
-  const table =
-    new Float32Array(
-      ANGULAR_LOOKUP_SIZE + 1
-    );
-
-  for (
-    let index = 0;
-    index <= ANGULAR_LOOKUP_SIZE;
-    index += 1
-  ) {
-    const angle =
-      (
-        index /
-        ANGULAR_LOOKUP_SIZE
-      ) *
-      Math.PI;
-
-    table[index] =
-      Math.exp(
-        -(
-          angle *
-          angle
-        ) /
-          sigma
-      );
-  }
-
-  return table;
-}
-
-const ANGULAR_FALLOFF_NORMAL =
-  buildAngularLookup(
-    0.18
-  );
-
-/*
- * Renamed from ANGULAR_FALLOFF_SURGE (Runtime v2 semantic cleanup): the
- * retired DRIFT/LISTEN/SURGE mode vocabulary must not survive in live
- * identifiers. This is the WIDER angular response used at high pointer
- * energy — pure rename, the lookup and its thresholds are unchanged.
- */
-const ANGULAR_FALLOFF_ACTIVE =
-  buildAngularLookup(
-    0.28
-  );
-
-function sampleAngularLookup(
-  delta: number,
-  table: Float32Array
-) {
-  const magnitude =
-    delta < 0
-      ? -delta
-      : delta;
-
-  const scaled =
-    magnitude *
-    ANGULAR_LOOKUP_SCALE;
-
-  const index =
-    Math.min(
-      ANGULAR_LOOKUP_SIZE - 1,
-      scaled | 0
-    );
-
-  const fraction =
-    scaled - index;
-
-  return (
-    table[index] +
-    (
-      table[index + 1] -
-      table[index]
-    ) *
-      fraction
-  );
-}
 
 function clamp(
   value: number,
@@ -422,1405 +315,11 @@ function distanceSquared(
   );
 }
 
-function createGlowSprite():
-  HTMLCanvasElement | null {
-  if (
-    typeof document ===
-    "undefined"
-  ) {
-    return null;
-  }
 
-  const sprite =
-    document.createElement(
-      "canvas"
-    );
 
-  sprite.width =
-    GLOW_SPRITE_SIZE;
 
-  sprite.height =
-    GLOW_SPRITE_SIZE;
 
-  const context =
-    sprite.getContext(
-      "2d"
-    );
 
-  if (!context) {
-    return null;
-  }
-
-  const half =
-    GLOW_SPRITE_SIZE *
-    0.5;
-
-  const gradient =
-    context.createRadialGradient(
-      half,
-      half,
-      0,
-      half,
-      half,
-      half
-    );
-
-  gradient.addColorStop(
-    0,
-    "rgba(255, 80, 20, 1)"
-  );
-
-  gradient.addColorStop(
-    0.35,
-    "rgba(255, 30, 10, 0.52)"
-  );
-
-  gradient.addColorStop(
-    1,
-    "rgba(255, 0, 0, 0)"
-  );
-
-  context.fillStyle =
-    gradient;
-
-  context.fillRect(
-    0,
-    0,
-    GLOW_SPRITE_SIZE,
-    GLOW_SPRITE_SIZE
-  );
-
-  return sprite;
-}
-
-function createNodeSprite():
-  HTMLCanvasElement | null {
-  if (
-    typeof document ===
-    "undefined"
-  ) {
-    return null;
-  }
-
-  const sprite =
-    document.createElement(
-      "canvas"
-    );
-
-  sprite.width =
-    NODE_SPRITE_SIZE;
-
-  sprite.height =
-    NODE_SPRITE_SIZE;
-
-  const context =
-    sprite.getContext(
-      "2d"
-    );
-
-  if (!context) {
-    return null;
-  }
-
-  const center =
-    NODE_SPRITE_SIZE *
-    0.5;
-
-  const radius =
-    NODE_SPRITE_SIZE *
-    0.5;
-
-  context.fillStyle =
-    "rgba(255, 72, 35, 1)";
-
-  context.beginPath();
-
-  context.arc(
-    center,
-    center,
-    radius * 0.9,
-    0,
-    TAU
-  );
-
-  context.fill();
-
-  return sprite;
-}
-
-function drawCoreFilament(
-  context: CanvasRenderingContext2D,
-  center: number,
-  radius: number,
-  startAngle: number,
-  length: number,
-  bend: number,
-  width: number,
-  alpha: number
-) {
-  context.beginPath();
-
-  const segments =
-    18;
-
-  for (
-    let index = 0;
-    index <= segments;
-    index += 1
-  ) {
-    const progress =
-      index /
-      segments;
-
-    const angle =
-      startAngle +
-      progress *
-        length;
-
-    const radial =
-      radius *
-      (
-        0.34 +
-        progress *
-          0.52 +
-        Math.sin(
-          progress *
-            Math.PI *
-            2
-        ) *
-          bend
-      );
-
-    const x =
-      center +
-      Math.cos(
-        angle
-      ) *
-        radial;
-
-    const y =
-      center +
-      Math.sin(
-        angle
-      ) *
-        radial;
-
-    if (
-      index ===
-      0
-    ) {
-      context.moveTo(
-        x,
-        y
-      );
-    } else {
-      context.lineTo(
-        x,
-        y
-      );
-    }
-  }
-
-  context.lineWidth =
-    width;
-
-  context.strokeStyle =
-    `rgba(255, 170, 70, ${alpha})`;
-
-  context.stroke();
-}
-
-function createCoreSprite():
-  HTMLCanvasElement | null {
-  if (
-    typeof document ===
-    "undefined"
-  ) {
-    return null;
-  }
-
-  const sprite =
-    document.createElement(
-      "canvas"
-    );
-
-  sprite.width =
-    CORE_SPRITE_SIZE;
-
-  sprite.height =
-    CORE_SPRITE_SIZE;
-
-  const context =
-    sprite.getContext(
-      "2d"
-    );
-
-  if (!context) {
-    return null;
-  }
-
-  const center =
-    CORE_SPRITE_SIZE *
-    0.5;
-
-  const radius =
-    CORE_SPRITE_SIZE *
-    0.5;
-
-  const gradient =
-    context.createRadialGradient(
-      center -
-        CORE_SPRITE_SIZE *
-          0.1,
-      center -
-        CORE_SPRITE_SIZE *
-          0.12,
-      CORE_SPRITE_SIZE *
-        0.03,
-      center,
-      center,
-      radius
-    );
-
-  gradient.addColorStop(
-    0,
-    "rgba(255, 188, 72, 1)"
-  );
-
-  gradient.addColorStop(
-    0.1,
-    "rgba(255, 132, 38, 1)"
-  );
-
-  gradient.addColorStop(
-    0.22,
-    "rgba(255, 72, 22, 1)"
-  );
-
-  gradient.addColorStop(
-    0.4,
-    "rgba(235, 24, 14, 0.98)"
-  );
-
-  gradient.addColorStop(
-    0.62,
-    "rgba(172, 8, 8, 0.88)"
-  );
-
-  gradient.addColorStop(
-    0.8,
-    "rgba(86, 0, 4, 0.56)"
-  );
-
-  gradient.addColorStop(
-    0.92,
-    "rgba(30, 0, 2, 0.22)"
-  );
-
-  gradient.addColorStop(
-    1,
-    "rgba(8, 0, 0, 0)"
-  );
-
-  context.fillStyle =
-    gradient;
-
-  context.fillRect(
-    0,
-    0,
-    CORE_SPRITE_SIZE,
-    CORE_SPRITE_SIZE
-  );
-
-  context.save();
-
-  context.beginPath();
-
-  context.arc(
-    center,
-    center,
-    radius * 0.91,
-    0,
-    TAU
-  );
-
-  context.clip();
-
-  const hotRegions = [
-    {
-      x:
-        center -
-        radius *
-          0.26,
-      y:
-        center -
-        radius *
-          0.18,
-      radius:
-        radius *
-        0.11,
-      alpha:
-        0.7
-    },
-    {
-      x:
-        center +
-        radius *
-          0.2,
-      y:
-        center -
-        radius *
-          0.27,
-      radius:
-        radius *
-        0.07,
-      alpha:
-        0.52
-    },
-    {
-      x:
-        center +
-        radius *
-          0.28,
-      y:
-        center +
-        radius *
-          0.18,
-      radius:
-        radius *
-        0.09,
-      alpha:
-        0.46
-    },
-    {
-      x:
-        center -
-        radius *
-          0.17,
-      y:
-        center +
-        radius *
-          0.3,
-      radius:
-        radius *
-        0.055,
-      alpha:
-        0.38
-    }
-  ];
-
-  for (
-    let index = 0;
-    index <
-      hotRegions.length;
-    index += 1
-  ) {
-    const region =
-      hotRegions[index];
-
-    const regionGradient =
-      context.createRadialGradient(
-        region.x,
-        region.y,
-        0,
-        region.x,
-        region.y,
-        region.radius
-      );
-
-    regionGradient.addColorStop(
-      0,
-      `rgba(255, 205, 80, ${region.alpha})`
-    );
-
-    regionGradient.addColorStop(
-      0.4,
-      `rgba(255, 105, 30, ${
-        region.alpha *
-        0.7
-      })`
-    );
-
-    regionGradient.addColorStop(
-      0.78,
-      `rgba(205, 22, 10, ${
-        region.alpha *
-        0.34
-      })`
-    );
-
-    regionGradient.addColorStop(
-      1,
-      "rgba(160, 0, 0, 0)"
-    );
-
-    context.fillStyle =
-      regionGradient;
-
-    context.beginPath();
-
-    context.arc(
-      region.x,
-      region.y,
-      region.radius,
-      0,
-      TAU
-    );
-
-    context.fill();
-  }
-
-  drawCoreFilament(
-    context,
-    center,
-    radius,
-    -2.55,
-    1.4,
-    0.026,
-    2.2,
-    0.34
-  );
-
-  drawCoreFilament(
-    context,
-    center,
-    radius,
-    -0.75,
-    1.18,
-    0.022,
-    1.7,
-    0.28
-  );
-
-  drawCoreFilament(
-    context,
-    center,
-    radius,
-    0.65,
-    1.28,
-    0.028,
-    1.9,
-    0.25
-  );
-
-  drawCoreFilament(
-    context,
-    center,
-    radius,
-    2.35,
-    1.05,
-    0.02,
-    1.6,
-    0.22
-  );
-
-  context.restore();
-
-  return sprite;
-}
-
-function createCoreDetailSprite():
-  HTMLCanvasElement | null {
-  if (
-    typeof document ===
-    "undefined"
-  ) {
-    return null;
-  }
-
-  const sprite =
-    document.createElement(
-      "canvas"
-    );
-
-  sprite.width =
-    CORE_SPRITE_SIZE;
-
-  sprite.height =
-    CORE_SPRITE_SIZE;
-
-  const context =
-    sprite.getContext(
-      "2d"
-    );
-
-  if (!context) {
-    return null;
-  }
-
-  const center =
-    CORE_SPRITE_SIZE *
-    0.5;
-
-  const radius =
-    CORE_SPRITE_SIZE *
-    0.5;
-
-  context.save();
-
-  context.beginPath();
-
-  context.arc(
-    center,
-    center,
-    radius * 0.84,
-    0,
-    TAU
-  );
-
-  context.clip();
-
-  drawCoreFilament(
-    context,
-    center,
-    radius,
-    -1.9,
-    1.7,
-    0.035,
-    1.35,
-    0.3
-  );
-
-  drawCoreFilament(
-    context,
-    center,
-    radius,
-    -0.12,
-    1.42,
-    0.032,
-    1.15,
-    0.25
-  );
-
-  drawCoreFilament(
-    context,
-    center,
-    radius,
-    1.15,
-    1.52,
-    0.028,
-    1.45,
-    0.26
-  );
-
-  drawCoreFilament(
-    context,
-    center,
-    radius,
-    2.75,
-    1.32,
-    0.026,
-    1.1,
-    0.22
-  );
-
-  context.restore();
-
-  return sprite;
-}
-
-function createBoundary(
-  count: number
-): BoundaryPoint[] {
-  return Array.from(
-    {
-      length:
-        count + 1
-    },
-    (
-      _,
-      index
-    ) => {
-      const angle =
-        (
-          index /
-          count
-        ) *
-        TAU;
-
-      return {
-        sin:
-          Math.sin(
-            angle
-          ),
-
-        cos:
-          Math.cos(
-            angle
-          ),
-
-        sin3:
-          Math.sin(
-            angle * 3
-          ),
-
-        cos3:
-          Math.cos(
-            angle * 3
-          ),
-
-        sin7:
-          Math.sin(
-            angle * 7
-          ),
-
-        cos7:
-          Math.cos(
-            angle * 7
-          ),
-
-        sin11:
-          Math.sin(
-            angle * 11
-          ),
-
-        cos11:
-          Math.cos(
-            angle * 11
-          ),
-
-        sin13:
-          Math.sin(
-            angle * 13
-          ),
-
-        cos13:
-          Math.cos(
-            angle * 13
-          ),
-
-        angle,
-
-        fieldIndex:
-          index
-      };
-    }
-  );
-}
-
-function buildFlowGeometry(
-  quality: Quality
-): FlowGeometry {
-  const flowCount =
-    quality.flowCount;
-
-  const segments =
-    quality.flowSegments;
-
-  const pointCount =
-    flowCount *
-    (
-      segments +
-      1
-    );
-
-  const baseAngles =
-    new Float32Array(
-      flowCount
-    );
-
-  const directions =
-    new Int8Array(
-      flowCount
-    );
-
-  const distanceScales =
-    new Float32Array(
-      pointCount
-    );
-
-  const anglePhaseSin =
-    new Float32Array(
-      pointCount
-    );
-
-  const anglePhaseCos =
-    new Float32Array(
-      pointCount
-    );
-
-  const wavePhaseSin =
-    new Float32Array(
-      pointCount
-    );
-
-  const wavePhaseCos =
-    new Float32Array(
-      pointCount
-    );
-
-  for (
-    let flowIndex = 0;
-    flowIndex <
-      flowCount;
-    flowIndex += 1
-  ) {
-    baseAngles[
-      flowIndex
-    ] =
-      (
-        flowIndex /
-        flowCount
-      ) *
-      TAU;
-
-    directions[
-      flowIndex
-    ] =
-      flowIndex % 2 ===
-      0
-        ? 1
-        : -1;
-
-    const flowOffset =
-      flowIndex *
-      (
-        segments +
-        1
-      );
-
-    for (
-      let segment = 0;
-      segment <= segments;
-      segment += 1
-    ) {
-      const progress =
-        segment /
-        segments;
-
-      const pointIndex =
-        flowOffset +
-        segment;
-
-      const anglePhase =
-        progress *
-        TAU;
-
-      const wavePhase =
-        progress *
-          Math.PI *
-          3.2 +
-        flowIndex;
-
-      distanceScales[
-        pointIndex
-      ] =
-        0.12 +
-        progress *
-          0.67;
-
-      anglePhaseSin[
-        pointIndex
-      ] =
-        Math.sin(
-          anglePhase
-        );
-
-      anglePhaseCos[
-        pointIndex
-      ] =
-        Math.cos(
-          anglePhase
-        );
-
-      wavePhaseSin[
-        pointIndex
-      ] =
-        Math.sin(
-          wavePhase
-        );
-
-      wavePhaseCos[
-        pointIndex
-      ] =
-        Math.cos(
-          wavePhase
-        );
-    }
-  }
-
-  return {
-    baseAngles,
-    directions,
-
-    distanceScales,
-    anglePhaseSin,
-    anglePhaseCos,
-
-    wavePhaseSin,
-    wavePhaseCos,
-
-    pointCount
-  };
-}
-
-function qualityFromArea(
-  area: number
-): QualityName {
-  if (
-    area <
-    120_000
-  ) {
-    return "low";
-  }
-
-  if (
-    area <
-    260_000
-  ) {
-    return "medium";
-  }
-
-  return "high";
-}
-
-function createGrid(
-  gridSize: number
-) {
-  const nodes:
-    GridNode[] =
-    [];
-
-  const nodeByCell =
-    new Map<
-      string,
-      number
-    >();
-
-  const spacing =
-    2 /
-    Math.max(
-      1,
-      gridSize - 1
-    );
-
-  for (
-    let row = 0;
-    row < gridSize;
-    row += 1
-  ) {
-    for (
-      let column = 0;
-      column < gridSize;
-      column += 1
-    ) {
-      const x =
-        -1 +
-        column *
-          spacing;
-
-      const y =
-        -1 +
-        row *
-          spacing;
-
-      const radialDistance =
-        Math.hypot(
-          x,
-          y
-        );
-
-      if (
-        radialDistance >
-        1
-      ) {
-        continue;
-      }
-
-      const index =
-        nodes.length;
-
-      nodeByCell.set(
-        `${row}:${column}`,
-        index
-      );
-
-      nodes.push({
-        homeX:
-          x,
-
-        homeY:
-          y,
-
-        x,
-        y,
-
-        energy:
-          0,
-
-        velocity:
-          0,
-
-        phase:
-          Math.random() *
-          TAU,
-
-        neighbors:
-          [],
-
-        neighborEdges:
-          []
-      });
-    }
-  }
-
-  const edges:
-    GridEdge[] =
-    [];
-
-  const connect = (
-    a: number,
-    b: number
-  ) => {
-    if (
-      a === b
-    ) {
-      return;
-    }
-
-    if (
-      nodes[a]
-        .neighbors
-        .includes(
-          b
-        )
-    ) {
-      return;
-    }
-
-    const dx =
-      nodes[a].homeX -
-      nodes[b].homeX;
-
-    const dy =
-      nodes[a].homeY -
-      nodes[b].homeY;
-
-    const restLength =
-      Math.hypot(
-        dx,
-        dy
-      );
-
-    if (
-      restLength <=
-      0.0001
-    ) {
-      return;
-    }
-
-    const resistance =
-      0.72 +
-      restLength *
-        0.85;
-
-    const edgeIndex =
-      edges.length;
-
-    edges.push({
-      a,
-      b,
-
-      restLength,
-
-      resistance,
-
-      flow:
-        0
-    });
-
-    nodes[a]
-      .neighbors
-      .push(
-        b
-      );
-
-    nodes[a]
-      .neighborEdges
-      .push(
-        edgeIndex
-      );
-
-    nodes[b]
-      .neighbors
-      .push(
-        a
-      );
-
-    nodes[b]
-      .neighborEdges
-      .push(
-        edgeIndex
-      );
-  };
-
-  for (
-    let row = 0;
-    row < gridSize;
-    row += 1
-  ) {
-    for (
-      let column = 0;
-      column < gridSize;
-      column += 1
-    ) {
-      const current =
-        nodeByCell.get(
-          `${row}:${column}`
-        );
-
-      if (
-        current ===
-        undefined
-      ) {
-        continue;
-      }
-
-      const right =
-        nodeByCell.get(
-          `${row}:${column + 1}`
-        );
-
-      const down =
-        nodeByCell.get(
-          `${row + 1}:${column}`
-        );
-
-      const diagonal =
-        nodeByCell.get(
-          `${row + 1}:${column + 1}`
-        );
-
-      const antiDiagonal =
-        nodeByCell.get(
-          `${row + 1}:${column - 1}`
-        );
-
-      if (
-        right !==
-        undefined
-      ) {
-        connect(
-          current,
-          right
-        );
-      }
-
-      if (
-        down !==
-        undefined
-      ) {
-        connect(
-          current,
-          down
-        );
-      }
-
-      if (
-        diagonal !==
-        undefined
-      ) {
-        connect(
-          current,
-          diagonal
-        );
-      }
-
-      if (
-        antiDiagonal !==
-        undefined
-      ) {
-        connect(
-          current,
-          antiDiagonal
-        );
-      }
-    }
-  }
-
-  for (
-    let index = 0;
-    index <
-      nodes.length;
-    index += 1
-  ) {
-    const node =
-      nodes[index];
-
-    if (
-      node.neighbors.length >=
-      4
-    ) {
-      continue;
-    }
-
-    let bestIndex =
-      -1;
-
-    let bestDistance =
-      Number.POSITIVE_INFINITY;
-
-    for (
-      let other = 0;
-      other <
-        nodes.length;
-      other += 1
-    ) {
-      if (
-        other ===
-          index ||
-        node.neighbors.includes(
-          other
-        )
-      ) {
-        continue;
-      }
-
-      const distance =
-        distanceSquared(
-          node.homeX,
-          node.homeY,
-          nodes[
-            other
-          ].homeX,
-          nodes[
-            other
-          ].homeY
-        );
-
-      if (
-        distance <
-        bestDistance
-      ) {
-        bestDistance =
-          distance;
-
-        bestIndex =
-          other;
-      }
-    }
-
-    if (
-      bestIndex >=
-      0
-    ) {
-      connect(
-        index,
-        bestIndex
-      );
-    }
-  }
-
-  return {
-    nodes,
-    edges
-  };
-}
-
-/*
- * BOUNDED GLOBAL POTENTIAL (Runtime v2) — replaces the dense O(N²)
- * weight matrix.
- *
- * MEASUREMENT FIRST: the previous pass walked every node pair every
- * frame (N ≤ 49 for gridSize 8) — ~2.4–3.4k multiply-adds of object
- * property loads per frame, measured at roughly a 2.4× larger inner
- * loop than the bounded model on the same shape (micro-benchmark,
- * Node/V8, 200k iterations: dense 3.4µs vs bounded 1.4µs per pass at
- * N=49, and the real dense loop also reloads `gridNodes[j].energy`
- * from objects instead of a typed array, which is strictly slower).
- * At 120 Hz that is a real, recurring hotspot — not theoretical
- * complexity.
- *
- * The model: weights are radial (1 / (1 + distance × GRID_GLOBAL_RADIUS)),
- * so each node's potential is dominated by its spatial neighbours. We
- * precompute each node's TOP-K strongest weights (K = 16, ≥ ~90% of
- * its total weight mass on the real grid) and renormalise by the
- * INCLUDED weight total, which preserves the field's scale and shape:
- * excluded distant nodes contribute a near-uniform, low-frequency
- * background the renormalisation absorbs. Energies are snapshotted
- * into a typed array once per frame so the hot inner loop performs
- * zero object property loads and zero bounds-checked array-of-object
- * reads. Visual behaviour is preserved; the all-node comparison is not.
- */
-const GLOBAL_POTENTIAL_K = 16;
-
-type GlobalPotentialField = {
-  /** Flattened N×K node indices (top-K influencers per node). */
-  indices: Int16Array;
-
-  /** Flattened N×K weights, aligned with `indices`. */
-  weights: Float32Array;
-
-  /** Per-node sum of the INCLUDED weights (renormalisation divisor). */
-  totals: Float32Array;
-
-  /** Reusable per-frame energy snapshot (typed-array hot loop). */
-  snapshot: Float32Array;
-
-  /** Node count this field was built for. */
-  count: number;
-
-  /** K used for this field (min(GLOBAL_POTENTIAL_K, nodeCount)). */
-  k: number;
-};
-
-function buildGlobalPotentialWeights(
-  nodes: GridNode[]
-): GlobalPotentialField {
-  const count =
-    nodes.length;
-
-  const k =
-    Math.min(
-      GLOBAL_POTENTIAL_K,
-      count
-    );
-
-  const indices =
-    new Int16Array(
-      count * k
-    );
-
-  const weights =
-    new Float32Array(
-      count * k
-    );
-
-  const totals =
-    new Float32Array(
-      count
-    );
-
-  const snapshot =
-    new Float32Array(
-      count
-    );
-
-  for (
-    let index = 0;
-    index < count;
-    index += 1
-  ) {
-    const node =
-      nodes[index];
-
-    /*
-     * Small insertion-sorted top-K: weight falls off with distance, so
-     * the selected set is the node's spatial neighbourhood. Selection
-     * happens once per world build, never per frame.
-     */
-    const candidates =
-      new Float32Array(
-        count
-      );
-
-    for (
-      let otherIndex = 0;
-      otherIndex <
-        count;
-      otherIndex += 1
-    ) {
-      const other =
-        nodes[
-          otherIndex
-        ];
-
-      const dx =
-        node.homeX -
-        other.homeX;
-
-      const dy =
-        node.homeY -
-        other.homeY;
-
-      const distance =
-        Math.hypot(
-          dx,
-          dy
-        );
-
-      candidates[
-        otherIndex
-      ] =
-        1 /
-        (
-          1 +
-          distance *
-            GRID_GLOBAL_RADIUS
-        );
-    }
-
-    let total = 0;
-
-    for (
-      let slot = 0;
-      slot < k;
-      slot += 1
-    ) {
-      let bestIndex =
-        -1;
-
-      let bestWeight =
-        -1;
-
-      for (
-        let otherIndex = 0;
-        otherIndex <
-          count;
-        otherIndex += 1
-      ) {
-        const weight =
-          candidates[
-            otherIndex
-          ];
-
-        if (
-          weight >
-          bestWeight
-        ) {
-          bestWeight =
-            weight;
-
-          bestIndex =
-            otherIndex;
-        }
-      }
-
-      const row =
-        index * k +
-        slot;
-
-      indices[row] =
-        bestIndex;
-
-      weights[row] =
-        bestWeight;
-
-      total +=
-        bestWeight;
-
-      /*
-       * Mark consumed so the same node is not selected twice.
-       * -1 can never be a real weight (weights are 1/(1+d·r) > 0).
-       */
-      candidates[
-        bestIndex
-      ] = -1;
-    }
-
-    totals[index] =
-      total;
-  }
-
-  return {
-    indices,
-    weights,
-    totals,
-    snapshot,
-    count,
-    k
-  };
-}
 
 export default function RedMagic() {
   const canvasRef =
@@ -2054,9 +553,27 @@ export default function RedMagic() {
       GridEdge[] =
       [];
 
-    let edgeBuckets =
-      new Uint8Array(
-        0
+    /*
+     * NETWORK BUCKET INDEX LISTS (Runtime v2.1) — the network draw
+     * pass used to re-traverse EVERY grid edge once per stroke bucket
+     * (one classify traversal + five bucket-filtered draw traversals
+     * = six full edge sweeps per frame, ~2.3k iterations at the high
+     * tier). The classify pass now writes each edge's index into its
+     * bucket's preallocated index list, and each draw pass walks only
+     * its own members: two sweeps total. Lists are allocated at world
+     * build (capacity = edge count — worst case, every edge in one
+     * bucket) and reused every frame: zero steady-state allocation.
+     */
+    const NETWORK_BUCKET_COUNT =
+      5;
+
+    let networkBucketIndices:
+      Uint16Array[] =
+      [];
+
+    let networkBucketCounts =
+      new Int32Array(
+        NETWORK_BUCKET_COUNT
       );
 
     let nodePotential =
@@ -2082,22 +599,26 @@ export default function RedMagic() {
       BoundaryPoint[] =
       [];
 
-    let boundaryNetworkNodeIndices =
+    let boundaryNetworkNodeIndices:
+      BoundaryNetworkWeights["nodeIndices"] =
       new Int16Array(
         0
       );
 
-    let boundaryNetworkNodeWeights =
+    let boundaryNetworkNodeWeights:
+      BoundaryNetworkWeights["nodeWeights"] =
       new Float32Array(
         0
       );
 
-    let boundaryNetworkResidualWeights =
+    let boundaryNetworkResidualWeights:
+      BoundaryNetworkWeights["residualWeights"] =
       new Float32Array(
         0
       );
 
-    let boundaryNetworkInfluenceCounts =
+    let boundaryNetworkInfluenceCounts:
+      BoundaryNetworkWeights["influenceCounts"] =
       new Uint8Array(
         0
       );
@@ -2207,9 +728,62 @@ export default function RedMagic() {
     const refreshEstimator =
       createRefreshEstimator();
 
+    /*
+     * Subsystem timing accumulator (Runtime v2.1) — null unless this
+     * is a NEXT_PUBLIC_RED_MAGIC_TIMING=1 measurement build. Sums are
+     * per WINDOW (reset at every sampling boundary), divided by the
+     * drawn-frame count at publication time. Lives outside the frame
+     * decision path: when null, every timing branch below folds away.
+     */
+    const subsystemTiming:
+      | RedMagicSubsystemTimings
+      | null =
+      RED_MAGIC_TIMING
+        ? {
+            sim: 0,
+
+            grid: 0,
+
+            render: 0,
+
+            membrane: 0,
+
+            network: 0,
+
+            flows: 0,
+
+            core: 0,
+
+            particles: 0
+          }
+        : null;
+
+    let timingFrameCount =
+      0;
+
     /* Organism-activity coordination throttle (worldSignals). */
     let activityPublishCounter =
       0;
+
+    /*
+     * ZERO-ALLOCATION SIGNAL RECORD (v2.1): the render loop used to
+     * pass a fresh object literal to interactionTargetEnergy every
+     * frame — one allocation per frame in the one component whose
+     * discipline treats per-frame garbage as a forbidden regression.
+     * The record is allocated once per mount and mutated in place;
+     * field writes on a stable monomorphic shape allocate nothing.
+     */
+    const interactionSignals: InteractionSignals = {
+      proximity: 0,
+
+      speed: 0,
+
+      dwell: 0,
+
+      memory: 0,
+
+      charge: 0
+    };
 
     /*
      * REFRESH-RATE AWARENESS (v2.2, hardened in Runtime v2).
@@ -2223,9 +797,15 @@ export default function RedMagic() {
     let lastAdaptTimestamp =
       0;
 
-    /* Minimum raw inter-frame delta inside the open sampling window. */
-    let windowMinDelta =
-      0;
+    /*
+     * V2.1: valid raw inter-frame deltas are collected into this
+     * bounded, reused typed-array buffer; the window's representative
+     * interval is a robust low percentile of the collected samples
+     * (see engineConfig) — one glitch-short RAF can no longer define
+     * the display.
+     */
+    const refreshSampler =
+      createRefreshDeltaSampler();
 
     /*
      * Hysteresis: quality responds to SUSTAINED conditions, not single
@@ -2286,249 +866,32 @@ export default function RedMagic() {
     const profile =
       ORGANISM_PROFILE;
 
-    const buildBoundaryNetworkWeights =
+    /*
+     * Boundary→network influence tables (v2.1): the table construction
+     * is a pure build-time function in redmagic/engineWorld.ts; this
+     * closure only rebinds the engine's working references to the
+     * freshly built structures (old tables become garbage with the
+     * closure that held them).
+     */
+    const rebuildBoundaryNetworkWeights =
       () => {
-        const boundaryCount =
-          membraneBoundary.length;
-
-        const nodeCount =
-          gridNodes.length;
-
-        const influenceCapacity =
-          Math.min(
-            MAX_NETWORK_INFLUENCES,
-            nodeCount
+        const weights =
+          buildBoundaryNetworkWeights(
+            membraneBoundary,
+            gridNodes
           );
-
-        const nodeIndices =
-          new Int16Array(
-            boundaryCount *
-            influenceCapacity
-          );
-
-        const influenceWeights =
-          new Float32Array(
-            boundaryCount *
-            influenceCapacity
-          );
-
-        const residualWeights =
-          new Float32Array(
-            boundaryCount
-          );
-
-        const influenceCounts =
-          new Uint8Array(
-            boundaryCount
-          );
-
-        for (
-          let boundaryIndex = 0;
-          boundaryIndex <
-            boundaryCount;
-          boundaryIndex += 1
-        ) {
-          const point =
-            membraneBoundary[
-              boundaryIndex
-            ];
-
-          const targetX =
-            point.cos *
-            0.9;
-
-          const targetY =
-            point.sin *
-            0.9;
-
-          const selectedIndices =
-            new Int16Array(
-              influenceCapacity
-            );
-
-          const selectedWeights =
-            new Float32Array(
-              influenceCapacity
-            );
-
-          selectedIndices.fill(
-            -1
-          );
-
-          let totalWeight =
-            0;
-
-          let selectedWeight =
-            0;
-
-          for (
-            let nodeIndex = 0;
-            nodeIndex <
-              nodeCount;
-            nodeIndex += 1
-          ) {
-            const node =
-              gridNodes[
-                nodeIndex
-              ];
-
-            const dx =
-              targetX -
-              node.homeX;
-
-            const dy =
-              targetY -
-              node.homeY;
-
-            const distance =
-              Math.hypot(
-                dx,
-                dy
-              );
-
-            const weight =
-              0.004 /
-              (
-                1 +
-                distance *
-                  3.5
-              );
-
-            totalWeight +=
-              weight;
-
-            let insertionIndex =
-              influenceCapacity;
-
-            for (
-              let slot = 0;
-              slot <
-                influenceCapacity;
-              slot += 1
-            ) {
-              if (
-                weight >
-                selectedWeights[
-                  slot
-                ]
-              ) {
-                insertionIndex =
-                  slot;
-
-                break;
-              }
-            }
-
-            if (
-              insertionIndex >=
-              influenceCapacity
-            ) {
-              continue;
-            }
-
-            for (
-              let slot =
-                influenceCapacity -
-                1;
-              slot >
-                insertionIndex;
-              slot -= 1
-            ) {
-              selectedWeights[
-                slot
-              ] =
-                selectedWeights[
-                  slot - 1
-                ];
-
-              selectedIndices[
-                slot
-              ] =
-                selectedIndices[
-                  slot - 1
-                ];
-            }
-
-            selectedWeights[
-              insertionIndex
-            ] =
-              weight;
-
-            selectedIndices[
-              insertionIndex
-            ] =
-              nodeIndex;
-          }
-
-          const rowOffset =
-            boundaryIndex *
-            influenceCapacity;
-
-          for (
-            let slot = 0;
-            slot <
-              influenceCapacity;
-            slot += 1
-          ) {
-            const nodeIndex =
-              selectedIndices[
-                slot
-              ];
-
-            if (
-              nodeIndex <
-              0
-            ) {
-              continue;
-            }
-
-            const weight =
-              selectedWeights[
-                slot
-              ];
-
-            nodeIndices[
-              rowOffset +
-              slot
-            ] =
-              nodeIndex;
-
-            influenceWeights[
-              rowOffset +
-              slot
-            ] =
-              weight;
-
-            selectedWeight +=
-              weight;
-          }
-
-          influenceCounts[
-            boundaryIndex
-          ] =
-            influenceCapacity;
-
-          residualWeights[
-            boundaryIndex
-          ] =
-            Math.max(
-              0,
-              totalWeight -
-                selectedWeight
-            );
-        }
 
         boundaryNetworkNodeIndices =
-          nodeIndices;
+          weights.nodeIndices;
 
         boundaryNetworkNodeWeights =
-          influenceWeights;
+          weights.nodeWeights;
 
         boundaryNetworkResidualWeights =
-          residualWeights;
+          weights.residualWeights;
 
         boundaryNetworkInfluenceCounts =
-          influenceCounts;
+          weights.influenceCounts;
       };
 
     /*
@@ -2790,9 +1153,26 @@ export default function RedMagic() {
         gridEdges =
           grid.edges;
 
-        edgeBuckets =
-          new Uint8Array(
-            gridEdges.length
+        networkBucketIndices =
+          [];
+
+        for (
+          let bucket = 0;
+          bucket <
+            NETWORK_BUCKET_COUNT;
+          bucket += 1
+        ) {
+          networkBucketIndices
+            .push(
+              new Uint16Array(
+                gridEdges.length
+              )
+            );
+        }
+
+        networkBucketCounts =
+          new Int32Array(
+            NETWORK_BUCKET_COUNT
           );
 
         nodePotential =
@@ -2818,7 +1198,7 @@ export default function RedMagic() {
             quality.membraneSteps
           );
 
-        buildBoundaryNetworkWeights();
+        rebuildBoundaryNetworkWeights();
 
         shockwaves =
           [];
@@ -2895,6 +1275,87 @@ export default function RedMagic() {
         );
       };
 
+    /*
+     * MEASUREMENT RESET (v2.1) — a real geometry or DPR change is a
+     * structural event: the open performance window and the refresh
+     * sampling window are invalidated so the next window measures the
+     * new configuration cleanly. (Hidden-tab suspension uses the same
+     * reset; see handleVisibility.)
+     */
+    const resetPerformanceSampling =
+      () => {
+        resetRefreshDeltaSampler(
+          refreshSampler
+        );
+
+        lastAdaptTimestamp = 0;
+
+        performanceSampleTime = 0;
+
+        performanceFrames = 0;
+
+        latestFps = 0;
+      };
+
+    /*
+     * BACKING STORE (v2.1) — the single bitmap-write path: canvas
+     * dimensions from the CURRENT width/height/dpr triple plus the
+     * matching transform. resize() calls it unconditionally on a real
+     * geometry change (width/height may change while dpr does not —
+     * e.g. a 1× display — and the store must still be rewritten);
+     * applyDpr() calls it on a pure resolution switch.
+     */
+    const applyBackingStore =
+      () => {
+        canvas.width =
+          Math.floor(
+            width *
+              dpr
+          );
+
+        canvas.height =
+          Math.floor(
+            height *
+              dpr
+          );
+
+        context.setTransform(
+          dpr,
+          0,
+          0,
+          dpr,
+          0,
+          0
+        );
+      };
+
+    /*
+     * APPLY DPR (v2.1) — a PURE resolution switch (no CSS geometry
+     * change): new bitmap through applyBackingStore, no world rebuild
+     * needed (particles and grid nodes live in CSS pixel space; the
+     * membrane gradient's user-space coordinates resolve under the
+     * CTM at fill time). The measurement reset stops the sampler from
+     * judging the new resolution with the old window's numbers.
+     */
+    const applyDpr =
+      (nextDpr: number) => {
+        if (
+          nextDpr === dpr
+        ) {
+          return;
+        }
+
+        dpr =
+          nextDpr;
+
+        dprLastChangeAt =
+          performance.now();
+
+        applyBackingStore();
+
+        resetPerformanceSampling();
+      };
+
     const resize =
       () => {
         const rect =
@@ -2946,10 +1407,6 @@ export default function RedMagic() {
             now: performance.now()
           });
 
-        if (nextDpr !== dpr) {
-          dprLastChangeAt = performance.now();
-        }
-
         /*
          * Perf guard (v3.1.1): ResizeObserver only coalesces within a
          * frame — a continuous window drag delivered up to ~60
@@ -2979,29 +1436,27 @@ export default function RedMagic() {
         height =
           nextHeight;
 
-        dpr =
-          nextDpr;
+        /*
+         * Real geometry change (v2.1): adopt the resolved DPR (the
+         * backing store must be rewritten even when the DPR itself is
+         * unchanged — a 1× display resizing its window still needs a
+         * new bitmap), then invalidate the measurement windows —
+         * resize previously let the open sampler window carry pre-
+         * and post-resize frames in one average.
+         */
+        if (
+          nextDpr !== dpr
+        ) {
+          dpr =
+            nextDpr;
 
-        canvas.width =
-          Math.floor(
-            width *
-              dpr
-          );
+          dprLastChangeAt =
+            performance.now();
+        }
 
-        canvas.height =
-          Math.floor(
-            height *
-              dpr
-          );
+        applyBackingStore();
 
-        context.setTransform(
-          dpr,
-          0,
-          0,
-          dpr,
-          0,
-          0
-        );
+        resetPerformanceSampling();
 
         centerX =
           width *
@@ -4040,6 +2495,20 @@ export default function RedMagic() {
               activeProfile.recovery
           );
 
+        /*
+         * REDUNDANT-WORK ELIMINATION (v2.1): the velocity decay and
+         * the breathing position are frame-uniform — Math.pow(0.8, …)
+         * was evaluated once per node per frame (49 pow calls at the
+         * high tier) and the node position was written twice (the
+         * pre-breathing write was dead the moment the breathing write
+         * followed). Both now happen once per frame / once per node.
+         */
+        const velocityDecay =
+          Math.pow(
+            0.8,
+            deltaScale
+          );
+
         for (
           let index = 0;
           index <
@@ -4051,24 +2520,11 @@ export default function RedMagic() {
               index
             ];
 
-          node.x =
-            centerX +
-            node.homeX *
-              radius;
-
-          node.y =
-            centerY +
-            node.homeY *
-              radius;
-
           node.energy *=
             decay;
 
           node.velocity *=
-            Math.pow(
-              0.8,
-              deltaScale
-            );
+            velocityDecay;
 
           const breathing =
             Math.sin(
@@ -4189,10 +2645,11 @@ export default function RedMagic() {
           nodePotential.fill(0);
         }
 
-        nextNodeEnergy.fill(
-          0
-        );
-
+        /*
+         * Seed next-frame energies from the decayed values (v2.1: the
+         * previous fill(0) was dead work — the copy below overwrites
+         * every element unconditionally).
+         */
         for (
           let index = 0;
           index <
@@ -5064,20 +3521,17 @@ export default function RedMagic() {
         context.lineJoin =
           "round";
 
-        let hasBaseline =
-          false;
-
-        let hasFaint =
-          false;
-
-        let hasLow =
-          false;
-
-        let hasMedium =
-          false;
-
-        let hasHigh =
-          false;
+        /*
+         * CLASSIFY PASS (v2.1): one sweep decides each edge's stroke
+         * bucket AND records its index in that bucket's preallocated
+         * index list — the draw passes below walk only their own
+         * members instead of re-scanning the full edge array once per
+         * bucket (the pre-v2.1 path performed six full sweeps).
+         */
+        networkBucketCounts
+          .fill(
+            0
+          );
 
         for (
           let index = 0;
@@ -5126,48 +3580,39 @@ export default function RedMagic() {
           ) {
             bucket =
               0;
-
-            hasBaseline =
-              true;
           } else if (
             active <
             0.12
           ) {
             bucket =
               1;
-
-            hasFaint =
-              true;
           } else if (
             active <
             0.3
           ) {
             bucket =
               2;
-
-            hasLow =
-              true;
           } else if (
             active <
             0.62
           ) {
             bucket =
               3;
-
-            hasMedium =
-              true;
-          } else {
-            bucket =
-              4;
-
-            hasHigh =
-              true;
           }
 
-          edgeBuckets[
-            index
+          networkBucketIndices[
+            bucket
+          ][
+            networkBucketCounts[
+              bucket
+            ]
           ] =
-            bucket;
+            index;
+
+          networkBucketCounts[
+            bucket
+          ] +=
+            1;
         }
 
         const lightMultiplier =
@@ -5176,28 +3621,34 @@ export default function RedMagic() {
             0.75;
 
         if (
-          hasBaseline
+          networkBucketCounts[
+            0
+          ] >
+            0
         ) {
           context.beginPath();
 
-          for (
-            let index = 0;
-            index <
-              gridEdges.length;
-            index += 1
-          ) {
-            if (
-              edgeBuckets[
-                index
-              ] !==
+          const bucketList =
+            networkBucketIndices[
               0
-            ) {
-              continue;
-            }
+            ];
 
+          const bucketCount =
+            networkBucketCounts[
+              0
+            ];
+
+          for (
+            let member = 0;
+            member <
+              bucketCount;
+            member += 1
+          ) {
             const edge =
               gridEdges[
-                index
+                bucketList[
+                  member
+                ]
               ];
 
             const a =
@@ -5235,28 +3686,34 @@ export default function RedMagic() {
         }
 
         if (
-          hasFaint
+          networkBucketCounts[
+            1
+          ] >
+            0
         ) {
           context.beginPath();
 
-          for (
-            let index = 0;
-            index <
-              gridEdges.length;
-            index += 1
-          ) {
-            if (
-              edgeBuckets[
-                index
-              ] !==
+          const bucketList =
+            networkBucketIndices[
               1
-            ) {
-              continue;
-            }
+            ];
 
+          const bucketCount =
+            networkBucketCounts[
+              1
+            ];
+
+          for (
+            let member = 0;
+            member <
+              bucketCount;
+            member += 1
+          ) {
             const edge =
               gridEdges[
-                index
+                bucketList[
+                  member
+                ]
               ];
 
             const a =
@@ -5294,28 +3751,34 @@ export default function RedMagic() {
         }
 
         if (
-          hasLow
+          networkBucketCounts[
+            2
+          ] >
+            0
         ) {
           context.beginPath();
 
-          for (
-            let index = 0;
-            index <
-              gridEdges.length;
-            index += 1
-          ) {
-            if (
-              edgeBuckets[
-                index
-              ] !==
+          const bucketList =
+            networkBucketIndices[
               2
-            ) {
-              continue;
-            }
+            ];
 
+          const bucketCount =
+            networkBucketCounts[
+              2
+            ];
+
+          for (
+            let member = 0;
+            member <
+              bucketCount;
+            member += 1
+          ) {
             const edge =
               gridEdges[
-                index
+                bucketList[
+                  member
+                ]
               ];
 
             const a =
@@ -5353,28 +3816,34 @@ export default function RedMagic() {
         }
 
         if (
-          hasMedium
+          networkBucketCounts[
+            3
+          ] >
+            0
         ) {
           context.beginPath();
 
-          for (
-            let index = 0;
-            index <
-              gridEdges.length;
-            index += 1
-          ) {
-            if (
-              edgeBuckets[
-                index
-              ] !==
+          const bucketList =
+            networkBucketIndices[
               3
-            ) {
-              continue;
-            }
+            ];
 
+          const bucketCount =
+            networkBucketCounts[
+              3
+            ];
+
+          for (
+            let member = 0;
+            member <
+              bucketCount;
+            member += 1
+          ) {
             const edge =
               gridEdges[
-                index
+                bucketList[
+                  member
+                ]
               ];
 
             const a =
@@ -5412,28 +3881,34 @@ export default function RedMagic() {
         }
 
         if (
-          hasHigh
+          networkBucketCounts[
+            4
+          ] >
+            0
         ) {
           context.beginPath();
 
-          for (
-            let index = 0;
-            index <
-              gridEdges.length;
-            index += 1
-          ) {
-            if (
-              edgeBuckets[
-                index
-              ] !==
+          const bucketList =
+            networkBucketIndices[
               4
-            ) {
-              continue;
-            }
+            ];
 
+          const bucketCount =
+            networkBucketCounts[
+              4
+            ];
+
+          for (
+            let member = 0;
+            member <
+              bucketCount;
+            member += 1
+          ) {
             const edge =
               gridEdges[
-                index
+                bucketList[
+                  member
+                ]
               ];
 
             const a =
@@ -5469,6 +3944,7 @@ export default function RedMagic() {
 
           context.stroke();
         }
+
 
         for (
           let index = 0;
@@ -5878,16 +4354,26 @@ export default function RedMagic() {
           clickLightBoost *
             0.65;
 
+        /*
+         * STRING-FREE STROKES (v2.1): the stroke colour used to be
+         * rebuilt from a template literal every frame — two fresh
+         * strings per frame here, one more in drawEnergyFlows. The
+         * strokeStyle is now a constant and the light multiplier is
+         * applied through globalAlpha, which composites identically
+         * (source alpha = strokeStyle alpha × globalAlpha) while
+         * allocating nothing.
+         */
         context.lineWidth =
           reducedMotion
             ? 1.2
             : 1.6;
 
         context.strokeStyle =
-          `rgba(255, 55, 40, ${
-            0.68 *
-            lightMultiplier
-          })`;
+          "rgb(255, 55, 40)";
+
+        context.globalAlpha =
+          0.68 *
+          lightMultiplier;
 
         context.stroke();
 
@@ -5895,12 +4381,16 @@ export default function RedMagic() {
           4;
 
         context.strokeStyle =
-          `rgba(125, 0, 0, ${
-            0.12 *
-            lightMultiplier
-          })`;
+          "rgb(125, 0, 0)";
+
+        context.globalAlpha =
+          0.12 *
+          lightMultiplier;
 
         context.stroke();
+
+        context.globalAlpha =
+          1;
       };
 
     const drawEnergyFlows =
@@ -5973,21 +4463,23 @@ export default function RedMagic() {
               0.5
           );
 
+        /* String-free stroke (v2.1): constant colour, alpha via globalAlpha. */
         context.strokeStyle =
-          `rgba(255, 70, 48, ${
-            (
-              0.08 +
-              pointerEnergy *
-                0.05 +
-              interactionTurbulence *
-                0.035
-            ) *
-            (
-              1 +
-              clickLightBoost *
-                0.65
-            )
-          })`;
+          "rgb(255, 70, 48)";
+
+        context.globalAlpha =
+          (
+            0.08 +
+            pointerEnergy *
+              0.05 +
+            interactionTurbulence *
+              0.035
+          ) *
+          (
+            1 +
+            clickLightBoost *
+              0.65
+          );
 
         context.beginPath();
 
@@ -6134,6 +4626,9 @@ export default function RedMagic() {
         }
 
         context.stroke();
+
+        context.globalAlpha =
+          1;
       };
 
     /*
@@ -6627,11 +5122,24 @@ export default function RedMagic() {
             );
         }
 
+        const timingGridStart =
+          subsystemTiming !== null
+            ? performance.now()
+            : 0;
+
         updateGrid(
           delta *
             interactionRecovery,
           elapsed
         );
+
+        if (
+          subsystemTiming !== null
+        ) {
+          subsystemTiming.grid +=
+            performance.now() -
+            timingGridStart;
+        }
 
         for (
           let index =
@@ -6715,7 +5223,11 @@ export default function RedMagic() {
          * Collect the raw (unclamped) inter-frame delta for refresh
          * estimation. The simulation clamps deltas at 32 ms, but the
          * DISPLAY's native interval lives below that cap under normal
-         * conditions, so the window minimum is a reliable estimator.
+         * conditions. V2.1: valid deltas are recorded into the bounded
+         * sampler buffer; the window's representative is a robust low
+         * PERCENTILE of the samples (engineConfig) instead of the raw
+         * minimum — a single glitch-short interval can no longer pin
+         * the estimate at a phantom refresh rate.
          */
         if (
           lastAdaptTimestamp !==
@@ -6731,15 +5243,10 @@ export default function RedMagic() {
             rawDelta <=
               34
           ) {
-            if (
-              windowMinDelta ===
-                0 ||
-              rawDelta <
-                windowMinDelta
-            ) {
-              windowMinDelta =
-                rawDelta;
-            }
+            recordRefreshDelta(
+              refreshSampler,
+              rawDelta
+            );
           }
         }
 
@@ -6796,21 +5303,96 @@ export default function RedMagic() {
         latestFps = fps;
 
         /*
-         * Refresh estimate (Runtime v2 estimator): sustained-fast
-         * adoption, sustained-collapse decay, null window when no
+         * Subsystem averages for this window (measurement builds
+         * only): per drawn frame, reset after publication.
+         */
+        let subsystems:
+          | RedMagicSubsystemTimings
+          | undefined;
+
+        if (
+          subsystemTiming !== null
+        ) {
+          if (
+            timingFrameCount >
+              0
+          ) {
+            const frames =
+              timingFrameCount;
+
+            subsystems = {
+              sim:
+                subsystemTiming.sim /
+                frames,
+
+              grid:
+                subsystemTiming.grid /
+                frames,
+
+              render:
+                subsystemTiming.render /
+                frames,
+
+              membrane:
+                subsystemTiming.membrane /
+                frames,
+
+              network:
+                subsystemTiming.network /
+                frames,
+
+              flows:
+                subsystemTiming.flows /
+                frames,
+
+              core:
+                subsystemTiming.core /
+                frames,
+
+              particles:
+                subsystemTiming.particles /
+                frames
+            };
+          }
+
+          subsystemTiming.sim = 0;
+
+          subsystemTiming.grid = 0;
+
+          subsystemTiming.render = 0;
+
+          subsystemTiming.membrane = 0;
+
+          subsystemTiming.network = 0;
+
+          subsystemTiming.flows = 0;
+
+          subsystemTiming.core = 0;
+
+          subsystemTiming.particles = 0;
+
+          timingFrameCount = 0;
+        }
+
+        /*
+         * Refresh estimate (v2.1): the window's representative is the
+         * robust percentile of the collected samples — sustained-fast
+         * adoption, sustained-collapse decay, null window when too few
          * valid deltas arrived (suspension/idle gaps).
          */
         const windowHz =
-          windowMinDelta > 0
-            ? 1000 / windowMinDelta
-            : null;
+          representativeWindowHz(
+            refreshSampler
+          );
 
         closeRefreshWindow(
           refreshEstimator,
           windowHz
         );
 
-        windowMinDelta = 0;
+        resetRefreshDeltaSampler(
+          refreshSampler
+        );
 
         const refreshHzEstimate =
           refreshEstimator.estimate;
@@ -6889,7 +5471,9 @@ export default function RedMagic() {
 
           lastAdaptation:
             lastAdaptation ??
-            undefined
+            undefined,
+
+          subsystems
         });
 
         if (
@@ -7013,6 +5597,19 @@ export default function RedMagic() {
             0;
         }
 
+        /*
+         * DPR pressure evidence (v2.1), captured from THIS window's
+         * streaks before any reset below: the same two-bad-window /
+         * three-good-window hysteresis the quality controller uses.
+         */
+        const sustainedPoor =
+          demoteStreak >=
+            2;
+
+        const sustainedRecovery =
+          promoteStreak >=
+            3;
+
         if (
           nextQuality !==
           null
@@ -7033,6 +5630,58 @@ export default function RedMagic() {
             mode: "soft",
             reason: adaptReason
           });
+        }
+
+        /*
+         * MEASURED-PRESSURE DPR (v2.1): evaluated HERE, on the
+         * measurement boundary — no resize event required. Sustained
+         * degradation lowers the backing-store resolution one coarse
+         * step (real fill-rate reduction, cheaper to reverse than a
+         * structural rebuild); sustained recovery with a healthy
+         * measured ratio restores it toward the static ceiling one
+         * fine step. The policy itself (engineConfig.resolvePressureDpr)
+         * owns the debounce, floor, ceiling and never-raise-while-poor
+         * law. applyDpr performs the switch and invalidates the
+         * sampling windows so the next window measures the new
+         * resolution instead of mixing old and new frames.
+         */
+        if (
+          !reducedMotion
+        ) {
+          const pressureDpr =
+            resolvePressureDpr({
+              currentDpr: dpr,
+
+              ceiling: dprCeilingFor(
+                qualityName,
+                width *
+                  height
+              ),
+
+              deviceDpr:
+                window.devicePixelRatio ||
+                1,
+
+              sustainedPoor,
+
+              sustainedRecovery,
+
+              performanceRatio:
+                refreshHzEstimate >
+                  0
+                  ? fps /
+                    refreshHzEstimate
+                  : 0,
+
+              lastChangeAt:
+                dprLastChangeAt,
+
+              now: performance.now()
+            });
+
+          applyDpr(
+            pressureDpr
+          );
         }
       };
 
@@ -7162,41 +5811,51 @@ export default function RedMagic() {
          * recovery (quality recently changed — cadence held stable).
          * idle/reduced/suspended return above or below.
          */
+        /*
+         * Proximity only counts while the pointer is actually on
+         * the canvas — a stale geometry value from a departed
+         * pointer must never hold the organism awake.
+         */
+        interactionSignals.proximity =
+          pointerActive
+            ? boundaryPointerDistanceFactor
+            : 0;
+
+        interactionSignals.speed =
+          clamp(
+            pointerSpeedPxPerS /
+              SPEED_SATURATION_PX_S,
+            0,
+            1
+          );
+
+        /*
+         * Presence builds dwell; stillness bleeds it away at 0.75×
+         * so resting on the canvas cannot hold energy forever.
+         */
+        interactionSignals.dwell =
+          pointerPresentSince > 0 &&
+          pointerActive
+            ? clamp(
+                (timestamp -
+                  pointerPresentSince -
+                  pointerStillMs * 0.75) /
+                  DWELL_SATURATION_MS,
+                0,
+                1
+              )
+            : 0;
+
+        interactionSignals.memory =
+          interactionMemory;
+
+        interactionSignals.charge =
+          charge;
+
         const signalEnergy =
-          interactionTargetEnergy({
-            /*
-             * Proximity only counts while the pointer is actually on
-             * the canvas — a stale geometry value from a departed
-             * pointer must never hold the organism awake.
-             */
-            proximity: pointerActive
-              ? boundaryPointerDistanceFactor
-              : 0,
-            speed: clamp(
-              pointerSpeedPxPerS /
-                SPEED_SATURATION_PX_S,
-              0,
-              1
-            ),
-            /*
-             * Presence builds dwell; stillness bleeds it away at 0.75×
-             * so resting on the canvas cannot hold energy forever.
-             */
-            dwell:
-              pointerPresentSince > 0 &&
-              pointerActive
-                ? clamp(
-                    (timestamp -
-                      pointerPresentSince -
-                      pointerStillMs * 0.75) /
-                      DWELL_SATURATION_MS,
-                    0,
-                    1
-                  )
-                : 0,
-            memory: interactionMemory,
-            charge
-          });
+          interactionTargetEnergy(
+            interactionSignals
+          );
 
         const recovered =
           timestamp - lastQualityChange <
@@ -7334,9 +5993,22 @@ export default function RedMagic() {
 
         updatePointerGeometry();
 
+        const timingSimStart =
+          subsystemTiming !== null
+            ? performance.now()
+            : 0;
+
         updatePhysicalState(
           stepDelta
         );
+
+        if (
+          subsystemTiming !== null
+        ) {
+          subsystemTiming.sim +=
+            performance.now() -
+            timingSimStart;
+        }
 
         /*
          * WORLD COORDINATION (Runtime v2): publish the organism's
@@ -7363,24 +6035,32 @@ export default function RedMagic() {
         }
 
         /*
-         * HARD REBUILD EXECUTION (Runtime v2): a scheduled structural
-         * rebuild runs ONLY on a settled frame — no active pointer, no
-         * live shockwaves, no turbulence, no recent click particles —
-         * or after HARD_REBUILD_MAX_WAIT_MS on any non-active frame.
-         * Rebuilding here (idle cadence included) keeps expensive
-         * reallocations off the interaction hot path.
+         * HARD REBUILD EXECUTION (Runtime v2, settle rule hardened in
+         * v2.1): a scheduled structural rebuild runs ONLY on a settled
+         * frame — no live shockwaves, no turbulence, no recent click
+         * particles, and a pointer that is EITHER absent OR resting
+         * still past the stillness/energy thresholds (the pre-v2.1
+         * predicate demanded pointerleave, so a parked pointer held
+         * every rebuild hostage — measured: none within 15 s). The
+         * HARD_REBUILD_MAX_WAIT_MS timeout remains as the safety net
+         * for any state the settle model does not cover.
          */
         if (
           hardRebuildPending &&
           hardRebuildTarget !== null
         ) {
           const settled =
-            !pointerActive &&
-            shockwaves.length ===
-              0 &&
-            interactionTurbulence <
-              0.01 &&
-            clickParticleCount === 0;
+            isSettledFrame(
+              pointerActive,
+
+              pointerStillIdle,
+
+              shockwaves.length,
+
+              interactionTurbulence,
+
+              clickParticleCount
+            );
 
           const waitedOut =
             hardRebuildScheduledAt > 0 &&
@@ -7388,10 +6068,26 @@ export default function RedMagic() {
               hardRebuildScheduledAt >
               HARD_REBUILD_MAX_WAIT_MS;
 
+          /*
+           * The timeout is a FULL escape, not a settled-frame variant:
+           * it lets a long-pending rebuild through on any NON-ACTIVE
+           * frame (its documented intent — "sustained degradation
+           * cannot defer recovery forever on a constantly-hovered
+           * canvas"). A pointer parked ON the organism core holds
+           * proximity energy above the settle threshold by design, so
+           * without this escape that canvas would never rebuild.
+           */
+          const timeoutEscape =
+            waitedOut &&
+            runtimeState !==
+              "active";
+
           if (
-            settled &&
-            (runtimeState === "idle" ||
-              waitedOut)
+            (settled &&
+              (runtimeState ===
+                "idle" ||
+                pointerStillIdle)) ||
+            timeoutEscape
           ) {
             const target = hardRebuildTarget;
 
@@ -7404,6 +6100,17 @@ export default function RedMagic() {
         context.globalAlpha =
           1;
 
+        /*
+         * Subsystem timing (v2.1, measurement builds only): the sim
+         * clock wraps updatePhysicalState above; the render clock wraps
+         * clear → particles. Both are read once per subsystem via
+         * performance.now() and accumulated per window.
+         */
+        const timingRenderStart =
+          subsystemTiming !== null
+            ? performance.now()
+            : 0;
+
         context.clearRect(
           0,
           0,
@@ -7413,26 +6120,98 @@ export default function RedMagic() {
 
         drawInteraction();
 
+        const timingMembraneStart =
+          subsystemTiming !== null
+            ? performance.now()
+            : 0;
+
         drawMembrane(
           time
         );
+
+        if (
+          subsystemTiming !== null
+        ) {
+          subsystemTiming.membrane +=
+            performance.now() -
+            timingMembraneStart;
+        }
+
+        const timingNetworkStart =
+          subsystemTiming !== null
+            ? performance.now()
+            : 0;
 
         drawNetwork(
           time
         );
 
+        if (
+          subsystemTiming !== null
+        ) {
+          subsystemTiming.network +=
+            performance.now() -
+            timingNetworkStart;
+        }
+
+        const timingFlowsStart =
+          subsystemTiming !== null
+            ? performance.now()
+            : 0;
+
         drawEnergyFlows(
           time
         );
+
+        if (
+          subsystemTiming !== null
+        ) {
+          subsystemTiming.flows +=
+            performance.now() -
+            timingFlowsStart;
+        }
+
+        const timingCoreStart =
+          subsystemTiming !== null
+            ? performance.now()
+            : 0;
 
         drawCore(
           time
         );
 
+        if (
+          subsystemTiming !== null
+        ) {
+          subsystemTiming.core +=
+            performance.now() -
+            timingCoreStart;
+        }
+
+        const timingParticlesStart =
+          subsystemTiming !== null
+            ? performance.now()
+            : 0;
+
         drawParticles(
           time,
           stepDelta
         );
+
+        if (
+          subsystemTiming !== null
+        ) {
+          subsystemTiming.particles +=
+            performance.now() -
+            timingParticlesStart;
+
+          subsystemTiming.render +=
+            performance.now() -
+            timingRenderStart;
+
+          timingFrameCount +=
+            1;
+        }
 
         maybeAdaptQuality(
           timestamp,
@@ -7611,15 +6390,10 @@ export default function RedMagic() {
           /*
            * Suspension resets the open sampling window: deltas across a
            * hidden period say nothing about the display or the engine,
-           * and a stale window must not drive adaptation (Runtime v2).
+           * and a stale window must not drive adaptation (Runtime v2;
+           * the same measurement reset geometry/DPR changes use, v2.1).
            */
-          windowMinDelta = 0;
-
-          lastAdaptTimestamp = 0;
-
-          performanceSampleTime = 0;
-
-          performanceFrames = 0;
+          resetPerformanceSampling();
 
           suspendRefreshWindow(
             refreshEstimator

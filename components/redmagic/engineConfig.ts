@@ -5,9 +5,9 @@
  * This module is deliberately free of React, DOM and canvas code so the
  * budget rules, the runtime-state model, the adaptive-DPR policy, the
  * refresh-rate estimator and the interaction-energy signal model can be
- * reasoned about (and tested) independently of the 6.8k-line engine in
- * RedMagic.tsx. The engine imports these values and policies; it never
- * redefines them locally.
+ * reasoned about (and tested) independently of the engine in
+ * RedMagic.tsx (orchestrator + hot path). The engine imports these
+ * values and policies; it never redefines them locally.
  *
  * UNIFIED BUDGET LAW: core, network, membrane, particles, energy flows
  * and atmosphere/background effects are ONE coordinated budget. A tier
@@ -317,11 +317,180 @@ export function resolveAdaptiveDpr(
 }
 
 /*
- * REFRESH-RATE ESTIMATION (Runtime v2, hardened).
+ * MEASURED-PRESSURE DPR POLICY (Runtime v2.1).
+ *
+ * Before v2.1 the adaptive DPR was evaluated ONLY on resize events: a
+ * sustained CPU/GPU load could degrade frame rate for minutes and the
+ * backing-store resolution never responded, because no geometry change
+ * ever arrived. The policy below runs on PERFORMANCE MEASUREMENT
+ * boundaries (the ~1.8 s sampling windows) instead:
+ *
+ * - SUSTAINED degradation (the same two-window evidence the quality
+ *   controller uses to demote a tier) lowers the pressure ceiling one
+ *   coarse step (0.5) — real fill-rate work reduction, cheaper and
+ *   faster to reverse than a structural rebuild.
+ * - SUSTAINED recovery (three good windows AND a measured
+ *   fps/refresh ratio ≥ DPR_RECOVERY_RATIO) restores the ceiling one
+ *   fine step (0.25), never while the ratio is unknown or poor.
+ * - Every change is debounced by DPR_CHANGE_DEBOUNCE_MS and bounded by
+ *   the tier/area ceiling from dprCeilingFor — pressure can only lower
+ *   what the static policy would allow, never raise past it.
+ * - A DPR switch is a structural event: the engine resets the
+ *   performance sampling window and the refresh window (a resolution
+ *   change invalidates both), so the next window measures the new
+ *   resolution cleanly and cannot oscillate on stale numbers.
+ */
+export const DPR_PRESSURE_STEP = 0.5;
+
+export const DPR_RECOVERY_STEP = 0.25;
+
+export const DPR_RECOVERY_RATIO = 0.85;
+
+export type DprPressureInput = {
+  currentDpr: number;
+
+  /** Static ceiling for the active tier/area (dprCeilingFor). */
+  ceiling: number;
+
+  deviceDpr: number;
+
+  /** Two consecutive bad windows (quality-demotion evidence). */
+  sustainedPoor: boolean;
+
+  /** Three consecutive good windows. */
+  sustainedRecovery: boolean;
+
+  /** fps / refresh estimate (0 = unknown). */
+  performanceRatio: number;
+
+  /** performance.now() of the last applied DPR change. */
+  lastChangeAt: number;
+
+  now: number;
+};
+
+/** Lower bound for the pressure path — never below 1× resolution. */
+export const DPR_FLOOR = 1;
+
+/**
+ * Resolve the pressure-adjusted DPR target. Returns the CURRENT dpr
+ * when the policy declines to change.
+ */
+export function resolvePressureDpr(
+  input: DprPressureInput
+): number {
+  if (
+    input.lastChangeAt >
+      0 &&
+    input.now - input.lastChangeAt <
+      DPR_CHANGE_DEBOUNCE_MS
+  ) {
+    return input.currentDpr;
+  }
+
+  if (
+    input.sustainedPoor &&
+    input.currentDpr >
+      DPR_FLOOR
+  ) {
+    return Math.max(
+      DPR_FLOOR,
+
+      input.currentDpr -
+        DPR_PRESSURE_STEP
+    );
+  }
+
+  if (input.sustainedRecovery) {
+    /*
+     * Restore only on sustained recovery with a known, healthy
+     * measured ratio — and never past the static ceiling.
+     */
+    if (
+      input.performanceRatio >
+        0 &&
+      input.performanceRatio >=
+        DPR_RECOVERY_RATIO
+    ) {
+      const target = Math.min(
+        input.ceiling,
+        input.deviceDpr > 0
+          ? input.deviceDpr
+          : 1,
+        MAX_DPR
+      );
+
+      if (
+        target >
+        input.currentDpr +
+          (DPR_RECOVERY_STEP -
+            0.01)
+      ) {
+        return Math.min(
+          target,
+
+          input.currentDpr +
+            DPR_RECOVERY_STEP
+        );
+      }
+    }
+  }
+
+  return input.currentDpr;
+}
+
+/*
+ * HARD-REBUILD SETTLE PREDICATE (Runtime v2.1).
+ *
+ * A structural rebuild executes only on a settled frame. Pre-v2.1 the
+ * predicate required the pointer to have LEFT the canvas, so a pointer
+ * resting motionless on the organism — stillness threshold passed,
+ * interaction energy settled — kept every pending rebuild waiting
+ * forever (measured: no rebuild within 15 s of stillness; the 12 s
+ * timeout only relaxed the cadence gate, not the settle predicate).
+ * The still-pointer idle model already defines "settled": once the
+ * pointer has crossed STILL_POINTER_IDLE_MS without movement and its
+ * energy fell under SETTLED_ENERGY, it is as settled as an absent
+ * pointer. The predicate below accepts both.
+ */
+export function isSettledFrame(
+  /** Pointer currently on the canvas. */
+  pointerActive: boolean,
+
+  /** Stillness + settled-energy thresholds both passed. */
+  pointerStillIdle: boolean,
+
+  /** Live shockwaves. */
+  shockwaveCount: number,
+
+  /** Interaction turbulence (settles under 0.01). */
+  turbulence: number,
+
+  /** Transient click particles still in flight. */
+  clickParticleCount: number
+): boolean {
+  /*
+   * Positional parameters, not an input record: the gate runs every
+   * frame while a rebuild is pending and must not allocate.
+   */
+  return (
+    (!pointerActive ||
+      pointerStillIdle) &&
+    shockwaveCount ===
+      0 &&
+    turbulence <
+      0.01 &&
+    clickParticleCount ===
+      0
+  );
+}
+
+/*
+ * REFRESH-RATE ESTIMATION (Runtime v2, hardened in v2.1).
  *
  * The browser does not expose the display's native refresh rate, but
  * requestAnimationFrame delivers frames at that rate, so the fastest
- * sustained inter-frame interval IS the native interval. The estimator:
+ * SUSTAINED inter-frame interval IS the native interval. The estimator:
  * - initialises conservatively at 0 (unknown → relative thresholds use
  *   conservative fallback lines),
  * - adopts a window only when it is SUSTAINED faster (3% above the
@@ -333,8 +502,40 @@ export function resolveAdaptiveDpr(
  * - suspends cleanly: hidden tabs and idle-cadence gaps produce no
  *   deltas at all, so windows reopen fresh instead of trusting stale
  *   fast numbers.
+ *
+ * V2.1 HARDENING — the window's representative interval is no longer
+ * the raw MINIMUM. A single unusually-short RAF interval (a double
+ * commit, a timer glitch) used to poison the whole window and could
+ * pin the estimate at a phantom 200+ Hz, which then permanently
+ * depressed the relative quality thresholds. Valid raw deltas are now
+ * collected into a bounded, allocation-free typed-array buffer (reused
+ * across windows) and the representative is the ~5th-percentile delta
+ * (partial selection, no sort, no allocation): a handful of outlier
+ * intervals can no longer define the display. Sampling also resets on
+ * real geometry/DPR changes (see the engine's resize/applyDpr paths)
+ * — a resolution switch invalidates the open window.
  */
 export const REFRESH_VALIDATION_WINDOWS = 6;
+
+/** Bounded per-window raw-delta buffer (240 Hz × 1.8 s ≈ 432 + headroom). */
+export const REFRESH_SAMPLE_CAPACITY = 600;
+
+/** Windows with fewer valid deltas than this report "no estimate". */
+export const REFRESH_MIN_SAMPLES = 8;
+
+/** Representative = this percentile of the window's valid deltas. */
+export const REFRESH_PERCENTILE = 0.05;
+
+/*
+ * Minimum rank of the representative. A percentile alone degrades on
+ * short windows (a 1.8 s window at low frame rates collects ~15
+ * samples, where 5% is rank 1 — the raw minimum again). The floor of
+ * 3 keeps the estimator robust against up to two glitch intervals
+ * regardless of window length, and errs toward UNDER-estimating the
+ * refresh rate, which only ever makes the quality thresholds more
+ * forgiving — never trigger-happy.
+ */
+export const REFRESH_MIN_RANK = 3;
 
 export type RefreshEstimator = {
   /** Current estimate in Hz; 0 = unknown. */
@@ -348,6 +549,138 @@ export function createRefreshEstimator(): RefreshEstimator {
   return { estimate: 0, slowStreak: 0 };
 }
 
+/*
+ * Reusable raw-delta sampler. `deltas` is allocated ONCE per engine
+ * mount and mutated in place — recording a delta on the frame path
+ * performs exactly one bounds-checked typed-array write.
+ */
+export type RefreshDeltaSampler = {
+  deltas: Float32Array;
+
+  /** Valid deltas recorded so far in the open window. */
+  count: number;
+};
+
+export function createRefreshDeltaSampler(): RefreshDeltaSampler {
+  return {
+    deltas: new Float32Array(
+      REFRESH_SAMPLE_CAPACITY
+    ),
+
+    count: 0
+  };
+}
+
+/** Record one valid raw inter-frame delta (ms). Capacity-bounded. */
+export function recordRefreshDelta(
+  sampler: RefreshDeltaSampler,
+  delta: number
+): void {
+  if (
+    sampler.count <
+    REFRESH_SAMPLE_CAPACITY
+  ) {
+    sampler.deltas[
+      sampler.count
+    ] = delta;
+
+    sampler.count += 1;
+  }
+}
+
+/** Invalidate the open window (suspension, idle gap, geometry change). */
+export function resetRefreshDeltaSampler(
+  sampler: RefreshDeltaSampler
+): void {
+  sampler.count = 0;
+}
+
+/**
+ * Robust representative interval for the closed window, in Hz.
+ * Returns null when the window carried too few valid deltas.
+ *
+ * The k-th smallest delta (k ≈ 5% of samples, minimum rank 3 — see
+ * REFRESH_MIN_RANK) is found with a bounded partial selection over the
+ * reused buffer — no sort, no allocation, O(k·n) with k ≤ 30. Deltas
+ * already rejected at record time (< 3 ms or > 34 ms) never reach the
+ * buffer.
+ */
+export function representativeWindowHz(
+  sampler: RefreshDeltaSampler
+): number | null {
+  const count =
+    sampler.count;
+
+  if (
+    count <
+    REFRESH_MIN_SAMPLES
+  ) {
+    return null;
+  }
+
+  const deltas =
+    sampler.deltas;
+
+  const k = Math.min(
+    count - 1,
+
+    Math.max(
+      REFRESH_MIN_RANK,
+
+      Math.ceil(
+        count *
+          REFRESH_PERCENTILE
+      )
+    )
+  );
+
+  for (
+    let slot = 0;
+    slot < k;
+    slot += 1
+  ) {
+    let minIndex =
+      slot;
+
+    for (
+      let scan =
+        slot + 1;
+      scan < count;
+      scan += 1
+    ) {
+      if (
+        deltas[scan] <
+        deltas[minIndex]
+      ) {
+        minIndex =
+          scan;
+      }
+    }
+
+    const swapped =
+      deltas[slot];
+
+    deltas[slot] =
+      deltas[minIndex];
+
+    deltas[minIndex] =
+      swapped;
+  }
+
+  const representative =
+    deltas[
+      k - 1
+    ];
+
+  return (
+    representative >
+    0
+      ? 1000 /
+        representative
+      : null
+  );
+}
+
 export type RefreshWindowResult = {
   /** Updated estimate after this window. */
   estimate: number;
@@ -357,9 +690,10 @@ export type RefreshWindowResult = {
 };
 
 /**
- * Close one sampling window. `windowHz` is derived from the window's
- * minimum raw inter-frame delta; pass null when the window produced no
- * valid deltas (suspended, idle-capped — the window is skipped).
+ * Close one sampling window. `windowHz` is the window's representative
+ * interval (see representativeWindowHz); pass null when the window
+ * produced no valid deltas (suspended, idle-capped — the window is
+ * skipped).
  */
 export function closeRefreshWindow(
   estimator: RefreshEstimator,

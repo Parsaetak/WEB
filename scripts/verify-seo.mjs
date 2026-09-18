@@ -62,7 +62,17 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(SCRIPT_DIR, "..");
 const OUT_DIR = path.join(ROOT, "out");
 
-const SITE_ORIGIN = "https://parsaetak.github.io/WEB";
+/*
+ * CANONICAL SITE FACTS (SEO v2 hardening, v2.1): origin, basePath and
+ * the world-shell scene vocabulary are DERIVED from data/routes.json —
+ * the single manually maintained registry (the same file
+ * build-blog.mjs and lib/routes.ts read). No mirror literals here.
+ */
+const ROUTE_REGISTRY = JSON.parse(
+  await readFile(path.join(ROOT, "data", "routes.json"), "utf8")
+);
+
+const SITE_ORIGIN = ROUTE_REGISTRY.site.origin;
 
 /*
  * Google Search Console verification token (v2.9). Emitted once from
@@ -76,39 +86,36 @@ const GOOGLE_SITE_VERIFICATION =
 /*
  * Mirror next.config.ts / build-blog.mjs: exported hrefs carry the
  * deployment basePath in CI, but the out/ tree itself is NOT
- * basePath-prefixed — strip it before resolving hrefs to files.
+ * basePath-prefixed — strip it before resolving hrefs to files. The
+ * VALUE comes from the registry; only the CI gate is environmental.
  */
-const BASE_PATH = process.env.GITHUB_ACTIONS === "true" ? "/WEB" : "";
+const BASE_PATH =
+  process.env.GITHUB_ACTIONS === "true"
+    ? ROUTE_REGISTRY.site.basePath
+    : "";
 
 /*
  * Hash scenes of the world shell — interaction states, not
- * documents (see LivingShell.tsx SCENES). Legal hrefs on the home
- * route; never sitemap entries; exempt from in-page anchor
- * resolution because the shell handles them through SceneUrlSync.
+ * documents (registry scenes.names; see LivingShell.tsx SCENES).
+ * Legal hrefs on the home route; never sitemap entries; exempt from
+ * in-page anchor resolution because the shell handles them through
+ * SceneUrlSync.
  */
-const SCENE_HASHES = new Set([
-  "home",
-  "about",
-  "systems",
-  "magic",
-  "work",
-  "library"
-]);
+const SCENE_HASHES = new Set(
+  ROUTE_REGISTRY.scenes.names
+);
 
 /*
  * CANONICAL ROUTE REGISTRY (SEO v2) — data/routes.json is the single
- * manually maintained route list; the route table below (titles, JSON-LD
- * type expectations, hub classification, inbound minimums) is DERIVED
- * from it. The same registry drives the sitemap generator in
- * scripts/build-blog.mjs and lib/routes.ts on the app side, so the
- * sitemap, the app routes and this verifier can never drift apart
- * silently — a route added to one place but not the registry fails
- * here, and a registry route without an export fails too.
+ * manually maintained route list (read once above); the route table
+ * below (titles, JSON-LD type expectations, hub classification,
+ * inbound minimums) is DERIVED from it. The same registry drives the
+ * sitemap generator in scripts/build-blog.mjs and lib/routes.ts on
+ * the app side, so the sitemap, the app routes and this verifier can
+ * never drift apart silently — a route added to one place but not the
+ * registry fails here, and a registry route without an export fails
+ * too.
  */
-const ROUTE_REGISTRY = JSON.parse(
-  await readFile(path.join(ROOT, "data", "routes.json"), "utf8")
-);
-
 const CONTENT_ROUTES = ROUTE_REGISTRY.routes
   .filter(
     (route) =>
