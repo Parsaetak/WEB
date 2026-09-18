@@ -9,6 +9,8 @@ import type {
 
 import { CONTENT_TYPE_ORDER } from "@/lib/blogFormat";
 
+import { getWorkEntryForProject } from "@/lib/workRegistry";
+
 /*
  * BLOG DATA ACCESS LAYER — SERVER SIDE.
  *
@@ -289,6 +291,80 @@ export function getRelatedPosts(
   }
 
   return resolved;
+}
+
+/*
+ * LATERAL CONTENT DESTINATIONS (v3.9) — the deterministic
+ * article→collection edges of the knowledge graph.
+ *
+ * The related-article index (indexes.related) covers the
+ * article→article layer. This function derives the LATERAL layer:
+ * when an article's own truthful metadata places it inside a
+ * canonical collection, the article page can link that collection
+ * directly, so the four content types (topic ↔ article ↔ work ↔
+ * research) form one connected, crawlable graph.
+ *
+ * Two deterministic rules only — no keyword matching, no scoring,
+ * nothing invented:
+ *
+ * 1. WORK — the article's `project` value is documented by an entry
+ *    in lib/workRegistry (the same registry /work/ renders). The
+ *    edge names the real entry, so "what is this?" is answered by
+ *    "here is the system it belongs to" on the canonical document.
+ *
+ * 2. RESEARCH — the article's content type is `research` (the
+ *    author's own frontmatter classification, build-validated).
+ *    Research writing belongs to the research programme document.
+ *
+ * Both edges carry descriptive labels (never "read more") and are
+ * consumed by the article page's related strip and by the SEO
+ * verifier, which expects them in the exported HTML.
+ */
+export type RelatedDestination = {
+  kind: "work" | "research";
+  /** Descriptive anchor text — names the real destination. */
+  label: string;
+  /** Root-relative collection href (basePath applied by caller). */
+  href: string;
+  /** One-line why — provenance of the relationship. */
+  note: string;
+};
+
+const WORK_DOCUMENT_HREF = "/work/";
+const RESEARCH_DOCUMENT_HREF = "/research/";
+
+export function getRelatedDestinations(
+  slug: string
+): RelatedDestination[] {
+  const post = BY_SLUG.get(slug);
+
+  if (!post) {
+    return [];
+  }
+
+  const destinations: RelatedDestination[] = [];
+
+  const workEntry = getWorkEntryForProject(post.project);
+
+  if (workEntry) {
+    destinations.push({
+      kind: "work",
+      label: `${workEntry.name} — Selected Work`,
+      href: WORK_DOCUMENT_HREF,
+      note: `The ${workEntry.type.toLowerCase()} this writing documents`
+    });
+  }
+
+  if (post.type === "research") {
+    destinations.push({
+      kind: "research",
+      label: "The research programme — Research",
+      href: RESEARCH_DOCUMENT_HREF,
+      note: "Questions, frameworks, and measurement behind this writing"
+    });
+  }
+
+  return destinations;
 }
 
 /*

@@ -178,6 +178,12 @@ function contentCollectionsEntity() {
  * routes render. Every node links to a real destination. This is a
  * navigation surface, not decoration: it orients the whole site
  * without reading a single paragraph.
+ *
+ * v3.9: each territory also carries its lateral collection edge —
+ * the canonical document (Selected Work or Research) where the
+ * territory's systems and programme are documented in depth. The
+ * links are the same truthful project/type relationships the
+ * article pages resolve; no territory gained or lost a topic.
  */
 const LAB_TERRITORIES: readonly {
   name: string;
@@ -198,6 +204,10 @@ const LAB_TERRITORIES: readonly {
       {
         label: "Inside SHEYTAN's local-first laboratory",
         href: "/blog/sheytan-the-local-first-laboratory/"
+      },
+      {
+        label: "SHEYTAN in Selected Work",
+        href: "/work/"
       }
     ]
   },
@@ -210,6 +220,10 @@ const LAB_TERRITORIES: readonly {
       {
         label: "AI Instructions: the constitutional framework",
         href: "/blog/ai-instructions/"
+      },
+      {
+        label: "The framework family in Selected Work",
+        href: "/work/"
       }
     ]
   },
@@ -222,6 +236,10 @@ const LAB_TERRITORIES: readonly {
       {
         label: "Reasoning is a system property",
         href: "/blog/reasoning-is-a-system-property/"
+      },
+      {
+        label: "The research programme",
+        href: "/research/"
       }
     ]
   },
@@ -234,6 +252,10 @@ const LAB_TERRITORIES: readonly {
       {
         label: "Measuring machine intelligence",
         href: "/blog/measuring-machine-intelligence/"
+      },
+      {
+        label: "UHIT in Selected Work",
+        href: "/work/"
       }
     ]
   },
@@ -246,6 +268,10 @@ const LAB_TERRITORIES: readonly {
       {
         label: "FreeIran engineering notes",
         href: "/blog/freeiran-engineering-notes/"
+      },
+      {
+        label: "FreeIran & WEB in Selected Work",
+        href: "/work/"
       }
     ]
   },
@@ -258,6 +284,10 @@ const LAB_TERRITORIES: readonly {
       {
         label: "Red Theory and the living web",
         href: "/blog/red-theory-and-the-living-web/"
+      },
+      {
+        label: "RED MAGIC in Selected Work",
+        href: "/work/"
       }
     ]
   }

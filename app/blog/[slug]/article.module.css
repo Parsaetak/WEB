@@ -1219,6 +1219,63 @@
   gap: 8px;
 }
 
+/*
+ * LATERAL DESTINATIONS (v3.9) — the article→collection edge rows
+ * ("IN THE LABORATORY"). Visually a quiet continuation of the
+ * related section: the same row language as the secondary list, one
+ * hairline-separated group with its own small mono kicker, and a
+ * provenance note on each row. The note takes its own full-width
+ * flex line (same pattern as .relatedRowShared) so the row grid
+ * stays intact above it.
+ */
+.relatedLateral {
+  margin-top: 18px;
+
+  padding-top: 14px;
+
+  border-top: 1px solid var(--line-soft);
+}
+
+.relatedLateralKicker {
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.22em;
+
+  text-transform: uppercase;
+}
+
+.relatedLateralNote {
+  flex-basis: 100%;
+
+  margin-top: 2px;
+
+  color: var(--text-muted);
+
+  opacity: 0.85;
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  letter-spacing: 0.05em;
+}
+
+.relatedLateralNote::before {
+  content: "→ ";
+
+  color: var(--red-hot);
+
+  opacity: 0.7;
+}
+
 .relatedRow {
   display: flex;
 

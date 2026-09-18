@@ -2954,3 +2954,105 @@ Stage Summary:
   the footer Collections row and the Blog's lab map carry
   discovery, and verify-seo.mjs enforces both directions of
   the new graph.
+
+---
+
+## 2026-09-19 — v3.9.0 INFORMATION ARCHITECTURE, FIRST-ACTION CLARITY & KNOWLEDGE-GRAPH DISCOVERY
+
+Task ID: 1 (single-agent run)
+Scope guard: RED MAGIC Runtime v2.1 untouched (lazy boundary, adaptive
+DPR, refresh estimator, runtime-state model, cached sprites verified);
+primary navigation stays HOME · ABOUT · BLOG · CONTACT; world-shell
+scenes stay hash interaction states; static-export and SEO registry laws
+preserved; no new dependencies.
+
+Work Log:
+- INSPECT (baseline commit 0806264, v3.8.0): pipeline
+  (scripts/build-blog.mjs), verifier (scripts/verify-seo.mjs), route
+  registry (data/routes.json), hubs (lib/hubs.ts), navigation
+  (lib/navigation.ts), home scene, blog index/article, work/research
+  documents, footer document nav.
+- BASELINE (measured): home HTML 89,537 B; initial JS on home 674,207 B
+  across 11 scripts; home order Hero → Capabilities → Featured Work → …;
+  /work/ + /research/ + /blog/ each exactly ONE occurrence in the home
+  document (footer only); hero actions #work scene + Contact + GitHub;
+  npm ci + build + verify green at 182 SEO + 13 brand + 11 export
+  checks; related-graph-covered 0/9.
+- ROOT CAUSE (reproduced, not assumed): verifySeoGraphDepth read
+  `post.related` from emitted post records; the pipeline emits related
+  sets under data.indexes.related[slug] — the field never existed on
+  posts. The 53 edges were real and already rendered ("RELATED
+  TRANSMISSIONS") in exported article HTML; the metric read the wrong
+  schema location.
+- FIRST-ACTION MODEL: HomeScene hero gains a START HERE nav
+  (aria-label="Start here — main paths through the site") with four real
+  crawlable destinations — /work/, /research/, /blog/, /contact/ — each
+  with a provenance note; the duplicate standalone Contact hero button
+  removed (Contact lives once); Explore-the-work scene action and GitHub
+  stay.
+- PROOF-FIRST ORDER: Featured Work now directly follows the hero
+  (Hero → Featured Work → Capabilities → Method → …); FULL PORTFOLIO
+  links the canonical /work/ document instead of the #work scene.
+- CAPABILITY → EVIDENCE: all eight capability cards carry descriptive
+  proof links (hubs /ai-systems/, /ai-evaluation/,
+  /software-engineering/, /local-ai/; /work/; field-note articles
+  sheytan/ai-instructions/anatomy). No invented relationships.
+- LATERAL GRAPH: WORK_ENTRIES extracted from app/work/page.tsx into
+  lib/workRegistry.ts (single source of truth; RED MAGIC entry declares
+  blogProjectAliases ["red-theory"] so both RED MAGIC project streams
+  resolve without renaming article frontmatter);
+  lib/blog.ts#getRelatedDestinations derives deterministic article →
+  collection edges (project → /work/ naming the real entry; type=research
+  → /research/); article pages render them as "IN THE LABORATORY" rows
+  (plain anchors, descriptive labels, provenance notes) inside the
+  related section.
+- WORK/RESEARCH/BLOG ROUTING: /work/ card names now link their field
+  notes (6 of 7 cards; Contents has no article); /research/ modules gain
+  a SYSTEM edge row (Reasoning → SHEYTAN/REP, Evaluation → UHIT, Local AI
+  → SHEYTAN, all to /work/); Blog Lab Map territories gain their second
+  truthful collection link (6 territories, no new ones).
+- VERIFIER: related-graph coverage re-measured from exported article
+  HTML against the declared index (fails when a declared set renders
+  zero links); new lateral gates per article scoped to the related
+  section (project → /work/, type=research → /research/ — the footer
+  cannot fake them); new `first action` group (START HERE nav + four
+  canonical hrefs above the FEATURED WORK marker in the exported home
+  HTML); graph-depth report extended.
+- REGISTRY: /work/ + /research/ sitemap lastmod bumped to 2026-09-19
+  (substantive content change); home stays dateless by design.
+- VERIFY (measured): npm ci / npm run blog / npm run build / npm run
+  lint (0 errors, 21 pre-existing img warnings unchanged) / tsc --noEmit
+  / npm run verify — 184 SEO + 13 brand + 11 export checks green;
+  related-graph-covered 9/9 (declared-article + lateral work:9
+  research:4); hub-covered 9/9; collection/home-covered 9/9; orphans 0.
+- EXPORT INSPECTED: home hero carries all four entry hrefs above
+  FEATURED WORK; 11/11 expected lateral edges present in exported
+  article related sections; 8 capability proof links; work card
+  name→article links (6); research SYSTEM rows (3); lab-map collection
+  links (10 work + 1 research programme).
+- BROWSER (agent-browser over the static export): home first viewport
+  desktop 1440×900 + mobile 390×844 screenshots; START HERE → /work/
+  route transition; article related section in live DOM (declared
+  related cards + SYSTEMS/RESEARCH lateral rows); keyboard focus reaches
+  the strip with focus-visible styling; Blog content modes
+  (ALL/ARTICLES/WORK/RESEARCH toggles) + search ("sheytan") interactively
+  verified; no-JS proxy (all scripts blocked) still renders h1, START
+  HERE with correct hrefs, featured work, and 5 project cards; RED MAGIC
+  lazy boundary verified (CSS seed present, no canvas, no eager
+  RedMagic script on load; organism loads at idle); reduced-motion media
+  blocks present (27); initial-load budget home JS 675,929 B (+0.26% vs
+  baseline) — no measurable regression.
+- Version 3.9.0; README (first actions, architecture, SEO, project
+  status), AGENTS.md (IA + lateral graph laws), Updated-Files.md
+  (v3.9.0 release section), worklog.md (this entry) updated.
+
+Stage Summary:
+- Deliverable: WEB-v3.9-INFORMATION-ARCHITECTURE-DISCOVERY.zip
+  (complete final repository state).
+- Key decision: the 0/9 metric was a verifier-schema mismatch, not
+  missing relationships — the fix strengthens the verifier to measure
+  exported HTML (declared edges must render; lateral edges are
+  required), and the deterministic project→Work / type→Research edge
+  model in lib/workRegistry.ts + lib/blog.ts makes the four content
+  types one connected crawlable graph without inventing a single
+  relationship.

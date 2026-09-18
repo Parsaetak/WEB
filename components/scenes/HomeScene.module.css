@@ -1140,6 +1140,237 @@
     break-word;
 }
 
+/*
+ * START HERE (v3.9) — the hero first-action strip. Four compact
+ * entry chips in a 2×2 grid beside/under the hero copy, visually
+ * quiet so the RED MAGIC organism stays the hero's texture. The
+ * label is a tiny mono kicker; each entry is a bordered link block
+ * with a bold destination name and one muted provenance line.
+ * Focus visibility and hover states follow the site's red accent.
+ */
+.homeHeroEntries {
+  position:
+    relative;
+
+  z-index:
+    4;
+
+  margin-top:
+    26px;
+
+  padding-top:
+    16px;
+
+  border-top:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.09
+    );
+
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap:
+    10px 14px;
+
+  max-width:
+    560px;
+}
+
+.homeHeroEntriesLabel {
+  grid-column:
+    1 / -1;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.34
+    );
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    8.5px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.22em;
+}
+
+.homeHeroEntry {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    3px;
+
+  padding:
+    9px 12px 10px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.1
+    );
+
+  border-radius:
+    8px;
+
+  background:
+    rgba(
+      8,
+      8,
+      10,
+      0.32
+    );
+
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.homeHeroEntry strong {
+  color:
+    var(--text);
+
+  font-size:
+    13px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    -0.01em;
+}
+
+.homeHeroEntry span {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.44
+    );
+
+  font-size:
+    10.5px;
+
+  line-height:
+    1.5;
+}
+
+.homeHeroEntry:hover {
+  border-color:
+    rgba(
+      255,
+      32,
+      32,
+      0.4
+    );
+
+  background:
+    rgba(
+      255,
+      32,
+      32,
+      0.05
+    );
+}
+
+.homeHeroEntry:hover strong {
+  color:
+    var(--red-hot);
+}
+
+.homeHeroEntry:focus-visible {
+  outline:
+    2px solid
+    var(--red-hot);
+
+  outline-offset:
+    2px;
+}
+
+/*
+ * CAPABILITY PROOF (v3.9) — the evidence edge under each
+ * capability. Mono, small, red-accented on hover; a real route to
+ * the hub, collection, or article that demonstrates the claim.
+ */
+.homeCapabilityProof {
+  display:
+    inline-flex;
+
+  align-items:
+    baseline;
+
+  gap:
+    6px;
+
+  margin-top:
+    14px;
+
+  color:
+    var(--text-muted);
+
+  font-family:
+    var(--font-mono);
+
+  font-size:
+    10px;
+
+  letter-spacing:
+    0.04em;
+
+  line-height:
+    1.5;
+
+  transition:
+    color 160ms ease;
+}
+
+.homeCapabilityProof span {
+  color:
+    var(--red);
+
+  transition:
+    color 160ms ease;
+}
+
+.homeCapabilityProof:hover,
+.homeCapabilityProof:focus-visible {
+  color:
+    var(--red-hot);
+}
+
+.homeCapabilityProof:hover span,
+.homeCapabilityProof:focus-visible span {
+  color:
+    var(--red-hot);
+}
+
 /* -------------------------------------------------------------------------- */
 /* Home featured projects                                                     */
 /* -------------------------------------------------------------------------- */
@@ -2667,6 +2898,18 @@ strong i {
   .homeCapabilityGrid {
     grid-template-columns:
       1fr;
+  }
+
+  /*
+   * START HERE strip (v3.9) — single column on small screens so
+   * each entry keeps its two-line composition without truncation.
+   */
+  .homeHeroEntries {
+    grid-template-columns:
+      1fr;
+
+    max-width:
+      none;
   }
 
   .homeCapability,

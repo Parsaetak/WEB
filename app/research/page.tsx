@@ -139,6 +139,12 @@ const SELECTED_ARTICLE_SLUGS: readonly string[] = [
  * the frameworks, systems, and articles named below exist on this
  * site or in the public repositories. A navigation surface first,
  * a documentation page second.
+ *
+ * v3.9: each module also carries its SYSTEM — the built system that
+ * executes the research line, linked to the canonical Selected Work
+ * document. The chain answers the full discovery walk of the
+ * programme: area → question → framework → evidence → related
+ * writing → related system.
  */
 const RESEARCH_MODULES: readonly {
   title: string;
@@ -147,6 +153,7 @@ const RESEARCH_MODULES: readonly {
   framework: { label: string; href: string };
   measurement: string;
   artifact: { label: string; href: string };
+  system: { label: string; href: string };
 }[] = [
   {
     title: "Reasoning",
@@ -163,6 +170,10 @@ const RESEARCH_MODULES: readonly {
     artifact: {
       label: "Reasoning Is a System Property",
       href: "/blog/reasoning-is-a-system-property/"
+    },
+    system: {
+      label: "REP executed inside SHEYTAN — Selected Work",
+      href: "/work/"
     }
   },
   {
@@ -180,6 +191,10 @@ const RESEARCH_MODULES: readonly {
     artifact: {
       label: "Measuring Machine Intelligence",
       href: "/blog/measuring-machine-intelligence/"
+    },
+    system: {
+      label: "UHIT — the measurement arm — Selected Work",
+      href: "/work/"
     }
   },
   {
@@ -197,6 +212,10 @@ const RESEARCH_MODULES: readonly {
     artifact: {
       label: "SHEYTAN: A Local-First AI Agent Laboratory",
       href: "/blog/sheytan-the-local-first-laboratory/"
+    },
+    system: {
+      label: "SHEYTAN Local Agent — Selected Work",
+      href: "/work/"
     }
   }
 ];
@@ -344,6 +363,20 @@ export default function ResearchPage() {
                     </p>
                   </div>
                 </div>
+
+                {/*
+                  * SYSTEM EDGE (v3.9) — the built system behind the
+                  * research line, routed to the canonical Selected
+                  * Work document. Closes the discovery walk:
+                  * question → framework → evidence → writing → system.
+                  */}
+                <p className={styles.researchModuleSystem}>
+                  <span>SYSTEM</span>
+
+                  <a href={routeHref(line.system.href)}>
+                    {line.system.label}
+                  </a>
+                </p>
               </article>
             ))}
           </div>

@@ -52,6 +52,26 @@ violation as a bug to be justified, not a style preference.
 - **SEO registry**: `data/routes.json` is the single manually maintained
   route list. The sitemap generator, the SEO verifier, and `lib/hubs.ts` all
   derive their route facts from it. Do not create parallel route lists.
+- **Information architecture (v3.9)**: the home page reads
+  `Hero → Featured Work → Capabilities → Method → Systems → Writing →
+  Direction → Connect`. The hero carries a START HERE `<nav>` with real
+  links to `/work/`, `/research/`, `/blog/`, `/contact/` — verified in the
+  exported HTML by `verify-seo.mjs` (the `first action` check). Every home
+  capability card carries a `proof` link to the hub/document/article that
+  demonstrates it. `/work/` and `/research/` remain canonical deep documents
+  reached through content, not primary tabs.
+- **Lateral content graph (v3.9)**: `lib/workRegistry.ts` holds the
+  Selected Work entries (`WORK_ENTRIES`) — the same table `/work/` renders.
+  `lib/blog.ts#getRelatedDestinations(slug)` derives each article's
+  deterministic lateral edges from it: `project` matches a registry
+  `blogProject` (or explicit `blogProjectAliases`) → a `/work/` edge naming
+  that entry; `type === "research"` → a `/research/` edge. The article page
+  renders them in the related section ("IN THE LABORATORY" rows) and the
+  SEO verifier requires them in the exported HTML (scoped to the related
+  section, because the footer also links the collections site-wide). When
+  adding a Work entry, keep `blogProject` truthful; when a system is
+  written about under a second project stream, declare it in
+  `blogProjectAliases` instead of renaming the article frontmatter.
 - Supporting engines: `lib/worldSignals.ts` (shared organism runtime state),
   `components/redmagic/engineConfig.ts` (quality budgets / runtime states /
   adaptive-DPR + pressure-DPR policies / refresh estimator / settle

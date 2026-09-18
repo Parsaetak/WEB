@@ -13,11 +13,12 @@ import {
   getBlogMetaList,
   getLinksHere,
   getPost,
+  getRelatedDestinations,
   getRelatedPosts,
   type RelatedPost
 } from "@/lib/blog";
 
-import { getHubForArticle } from "@/lib/hubs";
+import { getHubForArticle, routeHref } from "@/lib/hubs";
 
 import { CONTENT_TYPE_LABELS } from "@/lib/blogFormat";
 
@@ -229,6 +230,19 @@ export default async function ArticlePage({
 
   const { primary: relatedPrimary, secondary: relatedSecondary } =
     splitRelated(related);
+
+  /*
+   * LATERAL CONTENT DESTINATIONS (v3.9) — the deterministic
+   * article→collection edges (Selected Work via the article's
+   * project registry entry; Research via the content type). Rendered
+   * as crawlable rows in the related section, they make the four
+   * content types — topic, article, work, research — one connected
+   * graph instead of three parallel catalogs.
+   */
+  const relatedDestinations =
+    getRelatedDestinations(
+      post.slug
+    );
 
   /*
    * REVERSE LINK GRAPH (v2.5.4) — the "Referenced by" section.
@@ -875,12 +889,12 @@ export default async function ArticlePage({
           )}
         </nav>
 
-        {related.length > 0 && (
+        {(related.length > 0 || relatedDestinations.length > 0) && (
           <section
             className={
               styles.related
             }
-            aria-label="Related articles"
+            aria-label="Related articles, systems, and research"
             data-reveal=""
           >
             <p
@@ -1083,6 +1097,96 @@ export default async function ArticlePage({
                   )
                 )}
               </ul>
+            )}
+            {/*
+             * LATERAL DESTINATIONS (v3.9) — the crawlable
+             * article→collection edges. Same row language as the
+             * secondary related list; the kind label names the
+             * relationship (SYSTEMS / RESEARCH), the anchor names the
+             * real destination, and the note states the provenance.
+             * Plain anchors through routeHref: exported HTML, zero
+             * client JavaScript, descriptive anchor text.
+             */}
+            {relatedDestinations.length > 0 && (
+              <div
+                className={
+                  styles.relatedLateral
+                }
+              >
+                <p className={styles.relatedLateralKicker}>
+                  IN THE LABORATORY
+                </p>
+
+                <ul className={styles.relatedSecondaryList}>
+                  {relatedDestinations.map(
+                    (
+                      destination,
+                      index
+                    ) => (
+                      <li
+                        key={
+                          destination.href
+                        }
+                        data-destination={
+                          destination.kind
+                        }
+                        data-reveal="instant"
+                        data-reveal-order={
+                          index
+                        }
+                      >
+                        <a
+                          className={
+                            styles.relatedRow
+                          }
+                          href={routeHref(
+                            destination.href
+                          )}
+                        >
+                          <span
+                            className={
+                              styles.relatedRowCategory
+                            }
+                          >
+                            {destination.kind === "work"
+                              ? "SYSTEMS"
+                              : "RESEARCH"}
+                          </span>
+
+                          <span
+                            className={
+                              styles.relatedRowTitle
+                            }
+                          >
+                            {
+                              destination.label
+                            }
+                          </span>
+
+                          <span
+                            className={
+                              styles.relatedLateralNote
+                            }
+                          >
+                            {
+                              destination.note
+                            }
+                          </span>
+
+                          <span
+                            className={
+                              styles.relatedRowMeta
+                            }
+                            aria-hidden="true"
+                          >
+                            →
+                          </span>
+                        </a>
+                      </li>
+                    )
+                  )}
+                </ul>
+              </div>
             )}
           </section>
         )}

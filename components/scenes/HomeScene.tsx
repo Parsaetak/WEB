@@ -17,8 +17,15 @@ import styles from "./HomeScene.module.css";
  * HOME SCENE — the statically rendered home page.
  *
  * The file reads as the page narrative, top to bottom:
- *   Hero → Capabilities → Featured Work → Method → Systems →
+ *   Hero → Featured Work → Capabilities → Method → Systems →
  *   Writing → Direction → Connect
+ *
+ * v3.9 first-action model: the hero carries a START HERE strip of
+ * real document destinations (Selected Work / Research / Blog /
+ * Contact) beneath the primary actions, and the featured systems
+ * (the proof) now directly follow the identity layer — capabilities
+ * come after the evidence, each capability routing to its own
+ * public proof.
  *
  * Static-render law: this component renders synchronously into the
  * exported HTML (see SceneRegistry), so everything below is what
@@ -46,57 +53,143 @@ import styles from "./HomeScene.module.css";
  * scene/article, so the home page repeated it without adding
  * signal. The capability vocabulary remains fully represented
  * across the site.
+ * v3.9: each capability carries a `proof` — a real crawlable
+ * destination that demonstrates it (topic hub, Selected Work
+ * document, or the field notes). The grid behaves as an
+ * information-routing layer: "what is this?" → "where is the
+ * proof?". Every label is descriptive; nothing points at "read
+ * more".
  */
-const capabilities = [
+type Capability = {
+  number: string;
+  title: string;
+  copy: string;
+  proof: { label: string; href: string };
+};
+
+const capabilities: readonly Capability[] = [
   {
     number: "01",
     title: "AI systems",
     copy:
-      "Designing and building AI systems end to end: agent loops, controlled tools, context engineering, and verification gates."
+      "Designing and building AI systems end to end: agent loops, controlled tools, context engineering, and verification gates.",
+    proof: {
+      label: "The AI systems engineering hub",
+      href: "/ai-systems/"
+    }
   },
   {
     number: "02",
     title: "Reasoning & evaluation",
     copy:
-      "Structuring how systems think: decomposition, critique, adversarial checking, and measurable benchmarks like AIST and ASI-100."
+      "Structuring how systems think: decomposition, critique, adversarial checking, and measurable benchmarks like AIST and ASI-100.",
+    proof: {
+      label: "Measuring machine intelligence — the evaluation hub",
+      href: "/ai-evaluation/"
+    }
   },
   {
     number: "03",
     title: "Software engineering",
     copy:
-      "Shipping real software in Go, TypeScript, and React — architecture, tests, regression suites, and maintainable runtimes."
+      "Shipping real software in Go, TypeScript, and React — architecture, tests, regression suites, and maintainable runtimes.",
+    proof: {
+      label: "The software engineering hub",
+      href: "/software-engineering/"
+    }
   },
   {
     number: "04",
     title: "Product building",
     copy:
-      "Taking products from direction to delivery: scoping the problem, shaping the interface, deciding what not to build, and shipping."
+      "Taking products from direction to delivery: scoping the problem, shaping the interface, deciding what not to build, and shipping.",
+    proof: {
+      label: "Shipped products in Selected Work",
+      href: "/work/"
+    }
   },
   {
     number: "05",
     title: "Local AI & agents",
     copy:
-      "Running intelligence locally: managed llama.cpp inference, supervised agent loops, memory, and isolated workspaces."
+      "Running intelligence locally: managed llama.cpp inference, supervised agent loops, memory, and isolated workspaces.",
+    proof: {
+      label: "SHEYTAN — the local AI hub",
+      href: "/local-ai/"
+    }
   },
   {
     number: "06",
     title: "System architecture",
     copy:
-      "Designing systems that hold: process supervision, state, bounded restarts, and deliberate evolution paths."
+      "Designing systems that hold: process supervision, state, bounded restarts, and deliberate evolution paths.",
+    proof: {
+      label: "SHEYTAN's architecture — field notes",
+      href: "/blog/sheytan-the-local-first-laboratory/"
+    }
   },
   {
     number: "07",
     title: "Research frameworks",
     copy:
-      "Turning research into frameworks: AI Instructions, REP, and USEF — governance, reasoning, and system improvement."
+      "Turning research into frameworks: AI Instructions, REP, and USEF — governance, reasoning, and system improvement.",
+    proof: {
+      label: "AI Instructions — the constitution",
+      href: "/blog/ai-instructions/"
+    }
   },
   {
     number: "08",
     title: "Web engineering",
     copy:
-      "Engineering the web: static-first Next.js, performance budgets, accessibility, and honest, crawlable SEO."
+      "Engineering the web: static-first Next.js, performance budgets, accessibility, and honest, crawlable SEO.",
+    proof: {
+      label: "How this site is engineered",
+      href: "/blog/the-anatomy-of-a-fast-static-site/"
+    }
   }
 ] as const;
+
+/*
+ * START HERE (v3.9) — the hero's first-action entry points.
+ *
+ * A first-time visitor should never have to infer the site's
+ * architecture: under the identity + primary actions, one compact
+ * labeled strip exposes the four real discovery paths of the
+ * document layer — the canonical collections (Selected Work,
+ * Research), the content ecosystem (Blog), and the direct line
+ * (Contact). All four are plain crawlable anchors through
+ * routeHref (exported HTML, no JS); the experiential "Explore the
+ * work ↓" scene action stays in the hero actions row above, so the
+ * world layer keeps its entry too. Deliberately NOT a dashboard:
+ * four quiet entries, one line of provenance each.
+ */
+const heroEntryPoints: readonly {
+  label: string;
+  href: string;
+  note: string;
+}[] = [
+  {
+    label: "Selected Work",
+    href: "/work/",
+    note: "SHEYTAN, UHIT, FreeIran, RED MAGIC — the systems"
+  },
+  {
+    label: "Research",
+    href: "/research/",
+    note: "The questions, frameworks, and measurement"
+  },
+  {
+    label: "Blog",
+    href: "/blog/",
+    note: "Field notes, connected — the full index"
+  },
+  {
+    label: "Contact",
+    href: "/contact/",
+    note: "Research collaboration & engineering"
+  }
+];
 
 /*
  * Featured projects — the highest-signal public work, verified
@@ -649,13 +742,6 @@ export default function HomeScene({
                 Explore the work ↓
               </a>
 
-              <a
-                className="button button-secondary"
-                href={routeHref("/contact/")}
-              >
-                Contact
-              </a>
-
               {github && (
                 <a
                   className="button button-secondary"
@@ -667,6 +753,36 @@ export default function HomeScene({
                 </a>
               )}
             </div>
+
+            {/*
+              * START HERE (v3.9) — the first-action strip. A labeled
+              * <nav> so assistive technology can name it; four real
+              * destinations, each anchor carrying its own descriptive
+              * label (the note renders beneath as quiet provenance).
+              * Nothing here is decorative: every entry is a canonical
+              * document of the content graph. Contact lives HERE, not
+              * as a second hero button — one instance, no duplication.
+              */}
+            <nav
+              className={styles.homeHeroEntries}
+              aria-label="Start here — main paths through the site"
+            >
+              <span className={styles.homeHeroEntriesLabel} aria-hidden="true">
+                START HERE
+              </span>
+
+              {heroEntryPoints.map((entry) => (
+                <a
+                  key={entry.href}
+                  className={styles.homeHeroEntry}
+                  href={routeHref(entry.href)}
+                >
+                  <strong>{entry.label}</strong>
+
+                  <span>{entry.note}</span>
+                </a>
+              ))}
+            </nav>
           </div>
         </div>
 
@@ -680,38 +796,17 @@ export default function HomeScene({
         </div>
       </section>
 
-      {/* -------------------------------------------- CAPABILITIES */}
-      <section className={`section ${styles.homeCapabilities}`}>
-        <div className="page-container">
-          <HomeSectionIntro
-            kicker="CAPABILITIES"
-            title="What I can do"
-            lead="Capabilities backed by shipped systems — not aspirations. Each one is demonstrated by public work you can inspect."
-          />
-
-          <div
-            className={styles.homeCapabilityGrid}
-            aria-label="Core capabilities"
-          >
-            {capabilities.map((capability) => (
-              <div
-                className={styles.homeCapability}
-                key={capability.number}
-              >
-                <span className={styles.homeCapabilityNumber}>
-                  {capability.number}
-                </span>
-
-                <h3>{capability.title}</h3>
-
-                <p>{capability.copy}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ------------------------------------------- FEATURED WORK */}
+      {/*
+        * PROOF-FIRST ORDER (v3.9): featured work immediately follows
+        * the hero. Measured against the v3.8 baseline, the capability
+        * explainer (~2.8KB of DOM, a full grid) previously sat
+        * between the identity layer and the first concrete project —
+        * pushing "what I have actually built" past the first scroll
+        * on every common laptop viewport (hero is 100svh). The page
+        * now moves from identity to proof in one step:
+        * Hero → Featured Work → Capabilities → Method → …
+      */}
       <section className={`section ${styles.homeProjects}`}>
         <div className="page-container">
           <HomeSectionIntro
@@ -738,14 +833,69 @@ export default function HomeScene({
             ))}
           </div>
 
-          <a className={styles.homeProjectArchive} href="#work">
+          {/*
+            * PORTFOLIO ROUTING (v3.9): the archive link now targets
+            * the canonical Selected Work document — the crawlable,
+            * indexable deep page — instead of the world scene. The
+            * experiential #work scene remains one hop away in the
+            * world navigation and the footer.
+            */}
+          <a className={styles.homeProjectArchive} href={routeHref("/work/")}>
             <span>FULL PORTFOLIO</span>
 
             <strong>
-              Open the Work scene
+              Open Selected Work
               <span aria-hidden="true"> →</span>
             </strong>
           </a>
+        </div>
+      </section>
+
+      {/* -------------------------------------------- CAPABILITIES */}
+      <section className={`section ${styles.homeCapabilities}`}>
+        <div className="page-container">
+          <HomeSectionIntro
+            kicker="CAPABILITIES"
+            title="What I can do"
+            lead="The practice behind the proof above — and every capability here routes to the public work that demonstrates it."
+          />
+
+          <div
+            className={styles.homeCapabilityGrid}
+            aria-label="Core capabilities"
+          >
+            {capabilities.map((capability) => (
+              <div
+                className={styles.homeCapability}
+                key={capability.number}
+              >
+                <span className={styles.homeCapabilityNumber}>
+                  {capability.number}
+                </span>
+
+                <h3>{capability.title}</h3>
+
+                <p>{capability.copy}</p>
+
+                {/*
+                  * PROOF LINK (v3.9): the evidence edge. Descriptive
+                  * anchor text names the real destination — a topic
+                  * hub, the Selected Work document, or the field
+                  * notes — so the card answers both halves of the
+                  * routing question: what is this? where is the
+                  * proof?
+                  */}
+                <Link
+                  className={styles.homeCapabilityProof}
+                  href={capability.proof.href}
+                  prefetch={false}
+                >
+                  {capability.proof.label}
+                  <span aria-hidden="true"> →</span>
+                </Link>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -1835,6 +1835,57 @@
 }
 
 /*
+ * SYSTEM EDGE (v3.9) — the per-module "SYSTEM → Selected Work" row.
+ * A quiet mono footer inside the module card: label chip in the
+ * muted red, then the descriptive anchor to the canonical system
+ * document.
+ */
+.researchModuleSystem {
+  margin: 18px 0 0;
+
+  padding-top: 14px;
+
+  border-top: 1px solid var(--line-soft);
+
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: baseline;
+
+  gap: 4px 10px;
+
+  font-size: 12px;
+
+  line-height: 1.6;
+}
+
+.researchModuleSystem span {
+  color: var(--red-hot);
+
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.18em;
+}
+
+.researchModuleSystem a {
+  color: var(--text);
+
+  font-weight: 600;
+
+  transition: color 160ms ease;
+}
+
+.researchModuleSystem a:hover,
+.researchModuleSystem a:focus-visible {
+  color: var(--red-hot);
+}
+
+/*
  * The chain: five labeled steps with connector arrows. Desktop is
  * one horizontal row; mobile stacks the SAME nodes vertically with
  * a left rail — one system, two layouts, no separate mobile build.

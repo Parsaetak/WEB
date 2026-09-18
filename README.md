@@ -19,11 +19,14 @@ The site has three jobs. First, it is the professional index of the work: every 
 
 ## What you will find here
 
+### First actions (v3.9)
+The home hero states who Parsa Tak is and, directly beneath the identity, a **START HERE** strip exposes the site's four real discovery paths — **Selected Work** (`/work/`), **Research** (`/research/`), **Blog** (`/blog/`), and **Contact** (`/contact/`) — as plain crawlable links. The first screen therefore answers both "who is this?" and "what can I do next?" without requiring the visitor to infer the site's architecture. The featured systems (the concrete proof) immediately follow the hero, before the capability explainer; each capability card then routes to its own public evidence — a topic hub, the Selected Work document, or the field notes that demonstrate it.
+
 ### Work
-The **Work scene** (the `#work` hash scene) is the full portfolio: projects with their repositories, categories, and real destinations. The homepage carries the featured subset.
+The **Work scene** (the `#work` hash scene) is the experiential portfolio. The canonical **Selected Work document** (`/work/`) is the indexable deep portfolio: every system card links its repository, its field notes, its topic hub, and the Blog's project-filtered stream. The homepage carries the featured subset and routes to the document.
 
 ### Research
-The **Systems scene** (`#systems`) presents the framework family — AI Instructions, REP (Reasoning & Evaluation Protocol), and USEF (Unified System Evolution Framework) — plus the measurement programme behind UHIT/AIST. The **Library scene** (`#library`) hosts longer-form documents and PDFs.
+The **Systems scene** (`#systems`) presents the framework family — AI Instructions, REP (Reasoning & Evaluation Protocol), and USEF (Unified System Evolution Framework) — plus the measurement programme behind UHIT/AIST. The **Library scene** (`#library`) hosts longer-form documents and PDFs. The canonical **Research document** (`/research/`) maps the programme as research lines (question → method → framework → measurement → artifact → system), each line linking the system that executes it.
 
 ### Writing
 The **blog** is real content, not a stub: markdown articles under `content/blog/` become fully static `/blog/<slug>/` routes with generated metadata, related-article graphs, and structured data. The homepage's Writing section links the strongest articles, selected on the server at build time.
@@ -118,6 +121,8 @@ Scene changes are URL-addressable (`#systems` is a shareable state), handled by 
 - Server components pick content at build time; client components receive only minimal serializable props
 - Blog bodies exist only in generated static HTML — never in client JavaScript bundles
 - Zero runtime dependencies beyond React/Next; the build, blog, brand, and verification tooling is dependency-free Node.js
+- **Lateral content graph (v3.9)**: `lib/workRegistry.ts` is the single source of truth for the Selected Work entries; `lib/blog.ts` resolves each article's deterministic lateral destinations from it — an article whose `project` documents a registry system links `/work/`, and `type=research` articles link `/research/`. Article pages render these as crawlable rows in the related section, connecting topic ↔ article ↔ work ↔ research in exported HTML
+- **Home first-action model (v3.9)**: the hero's START HERE strip (a labeled `<nav>`) links the four canonical destinations in exported HTML, and featured work precedes the capabilities grid — proof before practice, every capability carrying its proof link
 
 ## Repository structure
 
@@ -164,6 +169,8 @@ The sitemap is generated from the **same** content index that produces the route
 - Google Search Console ownership meta tag emitted once per route and byte-verified on every build
 - `sitemap.xml` + `robots.txt` generated and verified against the actual export, including the content routes; article `lastmod` reflects content dates, never the build date
 - Semantic internal-link graph: every article carries a `TOPIC HUB` chip to its honest primary hub; every hub links its systems and ≥3 genuinely related articles; the shared footer exposes every content document site-wide — the verifier rejects orphan routes and link-count padding
+- Related-content graph verified in the exported HTML (v3.9): every article with declared related entries must render at least one of them as a real link, every project-tagged article must link `/work/` from its related section, and every `type=research` article must link `/research/` — the `related-graph-covered` metric is measured against crawlable HTML, never the pipeline's internal schema
+- First-action model verified (v3.9): the exported home document must expose the START HERE entry points to `/work/`, `/research/`, `/blog/`, and `/contact/` above the featured-work section
 - Visible author authority: every article ends with a factual author block (independent software engineer, product builder, and AI systems researcher) linking to `/about/`
 - Social metadata (OG/Twitter) with stable, production-absolute image URLs
 - RSS is **intentionally absent** — the export must contain no feed and no residual feed references, and verification enforces that
@@ -281,6 +288,7 @@ All user-facing personal and author copy speaks in first person ("I build…", "
 - Next.js 16.3.4 / React 19.2.8 / TypeScript 5.9, static export, Node 22 in CI
 - 9 published articles; the home Blog section links them from the homepage
 - 8 static content documents (v3.1): `/about/`, `/work/`, and six topic hubs forming the site's knowledge base
+- v3.9 information architecture: hero START HERE entry points, proof-first home ordering, capability→evidence links, and a fully crawlable lateral content graph (related-graph-covered 9/9 in the build verification)
 - Full verification suite green: SEO + brand gates pass on every build
 - Known limitations: GitHub Pages serves the site under `/WEB`, so the bare root URL redirects; hash-scene states are not individually indexable documents by design (the content routes and articles carry the indexable concepts)
 

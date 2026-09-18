@@ -36,7 +36,7 @@
       "contentType": "portfolio",
       "title": "Selected Work — Parsa Tak",
       "description": "Selected systems and projects by Parsa Tak: SHEYTAN local-first AI agent laboratory, the UHIT measurement programme (AIST-2026.09, ASI-100-Elite), FreeIran, this statically engineered website, and the RED MAGIC creative line.",
-      "sitemap": { "include": true, "lastmod": "2026-09-15" },
+      "sitemap": { "include": true, "lastmod": "2026-09-19" },
       "structuredData": ["WebSite", "Person", "WebPage", "ItemList", "BreadcrumbList"],
       "nav": ["content-collections", "footer-documents", "lab-map"],
       "inboundMinimum": 3
@@ -47,7 +47,7 @@
       "contentType": "research",
       "title": "Research — Parsa Tak",
       "description": "The research programme of Parsa Tak: reasoning as a system property, honest machine-intelligence measurement (UHIT, AIST-2026.09, ASI-100-Elite), local-first AI, and governable AI systems — with the six topic hubs that map the work.",
-      "sitemap": { "include": true, "lastmod": "2026-09-15" },
+      "sitemap": { "include": true, "lastmod": "2026-09-19" },
       "structuredData": ["WebSite", "Person", "WebPage", "BreadcrumbList"],
       "nav": ["content-collections", "footer-documents", "lab-map"],
       "inboundMinimum": 3

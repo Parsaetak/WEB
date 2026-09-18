@@ -1,5 +1,134 @@
 # Updated-Files.md — WEB release history
 
+## Release: v3.9.0 — INFORMATION ARCHITECTURE, FIRST-ACTION CLARITY & KNOWLEDGE-GRAPH DISCOVERY (2026-09-19)
+
+Mission: make the site easier to understand and navigate without removing
+its RED MAGIC / laboratory character — a clear first task, fast proof,
+deeper discovery, related content, conversion/contact — while keeping the
+world shell, the canonical document layer, and the RED MAGIC performance
+boundaries exactly as they were.
+
+### Root cause fixed: related-graph-covered 0/9
+
+`scripts/verify-seo.mjs` (v3.8) read `post.related` from the emitted post
+records, but the blog pipeline emits related sets under
+`data/blog/posts.json → indexes.related[slug]`; the per-post field never
+existed. The metric therefore read 0/9 while the pipeline computed 53 real
+edges and every article page already rendered them ("RELATED
+TRANSMISSIONS") as crawlable links. v3.9 replaces the check with one that
+verifies the exported HTML: every article with declared related entries
+must render at least one of those exact hrefs, and the deterministic
+lateral edges below are required per article. The metric is measured
+against what crawlers receive — the check got stronger, not suppressed.
+
+### First-action model + proof-first home ordering
+
+- `components/scenes/HomeScene.tsx`: new START HERE strip in the hero — a
+  labeled `<nav aria-label="Start here — main paths through the site">`
+  with four real crawlable destinations (Selected Work `/work/`, Research
+  `/research/`, Blog `/blog/`, Contact `/contact/`), each with a one-line
+  provenance note. The standalone Contact hero button was removed (Contact
+  lives once, in the strip); "Explore the work ↓" (world scene) and GitHub
+  remain the action row.
+- Home order is now `Hero → Featured Work → Capabilities → Method →
+  Systems → Writing → Direction → Connect` — the concrete proof directly
+  follows the identity layer instead of sitting behind the capability
+  grid (measured: the capability DOM previously separated the hero from
+  the first project card; the hero itself is 100svh).
+- The FULL PORTFOLIO archive link now targets the canonical `/work/`
+  document (was the `#work` scene; the scene stays reachable through the
+  world navigation and the footer).
+- Every capability card carries a descriptive `proof` link —
+  `01 → /ai-systems/`, `02 → /ai-evaluation/`, `03 →
+  /software-engineering/`, `04 → /work/`, `05 → /local-ai/`, `06 →
+  /blog/sheytan-the-local-first-laboratory/`, `07 →
+  /blog/ai-instructions/`, `08 → /blog/the-anatomy-of-a-fast-static-site/`
+  — so capabilities route to evidence instead of dead-ending.
+- `components/scenes/HomeScene.module.css`: `.homeHeroEntries*` (2×2 grid,
+  single column ≤760px, focus-visible outlines, reduced-motion-safe) and
+  `.homeCapabilityProof`.
+
+### Lateral content graph (deterministic, crawlable)
+
+- `lib/workRegistry.ts` (NEW): `WORK_ENTRIES` moved out of
+  `app/work/page.tsx` into the shared registry, plus
+  `getWorkEntryForProject(project)`. The RED MAGIC entry declares
+  `blogProjectAliases: ["red-theory"]` — the organism and the RED THEORY
+  model are written under two project streams but documented by one Work
+  entry. No article frontmatter was renamed.
+- `lib/blog.ts`: `getRelatedDestinations(slug)` derives each article's
+  lateral collection edges: `project` → the Work registry entry's
+  `/work/` edge (labeled with the real entry name); `type=research` → a
+  `/research/` edge. Two rules, no keyword matching, nothing invented.
+- `app/blog/[slug]/page.tsx`: the related section now also renders an
+  "IN THE LABORATORY" row group — crawlable plain anchors to `/work/`
+  and/or `/research/` with the relationship kind (SYSTEMS / RESEARCH),
+  the destination name, and the provenance note. Section aria-label
+  updated to "Related articles, systems, and research".
+- `app/blog/[slug]/article.module.css`: `.relatedLateral*` styles.
+- The four content types now connect in exported HTML:
+  TOPIC (hub chip) ↔ ARTICLE (related/links-here) ↔ WORK (lateral) ↔
+  RESEARCH (lateral); verifier reports `related-graph-covered 9/9
+  (declared-article + lateral work:9 research:4)`.
+
+### Work / Research / Blog / Lab Map discovery
+
+- `app/work/page.tsx`: consumes `lib/workRegistry.ts` (single source of
+  truth); each project card's name now links to its field notes (the
+  first interaction routes identity → proof). Cards keep repository,
+  topic-hub, article, and project-filter links.
+- `app/research/page.tsx`: each research module gains a SYSTEM edge —
+  `Reasoning → REP executed inside SHEYTAN`, `Evaluation → UHIT — the
+  measurement arm`, `Local AI → SHEYTAN Local Agent` — all routed to the
+  canonical `/work/` document (`researchModuleSystem` row).
+- `app/blog/page.tsx`: every Lab Map territory now carries a second
+  truthful link to the canonical collection documenting it (Selected Work
+  or the research programme) — six territories, no new territories, no
+  hub-page changes.
+
+### Verification changes
+
+- `scripts/verify-seo.mjs`: related-graph coverage now measured from
+  exported article HTML against the declared index (fails when a
+  declared edge set renders zero links); lateral gates per article
+  (project → `/work/`, `type=research` → `/research/`) scoped to the
+  related section so the site-wide footer cannot fake them; new
+  `first action` group requiring the home hero's START HERE nav with all
+  four canonical destinations above the FEATURED WORK marker; graph-depth
+  report line extended with the lateral counts.
+
+### Registry / metadata
+
+- `data/routes.json`: `/work/` and `/research/` lastmod bumped to
+  2026-09-19 (substantive content changed); no other lastmod touched —
+  home stays dateless by design, fake freshness stays banned.
+- `package.json`: version 3.9.0.
+
+### Preserved (verified, not assumed)
+
+- RED MAGIC remains lazy: CSS seed in the initial HTML, raw `import()` at
+  idle, no eager chunk (browser + HTML verified); Runtime v2.1 untouched.
+- Primary navigation stays `HOME · ABOUT · BLOG · CONTACT`; world-shell
+  scenes stay hash interaction states; no duplicate documents created.
+- Static export valid; sitemap 21 URLs ↔ export ↔ canonicals coherent.
+- Accessibility: START HERE and proof links are real focusable anchors
+  with visible focus states; lateral rows are list semantics; no
+  hover-only information; reduced-motion CSS untouched and verified.
+- Initial-load budget: home initial JS 675,929 B (baseline 674,207 B,
+  +0.26%); home HTML 91,579 B (baseline 89,537 B, +2.3% — the new
+  crawlable content itself). No measurable initial-load regression.
+
+### Measured results (v3.8.0 → v3.9.0)
+
+- related-graph-covered: 0/9 → 9/9 (measured from exported HTML)
+- hub-covered articles: 9/9 → 9/9 (unchanged); collection/home-covered
+  9/9 → 9/9 (unchanged); orphan count 0 → 0
+- Home hero entry points: 0 → 4 canonical document links in first screen
+- Article → /work/ edges: 0 → 9 (every project-tagged article)
+- Article → /research/ edges: 0 → 4 (every type=research article)
+- Work card name→article links: 0 → 6 (Contents has no article)
+- SEO checks: 182 → 184 passed; brand 13; export 11 (all green)
+
 ## Release: v3.7.0 — VISUAL UX + BLOG-CENTERED CONTENT ARCHITECTURE + SEO GRAPH (2026-09-18)
 
 Mission: make the site feel like a visual laboratory rather than a

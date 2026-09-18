@@ -1655,24 +1655,131 @@ async function verifySeoGraphDepth(articleRoutes, postsIndex) {
     }
   }
 
+  /*
+   * RELATED-GRAPH COVERAGE (v3.9) — measured against the EXPORTED
+   * HTML, not the pipeline's in-memory schema.
+   *
+   * v3.8 regression this replaces: the old check read `post.related`
+   * from the emitted post records — a field the pipeline has never
+   * emitted (related sets live under data.indexes.related[slug]).
+   * The metric therefore read 0/9 even though the pipeline computed
+   * 53 real edges and every article page rendered them as crawlable
+   * links. The fix is to verify the truth on the ground:
+   *
+   * 1. ARTICLE EDGES — for every article with declared related
+   *    entries (indexes.related), the exported article page must
+   *    contain at least one of those exact /blog/<slug>/ hrefs. This
+   *    validates BOTH presence (the related section rendered) and
+   *    truthfulness (the links are the declared ones, not invented
+   *    anchors).
+   *
+   * 2. LATERAL COLLECTION EDGES (v3.9 relationship model) — every
+   *    article whose `project` is documented in the Selected Work
+   *    registry must link /work/ from its page, and every
+   *    type=research article must link /research/. These are the
+   *    deterministic article→collection edges that connect the four
+   *    content types (topic ↔ article ↔ work ↔ research).
+   *
+   * A covered article satisfies (1) or (2). Missing expected edges
+   * FAIL — the metric cannot be gamed by deleting the section.
+   */
+  const relatedIndex = postsIndex.indexes?.related ?? {};
+
   const articleBodyCrossLinks = new Set();
 
+  let lateralWorkCovered = 0;
+  let lateralResearchCovered = 0;
+
   for (const slug of articleRoutes) {
+    const articleFile = path.join("blog", slug, "index.html");
+
+    const page = pages.find((candidate) => candidate.file === articleFile);
+
+    if (!page) {
+      continue; /* missing export already reported by verifyPage() */
+    }
+
     const post = postsIndex.posts.find((candidate) => candidate.slug === slug);
 
-    if (!post) {
-      continue;
+    const declaredRelated = Array.isArray(relatedIndex[slug])
+      ? relatedIndex[slug]
+      : [];
+
+    /* (1) Declared article→article edges rendered in the export. */
+    let renderedDeclared = 0;
+
+    for (const entry of declaredRelated) {
+      if (
+        entry &&
+        typeof entry.slug === "string" &&
+        page.html.includes(`href="${articleHref(entry.slug)}"`)
+      ) {
+        renderedDeclared += 1;
+      }
     }
 
-    /* The post's related index (computed by the blog pipeline) is a real
-       relationship edge, so treat a populated related set as a meaningful
-       article/topic path in addition to the raw body hrefs. */
-    if (
-      Array.isArray(post.related) &&
-      post.related.length > 0
-    ) {
+    if (declaredRelated.length > 0 && renderedDeclared === 0) {
+      fail(
+        `graph depth: /blog/${slug}/ declares ${declaredRelated.length} related article(s) in the content index but its exported HTML renders NONE of them — the related layer regressed`
+      );
+    } else if (renderedDeclared > 0) {
       articleBodyCrossLinks.add(slug);
     }
+
+    /*
+     * (2) Lateral article→collection edges — scoped to the article's
+     * RELATED SECTION, never the whole page. The shared footer
+     * document nav links /work/ and /research/ on every page of the
+     * site, so a whole-page search would trivially pass regardless
+     * of the related layer. The related section contains no nested
+     * <section> elements, so the first </section> after its kicker
+     * closes exactly this block.
+     */
+    const relatedKickerAt = page.html.indexOf("RELATED TRANSMISSIONS");
+
+    const relatedSectionEnd =
+      relatedKickerAt === -1
+        ? -1
+        : page.html.indexOf("</section>", relatedKickerAt);
+
+    const relatedScope =
+      relatedKickerAt === -1 || relatedSectionEnd === -1
+        ? ""
+        : page.html.slice(relatedKickerAt, relatedSectionEnd);
+
+    const hasWorkEdge =
+      post?.project != null &&
+      relatedScope.includes(`href="${routeHref("work")}"`);
+
+    const hasResearchEdge =
+      post?.type === "research" &&
+      relatedScope.includes(`href="${routeHref("research")}"`);
+
+    if (post?.project != null && !hasWorkEdge) {
+      fail(
+        `graph depth: /blog/${slug}/ documents the "${post.project}" project but its related section never links the canonical /work/ document`
+      );
+    } else if (hasWorkEdge) {
+      lateralWorkCovered += 1;
+    }
+
+    if (post?.type === "research" && !hasResearchEdge) {
+      fail(
+        `graph depth: /blog/${slug}/ is type=research but its related section never links the canonical /research/ document`
+      );
+    } else if (hasResearchEdge) {
+      lateralResearchCovered += 1;
+    }
+
+    if (hasWorkEdge || hasResearchEdge) {
+      articleBodyCrossLinks.add(slug);
+    }
+  }
+
+  if (articleBodyCrossLinks.size === articleRoutes.length) {
+    pass(
+      `graph depth: related-content graph fully crawlable — every article renders its declared related links or lateral collection edges`
+    );
   }
 
   const connectedCount = articleRoutes.filter((slug) => {
@@ -1718,6 +1825,50 @@ async function verifySeoGraphDepth(articleRoutes, postsIndex) {
     pass(
       "graph depth: /work/ and /research/ are discoverable from the home document and the blog index"
     );
+  }
+
+  /*
+   * FIRST-ACTION MODEL (v3.9) — the home hero must expose the site's
+   * primary discovery paths before the featured-work section begins.
+   * Verified against the exported home HTML: inside the substring
+   * from the top of the document to the FEATURED WORK section
+   * marker (the hero + everything above the proof), the START HERE
+   * entry-point nav must exist and carry all four canonical
+   * destinations — Selected Work, Research, Blog, Contact — as real
+   * crawlable hrefs. This keeps the first screen an orientation
+   * surface, not a scroll puzzle: a first-time visitor always has an
+   * obvious next action without JavaScript.
+   */
+  if (home) {
+    const featuredMarker = home.html.indexOf("FEATURED WORK");
+
+    const heroScope =
+      featuredMarker > 0 ? home.html.slice(0, featuredMarker) : home.html;
+
+    const heroExpectedHrefs = [
+      routeHref("work"),
+      routeHref("research"),
+      routeHref("blog"),
+      routeHref("contact")
+    ].filter((href) => !href.startsWith("undefined"));
+
+    const heroMissing = heroExpectedHrefs.filter(
+      (href) => !heroScope.includes(`href="${href}"`)
+    );
+
+    if (!heroScope.includes("Start here")) {
+      fail(
+        "first action: the home hero's START HERE entry-point nav is missing from the exported HTML"
+      );
+    } else if (heroMissing.length > 0) {
+      fail(
+        `first action: the home hero entry points are missing canonical destinations: ${heroMissing.join(", ")}`
+      );
+    } else {
+      pass(
+        "first action: the home hero exposes START HERE entry points to /work/, /research/, /blog/, and /contact/ above the featured work"
+      );
+    }
   }
 
   /* ---------- 5. Anchor-text quality ----------------------------------- */
@@ -1813,7 +1964,7 @@ async function verifySeoGraphDepth(articleRoutes, postsIndex) {
   /* ---------- 7. Graph depth report ------------------------------------ */
 
   console.log(
-    `  · graph depth: hub-covered articles ${hubCovered.size}/${articleRoutes.length}, collection/home-covered ${collectionCovered.size}/${articleRoutes.length}, related-graph-covered ${articleBodyCrossLinks.size}/${articleRoutes.length}`
+    `  · graph depth: hub-covered articles ${hubCovered.size}/${articleRoutes.length}, collection/home-covered ${collectionCovered.size}/${articleRoutes.length}, related-graph-covered ${articleBodyCrossLinks.size}/${articleRoutes.length} (declared-article + lateral work:${lateralWorkCovered} research:${lateralResearchCovered})`
   );
 
   if (failures.length > failureCountBefore) {
