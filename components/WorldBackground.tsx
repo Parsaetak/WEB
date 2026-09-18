@@ -17,6 +17,7 @@ import {
   getWorldClick,
   getWorldScene,
   getPulseToken,
+  getOrganismActivity,
   isWorldHidden
 } from "@/lib/worldSignals";
 
@@ -73,6 +74,22 @@ const RIPPLE_POOL = 6;
  * suspends itself.
  */
 const ENERGY_GAIN = 0.0035;
+
+/*
+ * RUNTIME V2 — SHARED VISUAL/PERFORMANCE BUDGET.
+ *
+ * The interactive RedMagic canvas organism publishes its arousal to the
+ * world-signal store. When it is already visibly responding to the same
+ * pointer (activity >= ORGANISM_ACTIVE_BACKOFF), this ambient layer
+ * backs off: its energy gain is scaled down proportionally and fresh
+ * click ripples are suppressed (the canvas produces its own richer
+ * shockwaves for the same gesture). One budget, two layers — the
+ * ambient organism stays alive, it just stops duplicating the
+ * interactive layer's signal.
+ */
+const ORGANISM_ACTIVE_BACKOFF = 0.35;
+
+const ORGANISM_ACTIVE_GAIN_SCALE = 0.4;
 
 const ENERGY_DECAY = 0.94;
 
@@ -510,6 +527,16 @@ export default function WorldBackground({
         return;
       }
 
+      /*
+       * Shared-budget coordination: when the interactive organism is
+       * already visibly responding to this pointer, its own shockwaves
+       * carry the gesture; a background ripple would duplicate the
+       * same visual signal in a cheaper dialect.
+       */
+      if (getOrganismActivity() >= ORGANISM_ACTIVE_BACKOFF) {
+        return;
+      }
+
       const host =
         rippleHostRef.current;
 
@@ -618,9 +645,20 @@ export default function WorldBackground({
        * Hard ceiling: bursts of fast movement may accumulate energy
        * quickly, but the organism never exceeds full saturation.
        */
+      /*
+       * Shared-budget gain (Runtime v2): the ambient layer's pointer
+       * gain scales down while the interactive canvas organism is
+       * awake — the same pointer signal is not amplified twice.
+       */
+      const coordinatedGain =
+        ENERGY_GAIN *
+        (1 -
+          getOrganismActivity() *
+            (1 - ORGANISM_ACTIVE_GAIN_SCALE));
+
       energy = Math.min(
         1,
-        energy + pointerSpeed * ENERGY_GAIN
+        energy + pointerSpeed * coordinatedGain
       );
 
       const baseline =

@@ -7,6 +7,11 @@ import {
   SITE_OG_IMAGE_WIDTH
 } from "@/lib/seo";
 
+import {
+  requireRouteMeta,
+  requireHubMeta
+} from "@/lib/routes";
+
 /*
  * CONTENT ROUTE DATA — TOPIC HUBS + IDENTITY ROUTES (v3.1).
  *
@@ -89,35 +94,39 @@ export type HubDefinition = {
 };
 
 /* -------------------------------------------------------------------------- */
-/* Identity + portfolio route definitions (metadata only — pages own copy)     */
+/* Identity + portfolio route definitions (metadata from the route registry)   */
 /* -------------------------------------------------------------------------- */
+
+/*
+ * SEO v2: titles and descriptions live ONCE in data/routes.json (the
+ * canonical route registry) — these definitions reference them instead
+ * of maintaining a second copy. lib/routes.requireRouteMeta throws at
+ * module init if a route is unregistered, so registry drift fails the
+ * build instead of shipping thin metadata.
+ */
 
 export const ABOUT_ROUTE = {
   slug: "about",
-  metaTitle: "About — Parsa Tak",
-  metaDescription:
-    "Parsa Tak is an independent software engineer, product builder, and AI systems researcher working across local AI agents, reasoning architectures, machine-intelligence evaluation, and shipped software. Profile, working method, research, engineering, product building, selected systems, and collaboration."
+  metaTitle: requireRouteMeta("about").title,
+  metaDescription: requireRouteMeta("about").description
 } as const;
 
 export const WORK_ROUTE = {
   slug: "work",
-  metaTitle: "Selected Work — Parsa Tak",
-  metaDescription:
-    "Selected systems and projects by Parsa Tak: SHEYTAN local-first AI agent laboratory, the UHIT measurement programme (AIST-2026.09, ASI-100-Elite), FreeIran, this statically engineered website, and the RED MAGIC creative line."
+  metaTitle: requireRouteMeta("work").title,
+  metaDescription: requireRouteMeta("work").description
 } as const;
 
 export const RESEARCH_ROUTE = {
   slug: "research",
-  metaTitle: "Research — Parsa Tak",
-  metaDescription:
-    "The research programme of Parsa Tak: reasoning as a system property, honest machine-intelligence measurement (UHIT, AIST-2026.09, ASI-100-Elite), local-first AI, and governable AI systems — with the six topic hubs that map the work."
+  metaTitle: requireRouteMeta("research").title,
+  metaDescription: requireRouteMeta("research").description
 } as const;
 
 export const CONTACT_ROUTE = {
   slug: "contact",
-  metaTitle: "Contact — Parsa Tak",
-  metaDescription:
-    "Contact Parsa Tak: research collaboration, business and engineering engagements, project collaboration, and open technical collaboration. Primary channel: email. Secondary: GitHub and LinkedIn."
+  metaTitle: requireRouteMeta("contact").title,
+  metaDescription: requireRouteMeta("contact").description
 } as const;
 
 /* -------------------------------------------------------------------------- */
@@ -127,11 +136,11 @@ export const CONTACT_ROUTE = {
 export const HUB_ROUTES: readonly HubDefinition[] = [
   {
     slug: "local-ai",
-    topicName: "Local AI",
+    topicName: requireHubMeta("local-ai").topicName,
     kicker: "TOPIC HUB / LOCAL AI",
-    metaTitle: "Local AI Systems & Agents — Parsa Tak",
+    metaTitle: requireHubMeta("local-ai").title,
     metaDescription:
-      "Local-first AI: agents, inference, memory and verification that run entirely on your own machine. How Parsa Tak builds local AI systems with SHEYTAN — managed llama.cpp, supervised agent loops, and objective verification gates.",
+      requireHubMeta("local-ai").description,
     h1: "Local AI systems that run entirely on your machine",
     lead: [
       "Local AI is the practice of running the whole intelligence stack — model inference, agent logic, tools, memory, evaluation — on hardware you control, with no account, no cloud backend, and no telemetry leaving the machine. It is the founding discipline of this laboratory, not a deployment afterthought.",
@@ -248,11 +257,11 @@ export const HUB_ROUTES: readonly HubDefinition[] = [
 
   {
     slug: "ai-systems",
-    topicName: "AI systems engineering",
+    topicName: requireHubMeta("ai-systems").topicName,
     kicker: "TOPIC HUB / AI SYSTEMS",
-    metaTitle: "AI Systems Engineering & Frameworks — Parsa Tak",
+    metaTitle: requireHubMeta("ai-systems").title,
     metaDescription:
-      "Treating AI as an engineered system: instruction hierarchies, tool governance, evidence handling, and self-improvement discipline. The AI Instructions constitutional framework, REP, USEF, and the SHEYTAN agent laboratory.",
+      requireHubMeta("ai-systems").description,
     h1: "AI systems: governance, tools, and verification as one architecture",
     lead: [
       "An AI system is not a model — it is the model plus its instructions, tools, memory, evaluation, and failure handling, arranged so the whole thing can be audited and improved. This hub collects the frameworks and systems built under that definition.",
@@ -381,11 +390,11 @@ export const HUB_ROUTES: readonly HubDefinition[] = [
 
   {
     slug: "ai-reasoning",
-    topicName: "AI reasoning",
+    topicName: requireHubMeta("ai-reasoning").topicName,
     kicker: "TOPIC HUB / AI REASONING",
-    metaTitle: "AI Reasoning Architectures — Parsa Tak",
+    metaTitle: requireHubMeta("ai-reasoning").title,
     metaDescription:
-      "Reasoning as a system property: the Reasoning Enhancement Protocol (REP), verification-first design, adversarial checking, and uncertainty handling. Why systems — not models — convert capability into execution.",
+      requireHubMeta("ai-reasoning").description,
     h1: "Reasoning is a system property, not a model feature",
     lead: [
       "A model proposes; a system decides. Reasoning that lives only inside the model's next token cannot be inspected, corrected, or trusted — so the laboratory treats reasoning as something you architect: decomposed into steps, checked against evidence, adversarially reviewed, and refined under explicit uncertainty handling.",
@@ -487,11 +496,11 @@ export const HUB_ROUTES: readonly HubDefinition[] = [
 
   {
     slug: "ai-evaluation",
-    topicName: "AI evaluation",
+    topicName: requireHubMeta("ai-evaluation").topicName,
     kicker: "TOPIC HUB / AI EVALUATION",
-    metaTitle: "AI Evaluation, Benchmarks & Measurement — Parsa Tak",
+    metaTitle: requireHubMeta("ai-evaluation").title,
     metaDescription:
-      "Measuring machine intelligence honestly: the UHIT measurement programme, the AIST-2026.09 standard, the ASI-100-Elite benchmark, multiplicative scoring, and the verification doctrine that keeps a benchmark from lying.",
+      requireHubMeta("ai-evaluation").description,
     h1: "Evaluation: measurement before claims",
     lead: [
       "Evaluation is where AI work earns its vocabulary. Before a system is called intelligent, capable, or improved, something has to measure it — and the measurement itself has to be immune to gaming. This hub collects the laboratory's measurement work and its doctrine.",
@@ -606,11 +615,11 @@ export const HUB_ROUTES: readonly HubDefinition[] = [
 
   {
     slug: "software-engineering",
-    topicName: "Software engineering",
+    topicName: requireHubMeta("software-engineering").topicName,
     kicker: "TOPIC HUB / SOFTWARE ENGINEERING",
-    metaTitle: "Software Engineering Notes & Systems — Parsa Tak",
+    metaTitle: requireHubMeta("software-engineering").title,
     metaDescription:
-      "Software engineering from an independent systems builder: deterministic pipelines, honest testing, chunked storage, static-site architecture, and building with AI under real constraints — from FreeIran, WEB, and the engineering notes.",
+      requireHubMeta("software-engineering").description,
     h1: "Software engineering: bounded systems, honest tests, fast static architecture",
     lead: [
       "The software line of this laboratory is about discipline more than scale: bounded resources, explicit state machines, deterministic selection, storage that survives crashes, and tests that do not lie. The systems are public; the engineering notes document why they are built the way they are.",
@@ -744,11 +753,11 @@ export const HUB_ROUTES: readonly HubDefinition[] = [
 
   {
     slug: "creative-technology",
-    topicName: "Creative technology",
+    topicName: requireHubMeta("creative-technology").topicName,
     kicker: "TOPIC HUB / CREATIVE TECHNOLOGY",
-    metaTitle: "Creative Technology & the Living Web — Parsa Tak",
+    metaTitle: requireHubMeta("creative-technology").title,
     metaDescription:
-      "Technology as an expressive medium: the RED MAGIC computational organism, RED THEORY's living-system dynamics, computational interfaces, and the engineering that makes a website behave like an organism instead of a brochure.",
+      requireHubMeta("creative-technology").description,
     h1: "Creative technology: the living web",
     lead: [
       "Creative technology is the laboratory's expressive line: interfaces that perceive, adapt, and show their state; simulations that treat a website as an ecosystem; and a visual identity — the 13-point star, the red/black world — that is generated and verified like code.",

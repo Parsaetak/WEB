@@ -47,6 +47,10 @@
  *   the topic hubs exist with full metadata, are linked from the home
  *   document, link ≥3 related articles (hubs), and have ≥3 inbound
  *   pages each — no SEO islands
+ * - graph depth (SEO v2)   verifySeoGraphDepth   — graph QUALITY:
+ *   inbound census per content page, orphan/orphan-adjacent articles,
+ *   hub/collection representation percentage, collection
+ *   discoverability, anchor-text quality, canonical↔sitemap coherence
  */
 
 import { readFile, readdir } from "node:fs/promises";
@@ -92,26 +96,32 @@ const SCENE_HASHES = new Set([
 ]);
 
 /*
- * STATIC CONTENT ROUTES (v3.1) — the real indexable documents beyond
- * the blog: the identity/portfolio pages and the topic hubs. Must
- * mirror the route tree (app/<route>/) and the sitemap generator's
- * STATIC_CONTENT_ROUTES list in scripts/build-blog.mjs. All three
- * are cross-checked here: a route exported but absent from the
- * sitemap (or vice versa) fails the build, and every route below is
- * verified for metadata, structured data, and graph connectivity.
+ * CANONICAL ROUTE REGISTRY (SEO v2) — data/routes.json is the single
+ * manually maintained route list; the route table below (titles, JSON-LD
+ * type expectations, hub classification, inbound minimums) is DERIVED
+ * from it. The same registry drives the sitemap generator in
+ * scripts/build-blog.mjs and lib/routes.ts on the app side, so the
+ * sitemap, the app routes and this verifier can never drift apart
+ * silently — a route added to one place but not the registry fails
+ * here, and a registry route without an export fails too.
  */
-const CONTENT_ROUTES = [
-  { route: "about", title: "About — Parsa Tak", types: ["WebSite", "Person", "ProfilePage", "BreadcrumbList"] },
-  { route: "work", title: "Selected Work — Parsa Tak", types: ["WebSite", "Person", "WebPage", "ItemList", "BreadcrumbList"] },
-  { route: "research", title: "Research — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
-  { route: "contact", title: "Contact — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
-  { route: "local-ai", title: "Local AI Systems & Agents — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
-  { route: "ai-systems", title: "AI Systems Engineering & Frameworks — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
-  { route: "ai-reasoning", title: "AI Reasoning Architectures — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
-  { route: "ai-evaluation", title: "AI Evaluation, Benchmarks & Measurement — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
-  { route: "software-engineering", title: "Software Engineering Notes & Systems — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] },
-  { route: "creative-technology", title: "Creative Technology & the Living Web — Parsa Tak", types: ["WebSite", "Person", "WebPage", "BreadcrumbList"] }
-];
+const ROUTE_REGISTRY = JSON.parse(
+  await readFile(path.join(ROOT, "data", "routes.json"), "utf8")
+);
+
+const CONTENT_ROUTES = ROUTE_REGISTRY.routes
+  .filter(
+    (route) =>
+      route.path !== "" && route.path !== "blog"
+  )
+  .map((route) => ({
+    route: route.path,
+    kind: route.kind,
+    title: route.title,
+    types: route.structuredData,
+    inboundMinimum:
+      route.inboundMinimum ?? 3
+  }));
 
 const failures = [];
 const checks = [];
@@ -1451,6 +1461,361 @@ async function verifyContentGraph() {
   }
 }
 
+/*
+ * SEO GRAPH DEPTH (SEO v2) — graph-QUALITY verification beyond
+ * "route exists" and "no orphan". While verifyInternalLinkGraph and
+ * verifyContentGraph establish that links resolve and the route set is
+ * connected, this group validates the SHAPE of the discovery graph:
+ *
+ * 1. inbound links per content page (articles AND content routes),
+ *    with the registered per-route minimums
+ * 2. orphan / orphan-adjacent content (zero-inbound FAILS now; an
+ *    article reachable only through the Blog index is warned as
+ *    orphan-adjacent — it has exactly one discovery path)
+ * 3. article/project/topic/hub relationships: how much of the article
+ *    catalogue is represented by the topic hubs, the collections
+ *    (/work/, /research/), or the home document — reported as a
+ *    percentage, with a hard floor
+ * 4. Work/Research/Article discoverability: the collections must be
+ *    linked from the home document AND the Blog index
+ * 5. anchor-text quality on internal content links: generic anchors
+ *    ("read more", "click here", …) fail — anchors must be descriptive
+ * 6. canonical/robots/sitemap coherence: every content page's
+ *    canonical must match the sitemap <loc> exactly
+ * 7. graph depth report: hub-coverage and multi-path percentages
+ *
+ * Only repository/exported facts are verified here — no external
+ * ranking or indexing claims are made or implied.
+ */
+const GENERIC_ANCHORS = new Set([
+  "read more",
+  "click here",
+  "here",
+  "this link",
+  "more",
+  "link",
+  "this page",
+  "learn more",
+  "details"
+]);
+
+const HUB_COVERAGE_FLOOR = 0.5;
+
+function stripHtmlToText(html) {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+async function verifySeoGraphDepth(articleRoutes, postsIndex) {
+  const failureCountBefore = failures.length;
+
+  const htmlFiles = await collectHtmlFiles(OUT_DIR);
+
+  const pages = [];
+  for (const file of htmlFiles) {
+    pages.push({
+      file,
+      html: await readFile(path.join(OUT_DIR, file), "utf8")
+    });
+  }
+
+  const routeHref = (route) => `${BASE_PATH}/${route}/`;
+  const articleHref = (slug) => `${BASE_PATH}/blog/${slug}/`;
+  const routeFile = (route) => path.join(route, "index.html");
+
+  /* ---------- 1. Inbound census per content page ---------------------- */
+
+  const inboundPagesByRoute = new Map(
+    CONTENT_ROUTES.map((entry) => [entry.route, []])
+  );
+
+  const inboundPagesByArticle = new Map(
+    articleRoutes.map((slug) => [slug, []])
+  );
+
+  for (const page of pages) {
+    for (const entry of CONTENT_ROUTES) {
+      if (
+        page.file !== routeFile(entry.route) &&
+        page.html.includes(`href="${routeHref(entry.route)}"`)
+      ) {
+        inboundPagesByRoute.get(entry.route).push(page.file);
+      }
+    }
+
+    for (const slug of articleRoutes) {
+      if (
+        page.file !== path.join("blog", slug, "index.html") &&
+        page.html.includes(`href="${articleHref(slug)}"`)
+      ) {
+        inboundPagesByArticle.get(slug).push(page.file);
+      }
+    }
+  }
+
+  for (const entry of CONTENT_ROUTES) {
+    const inbound = inboundPagesByRoute.get(entry.route).length;
+
+    if (inbound < entry.inboundMinimum) {
+      fail(
+        `graph depth: /${entry.route}/ has ${inbound} inbound page(s), below the registry minimum ${entry.inboundMinimum}`
+      );
+    } else {
+      console.log(
+        `  · graph depth: /${entry.route}/ has ${inbound} inbound page(s) (minimum ${entry.inboundMinimum})`
+      );
+    }
+  }
+
+  for (const slug of articleRoutes) {
+    const inbound = inboundPagesByArticle.get(slug).length;
+
+    if (inbound === 0) {
+      fail(
+        `graph depth: article /blog/${slug}/ has ZERO inbound internal links — an orphan document cannot be discovered (fix with real links, never artificial ones)`
+      );
+    } else {
+      console.log(
+        `  · graph depth: /blog/${slug}/ has ${inbound} inbound page(s)`
+      );
+    }
+  }
+
+  /* ---------- 2. Orphan-adjacent articles ----------------------------- */
+
+  const orphanAdjacent = articleRoutes.filter((slug) => {
+    const inbound = inboundPagesByArticle.get(slug);
+
+    if (inbound.length !== 1) {
+      return false;
+    }
+
+    return inbound[0] === path.join("blog", "index.html");
+  });
+
+  if (orphanAdjacent.length > 0) {
+    console.warn(
+      `[seo] WARNING — ${orphanAdjacent.length} orphan-adjacent article(s) reachable ONLY through the Blog index (add real cross-links from related articles, hubs, or the home document): ${orphanAdjacent.join(", ")}`
+    );
+  } else {
+    pass(
+      "graph depth: no orphan-adjacent articles — every article has at least one discovery path beyond the Blog index"
+    );
+  }
+
+  /* ---------- 3. Hub / collection / home representation ---------------- */
+
+  const hubEntries = CONTENT_ROUTES.filter(
+    (entry) => entry.kind === "topic-hub"
+  );
+
+  const hubCovered = new Set();
+
+  for (const slug of articleRoutes) {
+    const inbound = inboundPagesByArticle.get(slug);
+
+    const fromHub = inbound.some((file) =>
+      hubEntries.some((hub) => file === routeFile(hub.route))
+    );
+
+    if (fromHub) {
+      hubCovered.add(slug);
+    }
+  }
+
+  const collectionCovered = new Set();
+
+  for (const slug of articleRoutes) {
+    const inbound = inboundPagesByArticle.get(slug);
+
+    const fromCollection = inbound.some(
+      (file) =>
+        file === routeFile("work") ||
+        file === routeFile("research") ||
+        file === "index.html"
+    );
+
+    if (fromCollection) {
+      collectionCovered.add(slug);
+    }
+  }
+
+  const articleBodyCrossLinks = new Set();
+
+  for (const slug of articleRoutes) {
+    const post = postsIndex.posts.find((candidate) => candidate.slug === slug);
+
+    if (!post) {
+      continue;
+    }
+
+    /* The post's related index (computed by the blog pipeline) is a real
+       relationship edge, so treat a populated related set as a meaningful
+       article/topic path in addition to the raw body hrefs. */
+    if (
+      Array.isArray(post.related) &&
+      post.related.length > 0
+    ) {
+      articleBodyCrossLinks.add(slug);
+    }
+  }
+
+  const connectedCount = articleRoutes.filter((slug) => {
+    return (
+      hubCovered.has(slug) ||
+      collectionCovered.has(slug) ||
+      articleBodyCrossLinks.has(slug)
+    );
+  }).length;
+
+  const connectedShare =
+    articleRoutes.length > 0
+      ? connectedCount / articleRoutes.length
+      : 0;
+
+  if (connectedShare < HUB_COVERAGE_FLOOR) {
+    fail(
+      `graph depth: only ${Math.round(connectedShare * 100)}% of articles are connected to a hub, collection, or related-article path (floor ${Math.round(HUB_COVERAGE_FLOOR * 100)}%)`
+    );
+  } else {
+    pass(
+      `graph depth: ${Math.round(connectedShare * 100)}% of articles (${connectedCount}/${articleRoutes.length}) are connected to meaningful hub/collection/topic paths`
+    );
+  }
+
+  /* ---------- 4. Collection discoverability ---------------------------- */
+
+  const home = pages.find((page) => page.file === "index.html");
+
+  const blogIndex = pages.find((page) => page.file === path.join("blog", "index.html"));
+
+  for (const collection of ["work", "research"]) {
+    for (const [label, page] of [["home document", home], ["blog index", blogIndex]]) {
+      if (page && !page.html.includes(`href="${routeHref(collection)}"`)) {
+        fail(
+          `graph depth: /${collection}/ is not linked from the ${label} — the canonical collections must stay discoverable from both surfaces`
+        );
+      }
+    }
+  }
+
+  if (failures.every((entry) => !entry.includes("discoverable from both surfaces"))) {
+    pass(
+      "graph depth: /work/ and /research/ are discoverable from the home document and the blog index"
+    );
+  }
+
+  /* ---------- 5. Anchor-text quality ----------------------------------- */
+
+  const anchorPattern = new RegExp(
+    `<a\\s[^>]*href="(${BASE_PATH}/(?:blog/[a-z0-9-]+/?|[a-z-]+/?))"[^>]*>([\\s\\S]*?)</a>`,
+    "g"
+  );
+
+  const genericAnchors = [];
+
+  for (const page of pages) {
+    let match;
+
+    anchorPattern.lastIndex = 0;
+
+    while ((match = anchorPattern.exec(page.html)) !== null) {
+      const text = stripHtmlToText(match[2]);
+
+      if (!text) {
+        continue;
+      }
+
+      if (GENERIC_ANCHORS.has(text)) {
+        genericAnchors.push(
+          `${page.file}: generic anchor text "${text}" → ${match[1]}`
+        );
+      }
+    }
+  }
+
+  if (genericAnchors.length > 0) {
+    for (const entry of genericAnchors) {
+      fail(`graph depth: ${entry} (anchor text must be descriptive)`);
+    }
+  } else {
+    pass(
+      "graph depth: no generic anchor text — every internal content link is descriptive"
+    );
+  }
+
+  /* ---------- 6. Canonical ↔ sitemap coherence ------------------------- */
+
+  const sitemapText = await readText(path.join("sitemap.xml"));
+
+  const sitemapLocs = new Set(
+    [...sitemapText.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1])
+  );
+
+  let canonicalMismatches = 0;
+
+  const canonicalChecks = [
+    ...CONTENT_ROUTES.map((entry) => ({ route: entry.route })),
+    ...articleRoutes.map((slug) => ({ route: `blog/${slug}` }))
+  ];
+
+  for (const { route } of canonicalChecks) {
+    const file = path.join(route, "index.html");
+
+    const page = pages.find((candidate) => candidate.file === file);
+
+    if (!page) {
+      continue; /* missing export already reported by verifyPage() */
+    }
+
+    const canonical = page.html.match(
+      /<link rel="canonical" href="([^"]+)"/
+    );
+
+    if (!canonical) {
+      fail(`graph depth: /${route}/ has no canonical link element`);
+
+      canonicalMismatches += 1;
+
+      continue;
+    }
+
+    if (!sitemapLocs.has(canonical[1])) {
+      fail(
+        `graph depth: /${route}/ canonical ${canonical[1]} does not exactly match any sitemap <loc> — canonical and sitemap disagree`
+      );
+
+      canonicalMismatches += 1;
+    }
+  }
+
+  if (canonicalMismatches === 0) {
+    pass(
+      "graph depth: every content page's canonical exactly matches a sitemap <loc>"
+    );
+  }
+
+  /* ---------- 7. Graph depth report ------------------------------------ */
+
+  console.log(
+    `  · graph depth: hub-covered articles ${hubCovered.size}/${articleRoutes.length}, collection/home-covered ${collectionCovered.size}/${articleRoutes.length}, related-graph-covered ${articleBodyCrossLinks.size}/${articleRoutes.length}`
+  );
+
+  if (failures.length > failureCountBefore) {
+    fail(
+      `graph depth: ${failures.length - failureCountBefore} graph-depth failure(s) listed above`
+    );
+  }
+}
+
 async function main() {
   if (!existsSync(OUT_DIR)) {
     console.error("[seo] out/ does not exist — run `npm run build` first.");
@@ -1564,6 +1929,13 @@ async function main() {
   await verifyInteractivity();
   await verifyInternalLinkGraph(articleRoutes);
   await verifyContentGraph();
+
+  /*
+   * SEO v2 graph-depth group: validates the SHAPE of the discovery
+   * graph (hub representation, orphan-adjacency, anchor quality,
+   * canonical↔sitemap coherence) beyond bare connectivity.
+   */
+  await verifySeoGraphDepth(articleRoutes, postsIndex);
 
   /* Favicon family + brand assets (v2.9) — checked with the export. */
   await verifyFaviconFamily();

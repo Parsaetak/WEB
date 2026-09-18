@@ -62,6 +62,17 @@ type ParticleRenderOptions = {
   delta: number;
 
   reducedMotion: boolean;
+
+  /*
+   * RUNTIME V2 SOFT ADAPTATION — `activeLimit` caps how many BASE pool
+   * particles update/draw this frame (soft quality adaptation); click
+   * particles appended beyond `baseCount` always run so interaction
+   * feedback never disappears. Undefined = process everything (the
+   * historical behaviour, used by mounts before the first adaptation).
+   */
+  activeLimit?: number;
+
+  baseCount?: number;
 };
 
 type ParticleLayout = {
@@ -1165,9 +1176,36 @@ export function updateAndDrawParticles(
     time,
     delta,
 
-    reducedMotion
+    reducedMotion,
+
+    activeLimit,
+
+    baseCount
   } =
     options;
+
+  /*
+   * Soft-adaptation particle cap: base-pool particles with an index at
+   * or beyond the limit are skipped entirely (update AND draw); click
+   * particles beyond baseCount always process. When no limit is given
+   * every particle processes — identical to the pre-v2 behaviour.
+   */
+  const limitBaseAt =
+    typeof activeLimit ===
+      "number" &&
+    typeof baseCount ===
+      "number"
+      ? Math.max(
+          0,
+          activeLimit
+        )
+      : particles.length;
+
+  const baseBoundary =
+    typeof baseCount ===
+      "number"
+      ? baseCount
+      : 0;
 
   /*
    * Maintain the existing frame-rate-independent
@@ -1249,6 +1287,20 @@ export function updateAndDrawParticles(
     particles.length;
     index += 1
   ) {
+    /*
+     * Runtime v2 soft adaptation: base-pool particles at or beyond the
+     * active limit skip both update and draw; click particles (index
+     * beyond baseCount) always process so interaction feedback stays.
+     */
+    if (
+      index <
+        baseBoundary &&
+      index >=
+        limitBaseAt
+    ) {
+      continue;
+    }
+
     const particle =
       particles[index];
 

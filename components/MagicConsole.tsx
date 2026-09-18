@@ -182,6 +182,24 @@ function formLabel(
 }
 
 /*
+ * Runtime state label (Runtime v2): the organism's explicit cadence —
+ * reduced / suspended / idle / ambient / active / recovery. Rendered
+ * in the vitals readout so the engine's runtime state is observable
+ * without any new overlay or tooling.
+ */
+function stateLabel(
+  state?: RedMagicPerformanceSample["runtimeState"]
+) {
+  if (
+    !state
+  ) {
+    return "—";
+  }
+
+  return state.toUpperCase();
+}
+
+/*
  * Vitals readout — isolated subscriber (perf, v3.1.1).
  *
  * The performance sample arrives roughly every 1.8 s; it used to be
@@ -232,6 +250,11 @@ function MagicVitals() {
         )
       : "—";
 
+  const state =
+    stateLabel(
+      sample?.runtimeState
+    );
+
   return (
     <div
       className={
@@ -265,6 +288,16 @@ function MagicVitals() {
 
         <strong>
           {form}
+        </strong>
+      </div>
+
+      <div>
+        <span>
+          STATE
+        </span>
+
+        <strong>
+          {state}
         </strong>
       </div>
     </div>

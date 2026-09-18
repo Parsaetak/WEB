@@ -1,9 +1,14 @@
 "use client";
 
+import type {
+  QualityName,
+  RuntimeState
+} from "@/components/redmagic/engineConfig";
+
 export type RedMagicPerformanceSample = {
   fps: number;
   frameTime: number;
-  quality: "high" | "medium" | "low";
+  quality: QualityName;
   dpr: number;
   width: number;
   height: number;
@@ -21,6 +26,56 @@ export type RedMagicPerformanceSample = {
    * it is a measurement of the display the engine observed.
    */
   refreshHz?: number;
+
+  /*
+   * RUNTIME TELEMETRY (v2) — everything below is optional so older
+   * publishers stay type-compatible. All values are measurements of
+   * the live engine, held in memory only; nothing here is tracked,
+   * uploaded, or presented as a benchmark.
+   */
+
+  /** Explicit runtime cadence state (idle / ambient / active / …). */
+  runtimeState?: RuntimeState;
+
+  /** DPR ceiling the adaptive policy currently allows for this tier. */
+  dprCap?: number;
+
+  /** Simulation time scale actually applied this window. */
+  simulationScale?: number;
+
+  /** Particles updated/drawn this window vs the tier's pool budget. */
+  particlesActive?: number;
+  particlesBudget?: number;
+
+  /** Structural complexity of the live world (grid/boundary/flows). */
+  gridNodes?: number;
+  gridEdges?: number;
+  membranePoints?: number;
+  flowCount?: number;
+  flowSegments?: number;
+
+  /** Membrane draw stride (soft adaptation coarsens the stroke). */
+  membraneStride?: number;
+
+  /** 0..1 atmosphere/glow layer allowance currently applied. */
+  atmosphere?: number;
+
+  /** The most recent quality adaptation (soft = budget-only, hard = rebuild). */
+  lastAdaptation?: RedMagicAdaptation;
+};
+
+export type RedMagicAdaptation = {
+  /** soft = work reduction inside the tier; hard = structural rebuild. */
+  type: "soft" | "hard";
+
+  from: QualityName;
+  to: QualityName;
+
+  /** What triggered it: sustained-fps, reduced-motion, resize, recovery… */
+  reason: string;
+
+  /** performance.now() at the change. */
+  at: number;
 };
 
 type Listener =

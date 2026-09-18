@@ -10,6 +10,7 @@
  * - click ripples
  * - scene-transition pulses
  * - page visibility
+ * - interactive-organism arousal (Runtime v2 coordination)
  *
  * Why a module: LivingShell already re-renders on scene change, but
  * feeding every pointer movement through React state would re-render
@@ -58,7 +59,19 @@ const state = {
    * value to detect fresh events without any allocation.
    */
   pulseToken: 0,
-  clickToken: 0
+  clickToken: 0,
+
+  /*
+   * RUNTIME V2 — SHARED VISUAL/PERFORMANCE BUDGET.
+   *
+   * The RedMagic canvas organism (high-detail, interactive) publishes
+   * its arousal 0..1 here; the WorldBackground (low-cost ambient
+   * organism) reads it so the two layers never double-spend the same
+   * pointer energy: when the interactive organism is already visibly
+   * responding, the ambient layer backs off its own gain and skips
+   * duplicate ripples. One conceptual budget, two layers.
+   */
+  organismActivity: 0
 };
 
 function publish(event: WorldEvent) {
@@ -89,6 +102,25 @@ export function getPulseToken(): number {
 
 export function isWorldHidden(): boolean {
   return state.hidden;
+}
+
+/**
+ * Runtime v2 coordination: the interactive organism's arousal (0..1).
+ * Published by RedMagic (throttled, a plain field write) and read by
+ * WorldBackground's own loop — no listeners fire, no allocation.
+ */
+export function getOrganismActivity(): number {
+  return state.organismActivity;
+}
+
+export function noteOrganismActivity(level: number) {
+  const clamped = level < 0 ? 0 : level > 1 ? 1 : level;
+
+  if (state.organismActivity === clamped) {
+    return;
+  }
+
+  state.organismActivity = clamped;
 }
 
 export function setWorldScene(scene: WorldSceneMood) {

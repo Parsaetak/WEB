@@ -1231,25 +1231,29 @@ function buildLinksHere(posts) {
  */
 
 /*
- * STATIC CONTENT ROUTES (v3.1) — the real indexable documents beyond
- * the blog: the identity/portfolio pages and the topic hubs. These
- * are the same routes the app router exports and verify-seo.mjs
- * audits; if a route is added or renamed there, update this list —
- * the verifier fails the build when the sitemap and the exported
- * route tree disagree.
+ * STATIC CONTENT ROUTES (SEO v2) — derived from data/routes.json, the
+ * canonical route registry. The registry is the single manually
+ * maintained route list; the sitemap, verify-seo.mjs and lib/hubs.ts
+ * all read the same facts, so the sitemap can never disagree with the
+ * verified route set. lastmod values are content-revision dates from
+ * the registry — bumped only when a route's substantive content
+ * changes, never the build date. Fake freshness is still banned.
  */
-const STATIC_CONTENT_ROUTES = [
-  { path: "about", lastmod: "2026-09-15" },
-  { path: "work", lastmod: "2026-09-15" },
-  { path: "research", lastmod: "2026-09-15" },
-  { path: "contact", lastmod: "2026-09-15" },
-  { path: "local-ai", lastmod: "2026-09-14" },
-  { path: "ai-systems", lastmod: "2026-09-14" },
-  { path: "ai-reasoning", lastmod: "2026-09-14" },
-  { path: "ai-evaluation", lastmod: "2026-09-14" },
-  { path: "software-engineering", lastmod: "2026-09-14" },
-  { path: "creative-technology", lastmod: "2026-09-14" }
-];
+const ROUTE_REGISTRY = JSON.parse(
+  readFileSync(path.join(ROOT, "data", "routes.json"), "utf8")
+);
+
+const STATIC_CONTENT_ROUTES = ROUTE_REGISTRY.routes
+  .filter(
+    (route) =>
+      route.sitemap.include &&
+      route.path !== "" &&
+      route.path !== "blog"
+  )
+  .map((route) => ({
+    path: route.path,
+    lastmod: route.sitemap.lastmod
+  }));
 
 /*
  * Total sitemap URL count: home + blog index + every article + the

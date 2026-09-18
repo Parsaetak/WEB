@@ -102,9 +102,13 @@ one canonical URL ( / )
 ├── #work      ← lazily loaded scene
 └── #library   ← lazily loaded scene
 /blog/          ← real routes, one static page per article
+/about/ /work/ /research/ /contact/        ← canonical content documents
+/local-ai/ /ai-systems/ /ai-reasoning/     ← canonical topic hubs
+/ai-evaluation/ /software-engineering/
+/creative-technology/
 ```
 
-Scene changes are URL-addressable (`#systems` is a shareable state), handled by the shell's navigation, and never produce separate documents — only the blog earns separate indexable routes.
+Scene changes are URL-addressable (`#systems` is a shareable state), handled by the shell's navigation, and never produce separate documents. The blog earns one indexable route per article, and the content documents and topic hubs are indexable canonical routes of their own — the full route model is declared once in `data/routes.json` (the canonical route registry) and cross-verified by the sitemap and the SEO verifier.
 
 ## Technical architecture
 
@@ -125,11 +129,15 @@ components/          world shell, scenes, navigation, RED MAGIC systems
 components/content/  shared server-rendered content-route system
                      (shell, building blocks, hub view)
 components/scenes/   the six scene components (HomeScene is static)
+components/redmagic/ RED MAGIC engine config (quality budget, runtime
+                     states, adaptive-DPR policy, refresh estimator)
 content/blog/        markdown article source (frontmatter + body)
 lib/                 data access, SEO graph, hub definitions, brand,
-                     schedulers, links
+                     schedulers, links, route-registry loader
 scripts/             build-blog, brand generators, verification suite
 data/blog/           GENERATED posts.json (never edited by hand)
+data/routes.json     canonical route/content registry (SEO source of
+                     truth for sitemap, verifier, and route metadata)
 public/              static assets: brand art, icons, sitemap, robots
 assets/              brand system source (star variants, glyphs, social)
 .github/workflows/   the Pages deployment pipeline

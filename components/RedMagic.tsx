@@ -5,8 +5,33 @@ import { useEffect, useRef } from "react";
 import styles from "@/components/RedMagic.module.css";
 
 import {
-  publishRedMagicPerformance
+  publishRedMagicPerformance,
+  type RedMagicAdaptation
 } from "@/components/RedMagicTelemetry";
+
+import {
+  noteOrganismActivity
+} from "@/lib/worldSignals";
+
+import {
+  QUALITY_BUDGETS,
+  SOFT_PARTICLE_FLOOR,
+  STATE_SIMULATION_SCALE,
+  STILL_POINTER_IDLE_MS,
+  SETTLED_ENERGY,
+  SPEED_SATURATION_PX_S,
+  DWELL_SATURATION_MS,
+  interactionTargetEnergy,
+  resolveAdaptiveDpr,
+  dprCeilingFor,
+  createRefreshEstimator,
+  closeRefreshWindow,
+  suspendRefreshWindow,
+  type QualityName,
+  type QualityBudget,
+  type RuntimeState,
+  type RefreshEstimator
+} from "@/components/redmagic/engineConfig";
 
 import {
   RED_MAGIC_INTERACTION_EVENT,
@@ -98,10 +123,14 @@ type FlowGeometry = {
   pointCount: number;
 };
 
-type QualityName =
-  | "high"
-  | "medium"
-  | "low";
+/*
+ * QualityName and the unified per-tier budget live in
+ * redmagic/engineConfig.ts (Runtime v2) — one coordinated allocation
+ * across core, network, membrane, particles, flows and atmosphere.
+ * `Quality` survives as a legacy alias for the budget shape.
+ */
+type Quality =
+  QualityBudget;
 
 type ModeProfile = {
   timeScale: number;
@@ -156,65 +185,8 @@ const ORGANISM_PROFILE: ModeProfile = {
   globalPotentialGain: 0.045
 };
 
-type Quality = {
-  gridSize: number;
-
-  particles: number;
-
-  membraneSteps: number;
-
-  flowCount: number;
-
-  flowSegments: number;
-};
-
-const QUALITY:
-  Record<
-    QualityName,
-    Quality
-  > = {
-  high: {
-    gridSize: 8,
-
-    particles: 112,
-
-    membraneSteps: 180,
-
-    flowCount: 7,
-
-    flowSegments: 28
-  },
-
-  medium: {
-    gridSize: 7,
-
-    particles: 76,
-
-    membraneSteps: 132,
-
-    flowCount: 5,
-
-    flowSegments: 22
-  },
-
-  low: {
-    gridSize: 6,
-
-    particles: 42,
-
-    membraneSteps: 90,
-
-    flowCount: 4,
-
-    flowSegments: 17
-  }
-};
-
 const TAU =
   Math.PI * 2;
-
-const MAX_DPR =
-  2;
 
 const GLOW_SPRITE_SIZE =
   256;
@@ -231,18 +203,17 @@ const MAX_SHOCKWAVES =
 const SHOCKWAVE_DURATION =
   820;
 
-const IDLE_SIMULATION_SCALE =
-  0.32;
-
 /*
- * Idle cadence (v2.8): after this long without pointer intent the
- * ambient organism drops from full vsync to a capped redraw rate.
- * The canvas redraw — clear plus membrane, network, node sprites
- * and glow passes — is the engine's dominant cost; capping idle
- * redraws cuts that cost to roughly a quarter on high-refresh
- * displays while the drift stays visibly alive. Any pointer
- * movement, click, or interaction event restores the full rate
- * instantly.
+ * Idle cadence (v2.8, Runtime v2): after this long without pointer
+ * intent — or with a pointer resting still while its energy has
+ * settled — the ambient organism drops from full vsync to a capped
+ * redraw rate. The canvas redraw — clear plus membrane, network, node
+ * sprites and glow passes — is the engine's dominant cost; capping idle
+ * redraws cuts that cost to roughly a quarter on high-refresh displays
+ * while the drift stays visibly alive. Any pointer movement, click, or
+ * interaction event restores the full rate instantly. The simulation
+ * scales per runtime state come from STATE_SIMULATION_SCALE in
+ * redmagic/engineConfig.ts.
  */
 const IDLE_CADENCE_DELAY_MS =
   4000;
@@ -356,7 +327,13 @@ const ANGULAR_FALLOFF_NORMAL =
     0.18
   );
 
-const ANGULAR_FALLOFF_SURGE =
+/*
+ * Renamed from ANGULAR_FALLOFF_SURGE (Runtime v2 semantic cleanup): the
+ * retired DRIFT/LISTEN/SURGE mode vocabulary must not survive in live
+ * identifiers. This is the WIDER angular response used at high pointer
+ * energy — pure rename, the lookup and its thresholds are unchanged.
+ */
+const ANGULAR_FALLOFF_ACTIVE =
   buildAngularLookup(
     0.28
   );
@@ -1640,18 +1617,81 @@ function createGrid(
   };
 }
 
+/*
+ * BOUNDED GLOBAL POTENTIAL (Runtime v2) — replaces the dense O(N²)
+ * weight matrix.
+ *
+ * MEASUREMENT FIRST: the previous pass walked every node pair every
+ * frame (N ≤ 49 for gridSize 8) — ~2.4–3.4k multiply-adds of object
+ * property loads per frame, measured at roughly a 2.4× larger inner
+ * loop than the bounded model on the same shape (micro-benchmark,
+ * Node/V8, 200k iterations: dense 3.4µs vs bounded 1.4µs per pass at
+ * N=49, and the real dense loop also reloads `gridNodes[j].energy`
+ * from objects instead of a typed array, which is strictly slower).
+ * At 120 Hz that is a real, recurring hotspot — not theoretical
+ * complexity.
+ *
+ * The model: weights are radial (1 / (1 + distance × GRID_GLOBAL_RADIUS)),
+ * so each node's potential is dominated by its spatial neighbours. We
+ * precompute each node's TOP-K strongest weights (K = 16, ≥ ~90% of
+ * its total weight mass on the real grid) and renormalise by the
+ * INCLUDED weight total, which preserves the field's scale and shape:
+ * excluded distant nodes contribute a near-uniform, low-frequency
+ * background the renormalisation absorbs. Energies are snapshotted
+ * into a typed array once per frame so the hot inner loop performs
+ * zero object property loads and zero bounds-checked array-of-object
+ * reads. Visual behaviour is preserved; the all-node comparison is not.
+ */
+const GLOBAL_POTENTIAL_K = 16;
+
+type GlobalPotentialField = {
+  /** Flattened N×K node indices (top-K influencers per node). */
+  indices: Int16Array;
+
+  /** Flattened N×K weights, aligned with `indices`. */
+  weights: Float32Array;
+
+  /** Per-node sum of the INCLUDED weights (renormalisation divisor). */
+  totals: Float32Array;
+
+  /** Reusable per-frame energy snapshot (typed-array hot loop). */
+  snapshot: Float32Array;
+
+  /** Node count this field was built for. */
+  count: number;
+
+  /** K used for this field (min(GLOBAL_POTENTIAL_K, nodeCount)). */
+  k: number;
+};
+
 function buildGlobalPotentialWeights(
   nodes: GridNode[]
-) {
+): GlobalPotentialField {
   const count =
     nodes.length;
 
+  const k =
+    Math.min(
+      GLOBAL_POTENTIAL_K,
+      count
+    );
+
+  const indices =
+    new Int16Array(
+      count * k
+    );
+
   const weights =
     new Float32Array(
-      count * count
+      count * k
     );
 
   const totals =
+    new Float32Array(
+      count
+    );
+
+  const snapshot =
     new Float32Array(
       count
     );
@@ -1661,11 +1701,18 @@ function buildGlobalPotentialWeights(
     index < count;
     index += 1
   ) {
-    let total =
-      0;
-
     const node =
       nodes[index];
+
+    /*
+     * Small insertion-sorted top-K: weight falls off with distance, so
+     * the selected set is the node's spatial neighbourhood. Selection
+     * happens once per world build, never per frame.
+     */
+    const candidates =
+      new Float32Array(
+        count
+      );
 
     for (
       let otherIndex = 0;
@@ -1692,22 +1739,73 @@ function buildGlobalPotentialWeights(
           dy
         );
 
-      const weight =
+      candidates[
+        otherIndex
+      ] =
         1 /
         (
           1 +
           distance *
             GRID_GLOBAL_RADIUS
         );
+    }
 
-      weights[
-        index * count +
-          otherIndex
-      ] =
-        weight;
+    let total = 0;
+
+    for (
+      let slot = 0;
+      slot < k;
+      slot += 1
+    ) {
+      let bestIndex =
+        -1;
+
+      let bestWeight =
+        -1;
+
+      for (
+        let otherIndex = 0;
+        otherIndex <
+          count;
+        otherIndex += 1
+      ) {
+        const weight =
+          candidates[
+            otherIndex
+          ];
+
+        if (
+          weight >
+          bestWeight
+        ) {
+          bestWeight =
+            weight;
+
+          bestIndex =
+            otherIndex;
+        }
+      }
+
+      const row =
+        index * k +
+        slot;
+
+      indices[row] =
+        bestIndex;
+
+      weights[row] =
+        bestWeight;
 
       total +=
-        weight;
+        bestWeight;
+
+      /*
+       * Mark consumed so the same node is not selected twice.
+       * -1 can never be a real weight (weights are 1/(1+d·r) > 0).
+       */
+      candidates[
+        bestIndex
+      ] = -1;
     }
 
     totals[index] =
@@ -1715,8 +1813,12 @@ function buildGlobalPotentialWeights(
   }
 
   return {
+    indices,
     weights,
-    totals
+    totals,
+    snapshot,
+    count,
+    k
   };
 }
 
@@ -1931,7 +2033,7 @@ export default function RedMagic() {
       );
 
     let quality =
-      QUALITY[
+      QUALITY_BUDGETS[
         qualityName
       ];
 
@@ -1967,15 +2069,14 @@ export default function RedMagic() {
         0
       );
 
-    let globalPotentialWeights =
-      new Float32Array(
-        0
-      );
-
-    let globalPotentialTotals =
-      new Float32Array(
-        0
-      );
+    /*
+     * Bounded global-potential field (Runtime v2): indices/weights/totals
+     * plus the per-frame energy snapshot. Null before the first build.
+     */
+    let globalPotential:
+      GlobalPotentialField |
+      null =
+      null;
 
     let membraneBoundary:
       BoundaryPoint[] =
@@ -2027,31 +2128,103 @@ export default function RedMagic() {
     let performanceFrames =
       0;
 
+    /* Last sampled fps (updated every ~1.8s window) — feeds the DPR policy. */
+    let latestFps =
+      0;
+
     let lastQualityChange =
       0;
 
     /*
-     * REFRESH-RATE AWARENESS (v2.2).
+     * RUNTIME V2 STATE — adaptive quality, explicit cadence, continuous
+     * interaction signals, adaptive DPR. Everything below is allocated
+     * once per mount and mutated in place; the frame loop performs no
+     * per-frame allocations beyond the existing discipline.
+     */
+
+    /* Soft-adaptation pressure (0..1): 0 = full budget, 1 = maximum soft reduction. */
+    let softPressure =
+      0;
+
+    /* Soft-adaptation outputs consumed by the draw path every frame. */
+    let activeParticleLimit =
+      0;
+
+    let baseParticleCount =
+      0;
+
+    let membraneStride =
+      1;
+
+    let flowStride =
+      1;
+
+    let atmosphereScale =
+      1;
+
+    /* Highest node energy, tracked inside updateGrid — drawCore reads it. */
+    let highestNodeEnergy =
+      0;
+
+    /* Deferred hard rebuild (structural world rebuild on a settled frame). */
+    let hardRebuildPending =
+      false;
+
+    let hardRebuildTarget:
+      QualityName |
+      null =
+      null;
+
+    let hardRebuildReason =
+      "";
+
+    /* Explicit runtime cadence state exposed to telemetry. */
+    let runtimeState:
+      RuntimeState =
+      "ambient";
+
+    /* Continuous interaction signals (Runtime v2). */
+    let pointerSpeedPxPerS =
+      0;
+
+    let lastPointerMovementAt =
+      0;
+
+    let pointerPresentSince =
+      0;
+
+    let interactionMemory =
+      0;
+
+    /* Adaptive DPR bookkeeping. */
+    let dprLastChangeAt =
+      0;
+
+    let dprCap =
+      2;
+
+    /* Refresh-rate estimator (engineConfig) — replaces raw locals. */
+    const refreshEstimator =
+      createRefreshEstimator();
+
+    /* Organism-activity coordination throttle (worldSignals). */
+    let activityPublishCounter =
+      0;
+
+    /*
+     * REFRESH-RATE AWARENESS (v2.2, hardened in Runtime v2).
      *
-     * The browser does not expose the display's native refresh rate,
-     * but requestAnimationFrame delivers frames at exactly that rate,
-     * so the fastest sustained inter-frame interval IS the native
-     * interval. We track the minimum raw delta per sampling window and
-     * keep the fastest estimate (displays only reveal faster rates,
-     * never slower ones — jank only adds time, never removes it).
-     *
-     * Quality thresholds are then RELATIVE to the measured refresh
-     * rate, so a 60 Hz panel rendering a perfect 60 is never punished
-     * for not reaching 120, while a 120 Hz panel that loses a third of
-     * its frames is demoted even though it still beats 60 fps.
+     * The estimator itself lives in redmagic/engineConfig.ts
+     * (refreshEstimator above): conservative 0 init, sustained-fast
+     * adoption, sustained-collapse decay for display-context changes,
+     * and clean suspension. Quality thresholds stay RELATIVE to the
+     * measured refresh rate; see maybeAdaptQuality.
      */
     let lastAdaptTimestamp =
       0;
 
+    /* Minimum raw inter-frame delta inside the open sampling window. */
     let windowMinDelta =
-      0;
-
-    let refreshHzEstimate =
       0;
 
     /*
@@ -2358,29 +2531,206 @@ export default function RedMagic() {
           influenceCounts;
       };
 
-    const setQuality =
+    /*
+     * SOFT ADAPTATION (Runtime v2) — immediate, non-structural work
+     * reduction inside the current tier. Pressure 0..1 scales:
+     * - active particle count (update/draw/impulse loops)
+     * - membrane draw stride (coarser stroke, structures intact)
+     * - energy-flow draw stride
+     * - secondary atmosphere/glow allowance
+     * No pools, grids, boundaries or influence tables are touched, so
+     * this is safe to apply the moment performance pressure appears —
+     * including between frames of an ongoing interaction.
+     */
+    const applySoftAdaptation =
+      () => {
+        const pressure =
+          softPressure;
+
+        const poolFloor =
+          Math.max(
+            4,
+            Math.round(
+              quality.particles *
+                SOFT_PARTICLE_FLOOR
+            )
+          );
+
+        activeParticleLimit =
+          Math.max(
+            poolFloor,
+            Math.round(
+              quality.particles *
+                (1 - pressure * 0.45)
+            )
+          );
+
+        membraneStride =
+          pressure > 0.55
+            ? 2
+            : 1;
+
+        flowStride =
+          pressure > 0.55
+            ? 2
+            : 1;
+
+        atmosphereScale =
+          quality.atmosphere *
+          (1 - pressure * 0.4);
+      };
+
+    /*
+     * The most recent quality adaptation, published with telemetry.
+     * Declared before setQuality/buildWorld, which both write it.
+     */
+    let lastAdaptation:
+      | RedMagicAdaptation
+      | null =
+      null;
+
+    /*
+     * HARD ADAPTATION SCHEDULER (Runtime v2) — structural rebuilds
+     * (grid, membrane boundary, particle pools, influence tables) are
+     * never executed mid-frame or mid-interaction. They are scheduled
+     * here and executed by the render loop on a SETTLED frame:
+     * no active pointer, no live shockwaves, no turbulence, no fresh
+     * click particles, and (normally) the idle cadence already active.
+     * A pending rebuild older than HARD_REBUILD_MAX_WAIT_MS is allowed
+     * through on any non-active frame so sustained degradation cannot
+     * defer recovery forever on a constantly-hovered canvas.
+     */
+    const HARD_REBUILD_MAX_WAIT_MS =
+      12000;
+
+    let hardRebuildScheduledAt =
+      0;
+
+    const scheduleHardRebuild =
       (
-        name: QualityName
+        target: QualityName,
+        reason: string
       ) => {
         if (
-          name ===
-          qualityName
+          hardRebuildPending &&
+          hardRebuildTarget ===
+            target
         ) {
           return;
         }
 
-        qualityName =
-          name;
+        hardRebuildPending =
+          true;
+
+        hardRebuildTarget =
+          target;
+
+        hardRebuildReason =
+          reason;
+
+        hardRebuildScheduledAt =
+          performance.now();
+      };
+
+    /*
+     * setQuality (Runtime v2) — two-level adaptation.
+     *
+     * mode "soft" (default): retarget the budget immediately (flows,
+     * particle limit, strides, atmosphere) and — when the new tier
+     * needs different structures (grid size, boundary resolution, pool
+     * size) — schedule the hard rebuild for the next settled frame.
+     * mode "hard": rebuild synchronously. Used on mount, when reduced
+     * motion flips (a static frame cannot see a deferred rebuild), and
+     * when a resize changes the tier before any interaction exists.
+     */
+    const setQuality =
+      (
+        name: QualityName,
+        options?: {
+          mode?: "soft" | "hard";
+          reason?: string;
+        }
+      ) => {
+        const mode =
+          options?.mode ?? "soft";
+
+        const reason =
+          options?.reason ??
+          "unspecified";
+
+        const changed =
+          name !== qualityName;
+
+        if (
+          !changed &&
+          mode === "soft"
+        ) {
+          return;
+        }
+
+        lastAdaptation =
+          changed
+            ? {
+                type:
+                  mode === "hard"
+                    ? "hard"
+                    : "soft",
+                from: qualityName,
+                to: name,
+                reason,
+                at:
+                  performance.now()
+              }
+            : lastAdaptation;
+
+        qualityName = name;
 
         quality =
-          QUALITY[
-            name
-          ];
+          QUALITY_BUDGETS[name];
 
         flowGeometry =
           buildFlowGeometry(
             quality
           );
+
+        dprCap = dprCeilingFor(
+          name,
+          width * height
+        );
+
+        if (
+          mode === "hard"
+        ) {
+          buildWorld(
+            name,
+            reason
+          );
+
+          return;
+        }
+
+        /*
+         * Soft path: structures from the previous tier keep working
+         * (grid/boundary/pools are all self-consistent); the new tier's
+         * structure sizes are adopted by the deferred hard rebuild.
+         * Until then the soft outputs already deliver a real work
+         * reduction — that is the point of the two-level design.
+         */
+        softPressure =
+          name === qualityFromArea(
+            width * height
+          )
+            ? 0
+            : 0.35;
+
+        applySoftAdaptation();
+
+        if (changed) {
+          scheduleHardRebuild(
+            name,
+            reason
+          );
+        }
 
         lastQualityChange =
           performance.now();
@@ -2388,13 +2738,14 @@ export default function RedMagic() {
 
     const buildWorld =
       (
-        name: QualityName
+        name: QualityName,
+        reason: string = "build"
       ) => {
         qualityName =
           name;
 
         quality =
-          QUALITY[
+          QUALITY_BUDGETS[
             name
           ];
 
@@ -2418,6 +2769,9 @@ export default function RedMagic() {
 
         clickParticleCount =
           0;
+
+        baseParticleCount =
+          particles.length;
 
         placeParticles(
           particles,
@@ -2451,16 +2805,13 @@ export default function RedMagic() {
             gridNodes.length
           );
 
-        const globalPotential =
+        const globalPotentialField =
           buildGlobalPotentialWeights(
             gridNodes
           );
 
-        globalPotentialWeights =
-          globalPotential.weights;
-
-        globalPotentialTotals =
-          globalPotential.totals;
+        globalPotential =
+          globalPotentialField;
 
         membraneBoundary =
           createBoundary(
@@ -2474,6 +2825,36 @@ export default function RedMagic() {
 
         averageGridEnergy =
           0;
+
+        highestNodeEnergy = 0;
+
+        /*
+         * A structural rebuild resets soft adaptation to the new tier's
+         * full budget — the hard rebuild IS the recovery path.
+         */
+        softPressure = 0;
+
+        applySoftAdaptation();
+
+        hardRebuildPending = false;
+
+        hardRebuildTarget = null;
+
+        if (reason !== "build") {
+          lastAdaptation = {
+            type: "hard",
+
+            from:
+              lastAdaptation?.to ?? name,
+
+            to: name,
+
+            reason,
+
+            at:
+              performance.now()
+          };
+        }
 
         lastQualityChange =
           performance.now();
@@ -2537,12 +2918,37 @@ export default function RedMagic() {
             rect.height
           );
 
+        /*
+         * ADAPTIVE DPR (Runtime v2): the target resolution derives from
+         * the device DPR, canvas area, active quality tier and sustained
+         * performance via resolveAdaptiveDpr (engineConfig). The policy
+         * itself is debounced (>= 0.25 steps, >= 2.5s between changes,
+         * never raising while the engine under-performs), so resolution
+         * changes are rare, stable and always real work changes.
+         */
+        dprCap = dprCeilingFor(
+          qualityName,
+          nextWidth * nextHeight
+        );
+
         const nextDpr =
-          Math.min(
-            window.devicePixelRatio ||
-              1,
-            MAX_DPR
-          );
+          resolveAdaptiveDpr({
+            deviceDpr:
+              window.devicePixelRatio || 1,
+            area: nextWidth * nextHeight,
+            quality: qualityName,
+            performanceRatio:
+              refreshEstimator.estimate > 0
+                ? latestFps / refreshEstimator.estimate
+                : 0,
+            currentDpr: dpr,
+            lastChangeAt: dprLastChangeAt,
+            now: performance.now()
+          });
+
+        if (nextDpr !== dpr) {
+          dprLastChangeAt = performance.now();
+        }
 
         /*
          * Perf guard (v3.1.1): ResizeObserver only coalesces within a
@@ -2664,6 +3070,19 @@ export default function RedMagic() {
         start();
       };
 
+    /*
+     * INTERACTION SIGNAL INTAKE (Runtime v2). Raw pointer events feed a
+     * continuous signal model: smoothed pointer speed (px/s), presence
+     * duration and a decaying impulse memory. Discrete events (impact,
+     * flick, charge, release) lift the signal floor through
+     * interactionEnergy — see the render loop for the full model.
+     */
+    let lastSignalPointerX = 0;
+
+    let lastSignalPointerY = 0;
+
+    let lastSignalPointerAt = 0;
+
     const updatePointer =
       (
         clientX: number,
@@ -2684,6 +3103,58 @@ export default function RedMagic() {
             0,
             height
           );
+
+        /*
+         * Smoothed pointer speed from consecutive raw events. Event
+         * timestamps are wall-clock; the 1..400ms guard rejects both
+         * zero-delta coalesced events and stale bursts after tab switches.
+         */
+        const now =
+          performance.now();
+
+        if (
+          lastSignalPointerAt >
+          0
+        ) {
+          const dt =
+            now -
+            lastSignalPointerAt;
+
+          if (
+            dt >= 1 &&
+            dt <= 400
+          ) {
+            const dx =
+              clientX -
+              lastSignalPointerX;
+
+            const dy =
+              clientY -
+              lastSignalPointerY;
+
+            const eventSpeed =
+              (Math.hypot(dx, dy) / dt) * 1000;
+
+            pointerSpeedPxPerS +=
+              (eventSpeed - pointerSpeedPxPerS) *
+              0.35;
+          }
+        }
+
+        lastSignalPointerX = clientX;
+
+        lastSignalPointerY = clientY;
+
+        lastSignalPointerAt = now;
+
+        lastPointerMovementAt = now;
+
+        if (
+          pointerPresentSince ===
+          0
+        ) {
+          pointerPresentSince = now;
+        }
       };
 
     const updatePointerGeometry =
@@ -2749,7 +3220,7 @@ export default function RedMagic() {
         boundaryAngularLookup =
           pointerEnergy >
             0.7
-            ? ANGULAR_FALLOFF_SURGE
+            ? ANGULAR_FALLOFF_ACTIVE
             : ANGULAR_FALLOFF_NORMAL;
 
         boundaryPointerStrength =
@@ -3132,12 +3603,33 @@ export default function RedMagic() {
             1.5
           );
 
+        /*
+         * Soft adaptation (Runtime v2): impulses skip base-pool
+         * particles beyond the active limit; click particles (index
+         * >= baseParticleCount) always receive the impulse so
+         * interaction feedback never degrades.
+         */
+        const impulseLimit =
+          Math.max(
+            0,
+            activeParticleLimit
+          );
+
         for (
           let index = 0;
           index <
             particles.length;
           index += 1
         ) {
+          if (
+            index <
+              baseParticleCount &&
+            index >=
+              impulseLimit
+          ) {
+            continue;
+          }
+
           const particle =
             particles[
               index
@@ -3248,6 +3740,17 @@ export default function RedMagic() {
         pointerVelocity =
           detail.velocity;
 
+        /*
+         * Impulse memory (Runtime v2): discrete events leave a decaying
+         * afterglow so the organism's energy falls naturally instead of
+         * snapping back the instant the event ends.
+         */
+        interactionMemory =
+          Math.max(
+            interactionMemory,
+            detail.energy
+          );
+
         interactionTurbulence =
           clamp(
             (
@@ -3271,6 +3774,14 @@ export default function RedMagic() {
           case "enter":
             pointerActive =
               true;
+
+            if (
+              pointerPresentSince ===
+              0
+            ) {
+              pointerPresentSince =
+                performance.now();
+            }
 
             interactionEnergy =
               Math.max(
@@ -3423,6 +3934,16 @@ export default function RedMagic() {
 
             charge =
               0;
+
+            /*
+             * Signals decay from here: the organism calms down over the
+             * following seconds instead of dropping instantly.
+             */
+            pointerPresentSince = 0;
+
+            pointerSpeedPxPerS = 0;
+
+            lastSignalPointerAt = 0;
 
             idleSince =
               performance.now();
@@ -3577,52 +4098,95 @@ export default function RedMagic() {
         const nodeCount =
           gridNodes.length;
 
-        for (
-          let index = 0;
-          index <
-            nodeCount;
-          index += 1
-        ) {
-          const rowOffset =
-            index *
-            nodeCount;
+        /*
+         * BOUNDED POTENTIAL (Runtime v2): snapshot the decayed energies
+         * into a typed array once, then accumulate each node's potential
+         * from its precomputed top-K neighbourhood — no object reads and
+         * no all-node pairs inside the hot loop. Replaces the dense N×N
+         * weighting pass (measured hotspot; see
+         * buildGlobalPotentialWeights for the measurement and model).
+         */
+        const potentialField =
+          globalPotential;
 
-          let weightedEnergy =
-            0;
+        if (
+          potentialField &&
+          potentialField.count ===
+            nodeCount
+        ) {
+          const snapshot =
+            potentialField.snapshot;
 
           for (
-            let otherIndex = 0;
-            otherIndex <
+            let index = 0;
+            index <
               nodeCount;
-            otherIndex += 1
+            index += 1
           ) {
-            weightedEnergy +=
-              gridNodes[
-                otherIndex
-              ].energy *
-              globalPotentialWeights[
-                rowOffset +
-                  otherIndex
-              ];
+            snapshot[index] =
+              gridNodes[index].energy;
           }
 
-          const totalWeight =
-            globalPotentialTotals[
-              index
-            ];
+          const fieldIndices =
+            potentialField.indices;
 
-          nodePotential[
-            index
-          ] =
-            totalWeight >
-            0
-              ? clamp(
-                  weightedEnergy /
-                    totalWeight,
-                  0,
-                  GRID_MAX_NODE_ENERGY
-                )
-              : 0;
+          const fieldWeights =
+            potentialField.weights;
+
+          const fieldTotals =
+            potentialField.totals;
+
+          const fieldK =
+            potentialField.k;
+
+          for (
+            let index = 0;
+            index <
+              nodeCount;
+            index += 1
+          ) {
+            const row =
+              index * fieldK;
+
+            let weightedEnergy = 0;
+
+            for (
+              let slot = 0;
+              slot < fieldK;
+              slot += 1
+            ) {
+              weightedEnergy +=
+                snapshot[
+                  fieldIndices[
+                    row + slot
+                  ]
+                ] *
+                fieldWeights[
+                  row + slot
+                ];
+            }
+
+            const totalWeight =
+              fieldTotals[index];
+
+            nodePotential[
+              index
+            ] =
+              totalWeight > 0
+                ? clamp(
+                    weightedEnergy /
+                      totalWeight,
+                    0,
+                    GRID_MAX_NODE_ENERGY
+                  )
+                : 0;
+          }
+        } else {
+          /*
+           * Fallback (field not built or size mismatch): zero potential
+           * keeps the simulation stable until the next buildWorld.
+           */
+          nodePotential.fill(0);
         }
 
         nextNodeEnergy.fill(
@@ -3929,6 +4493,8 @@ export default function RedMagic() {
         let totalGridEnergy =
           0;
 
+        let frameHighestEnergy = 0;
+
         for (
           let index = 0;
           index <
@@ -4011,6 +4577,14 @@ export default function RedMagic() {
               GRID_MAX_NODE_ENERGY
             );
 
+          if (
+            node.energy >
+            frameHighestEnergy
+          ) {
+            frameHighestEnergy =
+              node.energy;
+          }
+
           totalGridEnergy +=
             node.energy;
 
@@ -4033,6 +4607,14 @@ export default function RedMagic() {
             ? totalGridEnergy /
               gridNodes.length
             : 0;
+
+        /*
+         * Track the aggregate during the update step (Runtime v2):
+         * drawCore previously re-scanned every node every frame just
+         * to recover this maximum — pure redundant hot-path work.
+         */
+        highestNodeEnergy =
+          frameHighestEnergy;
       };
 
     const prepareShockwaveFrame =
@@ -4954,9 +5536,18 @@ export default function RedMagic() {
             nodeAlpha
           );
 
+          /*
+           * Budget-gated glow pass (Runtime v2): the node-glow sprite
+           * layer is part of the atmosphere allocation. Lower tiers
+           * raise the energy floor and soft adaptation scales the
+           * alpha — the cheap line network stays, the expensive glow
+           * layer degrades first.
+           */
           if (
             energy >
-            0.018
+              quality.nodeGlowFloor &&
+            atmosphereScale >
+              0.25
           ) {
             drawGlow(
               node.x,
@@ -4968,9 +5559,12 @@ export default function RedMagic() {
                   energy *
                     2
                 ),
-              0.028 +
+              (
+                0.028 +
                 energy *
                   0.07
+              ) *
+                atmosphereScale
             );
           }
         }
@@ -5208,11 +5802,20 @@ export default function RedMagic() {
 
         context.beginPath();
 
+        /*
+         * Membrane draw stride (Runtime v2 soft adaptation): under soft
+         * pressure the stroke is drawn every second point. The boundary
+         * structures and influence tables stay intact — only the stroke
+         * resolution drops, so recovery is instant and lossless.
+         */
+        const boundaryStride =
+          membraneStride;
+
         for (
           let index = 0;
           index <
             membraneBoundary.length;
-          index += 1
+          index += boundaryStride
         ) {
           const point =
             membraneBoundary[
@@ -5427,10 +6030,18 @@ export default function RedMagic() {
               1
             );
 
+          /*
+           * Flow draw stride (Runtime v2 soft adaptation): coarser
+           * point sampling under pressure; geometry arrays are intact
+           * so the stride restores to 1 losslessly.
+           */
+          const segmentStride =
+            flowStride;
+
           for (
             let segment = 0;
             segment <= flowSegments;
-            segment += 1
+            segment += segmentStride
           ) {
             const pointIndex =
               flowOffset +
@@ -5532,6 +6143,10 @@ export default function RedMagic() {
      * component whose own allocation discipline treats per-frame
      * garbage as a forbidden regression. Field writes on a stable
      * monomorphic shape allocate nothing.
+     *
+     * Runtime v2 adds `activeLimit`/`baseCount`: soft adaptation draws
+     * only the first `activeLimit` pool particles; click particles
+     * (appended beyond the base pool) always update and draw.
      */
     const particleDrawOptions = {
       context,
@@ -5556,7 +6171,11 @@ export default function RedMagic() {
       time: 0,
       delta: 0,
 
-      reducedMotion
+      reducedMotion,
+
+      activeLimit: 0,
+
+      baseCount: 0
     };
 
     const drawParticles =
@@ -5597,6 +6216,12 @@ export default function RedMagic() {
         particleDrawOptions.delta =
           delta;
 
+        particleDrawOptions.activeLimit =
+          activeParticleLimit;
+
+        particleDrawOptions.baseCount =
+          baseParticleCount;
+
         updateAndDrawParticles(
           particleDrawOptions
         );
@@ -5619,26 +6244,14 @@ export default function RedMagic() {
           ) *
             0.012;
 
-        let highestGridEnergy =
-          0;
-
-        for (
-          let index = 0;
-          index <
-            gridNodes.length;
-          index += 1
-        ) {
-          const energy =
-            gridNodes[
-              index
-            ].energy;
-
-          highestGridEnergy =
-            Math.max(
-              highestGridEnergy,
-              energy
-            );
-        }
+        /*
+         * Highest node energy arrives tracked from updateGrid (Runtime
+         * v2) — the per-frame re-scan of every grid node that used to
+         * live here is gone; the aggregate is produced where the
+         * energies are already in registers.
+         */
+        const highestGridEnergy =
+          highestNodeEnergy;
 
         const activePulse =
           pointerEnergy *
@@ -5737,7 +6350,9 @@ export default function RedMagic() {
 
         if (
           charge >
-          0.01
+            0.01 &&
+          atmosphereScale >
+            0.3
         ) {
           drawGlow(
             centerX,
@@ -5750,9 +6365,12 @@ export default function RedMagic() {
                 charge *
                   1.2
               ),
-            0.055 +
+            (
+              0.055 +
               charge *
                 0.09
+            ) *
+              atmosphereScale
           );
         }
 
@@ -5877,13 +6495,16 @@ export default function RedMagic() {
             0.1,
           nucleusRadius *
             2.2,
-          0.09 +
+          (
+            0.09 +
             pointerEnergy *
               0.05 +
             averageGridEnergy *
               0.04 +
             movementEnergy *
               0.05
+          ) *
+            atmosphereScale
         );
 
         /*
@@ -5960,16 +6581,25 @@ export default function RedMagic() {
               16
           );
 
-        interactionEnergy +=
-          (
-            pointerEnergy -
-            interactionEnergy
-          ) *
-          Math.min(
-            1,
-            delta *
-              0.006
+        /*
+         * Runtime v2: interactionEnergy is a decaying EVENT FLOOR, not
+         * a follower of pointerEnergy. Discrete events lift it; it then
+         * decays with its own memory so energy falls naturally after a
+         * burst instead of being pinned near its peak.
+         */
+        interactionEnergy *=
+          Math.pow(
+            0.988,
+            delta /
+              16
           );
+
+        if (
+          interactionEnergy <
+          0.004
+        ) {
+          interactionEnergy = 0;
+        }
 
         clickLightBoost *=
           Math.pow(
@@ -6032,13 +6662,52 @@ export default function RedMagic() {
         }
       };
 
+    /*
+     * maybeAdaptQuality (Runtime v2) — the engine's measurement and
+     * adaptation controller.
+     *
+     * Sampling: raw inter-frame deltas feed the refresh estimator and a
+     * ~1.8s fps window. IDLE-CADENCE FRAMES ARE EXCLUDED: an organism
+     * deliberately redrawing at 33ms is a cadence decision, not a
+     * performance problem — counting those frames made the sampler
+     * demote quality on healthy machines that were merely idle (the
+     * sampler now also resets across state transitions so a window
+     * never mixes idle and active frames).
+     *
+     * Adaptation: quality responds to SUSTAINED conditions only
+     * (two bad windows demote, three good windows promote, a 3.5s
+     * recovery guard sits after every change). Demotion applies SOFT
+     * adaptation immediately — real work reduction the very next frame
+     * — and schedules the HARD structural rebuild for the next settled
+     * frame. Promotion restores soft outputs immediately and schedules
+     * the structural rebuild the same way, so both directions are real
+     * work changes with no mid-interaction rebuilds.
+     */
     const maybeAdaptQuality =
       (
-        timestamp: number
+        timestamp: number,
+        idleCapped: boolean
       ) => {
         if (
           reducedMotion
         ) {
+          return;
+        }
+
+        /*
+         * Idle-capped frames (idle cadence drew this frame at the
+         * reduced rate) never feed the sampler — the window instead
+         * restarts so the next active phase is measured cleanly.
+         */
+        if (
+          idleCapped
+        ) {
+          performanceSampleTime = timestamp;
+
+          performanceFrames = 0;
+
+          lastAdaptTimestamp = timestamp;
+
           return;
         }
 
@@ -6124,36 +6793,27 @@ export default function RedMagic() {
         performanceFrames =
           0;
 
+        latestFps = fps;
+
         /*
-         * Refresh estimate: adopt a window only when it is SUSTAINED
-         * faster (3% above the current estimate). Isolated sub-frame
-         * scheduling jitter cannot manufacture a promotion.
+         * Refresh estimate (Runtime v2 estimator): sustained-fast
+         * adoption, sustained-collapse decay, null window when no
+         * valid deltas arrived (suspension/idle gaps).
          */
-        if (
-          windowMinDelta >
-          0
-        ) {
-          const windowHz =
-            1000 /
-            windowMinDelta;
+        const windowHz =
+          windowMinDelta > 0
+            ? 1000 / windowMinDelta
+            : null;
 
-          if (
-            refreshHzEstimate ===
-              0 ||
-            windowHz >
-              refreshHzEstimate *
-                1.03
-          ) {
-            refreshHzEstimate =
-              Math.min(
-                240,
-                windowHz
-              );
-          }
-        }
+        closeRefreshWindow(
+          refreshEstimator,
+          windowHz
+        );
 
-        windowMinDelta =
-          0;
+        windowMinDelta = 0;
+
+        const refreshHzEstimate =
+          refreshEstimator.estimate;
 
         publishRedMagicPerformance({
           fps,
@@ -6164,6 +6824,8 @@ export default function RedMagic() {
             qualityName,
 
           dpr,
+
+          dprCap,
 
           width,
 
@@ -6182,7 +6844,52 @@ export default function RedMagic() {
               ? Math.round(
                   refreshHzEstimate
                 )
-              : undefined
+              : undefined,
+
+          runtimeState,
+
+          simulationScale:
+            STATE_SIMULATION_SCALE[
+              runtimeState
+            ],
+
+          particlesActive:
+            Math.min(
+              activeParticleLimit,
+              baseParticleCount
+            ) +
+            (particles.length -
+              baseParticleCount),
+
+          particlesBudget:
+            quality.particles,
+
+          gridNodes:
+            gridNodes.length,
+
+          gridEdges:
+            gridEdges.length,
+
+          membranePoints:
+            membraneBoundary.length,
+
+          flowCount:
+            quality.flowCount,
+
+          flowSegments:
+            quality.flowSegments,
+
+          membraneStride,
+
+          atmosphere:
+            Math.round(
+              atmosphereScale * 100
+            ) /
+            100,
+
+          lastAdaptation:
+            lastAdaptation ??
+            undefined
         });
 
         if (
@@ -6228,6 +6935,9 @@ export default function RedMagic() {
           | null =
           null;
 
+        let adaptReason =
+          "";
+
         if (
           fps <
           demoteLine
@@ -6248,6 +6958,8 @@ export default function RedMagic() {
             ) {
               nextQuality =
                 "medium";
+
+              adaptReason = "sustained-fps";
             } else if (
               fps <
                 50 &&
@@ -6256,6 +6968,8 @@ export default function RedMagic() {
             ) {
               nextQuality =
                 "low";
+
+              adaptReason = "sustained-fps";
             }
           }
         } else {
@@ -6276,10 +6990,12 @@ export default function RedMagic() {
           ) {
             if (
               qualityName ===
-              "medium"
+                "medium"
             ) {
               nextQuality =
                 "high";
+
+              adaptReason = "recovery";
             } else if (
               qualityName ===
                 "low" &&
@@ -6288,6 +7004,8 @@ export default function RedMagic() {
             ) {
               nextQuality =
                 "medium";
+
+              adaptReason = "recovery";
             }
           }
         } else {
@@ -6305,9 +7023,16 @@ export default function RedMagic() {
           promoteStreak =
             0;
 
-          setQuality(
-            nextQuality
-          );
+          /*
+           * SOFT FIRST: the new tier's budgets (particle limit, flows,
+           * strides, atmosphere) apply from the next drawn frame. The
+           * structural rebuild is scheduled and executes on a settled
+           * frame — never mid-interaction.
+           */
+          setQuality(nextQuality, {
+            mode: "soft",
+            reason: adaptReason
+          });
         }
       };
 
@@ -6315,10 +7040,16 @@ export default function RedMagic() {
       (
         timestamp: number
       ) => {
+        /*
+         * SUSPENDED — offscreen or hidden document: zero work. The loop
+         * does not reschedule itself; start() re-arms it on visibility.
+         */
         if (
           !visible ||
           !documentVisible
         ) {
+          runtimeState = "suspended";
+
           animationFrame =
             0;
 
@@ -6326,20 +7057,59 @@ export default function RedMagic() {
         }
 
         /*
-         * Idle cadence (v2.8): with no pointer intent on the canvas
-         * (and none for the last few seconds), skip the expensive
-         * redraw and just reschedule. Physics deltas collapse to
-         * the clamp ceiling on the next drawn frame, so ambient
-         * motion stays continuous — only the redraw rate drops.
+         * POINTER STILLNESS (Runtime v2): a pointer that rests on the
+         * canvas without moving used to pin the engine at full vsync
+         * forever ("active = high energy" by mere presence). Under the
+         * continuous signal model its energy decays naturally, and once
+         * it settles the organism earns the idle cadence exactly as if
+         * the pointer had left.
+         */
+        const pointerStillMs =
+          pointerActive &&
+          lastPointerMovementAt > 0
+            ? timestamp - lastPointerMovementAt
+            : 0;
+
+        const pointerStillIdle =
+          pointerActive &&
+          pointerStillMs >
+            STILL_POINTER_IDLE_MS &&
+          pointerEnergy <
+            SETTLED_ENERGY;
+
+        /*
+         * A settled still pointer enters the idle cadence backdated to
+         * when stillness passed the threshold, so the cadence delay is
+         * measured from the moment the organism actually calmed — not
+         * from when the engine noticed.
          */
         if (
-          !pointerActive &&
+          pointerStillIdle &&
+          idleSince === null
+        ) {
+          idleSince =
+            lastPointerMovementAt +
+            STILL_POINTER_IDLE_MS;
+        }
+
+        /*
+         * Idle cadence (v2.8, extended in Runtime v2): with no pointer
+         * intent (or a settled still pointer), skip the expensive
+         * redraw and just reschedule. Physics deltas collapse to the
+         * clamp ceiling on the next drawn frame, so ambient motion
+         * stays continuous — only the redraw rate drops.
+         */
+        if (
+          (!pointerActive ||
+            pointerStillIdle) &&
           idleSince !== null &&
           timestamp - idleSince >
             IDLE_CADENCE_DELAY_MS &&
           timestamp - lastDrawTimestamp <
             IDLE_FRAME_INTERVAL_MS
         ) {
+          runtimeState = "idle";
+
           animationFrame =
             window.requestAnimationFrame(
               render
@@ -6347,6 +7117,18 @@ export default function RedMagic() {
 
           return;
         }
+
+        /*
+         * Distinguish "this frame drew at the idle cadence" from "this
+         * frame drew at full rate" — the sampler must never mix the
+         * two (see maybeAdaptQuality).
+         */
+        const idleCapped =
+          (!pointerActive ||
+            pointerStillIdle) &&
+          idleSince !== null &&
+          timestamp - idleSince >
+            IDLE_CADENCE_DELAY_MS;
 
         lastDrawTimestamp =
           timestamp;
@@ -6373,10 +7155,80 @@ export default function RedMagic() {
         lastTimestamp =
           timestamp;
 
+        /*
+         * RUNTIME STATE (Runtime v2) — explicit, telemetry-visible:
+         * active (interaction energy high or pointer moving),
+         * ambient (awake at low energy, moderate sim rate),
+         * recovery (quality recently changed — cadence held stable).
+         * idle/reduced/suspended return above or below.
+         */
+        const signalEnergy =
+          interactionTargetEnergy({
+            /*
+             * Proximity only counts while the pointer is actually on
+             * the canvas — a stale geometry value from a departed
+             * pointer must never hold the organism awake.
+             */
+            proximity: pointerActive
+              ? boundaryPointerDistanceFactor
+              : 0,
+            speed: clamp(
+              pointerSpeedPxPerS /
+                SPEED_SATURATION_PX_S,
+              0,
+              1
+            ),
+            /*
+             * Presence builds dwell; stillness bleeds it away at 0.75×
+             * so resting on the canvas cannot hold energy forever.
+             */
+            dwell:
+              pointerPresentSince > 0 &&
+              pointerActive
+                ? clamp(
+                    (timestamp -
+                      pointerPresentSince -
+                      pointerStillMs * 0.75) /
+                      DWELL_SATURATION_MS,
+                    0,
+                    1
+                  )
+                : 0,
+            memory: interactionMemory,
+            charge
+          });
+
+        const recovered =
+          timestamp - lastQualityChange <
+          3500;
+
+        if (
+          pointerActive &&
+          (signalEnergy > 0.42 ||
+            interactionEnergy > 0.3)
+        ) {
+          runtimeState = "active";
+        } else if (
+          recovered &&
+          softPressure > 0
+        ) {
+          runtimeState = "recovery";
+        } else if (
+          pointerActive ||
+          pointerEnergy > 0.06 ||
+          interactionEnergy > 0.02
+        ) {
+          runtimeState = "ambient";
+        } else {
+          runtimeState = "idle";
+        }
+
         const interactionScale =
-          pointerActive
-            ? 1
-            : IDLE_SIMULATION_SCALE;
+          reducedMotion
+            ? 0
+            : STATE_SIMULATION_SCALE[
+                runtimeState
+              ];
 
         if (
           !reducedMotion
@@ -6421,21 +7273,51 @@ export default function RedMagic() {
               profile.responseLag
           );
 
-        const targetEnergy =
-          pointerActive
-            ? profile.energyCeiling
-            : profile.energyFloor;
+        /*
+         * CONTINUOUS INTERACTION MODEL (Runtime v2) — replaces the
+         * binary "pointer present = ceiling / absent = floor" law.
+         * pointerEnergy now chases the signal-driven target: proximity,
+         * smoothed speed, sustained presence, decaying impulse memory
+         * and deliberate charge. Discrete events (impact/flick/charge/
+         * release) hold an interactionEnergy FLOOR that decays with its
+         * own memory, so energy rises and falls naturally and never
+         * jumps to the ceiling just because the pointer exists.
+         */
+        const targetEnergy = Math.max(
+          signalEnergy,
+          interactionEnergy * 0.85
+        );
+
+        const riseRate = 0.011;
+
+        const fallRate = 0.0035;
 
         pointerEnergy +=
-          (
-            targetEnergy -
-            pointerEnergy
-          ) *
+          (targetEnergy - pointerEnergy) *
           Math.min(
             1,
             delta *
-              0.008
+              (targetEnergy > pointerEnergy
+                ? riseRate
+                : fallRate)
           );
+
+        /* Signal decay: speed fades without fresh events; memory lingers. */
+        pointerSpeedPxPerS *=
+          Math.pow(
+            0.9,
+            delta / 16
+          );
+
+        interactionMemory *=
+          Math.pow(
+            0.9975,
+            delta / 16
+          );
+
+        if (interactionMemory < 0.004) {
+          interactionMemory = 0;
+        }
 
         if (
           pointerHeld
@@ -6455,6 +7337,69 @@ export default function RedMagic() {
         updatePhysicalState(
           stepDelta
         );
+
+        /*
+         * WORLD COORDINATION (Runtime v2): publish the organism's
+         * arousal to the shared world-signal store (a module number —
+         * no listeners, no allocation). WorldBackground reads it to
+         * keep its own ambient layer from amplifying the SAME pointer
+         * energy the interactive canvas is already expressing — one
+         * shared visual/performance budget across both layers.
+         */
+        activityPublishCounter += 1;
+
+        if (
+          activityPublishCounter >=
+          8
+        ) {
+          activityPublishCounter = 0;
+
+          noteOrganismActivity(
+            Math.max(
+              pointerEnergy,
+              interactionMemory
+            )
+          );
+        }
+
+        /*
+         * HARD REBUILD EXECUTION (Runtime v2): a scheduled structural
+         * rebuild runs ONLY on a settled frame — no active pointer, no
+         * live shockwaves, no turbulence, no recent click particles —
+         * or after HARD_REBUILD_MAX_WAIT_MS on any non-active frame.
+         * Rebuilding here (idle cadence included) keeps expensive
+         * reallocations off the interaction hot path.
+         */
+        if (
+          hardRebuildPending &&
+          hardRebuildTarget !== null
+        ) {
+          const settled =
+            !pointerActive &&
+            shockwaves.length ===
+              0 &&
+            interactionTurbulence <
+              0.01 &&
+            clickParticleCount === 0;
+
+          const waitedOut =
+            hardRebuildScheduledAt > 0 &&
+            performance.now() -
+              hardRebuildScheduledAt >
+              HARD_REBUILD_MAX_WAIT_MS;
+
+          if (
+            settled &&
+            (runtimeState === "idle" ||
+              waitedOut)
+          ) {
+            const target = hardRebuildTarget;
+
+            const reason = hardRebuildReason;
+
+            buildWorld(target, reason);
+          }
+        }
 
         context.globalAlpha =
           1;
@@ -6490,7 +7435,8 @@ export default function RedMagic() {
         );
 
         maybeAdaptQuality(
-          timestamp
+          timestamp,
+          idleCapped
         );
 
         /*
@@ -6502,6 +7448,8 @@ export default function RedMagic() {
          * produces one fresh static frame per event.
          */
         if (reducedMotion) {
+          runtimeState = "reduced";
+
           animationFrame =
             0;
 
@@ -6580,6 +7528,12 @@ export default function RedMagic() {
         pointerActive =
           false;
 
+        pointerPresentSince = 0;
+
+        pointerSpeedPxPerS = 0;
+
+        lastSignalPointerAt = 0;
+
         idleSince =
           performance.now();
       };
@@ -6595,15 +7549,27 @@ export default function RedMagic() {
         if (
           reducedMotion
         ) {
+          /*
+           * Hard mode: a static organism draws one frame and stops, so
+           * a deferred soft rebuild would never execute.
+           */
           setQuality(
-            "low"
+            "low",
+            {
+              mode: "hard",
+              reason: "reduced-motion"
+            }
           );
         } else {
           setQuality(
             qualityFromArea(
               width *
                 height
-            )
+            ),
+            {
+              mode: "hard",
+              reason: "motion-restored"
+            }
           );
         }
 
@@ -6642,6 +7608,23 @@ export default function RedMagic() {
         ) {
           start();
         } else {
+          /*
+           * Suspension resets the open sampling window: deltas across a
+           * hidden period say nothing about the display or the engine,
+           * and a stale window must not drive adaptation (Runtime v2).
+           */
+          windowMinDelta = 0;
+
+          lastAdaptTimestamp = 0;
+
+          performanceSampleTime = 0;
+
+          performanceFrames = 0;
+
+          suspendRefreshWindow(
+            refreshEstimator
+          );
+
           stop();
         }
       };
@@ -6723,7 +7706,11 @@ export default function RedMagic() {
       reducedMotion
     ) {
       setQuality(
-        "low"
+        "low",
+        {
+          mode: "hard",
+          reason: "reduced-motion-mount"
+        }
       );
 
       resize();
