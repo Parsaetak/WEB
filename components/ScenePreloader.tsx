@@ -67,7 +67,7 @@ const SCENE_ORDER: readonly SceneId[] =
     "systems",
     "magic",
     "work",
-    "library"
+    "media"
   ];
 
 const PRELOADER_OWNER =
@@ -110,9 +110,9 @@ const preloaders: Record<
       "@/components/scenes/WorkScene"
     ),
 
-  library: () =>
+  media: () =>
     import(
-      "@/components/scenes/LibraryScene"
+      "@/components/scenes/MediaScene"
     )
 };
 

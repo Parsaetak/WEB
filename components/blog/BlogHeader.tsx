@@ -17,7 +17,7 @@ import styles from "./BlogHeader.module.css";
  * (UnifiedSiteNav) — the same renderer, data source, geometry,
  * accents, active states and animation language as the world HUD,
  * the content documents and the topic hubs. BLOG is the active
- * area; the experimental world scenes (SYSTEMS, RED MAGIC, LIBRARY)
+ * area; the experimental world scenes (SYSTEMS, RED MAGIC, MEDIA)
  * follow as the quieter secondary group; GitHub rides as a utility
  * entry inside the ≤860px disclosure menu. The separate scene-link
  * row and the standalone CompactMenu island are retired — the

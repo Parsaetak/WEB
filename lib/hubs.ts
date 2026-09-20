@@ -682,7 +682,7 @@ export const HUB_ROUTES: readonly HubDefinition[] = [
       },
       {
         name: "Contents",
-        what: "The multi-branch content infrastructure repository that publishes specifications, frameworks, and books, and feeds this site's library through a validated manifest.",
+        what: "The multi-branch content infrastructure repository that publishes specifications, frameworks, and books, and feeds this site's media collection through a validated manifest.",
         why: "Content is infrastructure: versioned, validated, and pipeline-fed like everything else.",
         meta: "SPECS · BOOKS · MANIFEST",
         links: [
@@ -802,13 +802,13 @@ export const HUB_ROUTES: readonly HubDefinition[] = [
       },
       {
         name: "RED MAGIC books",
-        what: "RED MAGIC, MAGIC FOR KIDS, and THE BOOK OF THE DEMIURGE — the written form of the ideas, readable in the Library.",
+        what: "RED MAGIC, MAGIC FOR KIDS, and THE BOOK OF THE DEMIURGE — the written form of the ideas, readable in the Media collection.",
         why: "The ideas survive outside the canvas, in long-form writing.",
-        meta: "BOOKS · LIBRARY",
+        meta: "BOOKS · MEDIA",
         links: [
           {
-            label: "The Library scene — the books",
-            href: "/#library",
+            label: "The Media scene — the books",
+            href: "/#media",
             external: false
           }
         ]

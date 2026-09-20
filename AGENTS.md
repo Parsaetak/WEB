@@ -38,7 +38,9 @@ violation as a bug to be justified, not a style preference.
   `/ai-reasoning/`, `/ai-evaluation/`, `/software-engineering/`,
   `/creative-technology/`), Blog index `/blog/`, articles `/blog/<slug>/`
   (derived from `content/blog/*.md`). World-shell hash scenes (`/#systems`,
-  `/#magic`, `/#library`) are interaction states — never documents, never
+  `/#magic`, `/#media`) are interaction states — never documents, never
+   (the legacy `/#library` hash resolves as a backward-compatible alias of
+   `/#media` since v4.0.0). They are never
   sitemap entries.
 - **RED MAGIC is lazy-loaded.** `components/RedMagic.tsx` (the ~6.5k-line
   orchestrator + hot path) is
@@ -103,7 +105,7 @@ violation as a bug to be justified, not a style preference.
 4. **No fake performance claims** in code comments, UI copy, README, or
    commits. The organism's telemetry reports *measurements*, not trophies.
 5. **The DRIFT / LISTEN / SURGE interaction modes are RETIRED.** Do not
-   reintroduce them as UI modes, identifiers, or copy. (Library media verbs
+   reintroduce them as UI modes, identifiers, or copy. (Media scene verbs
    READ/LISTEN/WATCH and historical "retired in v3.5" notes are unrelated and
    stay.) Legacy identifier example: `ANGULAR_FALLOFF_ACTIVE` (formerly
    `ANGULAR_FALLOFF_SURGE`) — neutral names, equivalent behavior.

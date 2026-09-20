@@ -21,9 +21,9 @@
  * orphaned.
  *
  * The six-scene world stays intact: the scene ids
- * (home / about / systems / magic / work / library) are internal
+ * (home / about / systems / magic / work / media) are internal
  * interaction states and are NOT renamed. The experimental
- * destinations — Systems, RED MAGIC, Library — remain secondary
+ * destinations — Systems, RED MAGIC, Media — remain secondary
  * "world" navigation, carried by the same unified renderer
  * (UnifiedSiteNav) on every surface — world HUD, blog header,
  * content-shell header, footer — with quieter styling instead of
@@ -106,10 +106,12 @@ export const CONTENT_NAV: readonly NavigationEntry[] = [
 ];
 
 /*
- * WORLD NAVIGATION (v3.2) — the experimental scenes, secondary and
- * contextual. These are interaction states of the world shell
- * ("#/systems", "#/magic", "#/library"), reachable from every
- * surface but visually quieter than the primary track.
+ * WORLD NAVIGATION (v3.2 / v4.0.0) — the experimental scenes, secondary
+ * and contextual. These are interaction states of the world shell
+ * ("#/systems", "#/magic", "#/media"), reachable from every
+ * surface but visually quieter than the primary track. The v4.0.0
+ * Media migration renamed the LIBRARY entry to MEDIA; "#library"
+ * keeps working as a normalised backward-compatible alias.
  */
 export const WORLD_NAV: readonly NavigationEntry[] = [
   {
@@ -125,9 +127,9 @@ export const WORLD_NAV: readonly NavigationEntry[] = [
     href: "/#magic"
   },
   {
-    id: "library",
-    label: "Library",
-    shortLabel: "LIBRARY",
-    href: "/#library"
+    id: "media",
+    label: "Media",
+    shortLabel: "MEDIA",
+    href: "/#media"
   }
 ];

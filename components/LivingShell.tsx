@@ -25,6 +25,7 @@ import SiteFooter from "@/components/SiteFooter";
 import WorldBackground from "@/components/WorldBackground";
 import RedCursor from "@/components/RedCursor";
 import MotionReveal from "@/components/MotionReveal";
+import PlayerRoot from "@/components/player/PlayerRoot";
 import {
   pulseWorld,
   setWorldScene
@@ -35,25 +36,36 @@ import type {
   HomeWritingPost
 } from "@/lib/homeWriting";
 
-export type SceneId =
-  | "home"
-  | "about"
-  | "systems"
-  | "magic"
-  | "work"
-  | "library";
+/*
+ * SCENE VOCABULARY (v4.0.0) — the canonical SceneId type and the
+ * legacy "#library" alias map live in lib/sceneIds.ts; LivingShell
+ * re-exports them so the historical import surface stays stable.
+ */
+import type {
+  SceneId
+} from "@/lib/sceneIds";
+
+import {
+  SCENE_ID_ALIASES
+} from "@/lib/sceneIds";
+
+export type { SceneId };
+
+export { SCENE_ID_ALIASES };
 
 export type SceneChangeSource =
   | "navigation"
   | "history";
 
 /*
- * INTERNAL SCENE REGISTRY (v3.2) — the six-scene world, unchanged.
- * Scene ids (home / about / systems / magic / work / library) are
+ * INTERNAL SCENE REGISTRY (v3.2 / v4.0.0) — the six-scene world.
+ * Scene ids (home / about / systems / magic / work / media) are
  * interaction states of the shell, NOT navigation labels; the labels
  * here feed the HUD status readout and hash parsing. The visible
  * navigation is built from lib/navigation.ts (PRIMARY_NAV +
- * WORLD_NAV), which leads with the professional destinations.
+ * WORLD_NAV), which leads with the professional destinations. The
+ * v4.0.0 Media migration renamed the library scene id to "media";
+ * "#library" survives as a normalised alias (SCENE_ID_ALIASES).
  */
 const SCENES: readonly {
   id: SceneId;
@@ -87,9 +99,9 @@ const SCENES: readonly {
       shortLabel: "WORK"
     },
     {
-      id: "library",
-      label: "Library",
-      shortLabel: "LIBRARY"
+      id: "media",
+      label: "Media",
+      shortLabel: "MEDIA"
     }
   ];
 
@@ -120,6 +132,13 @@ function readInitialScene(): SceneId {
         ""
       )
       .toLowerCase();
+
+  const aliased =
+    SCENE_ID_ALIASES[hash];
+
+  if (aliased) {
+    return aliased;
+  }
 
   return SCENES.some(
     (scene) =>
@@ -299,7 +318,7 @@ export default function LivingShell({
    * live in the Blog content ecosystem (footer collections row and
    * the Blog's lab map), while the experiential #work scene remains
    * reachable through its in-content links. The experimental scenes
-   * (SYSTEMS, RED MAGIC, LIBRARY) follow as the quieter world group,
+   * (SYSTEMS, RED MAGIC, MEDIA) follow as the quieter world group,
    * and GitHub rides as a utility entry in the disclosure menu. The
    * ≤860px disclosure panel is the same component's compact mode —
    * same labels, ordering, accents and animation language.
@@ -549,6 +568,17 @@ export default function LivingShell({
       </main>
 
       <SiteFooter />
+
+      {/*
+        * GLOBAL MUSIC PLAYER (v4.0.0) — mounted at the shell root so
+        * playback survives scene transitions and route navigation.
+        * PlayerRoot ships no player code until the store signals the
+        * first explicit playback intent; the lazy player surface then
+        * mounts (fixed mini bar / sticky compact bar + expanded
+        * overlay). The player never autoplays and never requests
+        * audio before that intent.
+        */}
+      <PlayerRoot />
 
       <SceneLoadingScreen
         visible={

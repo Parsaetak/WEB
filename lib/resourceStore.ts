@@ -26,7 +26,7 @@
  *                  handful of immutable resources this site holds).
  *
  * - "short-lived"  REFRESHABLE. Remote/derived metadata that may change
- *                  (library media probes, manifests fetched at runtime).
+ *                  (media probes, manifests fetched at runtime).
  *                  Requires `staleAfter`; the settled value is dropped
  *                  after the TTL and re-verified on next use.
  *

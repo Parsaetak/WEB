@@ -38,7 +38,7 @@ All loading work is classified on one ladder:
 - **P3 — background.** Secondary metadata. Nothing currently schedules P3 work.
 - **P4 — user-triggered.** PDFs, audio, video. *Never* loaded automatically.
 
-Heavy media being P4 is a hard law. The [Library](/#library) contains books and media measured in megabytes; none of it moves until you press READ, LISTEN, or WATCH. A link existing is not consent to download.
+Heavy media being P4 is a hard law. The [Media](/#media) collection contains books, music, and media measured in megabytes; none of it moves until you press READ, LISTEN, or WATCH. A link existing is not consent to download.
 
 ## The frame budget nobody told you about
 

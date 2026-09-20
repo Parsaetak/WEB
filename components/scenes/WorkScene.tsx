@@ -24,7 +24,7 @@ import styles from "./WorkScene.module.css";
  *
  * Internal routes carry the deployment basePath explicitly via
  * routeHref() — plain anchors, the same convention the v2.6.1
- * WorkScene used. Scene hashes (#magic, #systems, #library) are
+ * WorkScene used. Scene hashes (#magic, #systems, #media) are
  * same-document and must never be prefixed. NEXT_PUBLIC_BASE_PATH
  * is inlined at build time ("" locally, "/WEB" on GitHub Pages).
  */
@@ -360,7 +360,7 @@ const projectGroups: readonly ProjectGroup[] = [
         type: "REPOSITORY",
         status: "PUBLIC",
         copy:
-          "The multi-branch repository that publishes the specifications, frameworks, and books — and feeds this site's library through a validated manifest.",
+          "The multi-branch repository that publishes the specifications, frameworks, and books — and feeds this site's media collection through a validated manifest.",
         tags: [
           "SPECS",
           "BOOKS",
@@ -404,14 +404,14 @@ const projectGroups: readonly ProjectGroup[] = [
         type: "PUBLICATION",
         status: "PUBLISHED",
         copy:
-          "RED MAGIC, MAGIC FOR KIDS, and THE BOOK OF THE DEMIURGE — the written form of the RED MAGIC ideas, readable in the Library scene.",
+          "RED MAGIC, MAGIC FOR KIDS, and THE BOOK OF THE DEMIURGE — the written form of the RED MAGIC ideas, readable in the Media scene.",
         tags: [
           "BOOKS",
           "IDEAS"
         ],
-        href: "#library",
+        href: "#media",
         ariaLabel:
-          "Open the RED MAGIC books in the Library scene"
+          "Open the RED MAGIC books in the Media scene"
       }
     ]
   }

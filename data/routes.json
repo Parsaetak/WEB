@@ -161,7 +161,7 @@
     }
   ],
   "scenes": {
-    "$comment": "World-shell interaction states (LivingShell.tsx). Legal /#scene and #scene href targets; never sitemap entries; never canonical documents.",
-    "names": ["home", "about", "systems", "magic", "work", "library"]
+    "$comment": "World-shell interaction states (LivingShell.tsx). Legal /#scene and #scene href targets; never sitemap entries; never canonical documents. v4.0.0: the former library scene is now media (#library resolves as a normalised backward-compatible alias).",
+    "names": ["home", "about", "systems", "magic", "work", "media"]
   }
 }

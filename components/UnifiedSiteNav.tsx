@@ -29,7 +29,7 @@ import styles from "@/components/UnifiedSiteNav.module.css";
  * - TRACK (desktop): the horizontal primary/world track, identical on
  *   every surface. Primary tabs (HOME, ABOUT, WORK, RESEARCH, BLOG,
  *   CONTACT) each carry their own ~1s hover identity animation; the
- *   world scenes (SYSTEMS, RED MAGIC, LIBRARY) follow a quiet divider.
+ *   world scenes (SYSTEMS, RED MAGIC, MEDIA) follow a quiet divider.
  * - MENU (≤860px): a disclosure-panel mode of the same navigation —
  *   same labels, same ordering, same accents, same animation language.
  *   The trigger expands a panel with roving focus, Escape-to-close,

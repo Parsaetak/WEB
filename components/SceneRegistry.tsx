@@ -80,10 +80,10 @@ const WorkScene = dynamic(
     )
 );
 
-const LibraryScene = dynamic(
+const MediaScene = dynamic(
   () =>
     loadSceneModule(
-      "library"
+      "media"
     )
 );
 
@@ -97,7 +97,7 @@ const SCENE_COMPONENTS:
   systems: SystemsScene,
   magic: RedMagicScene,
   work: WorkScene,
-  library: LibraryScene
+  media: MediaScene
 };
 
 /*

@@ -1876,22 +1876,22 @@
   --mood-opacity: 0.75;
 }
 
-.worldBackground[data-scene="library"] .organismAtmosphere,
+.worldBackground[data-scene="media"] .organismAtmosphere,
 .worldBackground[data-scene="archive"] .organismAtmosphere {
   opacity: 0.72;
 }
 
-.worldBackground[data-scene="library"] .organismHeart,
+.worldBackground[data-scene="media"] .organismHeart,
 .worldBackground[data-scene="archive"] .organismHeart {
   opacity: 0.7;
 }
 
-.worldBackground[data-scene="library"] .redMagicCloudParticles,
+.worldBackground[data-scene="media"] .redMagicCloudParticles,
 .worldBackground[data-scene="archive"] .redMagicCloudParticles {
   --mood-opacity: 0.6;
 }
 
-.worldBackground[data-scene="library"] .redMagicCloudSparks,
+.worldBackground[data-scene="media"] .redMagicCloudSparks,
 .worldBackground[data-scene="archive"] .redMagicCloudSparks {
   --mood-opacity: 0.55;
 }

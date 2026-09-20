@@ -29,7 +29,7 @@ export type WorldSceneMood =
   | "systems"
   | "magic"
   | "work"
-  | "library"
+  | "media"
   | "archive";
 
 export type WorldEvent =

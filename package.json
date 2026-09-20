@@ -1,6 +1,6 @@
 {
   "name": "parsaetak-web",
-  "version": "3.9.0",
+  "version": "4.0.0",
   "private": true,
   "scripts": {
     "dev": "node scripts/build-blog.mjs && next dev",
@@ -11,6 +11,9 @@
     "blog": "node scripts/build-blog.mjs",
     "brand": "node scripts/generate-brand.mjs && node scripts/generate-project-art.mjs",
     "brand:raster": "python3 scripts/generate-brand-raster.py",
+    "media:sync": "node scripts/sync-media-manifest.mjs",
+    "media:validate": "node scripts/validate-media-manifest.mjs",
+    "test": "node --test --import ./tests/register.mjs \"tests/**/*.test.ts\"",
     "verify:seo": "node scripts/verify-seo.mjs",
     "verify:brand": "node scripts/verify-brand.mjs",
     "verify:export": "node scripts/verify-export-routes.mjs",

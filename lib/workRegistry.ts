@@ -209,8 +209,8 @@ export const WORK_ENTRIES: readonly WorkEntry[] = [
   {
     name: "Contents",
     type: "CONTENT INFRASTRUCTURE",
-    purpose: "The multi-branch repository that publishes the specifications, frameworks, and books — and feeds this site's library.",
-    what: "The multi-branch repository that publishes the specifications, frameworks, and books — and feeds this site's library through a validated manifest.",
+    purpose: "The multi-branch repository that publishes the specifications, frameworks, and books — and feeds this site's media collection.",
+    what: "The multi-branch repository that publishes the specifications, frameworks, and books — and feeds this site's media collection through a validated manifest.",
     problem: "Specifications and long-form writing drift when they live as loose files.",
     why: "Content is treated as infrastructure: versioned, validated, and pipeline-fed like code.",
     tech: "SPECS · BOOKS · MANIFEST",

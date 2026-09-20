@@ -331,8 +331,8 @@
   --nav-accent: #4db6ff;
 }
 
-.item[data-id="library"],
-.menuEntry[data-id="library"] {
+.item[data-id="media"],
+.menuEntry[data-id="media"] {
   --nav-accent: #ff4638;
 }
 

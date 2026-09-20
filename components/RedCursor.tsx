@@ -62,7 +62,7 @@ const RED_CURSOR_CSS = `
 
   /*
    * Native PDF viewers and other embedded document surfaces should
-   * keep their own cursor behavior. LibraryPdfReader toggles this
+   * keep their own cursor behavior. MediaPdfReader toggles this
    * class while a PDF is active.
    */
   html.pdf-reader-active,

@@ -18,7 +18,7 @@ import styles from "@/components/SiteDocNav.module.css";
  * - Collections: the canonical deep documents the Blog content
  *   ecosystem is built on (SELECTED WORK, RESEARCH) — kept crawlable
  *   site-wide so neither route can become orphaned;
- * - World: the experimental scenes (SYSTEMS, RED MAGIC, LIBRARY) as
+ * - World: the experimental scenes (SYSTEMS, RED MAGIC, MEDIA) as
  *   contextual destinations;
  * - Topics: the six topic hubs — the research map, one hop from
  *   every document.

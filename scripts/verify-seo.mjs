@@ -106,6 +106,14 @@ const SCENE_HASHES = new Set(
 );
 
 /*
+ * v4.0.0 Media migration: the former #library scene hash resolves as
+ * a backward-compatible alias of the canonical #media (see
+ * LivingShell.tsx SCENE_ID_ALIASES / SceneUrlSync). Links published
+ * before the migration must keep verifying.
+ */
+SCENE_HASHES.add("library");
+
+/*
  * CANONICAL ROUTE REGISTRY (SEO v2) — data/routes.json is the single
  * manually maintained route list (read once above); the route table
  * below (titles, JSON-LD type expectations, hub classification,
@@ -449,10 +457,10 @@ async function verifyInteractivity() {
     for (const href of hrefs) {
       if (href.startsWith("#") && href.length > 1) {
         /*
-         * SCENE HASHES (v2.7): #home, #about, #systems, #magic,
-         * #work, #library are interaction states of the world shell
-         * handled by SceneUrlSync — the same-document hash links the
-         * shell's own navigation emits. They are not document
+         * SCENE HASHES (v2.7 / v4.0.0): #home, #about, #systems,
+         * #magic, #work, #media are interaction states of the world
+         * shell handled by SceneUrlSync (#library remains legal as a
+         * backward-compatible alias of #media). They are not document
          * anchors and are exempt from in-page id resolution (they
          * were invisible to this check before the home scene became
          * server-rendered in v2.7).

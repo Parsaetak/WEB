@@ -129,6 +129,8 @@ const KNOWN_SCENES = new Set([
   "systems",
   "magic",
   "work",
+  "media",
+  /* v4.0.0 legacy alias — old article links may still target it. */
   "library"
 ]);
 

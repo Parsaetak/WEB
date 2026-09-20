@@ -49,7 +49,7 @@ The existing world layer remains the experiential layer:
 #systems
 #magic
 #work
-#library → eventually #media where appropriate
+#media (done in v4.0.0; #library kept as a normalised backward-compatible alias)
 ```
 
 The document layer remains the canonical, crawlable web architecture.
@@ -167,6 +167,18 @@ A clean repository should allow a new engineer/agent to understand:
 
 # PHASE 2 — Media Architecture + Library → Media
 
+> **STATUS: DELIVERED in v4.0.0.** The Library scene is now Media (`#media`),
+> backed by `data/media.json` (version 3) and the discriminated `MediaItem`
+> model (Book / Music / Video / Art). The external Contents
+> `Projects/library.json` contract is intact; the optional Music source
+> (`Projects/music.json`) is supported and currently absent — the Media scene
+> renders an honest empty state with zero fabricated tracks. Embedded audio
+> metadata (ID3v2 / MP4 atoms / FLAC) is extracted at build time over HTTP
+> range requests; covers resolve deterministically (explicit → basename →
+> folder → fallback). The global player (one store, one `<audio>` element,
+> full queue semantics, Media Session) ships lazy-mounted so the initial
+> bundle and the RED MAGIC runtime are untouched.
+
 ## Objective
 
 Rename the conceptual `Library` area to **Media** and make it the common discovery layer for all media types.
@@ -226,7 +238,7 @@ Important:
 
 * Preserve backward compatibility where needed.
 * Do not break existing hashes/URLs without a migration strategy.
-* Decide whether the current `#library` scene remains as an alias for compatibility or is replaced only after validation.
+* DECIDED (v4.0.0): `#library` remains as a normalised backward-compatible alias; `#media` is canonical. The address bar is rewritten to the canonical form after resolution.
 * Do not create unnecessary duplicate canonical documents.
 
 ## Media content model
@@ -804,14 +816,16 @@ Never fabricate:
 Suggested major milestones:
 
 ```text
-v3.9  Information Architecture + Discovery
-v4.0  Media Architecture + Library → Media
-v4.1  Music Player
-v4.2  Video Player
-v4.3  Art + Digital Shop foundation
-v4.4  Secure digital delivery / purchase flow
-v4.5  News
-v4.6  Full repository + product-system polish
+v3.9  Information Architecture + Discovery                (shipped)
+v4.0  Media Architecture + Library → Media + Music Player (shipped — the
+      Music Player was folded into v4.0 rather than split into v4.1,
+      because the Media model without a player would have shipped a
+      listening surface that could not listen)
+v4.1  Video Player enhancements
+v4.2  Art + Digital Shop foundation
+v4.3  Secure digital delivery / purchase flow
+v4.4  News
+v4.5  Full repository + product-system polish
 ```
 
 These version numbers are planning labels, not commitments. Keep the actual repository version consistent with the scope actually shipped.

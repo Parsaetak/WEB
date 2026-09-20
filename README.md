@@ -26,7 +26,7 @@ The home hero states who Parsa Tak is and, directly beneath the identity, a **ST
 The **Work scene** (the `#work` hash scene) is the experiential portfolio. The canonical **Selected Work document** (`/work/`) is the indexable deep portfolio: every system card links its repository, its field notes, its topic hub, and the Blog's project-filtered stream. The homepage carries the featured subset and routes to the document.
 
 ### Research
-The **Systems scene** (`#systems`) presents the framework family — AI Instructions, REP (Reasoning & Evaluation Protocol), and USEF (Unified System Evolution Framework) — plus the measurement programme behind UHIT/AIST. The **Library scene** (`#library`) hosts longer-form documents and PDFs. The canonical **Research document** (`/research/`) maps the programme as research lines (question → method → framework → measurement → artifact → system), each line linking the system that executes it.
+The **Systems scene** (`#systems`) presents the framework family — AI Instructions, REP (Reasoning & Evaluation Protocol), and USEF (Unified System Evolution Framework) — plus the measurement programme behind UHIT/AIST. The **Media scene** (`#media`) hosts longer-form documents, PDFs, music, and video. The canonical **Research document** (`/research/`) maps the programme as research lines (question → method → framework → measurement → artifact → system), each line linking the system that executes it.
 
 ### Writing
 The **blog** is real content, not a stub: markdown articles under `content/blog/` become fully static `/blog/<slug>/` routes with generated metadata, related-article graphs, and structured data. The homepage's Writing section links the strongest articles, selected on the server at build time.
@@ -48,10 +48,10 @@ The primary navigation is four destinations — identity (About), the laboratory
 ```
 PRIMARY:     HOME · ABOUT · BLOG · CONTACT
 COLLECTIONS: WORK · RESEARCH              (canonical deep documents, footer + lab map)
-WORLD:       SYSTEMS · RED MAGIC · LIBRARY (quieter, contextual)
+WORLD:       SYSTEMS · RED MAGIC · MEDIA (quieter, contextual)
 ```
 
-One navigation system renders every surface: `components/UnifiedSiteNav.tsx` consumes `lib/navigation.ts` (the single source of truth) and drives the world HUD desktop track, the blog header, the content-shell header on every content document and topic hub, and their shared ≤860px disclosure menu — desktop and mobile are two responsive modes of the same component, same labels, same ordering, same accents, same active/focus language. The six-scene world is unchanged internally — scene ids (`home / about / systems / magic / work / library`), hash routing, browser history, and hover-to-preload all behave exactly as before; the experiential `#work` scene remains a portfolio scene inside the living world, distinct from the canonical `/work/` document.
+One navigation system renders every surface: `components/UnifiedSiteNav.tsx` consumes `lib/navigation.ts` (the single source of truth) and drives the world HUD desktop track, the blog header, the content-shell header on every content document and topic hub, and their shared ≤860px disclosure menu — desktop and mobile are two responsive modes of the same component, same labels, same ordering, same accents, same active/focus language. The six-scene world is unchanged internally — scene ids (`home / about / systems / magic / work / media`), hash routing, browser history, and hover-to-preload all behave exactly as before; the experiential `#work` scene remains a portfolio scene inside the living world, distinct from the canonical `/work/` document.
 
 **Content-type model (v3.7):** every article carries a required frontmatter `type` — `article` (field notes / essays), `work` (built-system documentation), `research` (research-programme writing) — validated by the build pipeline and carried through the generated content index. The type drives the Blog's content modes, the card type badges, the article at-a-glance strip, and the home writing list, and `scripts/verify-seo.mjs` proves no content type is orphaned in the export.
 
@@ -103,7 +103,7 @@ one canonical URL ( / )
 ├── #systems   ← lazily loaded scene
 ├── #magic     ← lazily loaded scene (RED MAGIC)
 ├── #work      ← lazily loaded scene
-└── #library   ← lazily loaded scene
+└── #media     ← lazily loaded scene (Media: books, music, video, art)
 /blog/          ← real routes, one static page per article
 /about/ /work/ /research/ /contact/        ← canonical content documents
 /local-ai/ /ai-systems/ /ai-reasoning/     ← canonical topic hubs
@@ -123,6 +123,9 @@ Scene changes are URL-addressable (`#systems` is a shareable state), handled by 
 - Zero runtime dependencies beyond React/Next; the build, blog, brand, and verification tooling is dependency-free Node.js
 - **Lateral content graph (v3.9)**: `lib/workRegistry.ts` is the single source of truth for the Selected Work entries; `lib/blog.ts` resolves each article's deterministic lateral destinations from it — an article whose `project` documents a registry system links `/work/`, and `type=research` articles link `/research/`. Article pages render these as crawlable rows in the related section, connecting topic ↔ article ↔ work ↔ research in exported HTML
 - **Home first-action model (v3.9)**: the hero's START HERE strip (a labeled `<nav>`) links the four canonical destinations in exported HTML, and featured work precedes the capabilities grid — proof before practice, every capability carrying its proof link
+- **Media foundation (v4.0.0)**: the former Library scene is now **Media** (`#media`), rendering one discriminated `MediaItem` model — Book, Music, Video, Art — from `data/media.json` (synced from the Contents repository, external `library.json` contract intact; `#library` survives as a normalised alias)
+- **Embedded Music player (v4.0.0)**: one global player store with ONE `<audio>` element, created only on explicit playback intent; the store owns real queue semantics (current / upcoming / history / play now / play next / add / remove / clear / select), honest previous behaviour (restart when progressed, history otherwise), repeat, and Media Session integration. The player UI (desktop mini bar, mobile sticky bar, expanded overlay with queue) mounts lazily after the first play intent — no audio request ever precedes user intent
+- **Build-time audio metadata (v4.0.0)**: ID3v2 (MP3), MP4 atoms (M4A) and FLAC blocks are parsed by zero-dependency scripts over HTTP range requests during the Media manifest sync; cover art resolves deterministically (explicit path → matching basename → folder cover → UI fallback, `.jpeg`/`.png` only). The browser never downloads audio to discover metadata, and an absent Music source renders an honest empty state — never fabricated tracks
 
 ## Repository structure
 
@@ -248,7 +251,7 @@ Both read only generated artifacts, so they check what actually ships.
 
 GitHub Actions (`.github/workflows/deploy.yml`) deploys `main` to GitHub Pages:
 
-Pages source check → dependencies → Library manifest fetch + validation → blog pipeline validation → `next build` → SEO verification → brand verification (with regeneration/drift check) → static export validation → deployment manifests → Pages upload → deploy → live revision probe.
+Pages source check → dependencies → Media manifest sync + validation → unit tests → blog pipeline validation → `next build` → SEO verification → brand verification (with regeneration/drift check) → static export validation → deployment manifests → Pages upload → deploy → live revision probe.
 
 The pipeline is concurrency-gated and verifies the deployed revision is publicly observable before reporting success.
 
@@ -260,7 +263,7 @@ Read this section before changing anything. It is the safety net that keeps the 
 `app/` (routes and metadata) · `components/` (shell, scenes, systems) · `lib/` (data access, SEO, brand, schedulers) · `content/blog/` (articles) · `scripts/` (pipeline, generators, verification)
 
 **Generated (never hand-edit):**
-`data/blog/posts.json` · `public/sitemap.xml` · `public/brand/` and `public/images/projects/` (regenerate with `npm run brand`) · `out/` (build artifact)
+`data/blog/posts.json` · `data/media.json` (rewritten by `npm run media:sync` in CI) · `public/sitemap.xml` · `public/brand/` and `public/images/projects/` (regenerate with `npm run brand`) · `out/` (build artifact)
 
 **Static export:**
 `out/` is the whole site. If a change works in `next dev` but breaks the export, the export is right and the change is wrong — `npm run build && npm run verify` decides.

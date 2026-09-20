@@ -28,7 +28,7 @@ It is tempting to read that as poverty. In practice it is the most useful constr
 
 The whole architecture falls out of one question: *what can move from runtime to build time?*
 
-The answer turned out to be almost everything. Content manifests are synced and validated before the build — a malformed library record fails the pipeline loudly instead of shipping corrupted pages. The blog's articles are normalised, validated, and rendered to HTML before the site exists; indexes for tags, categories, related posts, and the sitemap are precomputed then too. The browser receives finished, typed data and never parses a markdown file. The pipeline is deliberately boring:
+The answer turned out to be almost everything. Content manifests are synced and validated before the build — a malformed media record fails the pipeline loudly instead of shipping corrupted pages. The blog's articles are normalised, validated, and rendered to HTML before the site exists; indexes for tags, categories, related posts, and the sitemap are precomputed then too. The browser receives finished, typed data and never parses a markdown file. The pipeline is deliberately boring:
 
 - **Source** — markdown files with structured frontmatter, in the repository.
 - **Validate** — required fields, types, slug format, dates, duplicate detection. A bad record fails the build with the file and the reason.

@@ -3056,3 +3056,66 @@ Stage Summary:
   model in lib/workRegistry.ts + lib/blog.ts makes the four content
   types one connected crawlable graph without inventing a single
   relationship.
+
+---
+
+## 2026-09-19 — v4.0.0 MEDIA FOUNDATION + EMBEDDED MUSIC PLAYER
+
+### What shipped
+
+**Media migration (Library → Media).** The user-facing Library is now Media
+everywhere: scene id `library` → `media` (`#media` canonical, `#library`
+normalised backward-compatible alias), `LibraryScene` → `MediaScene`
+(+CSS), `LibraryPdfReader` → `MediaPdfReader` (+CSS),
+`lib/contentRepository.ts` → `lib/mediaRepository.ts`,
+`data/library.json` → `data/media.json` (version 3), navigation labels
+LIBRARY → MEDIA, world-shell CSS scene selectors, SEO verifier scene
+hashes, blog pipeline KNOWN_SCENES, and all user-facing copy (WorkScene,
+workRegistry, hubs, blog sources). Obsolete files deleted; no duplicate
+implementations remain. The external Contents `Projects/library.json`
+contract is untouched — the CI sync normalises it into `data/media.json`.
+
+**Media model.** One discriminated union — `MediaItem = BookItem |
+MusicItem | VideoItem | ArtItem` — defined in the pure, test-shared
+`lib/media/normalize.ts`; Media filters are ALL · MUSIC · BOOKS · VIDEO ·
+ART. Kind/extension coherence is enforced at build time by
+`scripts/validate-media-manifest.mjs` (replaces the library validator).
+
+**Music data pipeline.** `scripts/sync-media-manifest.mjs` fetches the
+external library manifest, merges the OPTIONAL Music source
+(`Projects/music.json` — supported, currently absent → honest empty state,
+never fabricated tracks), extracts embedded metadata (ID3v2.2/2.3/2.4,
+MP4 atoms, FLAC STREAMINFO + Vorbis comments) over HTTP range requests,
+and resolves covers deterministically (explicit → basename → folder →
+fallback; .jpeg/.png only; no fuzzy matching). The browser never parses
+audio metadata and never downloads audio without playback intent.
+
+**Music player.** One global store (`lib/player/playerStore.ts`) owns ONE
+`<audio>` element, created only on explicit play intent. Real queue
+semantics: current / upcoming / history / play now / play next / add to
+queue / remove / clear upcoming / select queued. Previous: restart when
+progressed (>3 s), history step otherwise. Auto-advance with repeat
+off/all/one; honest stop when nothing remains. Volume/mute persist.
+Media Session wired where supported. The UI (desktop bottom mini bar,
+mobile sticky compact bar, expanded overlay with large artwork, full
+controls and queue) mounts lazily after the first play intent via a DOM
+event bridge — the initial bundle and RED MAGIC runtime are untouched,
+and the player survives scene transitions and route navigation.
+
+**Tests.** New zero-dependency `node --test` suite (93 tests) covering the
+parsers with synthetic byte fixtures, cover resolution, manifest schema +
+sync normalization, the Media model, the player store (with a scripted
+fake audio element), a real-HTTP range-pipeline end-to-end, the a11y
+markup contract, and the migration invariants (no stale Library files,
+no fabricated audio anywhere).
+
+### Verification (truthful)
+
+- npm ci: OK · npm test: 93/93 · npm run media:sync: OK (external contract
+  fetched; output byte-identical to the committed manifest; empty-Music
+  state reported) · npm run blog: OK · npm run build: OK (21 routes) ·
+  npm run lint: 0 errors (22 img warnings, pre-existing class) ·
+  npx tsc --noEmit: clean · npm run verify: SEO + brand + export all pass.
+- Known limitation: the Contents repository publishes no Music branch /
+  manifest yet, so shipped Music content is empty by design; playback was
+  verified locally with a synthetic fixture through the same pipeline.

@@ -28,7 +28,7 @@ export default defineConfig([
    *   server/client mismatch)
    * - MagicConsole: reads the localStorage sound preference on
    *   mount (same hydration constraint)
-   * - LibraryPdfReader: resets load state when `src` changes
+   * - MediaPdfReader: resets load state when `src` changes
    * The rule stays active as a warning so genuine cascading-render
    * regressions remain visible.
    */

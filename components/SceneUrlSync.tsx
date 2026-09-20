@@ -7,7 +7,11 @@ import {
 
 import type {
   SceneId
-} from "@/components/LivingShell";
+} from "@/lib/sceneIds";
+
+import {
+  SCENE_ID_ALIASES
+} from "@/lib/sceneIds";
 
 type SceneUrlSyncProps = {
   scene: SceneId;
@@ -23,7 +27,7 @@ const VALID_SCENES: readonly SceneId[] =
     "systems",
     "magic",
     "work",
-    "library"
+    "media"
   ];
 
 function readSceneFromHash():
@@ -61,6 +65,22 @@ function readSceneFromHash():
     hash === "home"
   ) {
     return "home";
+  }
+
+  /*
+   * "#library" is the backward-compatible alias of the canonical
+   * "#media" scene (v4.0.0 Media migration). Aliased hashes resolve
+   * to their target scene and the address bar is normalised to the
+   * canonical form by normalizeHash below.
+   */
+  const aliased =
+    (SCENE_ID_ALIASES as Record<
+      string,
+      SceneId | undefined
+    >)[hash];
+
+  if (aliased) {
+    return aliased;
   }
 
   return VALID_SCENES.includes(
