@@ -15,11 +15,21 @@ import SiteDocNav from "@/components/SiteDocNav";
 
 export default function SiteFooter() {
   return (
+    /*
+     * NO data-reveal opt-in (v4.0.4): the footer is site chrome and
+     * renders on routes with AND without a reveal controller
+     * (MotionReveal mounts on the world shell and the blog layout
+     * only). Under html.reveal-js a data-reveal element without a
+     * controller stays at opacity 0 forever — the pre-4.0.4 opt-in
+     * left the ENTIRE footer (document nav, public links, legal
+     * block) invisible on /about/, /contact/, /work/, /research/ and
+     * every topic hub. Verified against the v4.0.3 export before the
+     * fix; the footer is now permanently visible everywhere.
+     */
     <footer
       className={
         styles.livingShellLegal
       }
-      data-reveal="instant"
     >
       <div
         className={

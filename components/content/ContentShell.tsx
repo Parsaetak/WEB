@@ -211,6 +211,39 @@ export default function ContentShell({
            * measure (styles.doc).
            */}
           <div className={styles.heroDoc}>
+            {/*
+             * HERO SIGNAL (v4.0.4) — the shared top-left identity
+             * animation of the document tabs: a small node inside a
+             * thin ring, crowned by a rotating transmission arc — the
+             * same signal language as the scene loader, at document
+             * scale. It hangs ABOVE the title block on the shared
+             * alignment rail (never behind the text), is absolutely
+             * positioned (zero layout impact), is themed per tab
+             * through the shell's --page-accent, animates with
+             * transform/opacity only, and collapses to a static mark
+             * under prefers-reduced-motion. One shared mechanism for
+             * every ContentShell document; the per-tab motifs in the
+             * hero field keep their unique identities around it.
+             */}
+            <span
+              className={
+                styles.heroSignal
+              }
+              aria-hidden="true"
+            >
+              <span
+                className={
+                  styles.heroSignalRing
+                }
+              />
+
+              <span
+                className={
+                  styles.heroSignalCore
+                }
+              />
+            </span>
+
             <nav
               className={styles.crumbs}
               aria-label="Breadcrumb"

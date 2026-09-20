@@ -107,7 +107,12 @@ export function generateMetadata(): Metadata {
       card: "summary_large_image",
       title: "Blog — Parsa Tak",
       description: BLOG_DESCRIPTION,
-      images: [SITE_OG_IMAGE_PATH]
+      images: [
+        {
+          url: SITE_OG_IMAGE_PATH,
+          alt: "Parsa Tak — the laboratory's publication and discovery surface"
+        }
+      ]
     }
   };
 }

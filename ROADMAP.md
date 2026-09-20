@@ -1004,3 +1004,92 @@ add the verification layer so the class of regression cannot pass unnoticed.
   stays paused; fresh visitors create no audio element.
 - Speculation (scene chunks + organism) now starts strictly after the
   load event plus one idle gap; in v4.0.2 it began before FCP.
+
+---
+
+# PHASE 9 — VISUAL IDENTITY, FOOTER, ROUTE LOADING, SEO POLISH
+
+> **STATUS: DELIVERED in v4.0.4.**
+
+## Objective
+
+A measured polish/integrity pass on v4.0.3: restore the missing visible
+hero animation treatment on About and Contact, remove the retired
+WhatsApp contact channel completely, fix footer alignment on one grid
+contract, add a unified loading experience for real route navigation,
+and extend the SEO verification with site-wide quality checks —
+without changing the static-first architecture, the RED MAGIC, the
+global Music Player, or the v4.0.3 loading discipline.
+
+## Root cause found (verified against the v4.0.3 export)
+
+The entire footer was **invisible on every ContentShell route**
+(/about/, /contact/, /work/, /research/, the six topic hubs): the
+shared `SiteFooter` carried `data-reveal="instant"`, but the reveal
+controller (`MotionReveal`) only mounts on the world shell and the
+blog layout. Under the `html.reveal-js` pre-paint gate the footer's
+`opacity: 0` could never be lifted on those routes — reproduced in a
+real browser against the v4.0.3 export (computed opacity "0",
+`data-revealed` absent) before the fix.
+
+## Delivered
+
+- **Shared hero identity animation (v4.0.4)**: one hero signal
+  (node + ring + transmission arc) rendered by `ContentShell` for
+  every document tab — anchored above the title block on the shared
+  alignment rail, absolutely positioned (zero layout impact), themed
+  per tab through `--page-accent`, compositor-only, static under
+  reduced motion. No page-specific animation components; About and
+  Contact keep their unique hero motifs around the shared signal.
+- **WhatsApp removed from the entire project**: registry entry, icon
+  type, icon implementation, comments, and footer row rebalance
+  (14 links, 7 + 7). Regression tests fail on any occurrence in the
+  source tree, generated data, or the exported site
+  (`verify-seo.mjs` scans all exported HTML/XML/JSON/TXT).
+- **Footer grid contract**: the four document-nav rows share a fixed
+  heading column and one link-start position (the variable-width
+  heading hack is gone); the legal paragraph and LICENSE/TRADEMARKS
+  links share one end-aligned grid on the footer rail; mobile
+  collapses to stacked rows at ≤560px; the footer no longer opts into
+  the route-scoped reveal system (the visibility fix above).
+- **Unified route transition**: `GlobalRouteTransition` mounted once
+  from the root layout — intent captured on click (passive capture),
+  180 ms grace period, then the scene loader's signal language
+  (`SceneLoadingScreen` variant `route`) until the destination route
+  commits; double-rAF exit lets the destination settle in. Pure
+  decision layer in `lib/routeIntent.ts`; timing constants in
+  `lib/loadPhase.ts` (`ROUTE_OVERLAY_DELAY_MS`, safety cap
+  `ROUTE_TRANSITION_CAP_MS`). Display-only (pointer-events: none in
+  every state), race-safe under rapid clicks, excluded for external/
+  mailto/tel/download/modifier/new-tab/same-route/hash-scene
+  navigation, back/forward deliberately not intercepted, inert in
+  the static export, star image mounted only at first engagement.
+- **SEO quality group in verify-seo.mjs**: site-wide title and
+  description uniqueness census with length sanity, twitter:card +
+  twitter:image:alt coherence, og:image dimension declarations,
+  canonical-identity uniqueness across indexable pages, per-page
+  JSON-LD entity integrity (unique @ids, singular Person/WebSite),
+  and the WhatsApp-remnant ban. Twitter card images now carry alt
+  text site-wide (object form in the Metadata API).
+- **Repository hygiene**: no legacy/duplicate source-name patterns
+  (architecture test), `bench-results.json` gitignored, version 4.0.4.
+
+## Verification (measured, not assumed)
+
+- Full pipeline from a clean state: `npm ci`, `npm run blog`,
+  `npm run typecheck`, `npm run typecheck:tests`, `npm test`
+  (246 tests, 0 failures), `npm run build`, `npm run lint`
+  (0 errors), `npm run verify` (SEO + brand + export + loading).
+- Behavioral route-transition verification (headless Chromium,
+  17/17 checks): fast/warmed navigation never flashes the loader; a
+  navigation throttled past the grace period shows the overlay with
+  the destination label and `pointer-events: none`; the overlay
+  dismisses only when the route commits; same-route, external, and
+  modifier clicks never trigger it; rapid BLOG→CONTACT clicks keep
+  one continuous overlay under the latest intent; reduced motion
+  keeps the surface functional with a static arc; navigation stays
+  player-free without playback intent.
+- `npm run bench:loading` re-run on the v4.0.4 export (same harness,
+  same machine class): cold-load medians and navigation medians
+  within run-to-run variance of the v4.0.3 baseline (the route
+  transition adds display-only CSS, no critical-path work).

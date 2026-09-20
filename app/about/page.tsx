@@ -189,7 +189,7 @@ const SELECTED_ARTICLE_SLUGS: readonly string[] = [
  * Identity profiles only — the same id set the Person entity's
  * sameAs list uses, resolved from lib/links.ts so the page can never
  * drift from what the site actually publishes. Contact endpoints
- * (email, WhatsApp, PayPal) are deliberately excluded here: they are
+ * (email, PayPal) are deliberately excluded here: they are
  * presented in the Contact section below, while this section mirrors
  * the structured-data identity.
  */

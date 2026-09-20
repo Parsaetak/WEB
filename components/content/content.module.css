@@ -158,8 +158,13 @@
  * inner padding, or the text would sit a gutter to the right of
  * every other tab's rail. Text is capped to the shared readable
  * measures by .title/.lead, not by the container.
+ *
+ * position: relative (v4.0.4) anchors the shared hero signal to the
+ * title block without changing any geometry.
  */
 .heroDoc {
+  position: relative;
+
   width:
     min(
       calc(100% - 2 * var(--page-gutter)),
@@ -395,6 +400,213 @@
   background: currentColor;
 
   opacity: 0.4;
+}
+
+/*
+ * HERO SIGNAL (v4.0.4) — the SHARED top-left identity animation of
+ * the document tabs, rendered by ContentShell for every document.
+ *
+ * Geometry contract:
+ * - anchored to the heroDoc title block (position:relative above),
+ *   hanging ABOVE the crumbs on the shared alignment rail — beside/
+ *   around the title area, never behind the text, never overlapped
+ *   by it;
+ * - absolutely positioned → zero layout impact;
+ * - the total vertical occupancy (8px gap + 22px ring + 4px arc
+ *   overhang = 34px) always fits inside the hero's minimum top
+ *   padding floor (clamp(36px, 6vh, 80px)), so `overflow: clip` on
+ *   the hero can never cut it — the hero always grows to fit its
+ *   content plus that padding;
+ * - themed per tab through the shell's --page-accent.
+ *
+ * Motion contract: compositor-only (transform: rotate on the arc,
+ * opacity on the core); under prefers-reduced-motion the arc
+ * collapses to a static thin ring and the core stops breathing —
+ * the same reduced-motion treatment as the scene loader's signal.
+ */
+.heroSignal {
+  position: absolute;
+
+  left: 0;
+
+  bottom: calc(100% + 8px);
+
+  width: 22px;
+
+  height: 22px;
+
+  pointer-events: none;
+
+  color:
+    var(
+      --page-accent,
+      var(--red-hot)
+    );
+}
+
+.heroSignalRing {
+  position: absolute;
+
+  inset: 0;
+
+  border:
+    1px solid
+    currentColor;
+
+  border-radius: 50%;
+
+  opacity: 0.5;
+}
+
+.heroSignalCore {
+  position: absolute;
+
+  top: 50%;
+
+  left: 50%;
+
+  width: 4px;
+
+  height: 4px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+
+  opacity: 0.85;
+}
+
+/*
+ * TRANSMISSION ARC — the same conic sweep the scene loader orbits
+ * around the 13-point star, at document scale. currentColor through
+ * color-mix keeps the per-tab accent identity; the radial mask turns
+ * the disc into a thin orbit ring.
+ */
+.heroSignal::after {
+  content: "";
+
+  position: absolute;
+
+  inset: -4px;
+
+  border-radius: 50%;
+
+  background:
+    conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 288deg,
+      color-mix(
+        in srgb,
+        currentColor
+          85%,
+        transparent
+      )
+      348deg,
+      currentColor 360deg
+    );
+
+  mask-image:
+    radial-gradient(
+      circle at center,
+      transparent 0%,
+      transparent 60%,
+      black 64%,
+      black 100%
+    );
+
+  -webkit-mask-image:
+    radial-gradient(
+      circle at center,
+      transparent 0%,
+      transparent 60%,
+      black 64%,
+      black 100%
+    );
+
+  opacity: 0.9;
+}
+
+@media
+  (prefers-reduced-motion: no-preference) {
+  .heroSignal::after {
+    animation:
+      heroSignalOrbit
+      2.6s
+      linear
+      infinite;
+  }
+
+  .heroSignalCore {
+    animation:
+      heroSignalBreathe
+      2.6s
+      ease-in-out
+      infinite;
+  }
+}
+
+@media
+  (prefers-reduced-motion: reduce) {
+  /*
+   * Reduced motion: the sweep collapses to a static thin ring around
+   * the node — presence without motion (same treatment as the scene
+   * loader's signal arc).
+   */
+  .heroSignal::after {
+    background:
+      radial-gradient(
+        circle at center,
+        transparent 60%,
+        color-mix(
+          in srgb,
+          currentColor
+            55%,
+          transparent
+        )
+        64%,
+        color-mix(
+          in srgb,
+          currentColor
+            55%,
+          transparent
+        )
+        100%
+      );
+
+    mask-image: none;
+
+    -webkit-mask-image: none;
+  }
+}
+
+@keyframes
+  heroSignalOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes
+  heroSignalBreathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 0.95;
+  }
 }
 
 /*

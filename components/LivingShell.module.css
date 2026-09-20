@@ -417,6 +417,17 @@
   letter-spacing: 0.08em;
 }
 
+/*
+ * LEGAL BLOCK GRID CONTRACT (v4.0.4) — the long legal paragraph and
+ * the LICENSE / TRADEMARKS links share one grid on the footer rail:
+ * the paragraph owns the flexible first column (left-aligned at the
+ * same rail as the document nav above), the links end-align to the
+ * rail's right edge. Both items align to the row's end edge, and the
+ * links carry the SAME 1.7 line-height as the paragraph — combined
+ * with the anchors' cancelling 7px padding/negative margin (the
+ * touch-target contract), the two texts share one baseline without
+ * any per-side pixel offsets.
+ */
 .livingShellLegalBottom {
   display: grid;
 
@@ -434,7 +445,7 @@
 }
 
 .livingShellLegalBottom > p {
-  max-width: 920px;
+  max-width: 720px;
 
   margin: 0;
 
@@ -448,15 +459,13 @@
 .livingShellLegalLinks {
   display: flex;
 
-  align-items: center;
+  align-items: baseline;
 
   justify-content: flex-end;
 
   gap: 18px;
 
-  padding:
-    0 0
-    2px;
+  padding: 0;
 }
 
 .livingShellLegalLinks a {
@@ -474,8 +483,13 @@
    * TOUCH TARGET (v2.8.1): these are standalone footer controls, not
    * inline links in running text. Vertical padding lifts the hit
    * height to the 24px minimum; the negative margin keeps the footer
-   * row's visual geometry exactly as designed.
+   * row's visual geometry exactly as designed. line-height 1.7 (the
+   * legal paragraph's line box) plus the exact cancellation of
+   * padding and margin keep the link text on the paragraph's baseline
+   * under the v4.0.4 end-alignment grid.
    */
+  line-height: 1.7;
+
   padding: 7px 0;
 
   margin: -7px 0;

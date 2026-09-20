@@ -93,8 +93,8 @@ export const SITE_OG_IMAGE_HEIGHT = 630;
  * Public profile URLs that legitimately identify "Parsa Tak" on
  * external services. Selected by id from lib/links.ts (the site's
  * link source of truth) so this list can never drift from what the
- * site actually publishes. Contact channels (email, WhatsApp,
- * PayPal, Discord invites) are deliberately excluded — sameAs is
+ * site actually publishes. Contact channels (email, PayPal,
+ * Discord invites) are deliberately excluded — sameAs is
  * for identity profiles, not contact endpoints.
  */
 const PROFILE_LINK_IDS: ReadonlySet<string> = new Set([

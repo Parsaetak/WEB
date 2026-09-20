@@ -1,6 +1,5 @@
 export type PublicLinkIcon =
   | "x"
-  | "whatsapp"
   | "instagram"
   | "email"
   | "linkedin"
@@ -37,17 +36,6 @@ export const PUBLIC_LINKS = {
       icon: "x",
       theme: "x",
       accent: "#f5f7fb",
-      verified: true
-    },
-    {
-      id: "whatsapp",
-      label: "WhatsApp",
-      href: "https://api.whatsapp.com/send?phone=393515742989",
-      description: "Direct private contact.",
-      category: "social",
-      icon: "whatsapp",
-      theme: "whatsapp",
-      accent: "#25D366",
       verified: true
     },
     {

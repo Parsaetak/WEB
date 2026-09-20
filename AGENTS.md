@@ -76,6 +76,42 @@ violation as a bug to be justified, not a style preference.
   re-exports them. Loading regressions are verified, not asserted:
   `npm run verify:loading` (export-level) and `npm run bench:loading`
   (real-browser medians) gate the state.
+- **Unified route transition (v4.0.4):** REAL route/tab navigation
+  has ONE loading experience, mounted exactly ONCE from the root
+  layout (`app/layout.tsx` → `components/GlobalRouteTransition.tsx`)
+  — the same root-layout law as the global Music player. Contract:
+  intent captured by a passive capture-phase click listener (never
+  `preventDefault`, no custom routing); a 180 ms grace period
+  (`ROUTE_OVERLAY_DELAY_MS`, `lib/loadPhase.ts`) so warmed/cached
+  navigations never flash a loader; then the scene loader's signal
+  language (`SceneLoadingScreen` `variant="route"`) until the
+  destination route commits (`usePathname` comparison through
+  `lib/routeIntent.ts` — the pure, unit-tested decision layer);
+  double-rAF exit lets the destination paint first. The surface is
+  display-only (`pointer-events: none` in every state — it must
+  never inherit the boot gate's blocking rule), indeterminate (no
+  fake percentage, no minimum duration), race-safe by monotonic
+  intent tokens (latest navigation wins; stale timers/dismissals
+  no-op), excluded for external links, downloads, mailto/tel,
+  modifier/new-tab clicks, same-route and hash-scene navigation, and
+  back/forward is deliberately not intercepted. The star image mounts
+  only at first real engagement (`renderMark`) — never a speculative
+  request. Exclusion/timing regressions are pinned by
+  `tests/v404-polish.test.ts` and the export-level inertness check in
+  `verify:loading`.
+- **Document-tab hero signal + footer grid (v4.0.4):** every
+  ContentShell document renders ONE shared hero signal (node + ring +
+  transmission arc above the title block, rail-aligned, page-accent
+  themed, compositor-only, static under reduced motion) — no
+  page-specific animation components may be created. The footer's
+  four document-nav rows share one fixed heading column
+  (`--docnav-heading-width`) and one link-start position; the legal
+  block shares the footer rail; and `SiteFooter` must NEVER carry a
+  `data-reveal` opt-in again — the reveal controller mounts only on
+  the world shell and the blog layout, so an opt-in there left the
+  entire footer invisible (`opacity: 0`) on every ContentShell route
+  in v4.0.3 and earlier (verified against the v4.0.3 export before
+  the fix).
 - Blog pipeline: `scripts/build-blog.mjs` parses/validates/renderers
   `content/blog/*.md` → `data/blog/posts.json` + `public/sitemap.xml`. A
   malformed article FAILS the build. Run before dev/build.

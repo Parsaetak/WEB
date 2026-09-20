@@ -3,9 +3,22 @@
  * the shared footer. Sits on the same dark surface, uses the site's
  * mono/uppercase language at footer scale, and stays readable at
  * 320px by wrapping naturally.
+ *
+ * FOOTER GRID CONTRACT (v4.0.4) — the four navigation rows (SITE,
+ * COLLECTIONS, WORLD, TOPICS) share ONE deterministic two-column
+ * grid: a fixed heading column (--docnav-heading-width, sized to the
+ * longest heading "COLLECTIONS" at the footer's 9px mono scale) and
+ * one flexible link column. Every row's link content therefore
+ * starts at the EXACT same x-coordinate — the variable-width
+ * heading + flex layout this replaces (min-width: 58px) let each
+ * row's links start at a different position. Baseline alignment
+ * keeps the heading and the first link on one typographic line, and
+ * the ≤560px collapse stacks the columns gracefully.
  */
 
 .nav {
+  --docnav-heading-width: 96px;
+
   display: grid;
 
   gap: 10px;
@@ -20,18 +33,18 @@
 }
 
 .row {
-  display: flex;
+  display: grid;
 
-  flex-wrap: wrap;
+  grid-template-columns:
+    var(--docnav-heading-width)
+    minmax(0, 1fr);
+
+  column-gap: 14px;
 
   align-items: baseline;
-
-  gap: 8px 14px;
 }
 
 .heading {
-  min-width: 58px;
-
   color: var(--text-muted);
 
   font-family: var(--font-mono);
@@ -82,10 +95,14 @@
 }
 
 @media (max-width: 560px) {
+  /*
+   * Phone collapse: the heading takes its own row, the links flow
+   * beneath it — the shared grid contract steps down to one column.
+   */
   .row {
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
 
-    gap: 8px;
+    row-gap: 8px;
   }
 
   .link {

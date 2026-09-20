@@ -7,6 +7,8 @@ import "./globals.css";
 
 import GlobalMusicPlayerHost from "@/components/player/GlobalMusicPlayerHost";
 
+import GlobalRouteTransition from "@/components/GlobalRouteTransition";
+
 import {
   HOME_TITLE,
   JsonLd,
@@ -111,7 +113,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: HOME_TITLE,
     description: SITE_DESCRIPTION,
-    images: [SITE_OG_IMAGE_PATH]
+    images: [
+      {
+        url: SITE_OG_IMAGE_PATH,
+        alt: "Parsa Tak — AI systems, reasoning, and RED MAGIC"
+      }
+    ]
   },
   robots: {
     index: true,
@@ -237,6 +244,19 @@ export default function RootLayout({
           * exported HTML before engagement.
           */}
         <GlobalMusicPlayerHost />
+
+        {/*
+          * GLOBAL ROUTE TRANSITION (v4.0.4) — mounted exactly once,
+          * here in the ROOT layout, so the unified real-route loading
+          * surface survives every client-side navigation (the same
+          * law as the player host above). Display-only: it captures
+          * navigation INTENT through a passive click listener, shows
+          * the site's signal language only when a navigation outlives
+          * its grace period, and dismisses when the destination route
+          * has committed. It never blocks interaction, never delays a
+          * route, and ships inert in the static export.
+          */}
+        <GlobalRouteTransition />
       </body>
     </html>
   );

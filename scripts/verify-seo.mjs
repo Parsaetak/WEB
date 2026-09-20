@@ -51,6 +51,15 @@
  *   inbound census per content page, orphan/orphan-adjacent articles,
  *   hub/collection representation percentage, collection
  *   discoverability, anchor-text quality, canonical↔sitemap coherence
+ * - metadata quality (v4.0.4) verifyMetadataQuality — site-wide title/
+ *   description uniqueness census, length sanity, twitter:card +
+ *   twitter:image:alt coherence, og:image dimension declarations
+ * - canonical integrity (v4.0.4) verifyCanonicalUniqueness — each
+ *   canonical URL is claimed by exactly one exported page
+ * - entity graph (v4.0.4)  verifyEntityGraphIntegrity — per-page
+ *   unique JSON-LD @ids; singular Person/WebSite identity nodes
+ * - WhatsApp ban (v4.0.4)  verifyNoWhatsAppRemnants — the channel was
+ *   removed from the project; any occurrence in the export fails
  */
 
 import { readFile, readdir } from "node:fs/promises";
@@ -1982,6 +1991,326 @@ async function verifySeoGraphDepth(articleRoutes, postsIndex) {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* v4.0.4 — metadata QUALITY census + repository cleanliness on the export     */
+/*                                                                            */
+/* verifyMetadataQuality       — uniqueness + length sanity of titles and     */
+/*   descriptions across every canonical route and article, twitter card      */
+/*   coherence (card + image alt), og:image dimension declarations            */
+/* verifyCanonicalUniqueness   — no two exported pages declare the same       */
+/*   canonical URL (duplicate canonical identities fail loudly)               */
+/* verifyEntityGraphIntegrity  — per page: JSON-LD @id values are unique and  */
+/*   the page carries at most ONE Person and ONE WebSite node (the identity   */
+/*   graph stays singular; duplicates are a v2-era regression class)          */
+/* verifyNoWhatsAppRemnants    — WhatsApp was removed from the project in     */
+/*   v4.0.4; ANY occurrence in the exported site (HTML, XML, JSON, TXT) is a  */
+/*   build failure                                                           */
+/* -------------------------------------------------------------------------- */
+
+const WHATSAPP_PATTERN = /whatsapp|wa\.me/i;
+
+async function verifyNoWhatsAppRemnants() {
+  const files = [];
+
+  async function collect(dir) {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        await collect(full);
+      } else if (/\.(html|xml|json|txt)$/.test(entry.name)) {
+        files.push(full);
+      }
+    }
+  }
+
+  await collect(OUT_DIR);
+
+  let scanned = 0;
+  const hits = [];
+
+  for (const file of files) {
+    const content = await readFile(file, "utf8");
+    scanned += 1;
+
+    if (WHATSAPP_PATTERN.test(content)) {
+      hits.push(path.relative(OUT_DIR, file));
+    }
+  }
+
+  if (hits.length > 0) {
+    fail(
+      `whatsapp: removed-in-v4.0.4 contact channel reappeared in the export: ${hits.join(", ")}`
+    );
+  } else {
+    pass(`whatsapp: zero remnants across ${scanned} exported file(s)`);
+  }
+}
+
+/*
+ * Canonical metadata census: every indexable exported page's title,
+ * description, twitter card and og:image declarations, keyed by route.
+ * verifyPage already asserts per-route exactness against the registry;
+ * this census asserts the SITE-WIDE properties (uniqueness, sane
+ * lengths, coherence) that per-route checks cannot see.
+ */
+async function verifyMetadataQuality(articleRoutes) {
+  const pages = [{ route: "/", file: "index.html" }];
+
+  for (const entry of CONTENT_ROUTES) {
+    pages.push({ route: `/${entry.route}/`, file: path.join(entry.route, "index.html") });
+  }
+
+  pages.push({ route: "/blog/", file: path.join("blog", "index.html") });
+
+  for (const slug of articleRoutes) {
+    pages.push({
+      route: `/blog/${slug}/`,
+      file: path.join("blog", slug, "index.html")
+    });
+  }
+
+  const titles = new Map();
+  const descriptions = new Map();
+  let missingTwitterAlt = 0;
+  let missingOgDimensions = 0;
+
+  for (const page of pages) {
+    const file = page.file;
+
+    if (!existsSync(path.join(OUT_DIR, file))) {
+      continue; // verifyPage already reports the missing file
+    }
+
+    const html = await readText(file);
+
+    const titleMatches = html.match(/<title[^>]*>([\s\S]*?)<\/title>/g) ?? [];
+    const title =
+      titleMatches.length === 1
+        ? decodeEntities(titleMatches[0].replace(/<\/?title[^>]*>/g, "")).trim()
+        : null;
+
+    if (title) {
+      titles.set(title, [...(titles.get(title) ?? []), page.route]);
+
+      if (title.length < 15 || title.length > 80) {
+        fail(
+          `metadata quality: ${page.route} title length ${title.length} outside 15–80 ("${title}")`
+        );
+      }
+    }
+
+    const description = extractMatch(
+      html,
+      /<meta name="description" content="([^"]*)"/,
+      "meta description",
+      file
+    );
+
+    if (description) {
+      descriptions.set(description, [
+        ...(descriptions.get(description) ?? []),
+        page.route
+      ]);
+
+      if (description.length < 50 || description.length > 320) {
+        fail(
+          `metadata quality: ${page.route} description length ${description.length} outside 50–320`
+        );
+      }
+    }
+
+    if (!/<meta name="twitter:card" content="summary_large_image"\/>/.test(html)) {
+      fail(`metadata quality: ${page.route} missing twitter:card summary_large_image`);
+    }
+
+    if (!/<meta name="twitter:image:alt" content="[^"]+"\/>/.test(html)) {
+      missingTwitterAlt += 1;
+    }
+
+    if (
+      !/<meta property="og:image:width" content="\d+"\/>/.test(html) ||
+      !/<meta property="og:image:height" content="\d+"\/>/.test(html)
+    ) {
+      missingOgDimensions += 1;
+    }
+  }
+
+  for (const [title, routes] of titles) {
+    if (routes.length > 1) {
+      fail(`metadata quality: duplicate title "${title}" on ${routes.join(", ")}`);
+    }
+  }
+
+  for (const [description, routes] of descriptions) {
+    if (routes.length > 1) {
+      fail(
+        `metadata quality: duplicate meta description (${description.slice(0, 60)}…) on ${routes.join(", ")}`
+      );
+    }
+  }
+
+  if (missingTwitterAlt === 0) {
+    pass(`metadata quality: twitter:image:alt present on all ${pages.length} indexable page(s)`);
+  } else {
+    fail(
+      `metadata quality: ${missingTwitterAlt} page(s) missing twitter:image:alt (card image must not ship unlabelled)`
+    );
+  }
+
+  if (missingOgDimensions === 0) {
+    pass(`metadata quality: og:image width/height declared on all ${pages.length} indexable page(s)`);
+  } else {
+    fail(
+      `metadata quality: ${missingOgDimensions} page(s) missing og:image:width/height declarations`
+    );
+  }
+
+  if (titles.size === pages.length && descriptions.size === pages.length) {
+    pass(
+      `metadata quality: ${pages.length} page(s) carry ${titles.size} unique titles and ${descriptions.size} unique descriptions`
+    );
+  }
+}
+
+/*
+ * Canonical identity census: at most one INDEXABLE page may claim a
+ * canonical URL. Two pages declaring the same canonical is a
+ * duplicate-identity regression that per-route checks cannot see.
+ * Non-indexable documents (the exported 404s — Next emits noindex for
+ * them, they inherit the root layout metadata and stay out of the
+ * sitemap) are excluded: a noindex page's canonical is ignored by
+ * search engines and cannot create a duplicate indexed identity.
+ */
+async function verifyCanonicalUniqueness() {
+  const htmlFiles = await collectHtmlFiles(OUT_DIR);
+  const canonicals = new Map();
+  let skippedNonIndexable = 0;
+
+  for (const file of htmlFiles) {
+    if (file.endsWith("index.html") === false) {
+      continue;
+    }
+
+    const html = await readFile(path.join(OUT_DIR, file), "utf8");
+
+    if (/content="noindex/.test(html)) {
+      skippedNonIndexable += 1;
+      continue;
+    }
+
+    const canonical = extractMatch(
+      html,
+      /<link rel="canonical" href="([^"]*)"/,
+      "canonical link",
+      file
+    );
+
+    if (!canonical) {
+      continue; // verifyPage/interactivity already report missing canonicals
+    }
+
+    canonicals.set(canonical, [...(canonicals.get(canonical) ?? []), file]);
+  }
+
+  let duplicates = 0;
+
+  for (const [canonical, files] of canonicals) {
+    if (files.length > 1) {
+      duplicates += 1;
+      fail(
+        `canonical integrity: ${canonical} is declared by ${files.length} page(s): ${files.join(", ")}`
+      );
+    }
+  }
+
+  if (duplicates === 0) {
+    pass(
+      `canonical integrity: ${canonicals.size} canonical URL(s) across the export, each claimed by exactly one indexable page (${skippedNonIndexable} non-indexable document(s) excluded)`
+    );
+  }
+}
+
+/*
+ * Per-page entity graph integrity: every JSON-LD @id appears once per
+ * page, and the identity nodes stay singular (≤1 Person, ≤1 WebSite).
+ */
+async function verifyEntityGraphIntegrity() {
+  const htmlFiles = await collectHtmlFiles(OUT_DIR);
+  let pagesChecked = 0;
+  let violations = 0;
+
+  for (const file of htmlFiles) {
+    if (!file.endsWith("index.html")) {
+      continue;
+    }
+
+    const html = await readFile(path.join(OUT_DIR, file), "utf8");
+    const blocks = extractJsonLdBlocks(html);
+
+    if (blocks.length === 0) {
+      continue;
+    }
+
+    pagesChecked += 1;
+
+    const ids = new Map();
+    const typeCounts = new Map();
+
+    for (const block of blocks) {
+      let parsed;
+
+      try {
+        parsed = JSON.parse(block);
+      } catch {
+        continue; // verifyPage already reports unparseable blocks
+      }
+
+      const graph = parsed["@graph"] ?? [parsed];
+
+      for (const node of graph) {
+        if (node?.["@id"]) {
+          const id = node["@id"];
+          ids.set(id, (ids.get(id) ?? 0) + 1);
+        }
+
+        if (typeof node?.["@type"] === "string") {
+          typeCounts.set(
+            node["@type"],
+            (typeCounts.get(node["@type"]) ?? 0) + 1
+          );
+        }
+      }
+    }
+
+    const label = file === "index.html" ? "/" : `/${file.replace(/\/index\.html$/, "")}/`;
+
+    for (const [id, count] of ids) {
+      if (count > 1) {
+        violations += 1;
+        fail(`entity graph: ${label} declares @id "${id}" ${count}× — duplicated entity node`);
+      }
+    }
+
+    for (const singular of ["Person", "WebSite"]) {
+      const count = typeCounts.get(singular) ?? 0;
+
+      if (count > 1) {
+        violations += 1;
+        fail(
+          `entity graph: ${label} emits ${count} ${singular} nodes — the identity graph must stay singular`
+        );
+      }
+    }
+  }
+
+  if (violations === 0) {
+    pass(
+      `entity graph: ${pagesChecked} structured-data page(s) checked — unique @ids, singular Person/WebSite nodes`
+    );
+  }
+}
+
 async function main() {
   if (!existsSync(OUT_DIR)) {
     console.error("[seo] out/ does not exist — run `npm run build` first.");
@@ -2106,6 +2435,16 @@ async function main() {
   /* Favicon family + brand assets (v2.9) — checked with the export. */
   await verifyFaviconFamily();
   await verifyBrandAssetsInExport();
+
+  /*
+   * v4.0.4 quality + cleanliness group: site-wide metadata quality
+   * census, canonical identity integrity, per-page entity graph
+   * integrity, and the WhatsApp-remnant ban.
+   */
+  await verifyMetadataQuality(articleRoutes);
+  await verifyCanonicalUniqueness();
+  await verifyEntityGraphIntegrity();
+  await verifyNoWhatsAppRemnants();
 
   console.log(`\n[seo] ${checks.length} check(s) passed`);
   for (const entry of checks) {

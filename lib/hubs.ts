@@ -955,6 +955,10 @@ export type ContentMetadataInput = {
  * production metadataBase (which already carries /WEB), and the
  * site-level OG image. The root layout contributes the Search
  * Console verification token, favicon family, and robots default.
+ *
+ * v4.0.4: the Twitter image carries its alt text through the object
+ * form (the bare-string form cannot express twitter:image:alt), so
+ * the card metadata stays coherent with the og:image declaration.
  */
 export function contentRouteMetadata({
   route,
@@ -987,7 +991,12 @@ export function contentRouteMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: [SITE_OG_IMAGE_PATH]
+      images: [
+        {
+          url: SITE_OG_IMAGE_PATH,
+          alt: ogAlt
+        }
+      ]
     },
     robots: {
       index: true,

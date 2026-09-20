@@ -163,7 +163,12 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: post.title,
       description: post.description,
-      images: [image.url]
+      images: [
+        {
+          url: image.url,
+          alt: image.alt
+        }
+      ]
     },
 
     robots: {

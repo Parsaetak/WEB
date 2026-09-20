@@ -9,16 +9,22 @@ import {
   type PublicLink
 } from "@/lib/links";
 
+/*
+ * Two balanced rows of the public network (7 + 7 of the 14 verified
+ * links, rebalanced in v4.0.4 when a retired contact channel left the
+ * registry). The rows are presentation-only slicing of
+ * ALL_PUBLIC_LINKS — the link data itself is owned by lib/links.ts.
+ */
 const FOOTER_LINK_ROWS: readonly (
   readonly PublicLink[]
 )[] = [
   ALL_PUBLIC_LINKS.slice(
     0,
-    8
+    7
   ),
   ALL_PUBLIC_LINKS.slice(
-    8,
-    15
+    7,
+    14
   )
 ];
 
