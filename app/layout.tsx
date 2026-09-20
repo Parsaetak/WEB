@@ -5,6 +5,8 @@ import type {
 
 import "./globals.css";
 
+import GlobalMusicPlayerHost from "@/components/player/GlobalMusicPlayerHost";
+
 import {
   HOME_TITLE,
   JsonLd,
@@ -219,7 +221,22 @@ export default function RootLayout({
       </head>
       <body>
         <JsonLd data={SITE_ENTITY_GRAPH} />
+
         {children}
+
+        {/*
+          * GLOBAL MUSIC PLAYER HOST (v4.0.2) — mounted exactly once,
+          * here in the ROOT layout, so the ONE player store and its
+          * ONE <audio> element survive every client-side route
+          * navigation (the layout never unmounts during soft
+          * navigation). The host ships no player code: it mounts the
+          * lazy player surface only after the first explicit playback
+          * intent, or immediately when a persisted session exists
+          * (restored as a PAUSED player — never autoplaying).
+          * Static-export safe: the host renders nothing in the
+          * exported HTML before engagement.
+          */}
+        <GlobalMusicPlayerHost />
       </body>
     </html>
   );

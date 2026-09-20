@@ -57,6 +57,24 @@ export function buildM4a(options?: M4aOptions): Uint8Array;
 
 export function buildFlac(options?: FlacOptions): Uint8Array;
 
+export type WavOptions = {
+  title?: string;
+  artist?: string;
+  album?: string;
+  composer?: string;
+  year?: string;
+  genre?: string;
+  track?: string;
+  comment?: string;
+  seconds?: number;
+  sampleRate?: number;
+  channels?: number;
+  bitsPerSample?: number;
+  [field: string]: unknown;
+};
+
+export function buildWav(options?: WavOptions): Uint8Array;
+
 export function buildCoverPng(): Uint8Array;
 
 export function buildId3Tag(

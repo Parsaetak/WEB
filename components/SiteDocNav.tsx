@@ -1,4 +1,4 @@
-import { routeHref } from "@/lib/hubs";
+import Link from "next/link";
 
 import {
   CONTENT_NAV,
@@ -9,8 +9,9 @@ import {
 import styles from "@/components/SiteDocNav.module.css";
 
 /*
- * SITE DOCUMENT NAV (v3.7) — crawlable links to the real, indexable
- * documents, carried by the shared SiteFooter on every page.
+ * SITE DOCUMENT NAV (v3.7, soft navigation since v4.0.2) — crawlable
+ * links to the real, indexable documents, carried by the shared
+ * SiteFooter on every page.
  *
  * Four rows, in priority order:
  * - Site: the primary navigation (HOME, ABOUT, BLOG, CONTACT) — the
@@ -24,9 +25,15 @@ import styles from "@/components/SiteDocNav.module.css";
  *   every document.
  *
  * The hash scenes remain interaction states; these anchors make the
- * whole content graph reachable without JavaScript. Plain anchors
- * through routeHref: basePath-aware on GitHub Pages, zero client
- * JavaScript, no numbered labels.
+ * whole content graph reachable without JavaScript. Since v4.0.2 the
+ * rows render through next/link (the same component the unified
+ * navigation uses): Link renders a plain crawlable anchor in the
+ * exported HTML and applies the deployment basePath itself, while a
+ * hydrated browser upgrades the click to a CLIENT-SIDE navigation —
+ * the root layout (and with it the global Music player) never
+ * unmounts, so playback continues across the whole site. The router
+ * bundle already ships on every page (App Router hydration), so this
+ * adds no new client JavaScript — it removes full page reloads.
  */
 
 const DOCUMENT_LINKS: readonly { label: string; href: string }[] =
@@ -70,9 +77,13 @@ function NavRow({
       <ul className={styles.list}>
         {links.map((link) => (
           <li key={link.href}>
-            <a className={styles.link} href={routeHref(link.href)}>
+            {/*
+              * Raw root-relative href: Link applies the deployment
+              * basePath itself (routeHref would double-prefix it).
+              */}
+            <Link className={styles.link} href={link.href}>
               {link.label}
-            </a>
+            </Link>
           </li>
         ))}
       </ul>

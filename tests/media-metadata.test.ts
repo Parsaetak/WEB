@@ -1,6 +1,6 @@
 /*
  * tests/media-metadata.test.ts — embedded-metadata extraction tests
- * (MP3 ID3v2.3 / ID3v2.4, M4A MP4 atoms, FLAC blocks).
+ * (MP3 ID3v2.3 / ID3v2.4, M4A MP4 atoms, FLAC blocks, WAV RIFF).
  *
  * The fixtures are deterministic synthetic containers (never site
  * content): the MP3 carries a real silent MPEG Layer III bitstream,
@@ -14,7 +14,8 @@ import assert from "node:assert/strict";
 import {
   buildFlac,
   buildM4a,
-  buildMp3
+  buildMp3,
+  buildWav
 } from "./fixtures/audio.mjs";
 
 import { parseId3v2 } from "../scripts/media/id3.mjs";
@@ -26,6 +27,8 @@ import {
 import { parseMp4Metadata } from "../scripts/media/mp4.mjs";
 
 import { parseFlacMetadata } from "../scripts/media/flac.mjs";
+
+import { parseWavMetadata } from "../scripts/media/wav.mjs";
 
 import {
   extractAudioMetadata
@@ -315,5 +318,130 @@ describe("shared byte helpers", () => {
     assert.deepEqual(parseSlashPair("7/12"), { index: 7, total: 12 });
     assert.deepEqual(parseSlashPair("7"), { index: 7, total: undefined });
     assert.equal(parseSlashPair("x"), null);
+  });
+});
+
+/* ---------------------------------------------------------------- */
+/* v4.0.2 — WAV (RIFF/LIST INFO)                                     */
+/* ---------------------------------------------------------------- */
+
+describe("WAV (RIFF) metadata (v4.0.2)", () => {
+  it("extracts LIST/INFO tags and the exact PCM duration", () => {
+    const bytes = buildWav({
+      title: "Riff Title",
+      artist: "Riff Artist",
+      album: "Riff Album",
+      composer: "Riff Composer",
+      year: "2025",
+      genre: "Ambient",
+      track: "2/8",
+      seconds: 9
+    });
+
+    const parsed = parseWavMetadata(bytes);
+
+    assert.ok(parsed, "RIFF/WAVE should parse");
+
+    assert.equal(parsed!.fields.title, "Riff Title");
+    assert.equal(parsed!.fields.artist, "Riff Artist");
+    assert.equal(parsed!.fields.album, "Riff Album");
+    assert.equal(parsed!.fields.composer, "Riff Composer");
+    assert.equal(parsed!.fields.year, "2025");
+    assert.equal(parsed!.fields.trackNumber, 2);
+    assert.equal(parsed!.fields.trackTotal, 8);
+
+    assert.ok(Math.abs(parsed!.durationSeconds! - 9) < 0.01);
+  });
+
+  it("returns null for non-RIFF bytes", () => {
+    assert.equal(parseWavMetadata(new Uint8Array(64)), null);
+
+    assert.equal(
+      parseWavMetadata(new Uint8Array([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x41, 0x56, 0x49, 0x33])),
+      null,
+      "RIFF without the WAVE form type is not a WAV"
+    );
+  });
+
+  it("resolves duration from a truncated head window (data body never needed)", () => {
+    const bytes = buildWav({ seconds: 20 });
+
+    /* Past the fmt + LIST chunks and the data chunk HEADER, far
+     * before the data body — the size field is all the parser needs. */
+    const head = bytes.subarray(0, 200);
+
+    const parsed = parseWavMetadata(head);
+
+    assert.ok(parsed);
+
+    assert.ok(
+      Math.abs(parsed!.durationSeconds! - 20) < 0.01,
+      "duration comes from the data chunk SIZE field, not its body"
+    );
+  });
+
+  it("extracts through the range-request orchestrator like production", async () => {
+    const bytes = buildWav({
+      title: "Orchestrated",
+      artist: "Via Ranges",
+      seconds: 6
+    });
+
+    const files = new Map<string, Uint8Array>([
+      ["w.wav", bytes]
+    ]);
+
+    const fetchRange = async (
+      url: string,
+      start: number,
+      end: number | null
+    ) => {
+      const key = new URL(url).pathname.replace(/^\//, "");
+
+      const data = files.get(key);
+
+      if (!data) {
+        return {
+          status: 404,
+          arrayBuffer: new ArrayBuffer(0),
+          contentRange: null,
+          acceptRanges: null
+        };
+      }
+
+      if (start === 0 && end === 0) {
+        return {
+          status: 206,
+          arrayBuffer: data.subarray(0, 1).slice().buffer,
+          contentRange: `bytes 0-0/${data.length}`,
+          acceptRanges: "bytes"
+        };
+      }
+
+      const rangeEnd = end ?? data.length - 1;
+
+      return {
+        status: 206,
+        arrayBuffer: data
+          .subarray(start, rangeEnd + 1)
+          .slice().buffer,
+        contentRange: `bytes ${start}-${rangeEnd}/${data.length}`,
+        acceptRanges: "bytes"
+      };
+    };
+
+    const result = await extractAudioMetadata({
+      url: "https://cdn.test/w.wav",
+      kind: "wav",
+      fetchRange
+    });
+
+    assert.equal(result.source, "embedded");
+
+    assert.equal(result.fields.title, "Orchestrated");
+
+    assert.equal(result.fields.artist, "Via Ranges");
+
+    assert.ok(Math.abs(result.duration! - 6) < 0.01);
   });
 });

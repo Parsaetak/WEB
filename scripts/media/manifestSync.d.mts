@@ -1,5 +1,5 @@
 /*
- * Type declarations for scripts/media/manifestSync.mjs (v4.0.1).
+ * Type declarations for scripts/media/manifestSync.mjs (v4.0.2).
  */
 
 export type RawMediaItem = {
@@ -7,8 +7,11 @@ export type RawMediaItem = {
 };
 
 export type MediaManifestItem = {
-  branch: string;
-  source: string;
+  sourceType: "contents" | "direct";
+  branch?: string;
+  source?: string;
+  url?: string;
+  mimeType?: string;
   title: string;
   type: "book" | "music" | "video" | "art";
   artist?: string;
@@ -54,6 +57,10 @@ export function normalizeRawItem(
   raw: unknown,
   origin: string
 ): NormalizeResult;
+
+export function isValidDirectMediaUrl(
+  url: string
+): boolean;
 
 export function enrichMusicItem(options: {
   item: MediaManifestItem;

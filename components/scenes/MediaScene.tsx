@@ -26,6 +26,8 @@ import {
 
 import { getPlayerStore } from "@/lib/player/playerStore";
 
+import { usePlayerState } from "@/lib/player/usePlayer";
+
 import { formatPlayerTime } from "@/lib/player/format";
 
 import styles from "./MediaScene.module.css";
@@ -46,6 +48,13 @@ const MediaPdfReader =
  * deterministic collection id is the scene filter, and the queue
  * order is the filtered list order. Filtering Media re-registers the
  * collection — the player follows, never duplicates, that state.
+ *
+ * This scene is a CATALOG/INTENT surface only (v4.0.2): it renders
+ * catalog metadata and issues playback intents (play / play next /
+ * add to queue) against the ONE global store mounted by the root
+ * layout — it owns no audio element and no player state of its own,
+ * and it reads the store's current state purely to REFLECT it (the
+ * now-playing highlight below).
  */
 function getCollectionId(filter: MediaFilter) {
   return `media:${filter}`;
@@ -64,6 +73,13 @@ export default function MediaScene() {
   ] = useState<
     MediaItem[]
   >([]);
+
+  /*
+   * READ-ONLY mirror of the global player state: the only player
+   * data this catalog surface keeps is the reflection needed to mark
+   * the current track. All playback state stays in the one store.
+   */
+  const playerState = usePlayerState();
 
   const [
     selected,
@@ -322,9 +338,15 @@ export default function MediaScene() {
     if (isMusicItem(selected)) {
       /*
        * Music plays through the global player — never a modal
-       * <audio>. The viewer stays for PDFs, video and art.
+       * audio element. The viewer stays for PDFs, video and art. When the
+       * selected track IS the current one, the intent is a
+       * pause/resume gesture, not a restart.
        */
-      playTrack(selected.id);
+      if (selected.id === playerState.currentTrackId) {
+        getPlayerStore().togglePlay();
+      } else {
+        playTrack(selected.id);
+      }
 
       return;
     }
@@ -637,30 +659,53 @@ export default function MediaScene() {
                   </a>
 
                   {/*
-                    * SOURCE — the item's GitHub origin.
-                    * The URL was already computed for every item by
-                    * lib/mediaRepository but never surfaced; this
-                    * gives the viewer an honest provenance link
-                    * beside the download.
+                    * SOURCE — provenance. Contents items link their
+                    * GitHub origin (the URL computed by
+                    * lib/mediaRepository); direct items link the
+                    * external publisher, labeled honestly — a direct
+                    * source has no GitHub provenance and never a
+                    * faked one.
                     */}
-                  <a
-                    className={
-                      styles.mediaSourceButton
-                    }
-                    href={
-                      selected.githubUrl
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <span>SOURCE</span>
-
-                    <span
-                      aria-hidden="true"
+                  {selected.githubUrl ? (
+                    <a
+                      className={
+                        styles.mediaSourceButton
+                      }
+                      href={
+                        selected.githubUrl
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      ↗
-                    </span>
-                  </a>
+                      <span>SOURCE</span>
+
+                      <span
+                        aria-hidden="true"
+                      >
+                        ↗
+                      </span>
+                    </a>
+                  ) : selected.source.kind ===
+                    "direct" ? (
+                    <a
+                      className={
+                        styles.mediaSourceButton
+                      }
+                      href={
+                        selected.rawUrl
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span>DIRECT SOURCE</span>
+
+                      <span
+                        aria-hidden="true"
+                      >
+                        ↗
+                      </span>
+                    </a>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -1100,19 +1145,24 @@ export default function MediaScene() {
                                   }
                                 >
                                   <strong>
-                                    {
-                                      item.title
-                                    }
+                                    {item.title}
                                   </strong>
 
                                   <small>
-                                    {music
-                                      ? item.track
-                                          .artist ??
-                                        item.year ??
-                                        "ORIGINAL WORK"
-                                      : item.year ??
-                                        "ORIGINAL WORK"}
+                                    {music &&
+                                    item.id ===
+                                      playerState.currentTrackId
+                                      ? `${playerState.status === "playing" ? "NOW PLAYING" : "PAUSED"} · ${
+                                          item.track.artist ??
+                                          "ORIGINAL WORK"
+                                        }`
+                                      : music
+                                        ? item.track
+                                            .artist ??
+                                          item.year ??
+                                          "ORIGINAL WORK"
+                                        : item.year ??
+                                          "ORIGINAL WORK"}
                                   </small>
                                 </span>
 
@@ -1132,17 +1182,38 @@ export default function MediaScene() {
                                   className={
                                     styles.mediaItemPlay
                                   }
-                                  onClick={() =>
-                                    playTrack(
-                                      item.id
-                                    )
+                                  data-playing={
+                                    item.id ===
+                                      playerState.currentTrackId &&
+                                      playerState.status ===
+                                        "playing"
+                                      ? "true"
+                                      : "false"
                                   }
-                                  aria-label={`Play ${item.title}${item.track.artist ? ` by ${item.track.artist}` : ""}`}
+                                  onClick={() =>
+                                    item.id ===
+                                      playerState.currentTrackId
+                                      ? getPlayerStore().togglePlay()
+                                      : playTrack(
+                                          item.id
+                                        )
+                                  }
+                                  aria-label={
+                                    item.id ===
+                                      playerState.currentTrackId
+                                      ? `${playerState.status === "playing" ? "Pause" : "Resume"} ${item.title}${item.track.artist ? ` by ${item.track.artist}` : ""}`
+                                      : `Play ${item.title}${item.track.artist ? ` by ${item.track.artist}` : ""}`
+                                  }
                                 >
                                   <span
                                     aria-hidden="true"
                                   >
-                                    ▶
+                                    {item.id ===
+                                      playerState.currentTrackId &&
+                                      playerState.status ===
+                                        "playing"
+                                      ? "❚❚"
+                                      : "▶"}
                                   </span>
                                 </button>
                               )}
@@ -1525,19 +1596,27 @@ export default function MediaScene() {
                                 openItem
                               }
                             >
-                              {
-                                getActionLabel(
-                                  selected
-                                )
-                              }{" "}
                               {selectedIsMusic
-                                ? "TRACK"
-                                : "WORK"}
+                                ? selected.id ===
+                                    playerState.currentTrackId
+                                  ? playerState.status ===
+                                    "playing"
+                                    ? "PAUSE TRACK"
+                                    : "RESUME TRACK"
+                                  : `${getActionLabel(selected)} TRACK`
+                                : `${getActionLabel(selected)} WORK`}
 
                               <span
                                 aria-hidden="true"
                               >
-                                →
+                                {selectedIsMusic &&
+                                selected.id ===
+                                  playerState.currentTrackId
+                                  ? playerState.status ===
+                                    "playing"
+                                    ? "❚❚"
+                                    : "▶"
+                                  : "→"}
                               </span>
                             </button>
 
@@ -1586,6 +1665,13 @@ export default function MediaScene() {
                               "embedded"
                                 ? "extracted from the audio file's embedded tags"
                                 : "provided by the publisher manifest"}
+                              .{" "}
+                              Source:{" "}
+                              {selected.source
+                                .kind ===
+                              "direct"
+                                ? "direct external URL — playback streams from the publisher, never proxied through this site"
+                                : "repository-backed Contents file"}
                               .
                             </p>
                           )}

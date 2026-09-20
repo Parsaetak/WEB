@@ -1,8 +1,8 @@
 import { Fragment, type ReactNode } from "react";
 
-import { BRAND_STAR } from "@/lib/brand";
+import Link from "next/link";
 
-import { routeHref } from "@/lib/hubs";
+import { BRAND_STAR } from "@/lib/brand";
 
 import { PRIMARY_NAV, WORLD_NAV } from "@/lib/navigation";
 
@@ -157,12 +157,17 @@ export default function ContentShell({
     >
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <a className={styles.brand} href={routeHref("/")}>
+          <Link className={styles.brand} href="/">
             {/*
              * The 13-point star — the site identity — anchors the
              * content shell to the same brand as the world shell
              * and the blog. Decorative: the adjacent text is the
              * accessible content.
+             *
+             * Soft navigation (v4.0.2): the brand links home through
+             * next/link — a crawlable anchor in the export, a
+             * client-side navigation when hydrated, so the root
+             * layout and the global Music player never unmount.
              */}
             <img
               src={BRAND_STAR.red}
@@ -174,7 +179,7 @@ export default function ContentShell({
             />
 
             <span className={styles.brandName}>Parsa Tak</span>
-          </a>
+          </Link>
 
           <UnifiedSiteNav
             className={styles.contentNav}
@@ -247,12 +252,12 @@ export default function ContentShell({
                     )}
 
                     {crumb.href && !isLast ? (
-                      <a
+                      <Link
                         className={styles.crumbLink}
-                        href={routeHref(crumb.href)}
+                        href={crumb.href}
                       >
                         {crumb.name}
-                      </a>
+                      </Link>
                     ) : (
                       <span
                         className={styles.crumbCurrent}

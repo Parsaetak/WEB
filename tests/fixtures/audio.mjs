@@ -68,6 +68,16 @@ function uint32LE(value) {
   return bytes;
 }
 
+function uint16LE(value) {
+  const bytes = new Uint8Array(2);
+
+  bytes[0] = value & 0xff;
+
+  bytes[1] = (value >>> 8) & 0xff;
+
+  return bytes;
+}
+
 function uint24BE(value) {
   const bytes = new Uint8Array(3);
 
@@ -474,6 +484,99 @@ export function buildFlac({
     latin1("fLaC"),
     flacBlock(0, streamInfo, false),
     flacBlock(4, comments, true)
+  ]);
+}
+
+/**
+ * A real (silent) PCM RIFF/WAVE file with LIST/INFO tags — the WAV
+ * counterpart of buildMp3: byte-exact for the parser tests and
+ * genuinely playable in a browser for end-to-end verification.
+ */
+export function buildWav({
+  title = "WAV Track",
+  artist = "WAV Artist",
+  album = "WAV Album",
+  composer = "WAV Composer",
+  year = "2024",
+  genre = "Ambient",
+  track = "3/7",
+  comment = "Synthetic wav",
+  seconds = 30,
+  sampleRate = 44100,
+  channels = 2,
+  bitsPerSample = 16
+} = {}) {
+  const blockAlign =
+    (channels * bitsPerSample) / 8;
+
+  const byteRate =
+    sampleRate * blockAlign;
+
+  const dataBytes = Math.round(
+    seconds * byteRate
+  );
+
+  /* Word-aligned data body (16-bit stereo is always even; the pad
+   * keeps the builder honest for any configuration). */
+  const data = new Uint8Array(
+    dataBytes + (dataBytes % 2)
+  );
+
+  const fmt = concat([
+    uint16LE(1), /* PCM */
+    uint16LE(channels),
+    uint32LE(sampleRate),
+    uint32LE(byteRate),
+    uint16LE(blockAlign),
+    uint16LE(bitsPerSample)
+  ]);
+
+  const infoChunk = (id, text) => {
+    const body = utf8(text);
+
+    return concat([
+      latin1(id),
+      uint32LE(body.length),
+      body,
+      body.length % 2 === 1
+        ? new Uint8Array([0])
+        : new Uint8Array(0)
+    ]);
+  };
+
+  const listBody = concat([
+    latin1("INFO"),
+    infoChunk("INAM", title),
+    infoChunk("IART", artist),
+    infoChunk("IPRD", album),
+    infoChunk("ICMS", composer),
+    infoChunk("ICRD", year),
+    infoChunk("IGNR", genre),
+    infoChunk("ITRK", track),
+    infoChunk("ICMT", comment)
+  ]);
+
+  const chunk = (id, body) =>
+    concat([
+      latin1(id),
+      uint32LE(body.length),
+      body,
+      body.length % 2 === 1
+        ? new Uint8Array([0])
+        : new Uint8Array(0)
+    ]);
+
+  const wave = concat([
+    chunk("fmt ", fmt),
+    chunk("LIST", listBody),
+    chunk("data", data)
+  ]);
+
+  return concat([
+    latin1("RIFF"),
+    uint32LE(4 + wave.length),
+    latin1("WAVE"),
+    wave
   ]);
 }
 

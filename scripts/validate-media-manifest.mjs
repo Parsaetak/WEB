@@ -6,10 +6,15 @@
  * (scripts/sync-media-manifest.mjs) from the Contents repository.
  * Before the site builds, the manifest must be structurally sound:
  *
- *   - top level: `version` 3, string `updated`, array `items`
- *   - every item: string `branch`, `source`, `title`, canonical
- *     `type` (book | music | video | art — legacy "audio" rejected)
- *   - source extension must match the declared type
+ *   - top level: `version` 4, string `updated`, array `items`
+ *   - every item: explicit `sourceType` (contents | direct), string
+ *     `title`, canonical `type` (book | music | video | art — legacy
+ *     "audio" rejected)
+ *   - contents items: string `branch` + `source`, source extension
+ *     matches the declared type
+ *   - direct items: absolute http(s) `url`, type "music", audio kind
+ *     resolvable from the URL extension or declared mimeType, no
+ *     repository-only fields
  *   - music-only fields (duration, metadataSource, …) type-checked
  *
  * A malformed manifest fails the build BEFORE any expensive work,
@@ -57,6 +62,11 @@ if (errors.length > 0) {
 
 const counts = manifest.items.reduce((acc, item) => {
   acc[item.type] = (acc[item.type] ?? 0) + 1;
+
+  if (item.sourceType === "direct") {
+    acc.direct = (acc.direct ?? 0) + 1;
+  }
+
   return acc;
 }, {});
 

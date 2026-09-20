@@ -15,11 +15,14 @@ import {
   getActionLabel,
   getCatalogLabel,
   getCategoryForKind,
+  getDirectAudioKind,
   getDownloadLabel,
   getMediaFilterForItem,
   getMediaKind,
   getPreviewGlyph,
+  isValidDirectMediaUrl,
   MEDIA_FILTERS,
+  MIME_BY_AUDIO_KIND,
   normalizeCategory,
   normalizeManifestItems,
   normalizeMediaItem,
@@ -96,11 +99,31 @@ describe("manifest → MediaItem normalization", () => {
     assert.equal(
       normalizeMediaItem({
         branch: "Music",
-        source: "song.wav",
+        source: "song.txt",
         title: "song",
         type: "music"
       }),
       null
+    );
+  });
+
+  it("accepts .wav as a music kind (v4.0.2)", () => {
+    const item = normalizeMediaItem({
+      branch: "Music",
+      source: "Album/01 Lossless.wav",
+      title: "01 Lossless",
+      type: "music"
+    });
+
+    assert.ok(item);
+
+    assert.equal(item!.kind, "wav");
+
+    assert.equal(item!.category, "music");
+
+    assert.equal(
+      item!.rawUrl,
+      "https://cdn.jsdelivr.net/gh/Parsaetak/Contents@Music/Album/01%20Lossless.wav"
     );
   });
 
@@ -268,5 +291,250 @@ describe("manifest typing sanity", () => {
     };
 
     assert.equal(manifest.items.length, 1);
+  });
+});
+
+/* ---------------------------------------------------------------- */
+/* v4.0.2 — direct sources in the app-side model                    */
+/* ---------------------------------------------------------------- */
+
+const DIRECT = {
+  sourceType: "direct" as const,
+  url: "https://media.example.com/albums/02 Direct.wav",
+  title: "02 Direct",
+  type: "music",
+  artist: "Direct Artist",
+  mimeType: "audio/wav"
+};
+
+describe("manifest → MediaItem normalization — direct sources (v4.0.2)", () => {
+  it("derives a DirectSource item with the URL as the playback source", () => {
+    const item = normalizeMediaItem(DIRECT);
+
+    assert.ok(item);
+
+    assert.equal(
+      item!.id,
+      "direct:https://media.example.com/albums/02 Direct.wav"
+    );
+
+    assert.equal(item!.kind, "wav");
+
+    assert.equal(item!.category, "music");
+
+    assert.equal(item!.rawUrl, DIRECT.url);
+
+    assert.equal(
+      item!.githubUrl,
+      undefined,
+      "no GitHub provenance is fabricated for a direct source"
+    );
+
+    assert.deepEqual(item!.source, {
+      kind: "direct",
+      url: DIRECT.url,
+      mimeType: "audio/wav"
+    });
+
+    if (item!.category !== "music") {
+      return;
+    }
+
+    assert.equal(item!.track.artist, "Direct Artist");
+
+    assert.equal(item!.track.source, "manifest");
+  });
+
+  it("derives contents items with the explicit contents discriminator", () => {
+    const item = normalizeMediaItem(TRACK);
+
+    assert.ok(item);
+
+    assert.deepEqual(item!.source, {
+      kind: "contents",
+      branch: "Music",
+      path: "Album/01 Song.mp3"
+    });
+  });
+
+  it("rejects malformed direct URLs and unresolvable kinds (defense in depth)", () => {
+    assert.equal(
+      normalizeMediaItem({ ...DIRECT, url: "not-a-url" }),
+      null
+    );
+
+    assert.equal(
+      normalizeMediaItem({
+        ...DIRECT,
+        url: "ftp://media.example.com/a.wav"
+      }),
+      null
+    );
+
+    /* Extensionless with no mapping MIME — kind unresolvable. */
+    assert.equal(
+      normalizeMediaItem({
+        ...DIRECT,
+        url: "https://cdn.example.org/stream?id=1",
+        mimeType: undefined
+      }),
+      null
+    );
+
+    /* Direct sources are audio-only. */
+    assert.equal(
+      normalizeMediaItem({
+        ...DIRECT,
+        type: "book"
+      } as never),
+      null
+    );
+  });
+
+  it("resolves the direct kind from the MIME when the URL has no extension", () => {
+    const item = normalizeMediaItem({
+      ...DIRECT,
+      url: "https://cdn.example.org/stream?id=42",
+      mimeType: "audio/mpeg"
+    });
+
+    assert.ok(item);
+
+    assert.equal(item!.kind, "mp3");
+  });
+
+  it("carries an absolute direct cover URL without rewriting it", () => {
+    const item = normalizeMediaItem({
+      ...DIRECT,
+      cover: "https://media.example.com/art/cover.jpg"
+    });
+
+    assert.ok(item);
+
+    assert.equal(item!.coverUrl, "https://media.example.com/art/cover.jpg");
+  });
+
+  it("direct tracks flow into the manifest-level queue registry (player compatibility)", () => {
+    const items = normalizeManifestItems({
+      version: 4,
+      updated: "2026-09-20",
+      items: [DIRECT, TRACK]
+    });
+
+    const music = items.filter((item) => item.category === "music");
+
+    assert.equal(music.length, 2);
+
+    /* Both source shapes produce registry-shaped tracks: id + url. */
+    for (const track of music) {
+      assert.ok(track.id.length > 0);
+      assert.ok(track.rawUrl.startsWith("https://"));
+    }
+  });
+});
+
+describe("direct URL + MIME primitives (v4.0.2)", () => {
+  it("validates absolute http/https URLs only", () => {
+    assert.equal(
+      isValidDirectMediaUrl("https://media.example.com/a.wav"),
+      true
+    );
+
+    assert.equal(
+      isValidDirectMediaUrl("http://localhost:4173/e2e.wav"),
+      true
+    );
+
+    assert.equal(
+      isValidDirectMediaUrl("HTTP://EXAMPLE.COM/a.wav"),
+      true,
+      "URL parsing is case-insensitive on the scheme"
+    );
+
+    for (const bad of [
+      "",
+      "media.example.com/a.wav",
+      "/relative/a.wav",
+      "ftp://media.example.com/a.wav",
+      "file:///a.wav",
+      "javascript:alert(1)"
+    ]) {
+      assert.equal(isValidDirectMediaUrl(bad), false);
+    }
+  });
+
+  it("resolves direct kinds from URL extensions (query strings ignored)", () => {
+    assert.equal(
+      getDirectAudioKind("https://x.test/a.mp3?download=1"),
+      "mp3"
+    );
+
+    assert.equal(
+      getDirectAudioKind("https://x.test/a.WAV#fragment"),
+      "wav"
+    );
+
+    assert.equal(
+      getDirectAudioKind("https://x.test/a.m4a"),
+      "m4a"
+    );
+
+    assert.equal(
+      getDirectAudioKind("https://x.test/a.flac"),
+      "flac"
+    );
+
+    assert.equal(
+      getDirectAudioKind("https://x.test/a.txt"),
+      null,
+      "non-audio extensions never resolve"
+    );
+  });
+
+  it("resolves direct kinds from publisher MIME types", () => {
+    assert.equal(getDirectAudioKind("https://x.test/id/1", "audio/mpeg"), "mp3");
+    assert.equal(getDirectAudioKind("https://x.test/id/1", "audio/mp4"), "m4a");
+    assert.equal(getDirectAudioKind("https://x.test/id/1", "audio/FLAC"), "flac");
+    assert.equal(getDirectAudioKind("https://x.test/id/1", "audio/x-wav"), "wav");
+    assert.equal(getDirectAudioKind("https://x.test/id/1", "audio/ogg"), null);
+    assert.equal(getDirectAudioKind("https://x.test/a.wav", "audio/mpeg"), "wav");
+  });
+
+  it("maps every audio kind to its canonical MIME (server parity)", () => {
+    assert.deepEqual(MIME_BY_AUDIO_KIND, {
+      mp3: "audio/mpeg",
+      m4a: "audio/mp4",
+      flac: "audio/flac",
+      wav: "audio/wav"
+    });
+  });
+});
+
+describe("download labels — WAV (v4.0.2)", () => {
+  it("labels every music kind honestly, including WAV", () => {
+    const labelFor = (source: string, extra: Record<string, unknown> = {}) => {
+      const item = normalizeMediaItem({
+        branch: "Music",
+        source,
+        title: "T",
+        type: "music",
+        ...extra
+      });
+
+      return item ? getDownloadLabel(item) : "<rejected>";
+    };
+
+    assert.equal(labelFor("a.mp3"), "DOWNLOAD MP3");
+    assert.equal(labelFor("a.m4a"), "DOWNLOAD M4A");
+    assert.equal(labelFor("a.flac"), "DOWNLOAD FLAC");
+    assert.equal(labelFor("a.wav"), "DOWNLOAD WAV");
+  });
+
+  it("labels a direct-source WAV track (no branch needed)", () => {
+    const item = normalizeMediaItem(DIRECT);
+
+    assert.ok(item);
+
+    assert.equal(getDownloadLabel(item!), "DOWNLOAD WAV");
   });
 });

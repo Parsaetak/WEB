@@ -10,10 +10,16 @@
  *      A 404/absent file is the documented "no Music source" state —
  *      the pipeline continues with zero tracks and never fabricates
  *      music.
- *   3. for every music item: extract embedded metadata over HTTP
- *      range requests (scripts/media/audioMetadata.mjs) and resolve
- *      the cover path deterministically (scripts/media/covers.mjs)
- *   4. write data/media.json (version 3) — the app's only data input
+ *   3. for every CONTENTS music item: extract embedded metadata over
+ *      HTTP range requests (scripts/media/audioMetadata.mjs) and
+ *      resolve the cover path deterministically
+ *      (scripts/media/covers.mjs)
+ *   4. for every DIRECT music item (external absolute http(s) URL,
+ *      v4.0.2): pass it through VERBATIM — WEB never fetches, proxies,
+ *      or downloads direct media at build time; the browser receives
+ *      the URL only when playback is requested
+ *   5. write data/media.json (version 4) — the app's only data input,
+ *      with an explicit `sourceType` discriminator on every item
  *
  * Everything network-shaped is injected: `fetchJson`, `fetchRange`,
  * `exists` (remote path probe). Tests provide deterministic fakes.
@@ -25,7 +31,8 @@ import { resolveCoverPath } from "./covers.mjs";
 const MUSIC_KIND_BY_EXTENSION = {
   mp3: "mp3",
   m4a: "m4a",
-  flac: "flac"
+  flac: "flac",
+  wav: "wav"
 };
 
 function extensionOf(path) {
@@ -39,8 +46,35 @@ function isNonEmptyString(value) {
 }
 
 /**
+ * Absolute http/https URL gate for direct sources — shared shape with
+ * scripts/media/manifestSchema.mjs (kept local: zero-dependency module).
+ */
+export function isValidDirectMediaUrl(url) {
+  if (!isNonEmptyString(url)) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(url);
+
+    return (
+      parsed.protocol === "http:" ||
+      parsed.protocol === "https:"
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Normalise one raw manifest record into the canonical Media item.
  * Returns { item } or { error } (with a human-readable reason).
+ *
+ * DIRECT RECORDS (v4.0.2): a `url` field (with `branch`/`source`
+ * absent, or `sourceType: "direct"` explicit) builds a direct item —
+ * audio-only, validated as an absolute http/https URL, enriched with
+ * NOTHING (no fetches). Every normalised item carries an explicit
+ * `sourceType`; the runtime never infers source shapes from URLs.
  */
 export function normalizeRawItem(raw, origin) {
   if (
@@ -50,13 +84,19 @@ export function normalizeRawItem(raw, origin) {
     return { error: `${origin}: item is not an object` };
   }
 
-  for (const field of ["branch", "source", "title"]) {
+  for (const field of ["title"]) {
     if (!isNonEmptyString(raw[field])) {
       return {
         error: `${origin}: item is missing a valid \`${field}\` string`
       };
     }
   }
+
+  const wantsDirect =
+    raw.sourceType === "direct" ||
+    (isNonEmptyString(raw.url) &&
+      !isNonEmptyString(raw.branch) &&
+      !isNonEmptyString(raw.source));
 
   let type = raw.type;
 
@@ -71,13 +111,79 @@ export function normalizeRawItem(raw, origin) {
     };
   }
 
+  if (wantsDirect) {
+    return normalizeDirectItem(raw, type, origin);
+  }
+
+  for (const field of ["branch", "source"]) {
+    if (!isNonEmptyString(raw[field])) {
+      return {
+        error: `${origin}: item is missing a valid \`${field}\` string`
+      };
+    }
+  }
+
   const item = {
+    sourceType: "contents",
     branch: raw.branch,
     source: raw.source,
     title: raw.title,
     type
   };
 
+  copyDescriptiveFields(raw, item);
+
+  return { item };
+}
+
+function normalizeDirectItem(raw, type, origin) {
+  if (!isNonEmptyString(raw.url)) {
+    return {
+      error: `${origin}: sourceType "direct" requires a \`url\` string`
+    };
+  }
+
+  if (!isValidDirectMediaUrl(raw.url)) {
+    return {
+      error: `${origin}: direct \`url\` must be an absolute http/https URL (got ${JSON.stringify(raw.url)})`
+    };
+  }
+
+  if (type !== "music") {
+    return {
+      error: `${origin}: direct sources must be type "music" (got ${JSON.stringify(raw.type)}) — direct media is audio-only in this release`
+    };
+  }
+
+  const item = {
+    sourceType: "direct",
+    url: raw.url,
+    title: raw.title,
+    type
+  };
+
+  if (isNonEmptyString(raw.mimeType)) {
+    item.mimeType = raw.mimeType;
+  }
+
+  copyDescriptiveFields(raw, item);
+
+  /* A direct cover is an absolute URL, copied verbatim; a relative
+   * path cannot resolve without a branch and is refused loudly. */
+  if (isNonEmptyString(raw.cover)) {
+    if (!isValidDirectMediaUrl(raw.cover)) {
+      return {
+        error: `${origin}: direct item \`cover\` must be an absolute http(s) URL (got ${JSON.stringify(raw.cover)})`
+      };
+    }
+
+    item.cover = raw.cover;
+  }
+
+  return { item };
+}
+
+function copyDescriptiveFields(raw, item) {
   const copyStrings = [
     "subtitle",
     "description",
@@ -87,7 +193,6 @@ export function normalizeRawItem(raw, origin) {
     "series",
     "status",
     "readingTime",
-    "cover",
     "artist",
     "album",
     "albumArtist",
@@ -102,7 +207,29 @@ export function normalizeRawItem(raw, origin) {
     }
   }
 
-  for (const field of ["volume"]) {
+  /* Contents-style relative cover paths (probed on the branch CDN).
+   * Direct covers were already handled in normalizeDirectItem. */
+  if (
+    item.sourceType === "contents" &&
+    isNonEmptyString(raw.cover)
+  ) {
+    item.cover = raw.cover;
+  }
+
+  /*
+   * Numeric descriptive/music fields: copied when finite. For
+   * DIRECT items the publisher's duration is the ONLY duration
+   * (there is no embedded extraction); for contents items a manifest
+   * duration supplements a failed extraction instead of vanishing.
+   */
+  for (const field of [
+    "volume",
+    "duration",
+    "trackNumber",
+    "trackTotal",
+    "discNumber",
+    "discTotal"
+  ]) {
     if (Number.isFinite(raw[field])) {
       item[field] = raw[field];
     }
@@ -118,8 +245,6 @@ export function normalizeRawItem(raw, origin) {
   ) {
     item.tags = [...raw.tags];
   }
-
-  return { item };
 }
 
 /**
@@ -157,6 +282,11 @@ function createExistsProbe(fetchRange) {
  * Enrich one music item with embedded metadata + cover resolution.
  * Never throws: extraction problems downgrade to manifest metadata
  * with a returned warning string.
+ *
+ * DIRECT SOURCES (v4.0.2) are returned UNTOUCHED before any network
+ * probe happens — WEB never downloads or range-fetches direct media
+ * at build time; the manifest's own metadata is all a direct track
+ * will ever carry, and its provenance stays "manifest".
  */
 export async function enrichMusicItem({
   item,
@@ -164,6 +294,23 @@ export async function enrichMusicItem({
   fetchRange,
   warn = () => {}
 }) {
+  if (item.sourceType === "direct") {
+    if (
+      item.artist ||
+      item.album ||
+      item.duration !== undefined
+    ) {
+      return {
+        item: {
+          ...item,
+          metadataSource: "manifest"
+        }
+      };
+    }
+
+    return { item };
+  }
+
   const extension = extensionOf(item.source);
 
   const kind = MUSIC_KIND_BY_EXTENSION[extension ?? ""];
@@ -339,7 +486,7 @@ export async function buildMediaManifest({
 
   return {
     manifest: {
-      version: 3,
+      version: 4,
       updated,
       items
     },

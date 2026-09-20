@@ -32,7 +32,14 @@ import styles from "@/components/player/Player.module.css";
  */
 
 function controlClass(kind: string) {
-  return `${styles.controlButton} ${styles[kind]}`;
+  const extra = styles[kind];
+
+  /* Not every control has a dedicated class — the shared base is
+   * the contract; a missing modifier must never leak "undefined"
+   * into the class list. */
+  return extra
+    ? `${styles.controlButton} ${extra}`
+    : styles.controlButton;
 }
 
 function TrackIdentity({
@@ -90,7 +97,6 @@ export default function MiniPlayer() {
     state.duration > 0
       ? Math.min(state.currentTime, state.duration)
       : 0;
-
   return (
     <div
       className={styles.bar}
@@ -244,11 +250,33 @@ export default function MiniPlayer() {
             </span>
           )}
 
+          {state.error && hasTrack && (
+            <button
+              type="button"
+              className={controlClass("controlRetry")}
+              onClick={() => store.retry()}
+              aria-label="Retry playback of the current track"
+            >
+              <span aria-hidden="true">RETRY</span>
+            </button>
+          )}
+
           {isLoading && (
             <span className={styles.barState}>
               LOADING
             </span>
           )}
+
+          <button
+            type="button"
+            className={controlClass("controlShuffle")}
+            onClick={() => store.toggleShuffle()}
+            aria-label={`Shuffle. Currently ${state.shuffle ? "on" : "off"}.`}
+            aria-pressed={state.shuffle}
+            data-mode={state.shuffle ? "on" : "off"}
+          >
+            <span aria-hidden="true">⇄</span>
+          </button>
 
           <button
             type="button"

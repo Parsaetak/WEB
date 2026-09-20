@@ -167,13 +167,13 @@ A clean repository should allow a new engineer/agent to understand:
 # PHASE 2 — Media Architecture + Library → Media
 
 > **STATUS: DELIVERED in v4.0.0.** The Library scene is now Media (`#media`),
-> backed by `data/media.json` (version 3) and the discriminated `MediaItem`
+> backed by `data/media.json` (version 4 since v4.0.2) and the discriminated `MediaItem`
 > model (Book / Music / Video / Art). The external Contents
 > `Projects/library.json` contract is intact; the optional Music source
 > (`Projects/music.json`) is supported and currently absent — the Media scene
 > renders an honest empty state with zero fabricated tracks. Embedded audio
-> metadata (ID3v2 / MP4 atoms / FLAC) is extracted at build time over HTTP
-> range requests; covers resolve deterministically (explicit → basename →
+> metadata (ID3v2 / MP4 atoms / FLAC / RIFF-WAVE) is extracted at build time over
+> HTTP range requests; covers resolve deterministically (explicit → basename →
 > folder → fallback). The global player (one store, one `<audio>` element,
 > full queue semantics, Media Session) ships lazy-mounted so the initial
 > bundle and the RED MAGIC runtime are untouched.
@@ -288,6 +288,23 @@ Media becomes the single conceptual home for personal media rather than a collec
 ---
 
 # PHASE 3 — Music Player
+
+> **STATUS: DELIVERED across v4.0.0 + v4.0.2.** v4.0.0 shipped the store,
+> queue semantics, and lazy player surfaces. v4.0.2 completed the phase:
+> the player is now mounted once from the ROOT application layout, so
+> playback continues across every client-side route navigation site-wide;
+> direct external media URLs are supported (explicit `sourceType`
+> discriminator in the manifest, absolute http/https URLs validated at
+> sync/validation time, never proxied or downloaded by WEB); WAV is
+> supported everywhere audio types are defined (MP3 / M4A / FLAC / WAV);
+> non-sensitive playback state persists locally and a full reload restores
+> a PAUSED player at the persisted position (autoplay never happens); the
+> store owns deterministic shuffle, stop, retry, and the full Media Session
+> action set with per-action feature detection.
+>
+> Remaining Phase 3 work that is intentionally NOT shipped: keyboard
+> shortcuts, premium/free playback states, and cross-session resume
+> beyond the paused-restore contract (these stay future polish).
 
 ## Objective
 
@@ -824,6 +841,15 @@ v4.0.1 Repository cleanup + architecture-integrity pass (shipped — no new
       product features: Library migration finished, one hash parser, one
       work catalogue, real static 404, RED MAGIC engine modularization,
       tests under typecheck, fresh CI installs, working static preview)
+v4.0.2 Global Music + Direct Sources + WAV (shipped — the player is
+      mounted once from the root application layout so playback
+      continues across the full site; direct external media URLs are
+      supported through an explicit manifest source discriminator,
+      validated at build time and never proxied or downloaded by WEB;
+      WAV joins MP3/M4A/FLAC everywhere audio types are defined;
+      playback state persists locally with a paused, never-autoplaying
+      reload restore. Shop, secure purchases, and News remain future
+      phases — nothing beyond the Music Player scope is claimed)
 v4.1  Video Player enhancements
 v4.2  Art + Digital Shop foundation
 v4.3  Secure digital delivery / purchase flow

@@ -7,13 +7,24 @@
  * mediaRepository.ts) at build/runtime and by `node --test` (the
  * manifest-sync pipeline and these functions must never disagree).
  *
- * MEDIA MODEL (v4.0.0) — one discriminated union:
+ * MEDIA MODEL (v4.0.2) — one discriminated union:
  *
  *   MediaItem
  *    ├─ BookItem   (category "book",  .pdf)
- *    ├─ MusicItem  (category "music", .mp3 / .m4a / .flac)
+ *    ├─ MusicItem  (category "music", .mp3 / .m4a / .flac / .wav)
  *    ├─ VideoItem  (category "video", .mp4)
  *    └─ ArtItem    (category "art",   .png / .jpg / .jpeg / .webp / .gif)
+ *
+ * SOURCE MODEL (v4.0.2) — every item carries an EXPLICIT source
+ * discriminator (never inferred from URL shapes at runtime):
+ *
+ *   MediaSource
+ *    ├─ ContentsSource  { kind: "contents", branch, path }
+ *    │    repository-backed file (Parsaetak/Contents branch path,
+ *    │    played through the branch CDN URL)
+ *    └─ DirectSource    { kind: "direct", url, mimeType? }
+ *         external absolute http(s) URL, played as-is — never
+ *         proxied, downloaded, or copied into public/ by WEB
  */
 
 export type MediaCategory =
@@ -27,6 +38,7 @@ export type MediaKind =
   | "mp3"
   | "m4a"
   | "flac"
+  | "wav"
   | "mp4"
   | "png"
   | "jpg"
@@ -35,15 +47,30 @@ export type MediaKind =
   | "gif";
 
 /**
- * Manifest record (data/media.json, version 3). The legacy external
+ * Manifest record (data/media.json, version 4). The legacy external
  * type "audio" is normalised to "music" by the sync pipeline; this
  * module also tolerates it when normalising (defense in depth).
+ *
+ * Source shape (v4.0.2):
+ *   - `sourceType: "contents"` (or absent — legacy records) requires
+ *     `branch` + `source` (repository path);
+ *   - `sourceType: "direct"` requires `url` (absolute http/https) and
+ *     accepts an optional `mimeType`. The sync pipeline ALWAYS writes
+ *     `sourceType` explicitly; the runtime never infers the source
+ *     kind from URL strings.
  */
 export type MediaManifestItem = {
-  branch: string;
-  source: string;
+  branch?: string;
+  source?: string;
   title: string;
   type: string;
+
+  /** Explicit source discriminator (v4.0.2; absent = contents). */
+  sourceType?: "contents" | "direct";
+  /** Direct-source absolute http(s) URL (sourceType "direct" only). */
+  url?: string;
+  /** Optional MIME type supplied by the publisher of a direct URL. */
+  mimeType?: string;
 
   subtitle?: string;
   description?: string;
@@ -79,17 +106,72 @@ export type MediaManifest = {
   items: MediaManifestItem[];
 };
 
+/* ---------------------------------------------------------------- */
+/* Source abstraction (v4.0.2)                                      */
+/* ---------------------------------------------------------------- */
+
+/** Repository-backed file: a Contents branch + path pair. */
+export type ContentsSource = {
+  kind: "contents";
+  branch: string;
+  path: string;
+};
+
+/** External absolute http(s) URL, played directly by the browser. */
+export type DirectSource = {
+  kind: "direct";
+  url: string;
+  mimeType?: string;
+};
+
+/** The explicit source discriminator every MediaItem carries. */
+export type MediaSource =
+  | ContentsSource
+  | DirectSource;
+
+/**
+ * True when `url` is an absolute http/https URL. Direct media URLs
+ * must pass this check before they can enter the catalog; anything
+ * else (relative paths, other protocols, malformed strings) is
+ * rejected by manifest validation and by this defense-in-depth
+ * runtime check.
+ */
+export function isValidDirectMediaUrl(
+  url: string
+): boolean {
+  if (!isNonEmptyString(url)) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(url);
+
+    return (
+      parsed.protocol === "http:" ||
+      parsed.protocol === "https:"
+    );
+  } catch {
+    return false;
+  }
+}
+
+/* ---------------------------------------------------------------- */
+
 /** Fields shared by every resolved MediaItem. */
 type MediaItemFields = {
-  /** Canonical catalog id: "<branch>:<source>" — stable + unique. */
+  /** Canonical catalog id: "<branch>:<source>" or "direct:<url>". */
   id: string;
   name: string;
   path: string;
   kind: MediaKind;
   category: MediaCategory;
   rawUrl: string;
-  githubUrl: string;
+  /** GitHub provenance URL (contents items only — direct sources
+   * have no GitHub origin, so the field is absent, never faked). */
+  githubUrl?: string;
   coverUrl?: string;
+  /** Explicit source discriminator (v4.0.2). */
+  source: MediaSource;
 };
 
 export type BookItem = MediaItemFields & {
@@ -174,7 +256,7 @@ export type MediaItem =
 
 const KIND_BY_CATEGORY: Record<MediaCategory, readonly MediaKind[]> = {
   book: ["pdf"],
-  music: ["mp3", "m4a", "flac"],
+  music: ["mp3", "m4a", "flac", "wav"],
   video: ["mp4"],
   art: ["png", "jpg", "jpeg", "webp", "gif"]
 };
@@ -184,12 +266,46 @@ const CATEGORY_BY_KIND: Record<MediaKind, MediaCategory> = {
   mp3: "music",
   m4a: "music",
   flac: "music",
+  wav: "music",
   mp4: "video",
   png: "art",
   jpg: "art",
   jpeg: "art",
   webp: "art",
   gif: "art"
+};
+
+/**
+ * Canonical MIME type per audio kind — the one mapping shared by the
+ * download surfaces, the manifest validator, and the preview servers
+ * (the servers keep their own tables for non-audio types).
+ */
+export const MIME_BY_AUDIO_KIND: Readonly<
+  Record<string, string>
+> = {
+  mp3: "audio/mpeg",
+  m4a: "audio/mp4",
+  flac: "audio/flac",
+  wav: "audio/wav"
+};
+
+/**
+ * MIME type → audio kind (direct sources may carry extensionless
+ * URLs where the publisher-declared MIME is the only kind signal).
+ */
+const AUDIO_KIND_BY_MIME: Readonly<
+  Record<string, MediaKind>
+> = {
+  "audio/mpeg": "mp3",
+  "audio/mp3": "mp3",
+  "audio/mp4": "m4a",
+  "audio/aac": "m4a",
+  "audio/flac": "flac",
+  "audio/x-flac": "flac",
+  "audio/wav": "wav",
+  "audio/x-wav": "wav",
+  "audio/wave": "wav",
+  "audio/vnd.wave": "wav"
 };
 
 /**
@@ -261,6 +377,44 @@ export function normalizeCategory(
 }
 
 /**
+ * Resolve the audio kind of a DIRECT source URL: the URL's pathname
+ * extension wins (query strings and fragments are ignored), the
+ * publisher-declared MIME is the fallback for extensionless URLs.
+ * Returns null when neither resolves — the caller rejects the item
+ * rather than guessing.
+ */
+export function getDirectAudioKind(
+  url: string,
+  mimeType?: string
+): MediaKind | null {
+  let pathname = "";
+
+  try {
+    pathname = new URL(url).pathname;
+  } catch {
+    return null;
+  }
+
+  const extension = pathname
+    .split(".")
+    .pop()
+    ?.toLowerCase();
+
+  if (
+    extension &&
+    (KIND_BY_CATEGORY.music as readonly string[]).includes(extension)
+  ) {
+    return extension as MediaKind;
+  }
+
+  if (isNonEmptyString(mimeType)) {
+    return AUDIO_KIND_BY_MIME[mimeType.toLowerCase().split(";")[0]] ?? null;
+  }
+
+  return null;
+}
+
+/**
  * Percent-encode each path segment (CDN + GitHub URLs).
  */
 export function encodePath(
@@ -317,53 +471,135 @@ export function createGitHubUrl(
  * Returns null (caller filters) when the record is malformed or the
  * source extension is unknown. The category comes from the manifest
  * type (with the documented legacy alias); the rendering capability
- * comes from the file extension. A type/extension contradiction is
- * rejected — the sync pipeline + validator make this unreachable.
+ * comes from the file extension (contents items) or the URL/MIME
+ * pair (direct items). A type/extension contradiction is rejected —
+ * the sync pipeline + validator make this unreachable.
+ *
+ * SOURCE DISCRIMINATION (v4.0.2): `sourceType` is explicit —
+ * "direct" builds a DirectSource item from the absolute URL (no
+ * branch, no GitHub provenance, no CDN rewrite); anything else
+ * (including legacy records without the field) is contents-shaped
+ * and must carry branch + source. The kind is never guessed from a
+ * URL string for contents items and never from a path for direct
+ * ones.
  */
 export function normalizeMediaItem(
   metadata: MediaManifestItem
 ): MediaItem | null {
-  if (
-    !isNonEmptyString(metadata.branch) ||
-    !isNonEmptyString(metadata.source) ||
-    !isNonEmptyString(metadata.title)
-  ) {
-    return null;
-  }
-
   const category = normalizeCategory(metadata.type);
 
   if (!category) {
     return null;
   }
 
-  const kind = getMediaKind(metadata.source);
-
-  if (!kind) {
+  if (
+    !isNonEmptyString(metadata.title)
+  ) {
     return null;
   }
 
-  if (getCategoryForKind(kind) !== category) {
-    return null;
+  let shared: MediaItemFields;
+
+  let sourceName: string;
+
+  if (metadata.sourceType === "direct") {
+    /* -------------------------------------------------------
+     * DIRECT SOURCE — external absolute http(s) URL.
+     * The URL is validated (never trusted blindly), the kind must
+     * resolve from the URL extension or the declared MIME, and
+     * direct sources are audio-only in this release.
+     * ------------------------------------------------------- */
+    const url = metadata.url ?? "";
+
+    if (!isValidDirectMediaUrl(url)) {
+      return null;
+    }
+
+    if (category !== "music") {
+      return null;
+    }
+
+    const kind = getDirectAudioKind(
+      url,
+      metadata.mimeType
+    );
+
+    if (!kind) {
+      return null;
+    }
+
+    sourceName =
+      url.split("/").pop()?.split("?")[0] ?? url;
+
+    /* Direct covers must be absolute http(s) URLs — a contents-style
+     * relative path is unresolvable for a source with no branch. */
+    const coverUrl =
+      isNonEmptyString(metadata.cover) &&
+      isValidDirectMediaUrl(metadata.cover)
+        ? metadata.cover
+        : undefined;
+
+    shared = {
+      id: `direct:${url}`,
+      name: metadata.title || sourceName,
+      path: url,
+      kind,
+      category,
+      rawUrl: url,
+      githubUrl: undefined,
+      coverUrl,
+      source: {
+        kind: "direct",
+        url,
+        mimeType: isNonEmptyString(metadata.mimeType)
+          ? metadata.mimeType
+          : undefined
+      }
+    };
+  } else {
+    /* -------------------------------------------------------
+     * CONTENTS SOURCE — repository-backed branch path.
+     * ------------------------------------------------------- */
+    if (
+      !isNonEmptyString(metadata.branch) ||
+      !isNonEmptyString(metadata.source)
+    ) {
+      return null;
+    }
+
+    const kind = getMediaKind(metadata.source);
+
+    if (!kind) {
+      return null;
+    }
+
+    if (getCategoryForKind(kind) !== category) {
+      return null;
+    }
+
+    sourceName =
+      metadata.source.split("/").pop() ?? metadata.source;
+
+    const coverUrl = isNonEmptyString(metadata.cover)
+      ? createMediaUrl(metadata.branch, metadata.cover)
+      : undefined;
+
+    shared = {
+      id: `${metadata.branch}:${metadata.source}`,
+      name: metadata.title || sourceName,
+      path: metadata.source,
+      kind,
+      category,
+      rawUrl: createMediaUrl(metadata.branch, metadata.source),
+      githubUrl: createGitHubUrl(metadata.branch, metadata.source),
+      coverUrl,
+      source: {
+        kind: "contents",
+        branch: metadata.branch,
+        path: metadata.source
+      }
+    };
   }
-
-  const sourceName =
-    metadata.source.split("/").pop() ?? metadata.source;
-
-  const coverUrl = isNonEmptyString(metadata.cover)
-    ? createMediaUrl(metadata.branch, metadata.cover)
-    : undefined;
-
-  const shared: MediaItemFields = {
-    id: `${metadata.branch}:${metadata.source}`,
-    name: metadata.title || sourceName,
-    path: metadata.source,
-    kind,
-    category,
-    rawUrl: createMediaUrl(metadata.branch, metadata.source),
-    githubUrl: createGitHubUrl(metadata.branch, metadata.source),
-    coverUrl
-  };
 
   const base = {
     ...shared,
@@ -574,7 +810,9 @@ export function getDownloadLabel(item: MediaItem): string {
         ? "DOWNLOAD FLAC"
         : item.kind === "m4a"
           ? "DOWNLOAD M4A"
-          : "DOWNLOAD MP3";
+          : item.kind === "wav"
+            ? "DOWNLOAD WAV"
+            : "DOWNLOAD MP3";
 
     case "video":
       return "DOWNLOAD VIDEO";

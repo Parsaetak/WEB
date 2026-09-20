@@ -2476,6 +2476,17 @@ span {
   background: rgba(255, 32, 32, 0.12);
 }
 
+/* The CURRENT track's control: the playing state is visible (v4.0.2). */
+.mediaItemPlay[data-playing="true"] {
+  border-color: rgba(255, 70, 56, 0.9);
+
+  background: linear-gradient(
+    160deg,
+    rgba(255, 70, 56, 0.22),
+    rgba(179, 20, 10, 0.28)
+  );
+}
+
 .mediaItemPlay:focus-visible {
   outline: 2px solid #ff4638;
 

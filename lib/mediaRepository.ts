@@ -89,9 +89,12 @@ export async function listMusic(): Promise<MusicItem[]> {
 export {
   getActionLabel,
   getCatalogLabel,
+  getDirectAudioKind,
   getDownloadLabel,
   getMediaFilterForItem,
   getPreviewGlyph,
+  isValidDirectMediaUrl,
+  MIME_BY_AUDIO_KIND,
   MEDIA_FILTERS,
   normalizeMediaItem
 } from "@/lib/media/normalize";
@@ -99,11 +102,14 @@ export {
 export type {
   ArtItem,
   BookItem,
+  ContentsSource,
+  DirectSource,
   MediaCategory,
   MediaFilter,
   MediaItem,
   MediaKind,
   MediaManifest,
+  MediaSource,
   MusicItem,
   VideoItem
 } from "@/lib/media/normalize";

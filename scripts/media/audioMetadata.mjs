@@ -27,6 +27,7 @@ import {
   looksLikeMp4
 } from "./mp4.mjs";
 import { parseFlacMetadata } from "./flac.mjs";
+import { parseWavMetadata } from "./wav.mjs";
 
 const HEAD_WINDOW = 256 * 1024;
 
@@ -97,7 +98,7 @@ function normalizeDuration(seconds) {
  *
  * @param {object} options
  * @param {string} options.url — absolute audio URL
- * @param {"mp3"|"m4a"|"flac"} options.kind
+ * @param {"mp3"|"m4a"|"flac"|"wav"} options.kind
  * @param {(url: string, start: number, end: number|null) => Promise<{
  *   status: number, arrayBuffer: ArrayBuffer, contentRange?: string|null,
  *   acceptRanges?: boolean
@@ -273,6 +274,28 @@ function extractFromHeadBytes({
 
   if (kind === "flac") {
     const parsed = parseFlacMetadata(bytes);
+
+    if (!parsed) {
+      return { fields: {}, exact: false, source: "none" };
+    }
+
+    const fields = normalizeFields(parsed.fields);
+
+    const duration = normalizeDuration(parsed.durationSeconds);
+
+    return {
+      fields,
+      duration,
+      exact: duration !== undefined,
+      source:
+        Object.keys(fields).length > 0 || duration !== undefined
+          ? "embedded"
+          : "none"
+    };
+  }
+
+  if (kind === "wav") {
+    const parsed = parseWavMetadata(bytes);
 
     if (!parsed) {
       return { fields: {}, exact: false, source: "none" };

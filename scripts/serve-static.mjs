@@ -44,6 +44,7 @@ const MIME = {
   ".mp3": "audio/mpeg",
   ".m4a": "audio/mp4",
   ".flac": "audio/flac",
+  ".wav": "audio/wav",
   ".pdf": "application/pdf",
   ".xml": "application/xml",
   ".txt": "text/plain",

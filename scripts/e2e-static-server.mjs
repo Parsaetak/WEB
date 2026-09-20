@@ -29,6 +29,7 @@ const MIME = {
   ".mp3": "audio/mpeg",
   ".m4a": "audio/mp4",
   ".flac": "audio/flac",
+  ".wav": "audio/wav",
   ".pdf": "application/pdf",
   ".xml": "application/xml",
   ".txt": "text/plain",
@@ -80,6 +81,7 @@ const server = createServer(async (request, response) => {
       response.writeHead(200, {
         "content-length": size,
         "accept-ranges": "bytes",
+        "cache-control": "no-store",
         "content-type": MIME[path.extname(filePath)] ?? "application/octet-stream"
       });
 

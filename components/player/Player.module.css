@@ -227,6 +227,22 @@ html:has(.bar) {
   border-color: #ff4638;
 }
 
+/* Shuffle (v4.0.2): the active queue-ordering mode is visible. */
+.controlShuffle[data-mode="on"] {
+  border-color: rgba(255, 70, 56, 0.9);
+
+  color: #ff4638;
+}
+
+/* Retry (v4.0.2): offered exactly when playback failed. */
+.controlRetry {
+  border-color: rgba(255, 70, 56, 0.55);
+
+  color: #ff4638;
+
+  font-size: 10px;
+}
+
 .timeLabel {
   font-size: 10px;
 
@@ -856,6 +872,36 @@ html:has(.bar) {
   font-size: 11px;
 
   letter-spacing: 0.05em;
+
+  color: #ff4638;
+}
+
+/* Retry inside the expanded error line (v4.0.2). */
+.expandedRetry {
+  display: inline-block;
+
+  margin-left: 8px;
+
+  padding: 3px 10px;
+
+  border: 1px solid rgba(255, 70, 56, 0.55);
+
+  border-radius: 999px;
+
+  background: transparent;
+
+  color: #ff4638;
+
+  font-size: 10px;
+
+  letter-spacing: 0.08em;
+
+  cursor: pointer;
+}
+
+/* Shuffle / repeat active modes (v4.0.2). */
+.expandedSecondary[data-mode="on"] {
+  border-color: rgba(255, 70, 56, 0.9);
 
   color: #ff4638;
 }

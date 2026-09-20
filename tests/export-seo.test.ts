@@ -79,11 +79,22 @@ describe("navigation vocabulary", () => {
 });
 
 describe("data files", () => {
-  it("data/media.json exists as version 3 and data/library.json is gone", async () => {
+  it("data/media.json exists as version 4 (explicit sourceType) and data/library.json is gone", async () => {
     const manifest = await readJson("data/media.json");
 
-    assert.equal(manifest.version, 3);
+    assert.equal(manifest.version, 4);
+
     assert.ok(Array.isArray(manifest.items));
+
+    /* v4.0.2: every item carries the explicit source discriminator
+     * (the sync pipeline always writes it; the runtime never infers
+     * source kinds from URL strings). */
+    for (const item of manifest.items as { sourceType?: string }[]) {
+      assert.ok(
+        item.sourceType === "contents" || item.sourceType === "direct",
+        "every committed item declares an explicit sourceType"
+      );
+    }
 
     await assert.rejects(
       () => readJson("data/library.json"),

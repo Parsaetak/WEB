@@ -152,3 +152,49 @@ describe("reduced motion + touch targets", () => {
     assert.match(playerCss, /env\(safe-area-inset-bottom/);
   });
 });
+
+describe("player markup contract — v4.0.2 controls", () => {
+  it("labels the shuffle and retry controls with names and states", async () => {
+    const mini = await readComponent("MiniPlayer.tsx");
+    const expanded = await readComponent("ExpandedPlayer.tsx");
+
+    /* Shuffle: a named, pressed-state toggle on both surfaces. */
+    assert.match(
+      mini,
+      /aria-label=\{`Shuffle\. Currently \$\{state\.shuffle \? "on" : "off"\}\.`\}/
+    );
+
+    assert.match(mini, /aria-pressed=\{state\.shuffle\}/);
+
+    assert.match(
+      expanded,
+      /aria-label=\{`Shuffle\. Currently \$\{state\.shuffle \? "on" : "off"\}\.`\}/
+    );
+
+    assert.match(expanded, /aria-pressed=\{state\.shuffle\}/);
+
+    /* Retry: named, offered only when a track exists. */
+    assert.match(mini, /aria-label="Retry playback of the current track"/);
+
+    assert.match(expanded, /aria-label="Retry playback of the current track"/);
+  });
+
+  it("marks the current track's card control with its playing state", async () => {
+    const scene = await readFile(
+      path.join(ROOT, "components", "scenes", "MediaScene.tsx"),
+      "utf8"
+    );
+
+    assert.match(
+      scene,
+      /data-playing=/,
+      "the card play control exposes its playing state"
+    );
+
+    assert.match(
+      scene,
+      /aria-label=\{[^}]*Pause|aria-label=\{[^}]*Resume/,
+      "the current track's control flips to Pause/Resume semantics"
+    );
+  });
+});

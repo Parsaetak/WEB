@@ -17,4 +17,4 @@ out/
 .vscode/
 
 # TypeScript incremental build cache
-tsconfig.tsbuildinfo
+*.tsbuildinfo

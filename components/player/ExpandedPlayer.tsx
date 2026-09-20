@@ -259,6 +259,19 @@ export default function ExpandedPlayer() {
                       : "↻OFF"}
                 </span>
               </button>
+
+              <button
+                type="button"
+                className={styles.expandedSecondary}
+                onClick={() => store.toggleShuffle()}
+                aria-label={`Shuffle. Currently ${state.shuffle ? "on" : "off"}.`}
+                aria-pressed={state.shuffle}
+                data-mode={state.shuffle ? "on" : "off"}
+              >
+                <span aria-hidden="true">
+                  {state.shuffle ? "⇄ ON" : "⇄ OFF"}
+                </span>
+              </button>
             </div>
 
             <div className={styles.expandedVolumeRow}>
@@ -300,7 +313,18 @@ export default function ExpandedPlayer() {
                 className={styles.expandedError}
                 role="alert"
               >
-                {state.error}
+                {state.error}{" "}
+
+                {track && (
+                  <button
+                    type="button"
+                    className={styles.expandedRetry}
+                    onClick={() => store.retry()}
+                    aria-label="Retry playback of the current track"
+                  >
+                    RETRY
+                  </button>
+                )}
               </p>
             )}
           </div>

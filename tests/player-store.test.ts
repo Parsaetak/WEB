@@ -18,6 +18,16 @@ import {
   type PlayerAudioElement
 } from "../lib/player/playerStore";
 
+import {
+  clearPersistedSessionForTests,
+  writePersistedSession
+} from "../lib/player/persistence";
+
+import {
+  hashSeed,
+  shuffleTrackIds
+} from "../lib/player/shuffle";
+
 import type { MusicItem } from "../lib/media/normalize";
 
 type FakeAudio = PlayerAudioElement & {
@@ -121,6 +131,11 @@ const TRACKS: MusicItem[] = [
   rawUrl: `https://cdn.test/${title}.mp3`,
   githubUrl: `https://github.test/${title}.mp3`,
   coverUrl: undefined,
+  source: {
+    kind: "contents" as const,
+    branch: "Music",
+    path: `${title}.mp3`
+  },
   track: {
     title,
     artist: "Artist",
@@ -131,6 +146,8 @@ const TRACKS: MusicItem[] = [
 
 function setup() {
   resetPlayerStoreForTests();
+
+  clearPersistedSessionForTests();
 
   const audio = makeFakeAudio();
 
@@ -526,5 +543,221 @@ describe("player store — state and errors", () => {
     assert.equal(store.getTrack("Music/One.mp3")?.title, "One");
     assert.equal(store.getTrack("Music/Ghost.mp3"), null);
     assert.equal(store.getTrack(null), null);
+  });
+});
+
+describe("player store — v4.0.2 additions: shuffle, stop, retry, preload", () => {
+  it("preload stays \"none\" until an explicit playback intent raises it to \"auto\"", () => {
+    const { store, audio } = setup();
+
+    /* The element exists (wired by the surface) but requests nothing. */
+    assert.equal(audio.preload, "none");
+
+    store.playCollectionFrom("Music/One.mp3");
+
+    assert.equal(audio.preload, "auto", "loading begins with the intent");
+
+    audio.pause();
+
+    store.togglePlay();
+
+    assert.equal(audio.preload, "auto");
+  });
+
+  it("shuffle reorders the ONE queue deterministically (permutation, stable seed)", () => {
+    const { store } = setup();
+
+    store.playCollectionFrom("Music/One.mp3");
+
+    const canonical = [...store.getState().upcoming];
+
+    store.toggleShuffle();
+
+    const shuffled = store.getState().upcoming;
+
+    assert.equal(store.getState().shuffle, true);
+
+    assert.equal(shuffled.length, canonical.length);
+
+    assert.deepEqual(
+      [...shuffled].sort(),
+      [...canonical].sort(),
+      "the shuffled queue is a permutation of the canonical queue"
+    );
+
+    /* Deterministic: the same seed produces the same order. */
+    assert.deepEqual(
+      shuffleTrackIds(canonical, "media:all|Music/One.mp3"),
+      shuffled
+    );
+
+    /* Toggling off restores the canonical order after the current. */
+    store.toggleShuffle();
+
+    assert.equal(store.getState().shuffle, false);
+
+    assert.deepEqual(store.getState().upcoming, canonical);
+  });
+
+  it("playCollectionFrom builds a shuffled queue when shuffle is on", () => {
+    const { store } = setup();
+
+    store.toggleShuffle();
+
+    store.playCollectionFrom("Music/One.mp3");
+
+    const upcoming = store.getState().upcoming;
+
+    assert.equal(upcoming.length, 3);
+
+    assert.deepEqual(
+      [...upcoming].sort(),
+      [
+        "Music/Four.mp3",
+        "Music/Three.mp3",
+        "Music/Two.mp3"
+      ]
+    );
+
+    assert.notDeepEqual(
+      upcoming,
+      ["Music/Two.mp3", "Music/Three.mp3", "Music/Four.mp3"],
+      "the deterministic shuffle actually reordered the queue (seed-fixed expectation)"
+    );
+
+    /* Deterministic against the documented seed. */
+    assert.deepEqual(
+      shuffleTrackIds(
+        ["Music/Two.mp3", "Music/Three.mp3", "Music/Four.mp3"],
+        "media:all|Music/One.mp3"
+      ),
+      upcoming
+    );
+  });
+
+  it("stop pauses and rewinds; the track stays selected", () => {
+    const { store, audio } = setup();
+
+    store.playCollectionFrom("Music/Two.mp3");
+
+    audio.currentTime = 12;
+
+    audio.emit("timeupdate");
+
+    store.stop();
+
+    const state = store.getState();
+
+    assert.equal(state.status, "paused");
+
+    assert.equal(state.currentTime, 0);
+
+    assert.equal(state.currentTrackId, "Music/Two.mp3");
+
+    assert.equal(audio.currentTime, 0);
+
+    assert.equal(audio.paused, true);
+  });
+
+  it("retry re-commits the current track after an error", () => {
+    const { store, audio } = setup();
+
+    store.playCollectionFrom("Music/One.mp3");
+
+    audio.emit("error");
+
+    assert.equal(store.getState().status, "error");
+
+    const sourcesBefore = audio.sources.length;
+
+    store.retry();
+
+    /* The fake audio plays synchronously: the retry already reached
+     * "playing" through the element's play event. */
+    assert.equal(store.getState().status, "playing");
+
+    assert.equal(
+      audio.sources.length,
+      sourcesBefore + 1,
+      "retry re-assigns the source"
+    );
+
+    assert.equal(store.getState().currentTrackId, "Music/One.mp3");
+
+    assert.equal(store.getState().error, null);
+  });
+
+  it("registering a narrower collection never evicts the playing track (registry merge)", () => {
+    const { store } = setup();
+
+    store.playCollectionFrom("Music/One.mp3");
+
+    /* A filter switch to "book" registers an empty music list. */
+    store.setCollection([], "media:book");
+
+    const state = store.getState();
+
+    assert.equal(state.currentTrackId, "Music/One.mp3");
+
+    assert.equal(
+      store.getTrack("Music/One.mp3")?.title,
+      "One",
+      "the playing track keeps its metadata"
+    );
+
+    assert.deepEqual(state.upcoming, [
+      "Music/Two.mp3",
+      "Music/Three.mp3",
+      "Music/Four.mp3"
+    ]);
+  });
+
+  it("next with an empty queue and shuffle on never repeats the current track", () => {
+    const { store } = setup();
+
+    store.toggleShuffle();
+
+    store.playCollectionFrom("Music/One.mp3");
+
+    store.clearUpcoming();
+
+    store.next();
+
+    assert.notEqual(
+      store.getState().currentTrackId,
+      "Music/One.mp3"
+    );
+
+    assert.equal(store.getState().upcoming.length, 2);
+
+    assert.equal(store.getState().shuffle, true);
+  });
+});
+
+describe("player store — shuffle unit contract", () => {
+  it("hashSeed is stable and differs across seeds", () => {
+    assert.equal(hashSeed("a|b"), hashSeed("a|b"));
+
+    assert.notEqual(hashSeed("a|b"), hashSeed("b|a"));
+  });
+
+  it("shuffleTrackIds is deterministic and never mutates its input", () => {
+    const ids = ["a", "b", "c", "d", "e"];
+
+    const first = shuffleTrackIds(ids, "seed");
+
+    const second = shuffleTrackIds(ids, "seed");
+
+    assert.deepEqual(first, second);
+
+    assert.deepEqual(ids, ["a", "b", "c", "d", "e"]);
+
+    assert.deepEqual([...first].sort(), [...ids].sort());
+  });
+
+  it("shuffleTrackIds degenerates honestly for empty and single queues", () => {
+    assert.deepEqual(shuffleTrackIds([], "x"), []);
+
+    assert.deepEqual(shuffleTrackIds(["only"], "x"), ["only"]);
   });
 });

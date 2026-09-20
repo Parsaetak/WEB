@@ -498,8 +498,8 @@ describe("CI and the local commands describe the real pipeline", () => {
 
     assert.equal(
       pkg.version,
-      "4.0.1",
-      "the package version matches this cleanup release"
+      "4.0.2",
+      "the package version matches this release"
     );
   });
 });
@@ -531,5 +531,221 @@ describe("retired navigation files and process diaries stay gone", () => {
     await assertFileGone("Updated-Files.md", "same");
 
     await assertFileGone("PUSH-NOTES.txt", "same");
+  });
+});
+
+/* ---------------------------------------------------------------- */
+/* v4.0.2 — ONE global music player, mounted from the root layout    */
+/* ---------------------------------------------------------------- */
+
+describe("the global music player architecture (v4.0.2)", () => {
+  it("the ROOT layout mounts GlobalMusicPlayerHost exactly once", async () => {
+    const layout = await readText("app/layout.tsx");
+
+    assert.match(
+      layout,
+      /GlobalMusicPlayerHost/,
+      "the root application layout renders the global player host"
+    );
+
+    assert.equal(
+      (layout.match(/<GlobalMusicPlayerHost \/>/g) ?? []).length,
+      1,
+      "exactly ONE host mount site-wide"
+    );
+  });
+
+  it("the world shell no longer owns the player (the v4.0.x gap is closed)", async () => {
+    const shell = await readText("components/LivingShell.tsx");
+
+    assert.doesNotMatch(
+      shell,
+      /GlobalMusicPlayerHost|PlayerRoot|PlayerSurface/,
+      "LivingShell renders only on \"/\" — a player mounted there dies on route navigation"
+    );
+
+    await assertFileGone(
+      "components/player/PlayerRoot.tsx",
+      "superseded by GlobalMusicPlayerHost (root layout)"
+    );
+  });
+
+  it("exactly ONE authoritative audio path exists (one element, one construction site)", async () => {
+    const store = await readText("lib/player/playerStore.ts");
+
+    assert.equal(
+      (store.match(/new window\.Audio\(\)/g) ?? []).length,
+      1,
+      "the single HTMLAudioElement construction site lives in the store factory"
+    );
+
+    /* No other module creates media elements. */
+    const playerSources = [
+      "components/player/GlobalMusicPlayerHost.tsx",
+      "components/player/PlayerSurface.tsx",
+      "components/player/MiniPlayer.tsx",
+      "components/player/ExpandedPlayer.tsx",
+      "components/player/PlayerArtwork.tsx",
+      "components/scenes/MediaScene.tsx"
+    ];
+
+    for (const file of playerSources) {
+      const source = await readText(file);
+
+      assert.doesNotMatch(
+        source,
+        /new Audio\(|HTMLAudioElement|createElement\("audio"\)|<audio[\s>]/,
+        `${file} must not create its own audio element`
+      );
+    }
+  });
+
+  it("MediaScene is a catalog/intent surface, never the player owner", async () => {
+    const scene = await readText("components/scenes/MediaScene.tsx");
+
+    assert.doesNotMatch(
+      scene,
+      /attachElementListeners|attachMediaSession|setPlayerAudioFactory/,
+      "element wiring and Media Session integration belong to the global player layer"
+    );
+
+    assert.doesNotMatch(
+      scene,
+      /<audio[\s>]/,
+      "the scene renders no audio element"
+    );
+
+    /* Its player surface is intents + a read-only reflection. */
+    assert.match(scene, /usePlayerState/);
+    assert.match(scene, /getPlayerStore\(\)\.playNext/);
+    assert.match(scene, /getPlayerStore\(\)\.addToQueue/);
+  });
+
+  it("the player host stays out of the main bundle discipline (no store import)", async () => {
+    const host = await readText(
+      "components/player/GlobalMusicPlayerHost.tsx"
+    );
+
+    assert.doesNotMatch(
+      host,
+      /playerStore|usePlayer|mediaRepository/,
+      "the host bridges through a DOM event + a storage probe only"
+    );
+
+    assert.match(
+      host,
+      /hasPersistedSession/,
+      "the restored-session probe is a raw storage check"
+    );
+
+    assert.match(
+      host,
+      /web:player:engage/,
+      "the first-play engagement event drives the lazy mount"
+    );
+  });
+
+  it("nothing is requested before playback intent (preload discipline)", async () => {
+    const store = await readText("lib/player/playerStore.ts");
+
+    assert.match(
+      store,
+      /element\.preload = "none"/,
+      "the element is created with preload none"
+    );
+
+    assert.match(
+      store,
+      /audio\.preload = "none"/,
+      "the discipline is applied by the store regardless of the factory"
+    );
+
+    assert.match(
+      store,
+      /element\.preload = "auto"/,
+      "preload is raised exactly when a track URL is assigned"
+    );
+
+    /* The audio src assignment lives inside the playback commit. */
+    assert.equal(
+      (store.match(/element\.src = entry\.url/g) ?? []).length,
+      1
+    );
+  });
+
+  it("Media Session is centralized in the global player layer with the full action set", async () => {
+    const store = await readText("lib/player/playerStore.ts");
+
+    for (const action of [
+      "play",
+      "pause",
+      "stop",
+      "previoustrack",
+      "nexttrack",
+      "seekbackward",
+      "seekforward",
+      "seekto"
+    ]) {
+      assert.match(
+        store,
+        new RegExp(`registerAction\\("${action}"`),
+        `Media Session registers ${action} with a per-action fallback`
+      );
+    }
+
+    assert.match(store, /playbackState/);
+    assert.match(store, /setPositionState/);
+  });
+
+  it("restoration never autoplays (the paused reload contract)", async () => {
+    const store = await readText("lib/player/playerStore.ts");
+
+    assert.match(
+      store,
+      /restorePersistedSession\(\): boolean/,
+      "the store exposes the restore lifecycle"
+    );
+
+    const surface = await readText(
+      "components/player/PlayerSurface.tsx"
+    );
+
+    assert.match(
+      surface,
+      /store\.restorePersistedSession\(\)/,
+      "the surface restores on mount (inside the lazy chunk)"
+    );
+
+    assert.match(
+      surface,
+      /getMusicItems\(\)/,
+      "the full catalog is registered so any route can resolve a session"
+    );
+  });
+
+  it("persistence and volume use separate, versioned storage keys", async () => {
+    const persistence = await readText("lib/player/persistence.ts");
+    const store = await readText("lib/player/playerStore.ts");
+
+    assert.match(persistence, /"web-player-session"/);
+    assert.match(persistence, /SESSION_STORAGE_VERSION = "v1"/);
+
+    assert.match(store, /"web-player-volume"/);
+    assert.match(store, /VOLUME_STORAGE_VERSION = "v1"/);
+  });
+
+  it("the preview servers map .wav to its MIME type", async () => {
+    for (const server of [
+      "scripts/serve-static.mjs",
+      "scripts/e2e-static-server.mjs"
+    ]) {
+      const source = await readText(server);
+
+      assert.match(
+        source,
+        /"\.wav": "audio\/wav"/,
+        `${server} serves WAV with the correct MIME`
+      );
+    }
   });
 });

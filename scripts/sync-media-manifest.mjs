@@ -162,10 +162,14 @@ const musicCount = manifest.items.filter(
   (item) => item.type === "music"
 ).length;
 
+const directCount = manifest.items.filter(
+  (item) => item.sourceType === "direct"
+).length;
+
 const embeddedCount = manifest.items.filter(
   (item) => item.type === "music" && item.metadataSource === "embedded"
 ).length;
 
 console.log(
-  `[media] Manifest synced: ${bookCount} book(s), ${musicCount} music track(s) (${embeddedCount} with embedded metadata), version ${manifest.version}.`
+  `[media] Manifest synced: ${bookCount} book(s), ${musicCount} music track(s) (${directCount} direct source(s), ${embeddedCount} with embedded metadata), version ${manifest.version}.`
 );

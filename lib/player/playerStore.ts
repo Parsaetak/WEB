@@ -1,14 +1,19 @@
 /*
- * lib/player/playerStore.ts — the global Music player store (v4.0.0).
+ * lib/player/playerStore.ts — the global Music player store (v4.0.2).
  *
  * ONE authoritative audio element for the whole application, created
  * lazily on the first explicit playback intent — never per track,
  * never at page load, never without user interaction (no autoplay).
+ * The element belongs to this STORE (attached to document.body, never
+ * to a route's React tree), and the store is mounted exactly once by
+ * the root application shell (GlobalMusicPlayerHost) — so playback,
+ * queue, and position survive every client-side route change without
+ * pause, src reset, or store recreation.
  *
  * The store is framework-free (subscribe/getState) so the React
  * binding (usePlayer) stays a thin useSyncExternalStore shim and the
- * pure queue/history/repeat logic is unit-testable under `node
- * --test` with a fake audio adapter.
+ * pure queue/history/repeat/shuffle logic is unit-testable under
+ * `node --test` with a fake audio adapter.
  *
  * QUEUE SEMANTICS (deterministic, derived from the active Media
  * collection):
@@ -22,17 +27,39 @@
  *   select     — an upcoming entry jumps to current
  *   clear      — empties upcoming (current untouched)
  *
+ * SHUFFLE (v4.0.2) is an ORDERING of the one queue, never a second
+ * queue: enabling it deterministically reshuffles upcoming; disabling
+ * restores the collection order after the current track.
+ *
  * PREVIOUS: sufficiently progressed (> 3 s) restarts the current
  * track; near the beginning it pops history (or restarts when the
  * stack is empty).
  *
  * AUTO-ADVANCE (end of track): repeat "one" replays; otherwise the
  * next upcoming track plays; with an empty upcoming queue and repeat
- * "all" the active collection restarts; otherwise playback stops —
- * the player never invents a next track.
+ * "all" the active collection restarts (shuffled when shuffle is on);
+ * otherwise playback stops — the player never invents a next track.
+ *
+ * PERSISTENCE (v4.0.2): non-sensitive playback state (repeat, shuffle,
+ * queue, history, current track, position, collection identity) is
+ * snapshotted to localStorage at meaningful transitions and on page
+ * hide. After a full browser reload the session RESTORES as a paused
+ * player at the persisted position — autoplay never happens; playback
+ * resumes only on the next explicit user gesture. Volume + muted keep
+ * their own long-standing key. Client-side route navigation never
+ * goes through storage at all.
  */
 
 import type { MusicItem } from "@/lib/media/normalize";
+
+import {
+  readPersistedSession,
+  writePersistedSession
+} from "@/lib/player/persistence";
+
+import {
+  shuffleTrackIds
+} from "@/lib/player/shuffle";
 
 /* ---------------------------------------------------------------- */
 /* Minimal audio element contract (real <audio> or a test fake)      */
@@ -86,7 +113,13 @@ function defaultAudioFactory(): PlayerAudioElement | null {
 
   const element = new window.Audio();
 
-  element.preload = "metadata";
+  /*
+   * preload "none" until an explicit playback intent exists: the
+   * element requests NOTHING at creation, and commitPlaybackStart
+   * raises it to "auto" exactly when a track URL is assigned. (The
+   * element also carries no src until then, so nothing is fetched.)
+   */
+  element.preload = "none";
 
   /*
    * Attach the authoritative element to the document: some engines
@@ -138,6 +171,8 @@ export type PlayerState = {
   volume: number;
   muted: boolean;
   repeat: PlayerRepeat;
+  /** Queue-ordering mode (v4.0.2), persisted with the session. */
+  shuffle: boolean;
   /** Expanded player surface (large artwork + queue) visibility. */
   expanded: boolean;
   /**
@@ -159,6 +194,7 @@ const INITIAL_STATE: PlayerState = {
   volume: 1,
   muted: false,
   repeat: "off",
+  shuffle: false,
   expanded: false,
   collectionId: null
 };
@@ -305,6 +341,15 @@ export type PlayerStore = {
 
   pause(): void;
 
+  /** Pause and rewind to 0:00 (the track stays selected). */
+  stop(): void;
+
+  /** Re-attempt the current track after an error (or reload). */
+  retry(): void;
+
+  /** Shuffle reorders the ONE queue deterministically. */
+  toggleShuffle(): void;
+
   next(): void;
 
   previous(): void;
@@ -319,6 +364,15 @@ export type PlayerStore = {
 
   setExpanded(expanded: boolean): void;
 
+  /**
+   * Restore a persisted session (after a full browser reload) as a
+   * PAUSED player at the persisted position. Requires the catalog
+   * registry to be registered first. NEVER autoplays — the restored
+   * position becomes a pending seek applied when the user resumes.
+   * Returns true when a session was restored.
+   */
+  restorePersistedSession(): boolean;
+
   /** Element event bridge (wired once by the player surface). */
   attachElementListeners(): void;
 };
@@ -331,6 +385,12 @@ export function createPlayerStore(): PlayerStore {
 
   const listeners = new Set<() => void>();
 
+  /*
+   * The registry is a MERGING lookup (v4.0.2): registering a
+   * collection adds/updates entries and never evicts existing ones,
+   * so the playing track keeps its metadata even when the active
+   * Media filter (or a route change) registers a narrower list.
+   */
   const registry = new Map<string, TrackRegistryEntry>();
 
   let collectionOrder: string[] = [];
@@ -338,6 +398,18 @@ export function createPlayerStore(): PlayerStore {
   let audio: PlayerAudioElement | null = null;
 
   let listenersAttached = false;
+
+  /*
+   * Restored position waiting for the resumed track's metadata — set
+   * by restorePersistedSession, consumed by handleLoadedMetadata,
+   * superseded by any explicit seek.
+   */
+  let pendingSeekSeconds: number | null = null;
+
+  /* Throttle for timeupdate-driven session writes (ms). */
+  const SESSION_WRITE_INTERVAL_MS = 3000;
+
+  let lastSessionWriteAt = 0;
 
   function emit() {
     for (const listener of listeners) {
@@ -351,6 +423,24 @@ export function createPlayerStore(): PlayerStore {
     emit();
   }
 
+  function persistSession() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    lastSessionWriteAt = Date.now();
+
+    writePersistedSession({
+      currentTrackId: state.currentTrackId,
+      currentTime: state.currentTime,
+      upcoming: state.upcoming,
+      history: state.history,
+      collectionId: state.collectionId,
+      repeat: state.repeat,
+      shuffle: state.shuffle
+    });
+  }
+
   function ensureAudio(): PlayerAudioElement | null {
     if (audio) {
       return audio;
@@ -361,6 +451,12 @@ export function createPlayerStore(): PlayerStore {
     if (!audio) {
       return null;
     }
+
+    /*
+     * preload "none" at creation (whoever made the element): nothing
+     * is requested until commitPlaybackStart raises it to "auto".
+     */
+    audio.preload = "none";
 
     audio.volume = state.muted ? 0 : state.volume;
 
@@ -379,7 +475,10 @@ export function createPlayerStore(): PlayerStore {
     return registry.get(trackId) ?? null;
   }
 
-  function commitPlaybackStart(entry: TrackRegistryEntry) {
+  function commitPlaybackStart(
+    entry: TrackRegistryEntry,
+    options?: { resume?: boolean }
+  ) {
     const element = ensureAudio();
 
     if (!element) {
@@ -389,6 +488,14 @@ export function createPlayerStore(): PlayerStore {
       });
 
       return;
+    }
+
+    /*
+     * An explicit new track supersedes any restored position; only
+     * the resume path (restored session / retry) keeps it.
+     */
+    if (!options?.resume) {
+      pendingSeekSeconds = null;
     }
 
     /*
@@ -402,14 +509,30 @@ export function createPlayerStore(): PlayerStore {
         ? [...state.history.filter((id) => id !== previousId), previousId]
         : state.history;
 
+    /* Explicit playback intent: this is where loading begins. */
+    element.preload = "auto";
+
     element.src = entry.url;
+
+    /*
+     * Resume keeps the CURRENT position: the pending restored seek
+     * when one exists, otherwise the state's last known position (a
+     * pre-resume scrub, or the failure point of a mid-track error).
+     * Any other path starts at zero.
+     */
+    const resumePosition = options?.resume
+      ? Math.max(
+          0,
+          pendingSeekSeconds ?? state.currentTime
+        )
+      : 0;
 
     setState({
       currentTrackId: entry.id,
       history,
       status: "loading",
       error: null,
-      currentTime: 0,
+      currentTime: resumePosition,
       duration: entry.duration ?? 0
     });
 
@@ -421,12 +544,15 @@ export function createPlayerStore(): PlayerStore {
     });
 
     engageObserver();
+
+    persistSession();
   }
 
   /**
    * First-play engagement signal. The player surface (mini bar,
-   * expanded view) is mounted by PlayerRoot only after this DOM
-   * event — keeping the whole player UI out of the initial bundle.
+   * expanded view) is mounted by GlobalMusicPlayerHost only after
+   * this DOM event — keeping the whole player UI out of the initial
+   * bundle.
    */
   function engageObserver() {
     if (typeof document === "undefined") {
@@ -483,10 +609,17 @@ export function createPlayerStore(): PlayerStore {
       const entry = resolveTrack(firstId);
 
       if (entry) {
+        const remaining = collectionOrder.slice(1);
+
         commitPlaybackStart(entry);
 
         setState({
-          upcoming: collectionOrder.slice(1),
+          upcoming: state.shuffle
+            ? shuffleTrackIds(
+                remaining,
+                `${state.collectionId ?? "media"}|${firstId}`
+              )
+            : remaining,
           collectionId: state.collectionId
         });
 
@@ -496,6 +629,8 @@ export function createPlayerStore(): PlayerStore {
 
     /* Nothing honest left to play — stop, keep the last state. */
     setState({ status: "paused" });
+
+    persistSession();
   }
 
   function handleEnded() {
@@ -508,6 +643,18 @@ export function createPlayerStore(): PlayerStore {
     }
 
     setState({ currentTime: audio.currentTime });
+
+    /*
+     * Redundant position persistence (the pagehide handler is the
+     * authoritative one): throttled so timeupdate's ~4 Hz never
+     * becomes a storage storm.
+     */
+    if (
+      typeof window !== "undefined" &&
+      Date.now() - lastSessionWriteAt > SESSION_WRITE_INTERVAL_MS
+    ) {
+      persistSession();
+    }
   }
 
   function handleLoadedMetadata() {
@@ -517,12 +664,34 @@ export function createPlayerStore(): PlayerStore {
 
     const duration = audio.duration;
 
-    setState({
-      duration:
-        Number.isFinite(duration) && duration > 0
-          ? duration
-          : state.duration
-    });
+    const knownDuration =
+      Number.isFinite(duration) && duration > 0
+        ? duration
+        : state.duration;
+
+    const patch: Partial<PlayerState> = {
+      duration: knownDuration
+    };
+
+    /*
+     * The restored position (set by restorePersistedSession) is
+     * applied exactly once, when the resumed track's metadata is
+     * loaded and the duration is real.
+     */
+    if (pendingSeekSeconds !== null) {
+      const target =
+        knownDuration > 0
+          ? Math.min(Math.max(pendingSeekSeconds, 0), knownDuration)
+          : Math.max(pendingSeekSeconds, 0);
+
+      audio.currentTime = target;
+
+      pendingSeekSeconds = null;
+
+      patch.currentTime = target;
+    }
+
+    setState(patch);
   }
 
   function handlePlay() {
@@ -533,6 +702,8 @@ export function createPlayerStore(): PlayerStore {
     if (state.status !== "error") {
       setState({ status: "paused" });
     }
+
+    persistSession();
   }
 
   function handleError() {
@@ -560,8 +731,13 @@ export function createPlayerStore(): PlayerStore {
     },
 
     setCollection(tracks, collectionId) {
-      registry.clear();
-
+      /*
+       * MERGE, never evict (v4.0.2): the registry is the id → track
+       * lookup the whole site reads; the active collection only
+       * defines the ORDER the queue is built from. Registering a
+       * narrower list (a filter switch, a route change) must never
+       * erase the identity of the track that is playing right now.
+       */
       collectionOrder = [];
 
       for (const track of tracks) {
@@ -592,8 +768,16 @@ export function createPlayerStore(): PlayerStore {
 
       const index = collectionOrder.indexOf(trackId);
 
-      const upcoming =
+      const ordered =
         index >= 0 ? collectionOrder.slice(index + 1) : [];
+
+      const upcoming =
+        state.shuffle
+          ? shuffleTrackIds(
+              ordered,
+              `${collectionId ?? state.collectionId ?? "media"}|${trackId}`
+            )
+          : ordered;
 
       setState({
         upcoming,
@@ -623,6 +807,8 @@ export function createPlayerStore(): PlayerStore {
       upcoming.unshift(trackId);
 
       setState({ upcoming });
+
+      persistSession();
     },
 
     addToQueue(trackId) {
@@ -635,16 +821,22 @@ export function createPlayerStore(): PlayerStore {
       }
 
       setState({ upcoming: [...state.upcoming, trackId] });
+
+      persistSession();
     },
 
     removeFromQueue(trackId) {
       setState({
         upcoming: state.upcoming.filter((id) => id !== trackId)
       });
+
+      persistSession();
     },
 
     clearUpcoming() {
       setState({ upcoming: [] });
+
+      persistSession();
     },
 
     selectQueued(trackId) {
@@ -678,6 +870,21 @@ export function createPlayerStore(): PlayerStore {
       if (!element) {
         return;
       }
+      /*
+       * Restored session (after a full reload): the element exists
+       * but was never loaded — resuming means committing the current
+       * track with its persisted position, not calling play() on an
+       * empty element (which every browser rejects).
+       */
+      if (!element.src) {
+        const entry = resolveTrack(state.currentTrackId);
+
+        if (entry) {
+          commitPlaybackStart(entry, { resume: true });
+        }
+
+        return;
+      }
 
       if (state.status === "playing") {
         element.pause();
@@ -697,6 +904,78 @@ export function createPlayerStore(): PlayerStore {
       const element = ensureAudio();
 
       element?.pause();
+
+      persistSession();
+    },
+
+    stop() {
+      const element = ensureAudio();
+
+      if (element) {
+        element.pause();
+
+        /* Rewind only a loaded element (an unloaded one has no
+         * position to rewind). */
+        if (element.src) {
+          element.currentTime = 0;
+        }
+      }
+
+      pendingSeekSeconds = null;
+
+      setState({
+        status: "paused",
+        currentTime: 0
+      });
+
+      persistSession();
+    },
+
+    retry() {
+      const entry = resolveTrack(state.currentTrackId);
+
+      if (!entry) {
+        return;
+      }
+
+      /*
+       * Retry re-commits the current track. The resume flag keeps a
+       * still-pending restored position alive when the FIRST attempt
+       * failed before the track ever loaded.
+       */
+      commitPlaybackStart(entry, { resume: true });
+    },
+
+    toggleShuffle() {
+      const shuffle = !state.shuffle;
+
+      let upcoming = state.upcoming;
+
+      if (shuffle) {
+        /*
+         * Deterministic reshuffle of the ONE queue: same collection,
+         * same current track → same order (testable, reproducible).
+         */
+        upcoming = shuffleTrackIds(
+          state.upcoming,
+          `${state.collectionId ?? "media"}|${state.currentTrackId ?? "none"}`
+        );
+      } else {
+        /* Back to the canonical collection order after the current
+         * track (when the current track belongs to the collection).
+         */
+        const index = state.currentTrackId
+          ? collectionOrder.indexOf(state.currentTrackId)
+          : -1;
+
+        if (index >= 0) {
+          upcoming = collectionOrder.slice(index + 1);
+        }
+      }
+
+      setState({ shuffle, upcoming });
+
+      persistSession();
     },
 
     next() {
@@ -717,21 +996,56 @@ export function createPlayerStore(): PlayerStore {
           ? collectionOrder.indexOf(state.currentTrackId)
           : -1;
 
-        const wrappedId =
-          collectionOrder[
-            (currentIndex + 1) % collectionOrder.length
-          ];
+        let wrappedId: string | undefined;
 
-        const wrapped = resolveTrack(wrappedId);
+        if (state.shuffle) {
+          /*
+           * No queue, shuffle on: the next track is a deterministic
+           * pick from the remaining collection (never the current
+           * track again, unless it is all there is).
+           */
+          const candidates = collectionOrder.filter(
+            (id) => id !== state.currentTrackId
+          );
+
+          wrappedId =
+            candidates.length > 0
+              ? shuffleTrackIds(
+                  candidates,
+                  `${state.collectionId ?? "media"}|${state.currentTrackId ?? "none"}|next`
+                )[0]
+              : collectionOrder[
+                  (currentIndex + 1) % collectionOrder.length
+                ];
+        } else {
+          wrappedId =
+            collectionOrder[
+              (currentIndex + 1) % collectionOrder.length
+            ];
+        }
+
+        const wrapped = resolveTrack(wrappedId ?? null);
 
         if (wrapped && wrappedId !== state.currentTrackId) {
+          const wrappedIndex = collectionOrder.indexOf(wrappedId);
+
+          const ordered =
+            wrappedIndex >= 0
+              ? collectionOrder.slice(wrappedIndex + 1)
+              : [];
+
           commitPlaybackStart(wrapped);
 
           setState({
-            upcoming: collectionOrder.slice(
-              collectionOrder.indexOf(wrappedId) + 1
-            )
+            upcoming: state.shuffle
+              ? shuffleTrackIds(
+                  ordered,
+                  `${state.collectionId ?? "media"}|${wrappedId}`
+                )
+              : ordered
           });
+
+          persistSession();
         }
       }
     },
@@ -746,6 +1060,8 @@ export function createPlayerStore(): PlayerStore {
         element.currentTime = 0;
 
         setState({ currentTime: 0 });
+
+        persistSession();
 
         return;
       }
@@ -768,6 +1084,8 @@ export function createPlayerStore(): PlayerStore {
         element.currentTime = 0;
 
         setState({ currentTime: 0 });
+
+        persistSession();
       }
     },
 
@@ -783,9 +1101,17 @@ export function createPlayerStore(): PlayerStore {
           ? Math.min(Math.max(seconds, 0), state.duration)
           : Math.max(seconds, 0);
 
+      /*
+       * An explicit seek always supersedes a restored pending
+       * position — the user's gesture wins over the snapshot.
+       */
+      pendingSeekSeconds = null;
+
       element.currentTime = target;
 
       setState({ currentTime: target });
+
+      persistSession();
     },
 
     setVolume(value) {
@@ -829,10 +1155,59 @@ export function createPlayerStore(): PlayerStore {
         order[(order.indexOf(state.repeat) + 1) % order.length];
 
       setState({ repeat: next });
+
+      persistSession();
     },
 
     setExpanded(expanded) {
       setState({ expanded });
+    },
+
+    restorePersistedSession() {
+      const session = readPersistedSession();
+
+      if (!session) {
+        return false;
+      }
+
+      const entry = resolveTrack(session.currentTrackId);
+
+      /*
+       * Honest restore: a session whose track no longer exists in
+       * the catalog is not restored at all — the player stays idle
+       * rather than showing a ghost.
+       */
+      if (!entry) {
+        return false;
+      }
+
+      /*
+       * The persisted position becomes a PENDING seek: state shows
+       * it immediately (the bar renders "paused at 1:23"), but the
+       * element stays untouched — no src, no load, no autoplay. The
+       * position lands on the element when the user resumes.
+       */
+      pendingSeekSeconds =
+        session.position > 0 ? session.position : null;
+
+      setState({
+        currentTrackId: entry.id,
+        upcoming: session.upcoming.filter(
+          (id) => registry.has(id) && id !== entry.id
+        ),
+        history: session.history.filter((id) =>
+          registry.has(id)
+        ),
+        status: "paused",
+        error: null,
+        currentTime: session.position,
+        duration: entry.duration ?? 0,
+        repeat: session.repeat,
+        shuffle: session.shuffle,
+        collectionId: session.collectionId ?? state.collectionId
+      });
+
+      return true;
     },
 
     attachElementListeners() {
@@ -850,6 +1225,23 @@ export function createPlayerStore(): PlayerStore {
       element.addEventListener("play", handlePlay);
       element.addEventListener("pause", handlePause);
       element.addEventListener("error", handleError);
+
+      /*
+       * The authoritative session write happens when the page is
+       * going away — a reload must always find the freshest state.
+       */
+      if (typeof window !== "undefined") {
+        window.addEventListener("pagehide", persistSession);
+
+        window.document.addEventListener(
+          "visibilitychange",
+          () => {
+            if (window.document.visibilityState === "hidden") {
+              persistSession();
+            }
+          }
+        );
+      }
 
       /*
        * Playback may have started before the player surface mounted
@@ -921,6 +1313,13 @@ export function resetPlayerStoreForTests(): void {
 /* Media Session integration                                         */
 /* ---------------------------------------------------------------- */
 
+type MediaSessionActionDetails = {
+  action: string;
+  fastSeek?: boolean;
+  seekTime?: number;
+  seekOffset?: number;
+};
+
 type MediaSessionLike = {
   metadata: unknown;
 
@@ -928,13 +1327,28 @@ type MediaSessionLike = {
 
   setActionHandler(
     action: string,
-    handler: (() => void) | null
+    handler:
+      | ((details?: MediaSessionActionDetails) => void)
+      | null
   ): void;
+
+  setPositionState?(state: {
+    duration?: number;
+    playbackRate?: number;
+    position?: number;
+  }): void;
 };
+
+const MEDIA_SESSION_SEEK_STEP_SECONDS = 10;
 
 /**
  * Wire the Media Session API to the store (no-op where unsupported).
- * Called once by the player surface after the audio element exists.
+ * Called once by the global player surface after the audio element
+ * exists — the ONLY place Media Session is wired: metadata,
+ * playbackState, position, and every supported action (play, pause,
+ * stop, previoustrack, nexttrack, seekbackward, seekforward, seekto)
+ * route through the one store. Support is feature-detected action by
+ * action; the player is fully functional without any of it.
  */
 export function attachMediaSession(
   store: PlayerStore
@@ -993,17 +1407,96 @@ export function attachMediaSession(
     }
   };
 
-  try {
-    session.setActionHandler("play", () => store.togglePlay());
-    session.setActionHandler("pause", () => store.pause());
-    session.setActionHandler("previoustrack", () => store.previous());
-    session.setActionHandler("nexttrack", () => store.next());
-    session.setActionHandler("stop", () => store.pause());
-  } catch {
-    /* Some actions are unsupported per-platform; feature-detective. */
-  }
+  const syncPlaybackState = () => {
+    try {
+      const status = store.getState().status;
 
-  store.subscribe(updateMetadata);
+      session.playbackState =
+        status === "playing"
+          ? "playing"
+          : status === "paused" || status === "loading"
+            ? "paused"
+            : "none";
+    } catch {
+      /* Enhancement, never a dependency. */
+    }
+  };
 
-  updateMetadata();
+  const syncPositionState = () => {
+    try {
+      const state = store.getState();
+
+      if (state.duration <= 0) {
+        return;
+      }
+
+      session.setPositionState?.({
+        duration: state.duration,
+        playbackRate: 1,
+        position: Math.min(
+          Math.max(state.currentTime, 0),
+          state.duration
+        )
+      });
+    } catch {
+      /* Engines reject inconsistent position payloads — skip. */
+    }
+  };
+
+  const syncAll = () => {
+    updateMetadata();
+
+    syncPlaybackState();
+
+    syncPositionState();
+  };
+
+  /* Registered one action at a time: per-action support varies. */
+  const registerAction = (
+    action: string,
+    handler: (details?: MediaSessionActionDetails) => void
+  ) => {
+    try {
+      session.setActionHandler(action, handler);
+    } catch {
+      /* Unsupported on this platform — safe per-action fallback. */
+    }
+  };
+
+  registerAction("play", () => store.togglePlay());
+  registerAction("pause", () => store.pause());
+  registerAction("stop", () => store.stop());
+  registerAction("previoustrack", () => store.previous());
+  registerAction("nexttrack", () => store.next());
+
+  registerAction("seekbackward", () => {
+    const state = store.getState();
+
+    store.seek(
+      state.currentTime - MEDIA_SESSION_SEEK_STEP_SECONDS
+    );
+  });
+
+  registerAction("seekforward", () => {
+    const state = store.getState();
+
+    store.seek(
+      state.currentTime + MEDIA_SESSION_SEEK_STEP_SECONDS
+    );
+  });
+
+  registerAction("seekto", (details) => {
+    if (
+      typeof details?.seekTime !== "number" ||
+      !Number.isFinite(details.seekTime)
+    ) {
+      return;
+    }
+
+    store.seek(details.seekTime);
+  });
+
+  store.subscribe(syncAll);
+
+  syncAll();
 }

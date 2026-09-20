@@ -86,6 +86,30 @@ violation as a bug to be justified, not a style preference.
   tables, flow geometry), `components/redmagic/engineSprites.ts`
   (cached offscreen sprite factory), `lib/backgroundScheduler.ts` +
   `lib/idleScheduler.ts` (idle-time loading).
+- **Global Music player (v4.0.2):** the player is mounted exactly
+  ONCE, from the ROOT application layout (`app/layout.tsx` →
+  `components/player/GlobalMusicPlayerHost.tsx`), never from a route
+  or scene — the world shell's former mount existed only on "/" and
+  lost the UI on route navigation. Under the host: ONE
+  `PlayerStore` (`lib/player/playerStore.ts`, module singleton) and
+  ONE `<audio>` element (created by the store's factory, attached to
+  `document.body`, `preload="none"` until the first playback intent
+  assigns a URL). The host imports NO store code: the lazy
+  `PlayerSurface` chunk mounts on the store's `web:player:engage`
+  DOM event (first explicit play intent) or immediately when a
+  persisted session exists (a raw localStorage probe). MediaScene is
+  a catalog/intent surface — it registers the filtered collection
+  and issues intents (play / play next / add to queue); the element
+  wiring and the whole Media Session integration live in the global
+  player layer. Direct external media URLs (`sourceType: "direct"`
+  in `data/media.json`, schema v4) are absolute http/https URLs
+  validated at sync + validation time; WEB never proxies, downloads
+  or range-fetches them at build time, and never fabricates GitHub
+  provenance for them. Non-sensitive playback state persists
+  locally (`lib/player/persistence.ts`); a full reload restores a
+  PAUSED player at the persisted position and NEVER autoplays.
+  Player state survives client-side route navigation by
+  construction — no player API is called on route change.
 - **RedMagic runtime shape (v4.0.1):** `RedMagic.tsx` mounts the engine
   through `mountRedMagicEngine(canvas)` (`redmagic/lifecycle.ts`) and
   returns its teardown. All mutable engine state lives in ONE
@@ -97,6 +121,18 @@ violation as a bug to be justified, not a style preference.
   pure policies live in `redmagic/engineConfig.ts`. Behavior,
   lazy-loading, idle gating, reduced-motion handling, cleanup and
   telemetry gates are unchanged by the v4.0.1 modularization.
+- **Media model (v4.0.2):** `data/media.json` is schema v4 with an
+  explicit `sourceType` discriminator on every item — `contents`
+  (branch + source path, played through the jsDelivr CDN mirror of
+  the Contents repository) or `direct` (absolute http/https audio
+  URL, played as-is). The runtime (`lib/media/normalize.ts`) branches
+  on the discriminator and NEVER infers source kinds from URL
+  strings. Audio kinds: mp3, m4a, flac, wav. Embedded metadata for
+  contents items (ID3v2 / MP4 atoms / FLAC blocks / RIFF-WAVE
+  `LIST/INFO` + `fmt`/`data` duration) is extracted ONLY at build
+  time by `scripts/media/audioMetadata.mjs` over range requests;
+  direct items carry publisher manifest metadata and never claim
+  embedded provenance.
 
 ## Core rules
 

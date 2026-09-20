@@ -25,7 +25,6 @@ import SiteFooter from "@/components/SiteFooter";
 import WorldBackground from "@/components/WorldBackground";
 import RedCursor from "@/components/RedCursor";
 import MotionReveal from "@/components/MotionReveal";
-import PlayerRoot from "@/components/player/PlayerRoot";
 import {
   pulseWorld,
   setWorldScene
@@ -500,15 +499,14 @@ export default function LivingShell({
       <SiteFooter />
 
       {/*
-        * GLOBAL MUSIC PLAYER (v4.0.0) — mounted at the shell root so
-        * playback survives scene transitions and route navigation.
-        * PlayerRoot ships no player code until the store signals the
-        * first explicit playback intent; the lazy player surface then
-        * mounts (fixed mini bar / sticky compact bar + expanded
-        * overlay). The player never autoplays and never requests
-        * audio before that intent.
+        * GLOBAL MUSIC PLAYER (v4.0.2) — the player host moved from
+        * this shell to the ROOT application layout (app/layout.tsx):
+        * the world shell renders only on "/", and a player mounted
+        * here would lose its UI on every route navigation. The
+        * root-layout mount keeps the ONE store and the ONE audio
+        * element alive site-wide; this shell keeps no player mount
+        * of its own.
         */}
-      <PlayerRoot />
 
       <SceneLoadingScreen
         visible={
