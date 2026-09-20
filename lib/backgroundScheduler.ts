@@ -40,6 +40,25 @@ import {
   BACKGROUND_IDLE_TIMEOUT_MS
 } from "@/lib/loadPhase";
 
+/*
+ * Capability probes (v4.0.3) live in lib/connection.ts — the ONE
+ * probe module, shared with the unified navigation (which must skip
+ * speculative warming under constrained connections without shipping
+ * the scheduler's task queue). The import keeps the scheduler's own
+ * drop-at-enqueue behaviour working; the re-export keeps every
+ * existing consumer unchanged.
+ */
+import {
+  allowsSpeculativeNetwork,
+  isMemoryConstrained
+} from "@/lib/connection";
+
+export {
+  allowsSpeculativeNetwork,
+  getConnectionState,
+  isMemoryConstrained
+} from "@/lib/connection";
+
 export const BACKGROUND_PRIORITY = {
   /** Requested by an explicit user action right now. */
   USER_NAVIGATION: 0,
@@ -92,7 +111,7 @@ const stats: SchedulerStats = {
 };
 
 /* -------------------------------------------------------------------------- */
-/* Capability probes                                                          */
+/* Capability probes (moved to lib/connection.ts in v4.0.3)                   */
 /* -------------------------------------------------------------------------- */
 
 export function isPageVisible(): boolean {
@@ -100,63 +119,6 @@ export function isPageVisible(): boolean {
     typeof document === "undefined" ||
     document.visibilityState === "visible"
   );
-}
-
-type ConnectionState = {
-  saveData?: boolean;
-  effectiveType?: string;
-};
-
-function getConnectionState(): ConnectionState | null {
-  if (typeof navigator === "undefined") {
-    return null;
-  }
-
-  const navigatorWithConnection = navigator as Navigator & {
-    connection?: ConnectionState;
-  };
-
-  return navigatorWithConnection.connection ?? null;
-}
-
-/*
- * True when the connection is good enough for SPECULATIVE work.
- * Explicit user-triggered work is never gated by this.
- */
-export function allowsSpeculativeNetwork(): boolean {
-  const connection = getConnectionState();
-
-  if (!connection) {
-    return true;
-  }
-
-  if (connection.saveData) {
-    return false;
-  }
-
-  return (
-    connection.effectiveType !== "slow-2g" &&
-    connection.effectiveType !== "2g"
-  );
-}
-
-/*
- * Conservative memory-pressure signal. Only used to shed SPECULATIVE
- * work; the core website is never degraded by it. Returns true when
- * the device reports a constrained memory budget.
- */
-export function isMemoryConstrained(): boolean {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
-
-  const navigatorWithMemory = navigator as Navigator & {
-    deviceMemory?: number;
-  };
-
-  const deviceMemory = navigatorWithMemory.deviceMemory;
-
-  return typeof deviceMemory === "number" && deviceMemory <= 2;
 }
 
 /* -------------------------------------------------------------------------- */

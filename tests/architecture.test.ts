@@ -498,7 +498,7 @@ describe("CI and the local commands describe the real pipeline", () => {
 
     assert.equal(
       pkg.version,
-      "4.0.2",
+      "4.0.3",
       "the package version matches this release"
     );
   });
@@ -725,9 +725,19 @@ describe("the global music player architecture (v4.0.2)", () => {
 
   it("persistence and volume use separate, versioned storage keys", async () => {
     const persistence = await readText("lib/player/persistence.ts");
+    const presence = await readText("lib/player/sessionPresence.ts");
     const store = await readText("lib/player/playerStore.ts");
 
-    assert.match(persistence, /"web-player-session"/);
+    /* The session key constant lives ONCE, in the presence probe module. */
+    assert.match(presence, /"web-player-session"/);
+    assert.match(presence, /export const SESSION_STORAGE_KEY/);
+
+    assert.doesNotMatch(
+      persistence,
+      /"web-player-session"/,
+      "persistence imports the key from sessionPresence — one constant, no duplicate"
+    );
+
     assert.match(persistence, /SESSION_STORAGE_VERSION = "v1"/);
 
     assert.match(store, /"web-player-volume"/);

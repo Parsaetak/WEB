@@ -7,7 +7,7 @@ import {
   useState
 } from "react";
 
-import { hasPersistedSession } from "@/lib/player/persistence";
+import { hasPersistedSession } from "@/lib/player/sessionPresence";
 
 const PlayerSurface = dynamic(
   () => import("@/components/player/PlayerSurface"),

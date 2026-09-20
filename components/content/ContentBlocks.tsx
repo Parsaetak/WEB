@@ -1,16 +1,25 @@
 import type { ReactNode } from "react";
 
-import { routeHref, type HubProject } from "@/lib/hubs";
+import Link from "next/link";
+
+import { type HubProject } from "@/lib/hubs";
 
 import styles from "@/components/content/content.module.css";
 
 /*
- * CONTENT BUILDING BLOCKS (v3.1) — small server components shared by
- * the content routes so every document renders the same section,
- * project, article-card and link-row vocabulary. All links are plain
- * anchors resolved through routeHref: external targets carry
- * rel="noreferrer", internal targets are basePath-aware and
- * crawlable without JavaScript.
+ * CONTENT BUILDING BLOCKS (v3.1, soft internal navigation in v4.0.3)
+ * — small server components shared by the content routes so every
+ * document renders the same section, project, article-card and
+ * link-row vocabulary.
+ *
+ * INTERNAL links render through next/link with viewport prefetch
+ * disabled: the exported HTML carries the same crawlable, basePath-
+ * aware anchor as before, and a hydrated browser upgrades the click
+ * to a CLIENT-SIDE navigation — the root layout and the ONE global
+ * Music player never unmount, so playback survives every in-document
+ * jump (v4.0.2 gave the footer the same upgrade; v4.0.3 extends it to
+ * the document body). External targets stay plain anchors with
+ * rel="noreferrer".
  */
 
 export function Section({
@@ -53,10 +62,24 @@ export function FocusList({
   );
 }
 
-function projectLinkTarget(href: string, external: boolean) {
-  return external
-    ? { href, target: "_blank", rel: "noreferrer" }
-    : { href: routeHref(href) };
+/*
+ * Internal hrefs stay RAW root-relative paths: next/link applies the
+ * deployment basePath itself (routeHref would double-prefix it).
+ */
+export function DocLink({
+  href,
+  className,
+  children
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link href={href} className={className} prefetch={false}>
+      {children}
+    </Link>
+  );
 }
 
 export function ProjectCardList({
@@ -81,16 +104,28 @@ export function ProjectCardList({
           </p>
 
           <div className={styles.projectLinks}>
-            {project.links.map((link) => (
-              <a
-                key={link.href}
-                className={styles.projectLink}
-                {...projectLinkTarget(link.href, link.external)}
-              >
-                {link.label}
-                {link.external ? " ↗" : ""}
-              </a>
-            ))}
+            {project.links.map((link) =>
+              link.external ? (
+                <a
+                  key={link.href}
+                  className={styles.projectLink}
+                  href={link.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {link.label}
+                  {" ↗"}
+                </a>
+              ) : (
+                <DocLink
+                  key={link.href}
+                  href={link.href}
+                  className={styles.projectLink}
+                >
+                  {link.label}
+                </DocLink>
+              )
+            )}
           </div>
         </article>
       ))}
@@ -120,9 +155,9 @@ export function ArticleCard({
   note?: string;
 }) {
   return (
-    <a
+    <DocLink
       className={styles.articleCard}
-      href={routeHref(`/blog/${article.slug}/`)}
+      href={`/blog/${article.slug}/`}
     >
       <h3 className={styles.articleCardTitle}>{article.title}</h3>
 
@@ -131,7 +166,7 @@ export function ArticleCard({
       <p className={styles.articleCardMeta}>
         {article.category} · {article.date} · {article.readingTime}
       </p>
-    </a>
+    </DocLink>
   );
 }
 
@@ -145,20 +180,34 @@ export type ContentLink = {
 export function LinkCardRow({ links }: { links: readonly ContentLink[] }) {
   return (
     <div className={styles.linkRow}>
-      {links.map((link) => (
-        <a
-          key={link.href}
-          className={styles.linkCard}
-          {...projectLinkTarget(link.href, link.external)}
-        >
-          <p className={styles.linkLabel}>
-            {link.label}
-            {link.external ? " ↗" : ""}
-          </p>
+      {links.map((link) =>
+        link.external ? (
+          <a
+            key={link.href}
+            className={styles.linkCard}
+            href={link.href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <p className={styles.linkLabel}>
+              {link.label}
+              {" ↗"}
+            </p>
 
-          <p className={styles.linkNote}>{link.note}</p>
-        </a>
-      ))}
+            <p className={styles.linkNote}>{link.note}</p>
+          </a>
+        ) : (
+          <DocLink
+            key={link.href}
+            href={link.href}
+            className={styles.linkCard}
+          >
+            <p className={styles.linkLabel}>{link.label}</p>
+
+            <p className={styles.linkNote}>{link.note}</p>
+          </DocLink>
+        )
+      )}
     </div>
   );
 }
@@ -175,18 +224,32 @@ export function NextStep({
       <p className={styles.nextStepText}>{text}</p>
 
       <div className={styles.nextStepLinks}>
-        {links.map((link) => (
-          <a
-            key={link.href}
-            className={styles.nextStepLink}
-            {...projectLinkTarget(link.href, link.external)}
-          >
-            {link.label}
-            {link.external ? " ↗" : ""}
+        {links.map((link) =>
+          link.external ? (
+            <a
+              key={link.href}
+              className={styles.nextStepLink}
+              href={link.href}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {link.label}
+              {" ↗"}
 
-            <span className={styles.nextStepNote}> — {link.note}</span>
-          </a>
-        ))}
+              <span className={styles.nextStepNote}> — {link.note}</span>
+            </a>
+          ) : (
+            <DocLink
+              key={link.href}
+              href={link.href}
+              className={styles.nextStepLink}
+            >
+              {link.label}
+
+              <span className={styles.nextStepNote}> — {link.note}</span>
+            </DocLink>
+          )
+        )}
       </div>
     </div>
   );

@@ -205,11 +205,15 @@ static HTML + CSS seed
 - The **home scene is statically imported** — its content is the initial HTML, never behind a Suspense gate
 - The five **secondary scenes are dynamically imported** one at a time, on navigation
 - **Scene transitions have no minimum duration (v3.5)** — the registry renders the destination the moment its module is resident. A warmed/cached scene swaps in before the next paint (fast path, no loader ever painted); a genuinely slow fetch keeps the current scene dipped and shows the viewport loading surface only after `SCENE_OVERLAY_DELAY_MS` (slow path). Race protection keeps rapid navigation correct: only the latest requested scene may commit
-- **Route navigation warms on intent (v3.5)** — hover/focus/press prefetches the destination's RSC payload once (deduplicated); no continuous prefetching of every page
-- The **RED MAGIC organism loads at idle** and only when reduced-motion, save-data, and memory constraints allow; otherwise the CSS seed stays permanently
+- **Route navigation warms on intent (v3.5, disciplined in v4.0.3)** — pointer-down and keyboard focus warm the destination's RSC payload immediately; pointer-enter requires a short dwell (cancelled on leave); save-data and 2G connections never warm; the current route is never warmed; every warm is deduplicated. No continuous prefetching of any page
+- **The post-load settle gate (v4.0.3)** — all speculative loaders (predicted scene chunks, the RED MAGIC organism) wait for `whenPageSettled()` (lib/loadPhase.ts): the document fully loads, then one idle gap is granted. Idle callbacks are low-priority, not permission to run during critical startup
+- **The RED MAGIC organism loads after the settle gate** and only when reduced-motion, save-data, and memory constraints allow; otherwise the CSS seed stays permanently
+- **Viewport prefetch is off site-wide (v4.0.3)** — every internal `next/link` carries `prefetch={false}`; the only fetches are intent-warmed payloads (see above). v4.0.2's brand-link viewport prefetch pulled the whole home shell (~115 KB of JS plus payloads) onto every content page — measured, then eliminated
+- **The player host initial graph is minimal (v4.0.3)** — GlobalMusicPlayerHost imports only the raw session-presence probe (lib/player/sessionPresence.ts); the full session read/write/validate module stays in the lazy player chunk
+- **Document-body internal links are soft (v4.0.3)** — the content blocks (cards, link rows, prose links) render through `next/link` with prefetch disabled: crawlable exported anchors, client-side navigation when hydrated, so the ONE global player never dies on an in-document jump (the v4.0.2 footer upgrade, extended)
+- **Loading is verified, not asserted (v4.0.3)** — `npm run verify:loading` proves the exported HTML carries no player surface, no scene/organism code in initial chunks, and an identical document skeleton across tabs; `npm run bench:loading` measures real browser numbers (HTML/JS bytes, DCL/load/FCP, speculative request counts, navigation times, player continuity) with medians over repeated cold runs
 - Motion is CSS-first (transform/opacity), driven by one shared IntersectionObserver with one-shot reveals — no per-frame React state, no scroll listeners
 - Images carry intrinsic dimensions, lazy-load below the fold, and use stable static URLs
-- Blog route payloads are prefetched on intent (hover/focus), not automatically
 
 ## Accessibility
 

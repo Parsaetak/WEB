@@ -6,6 +6,7 @@ import ContentShell from "@/components/content/ContentShell";
 
 import {
   ArticleCard,
+  DocLink,
   FocusList,
   LinkCardRow,
   NextStep,
@@ -97,7 +98,7 @@ export default function HubPageView({ hub }: { hub: HubDefinition }) {
             <p>
               The complete portfolio — including the systems from other
               domains — is collected on the{" "}
-              <a href={routeHref("/work/")}>Selected Work page</a>.
+              <DocLink href="/work/">Selected Work page</DocLink>.
             </p>
           </Prose>
         </Section>

@@ -4,6 +4,8 @@ import type {
 
 import Link from "next/link";
 
+import { DocLink } from "@/components/content/ContentBlocks";
+
 import BlogIndex from "@/components/blog/BlogIndex";
 
 import {
@@ -33,7 +35,6 @@ import {
   WEBSITE_ID
 } from "@/lib/seo";
 
-import { routeHref } from "@/lib/hubs";
 
 import styles from "./page.module.css";
 
@@ -368,12 +369,12 @@ export default function BlogPage() {
                   <span aria-hidden="true"> →</span>
                 </a>
 
-                <a
+                <Link
                   className="button button-secondary"
-                  href={routeHref("/work/")}
-                >
+                  href={"/work/"}
+                 prefetch={false}>
                   Work — the systems
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -407,6 +408,7 @@ export default function BlogPage() {
                     href={`/blog/${featured.slug}/`}
                     aria-label={`Featured: ${featured.title}`}
                     tabIndex={-1}
+                    prefetch={false}
                   >
                     <img
                       src={featured.cover.src}
@@ -456,6 +458,7 @@ export default function BlogPage() {
                   <Link
                     href={`/blog/${latest.slug}/`}
                     className={styles.instrumentLatestLink}
+                    prefetch={false}
                   >
                     {latest.title}
                   </Link>
@@ -489,6 +492,7 @@ export default function BlogPage() {
                   href={`/blog/${featured.slug}/`}
                   aria-label={featured.title}
                   tabIndex={-1}
+                  prefetch={false}
                 >
                   <img
                     src={featured.cover.src}
@@ -519,6 +523,7 @@ export default function BlogPage() {
                 >
                   <Link
                     href={`/blog/${featured.slug}/`}
+                    prefetch={false}
                   >
                     {featured.title}
                   </Link>
@@ -555,6 +560,7 @@ export default function BlogPage() {
                 <Link
                   className={`button button-primary ${styles.blogFeaturedAction}`}
                   href={`/blog/${featured.slug}/`}
+                  prefetch={false}
                 >
                   Read article
                   <span aria-hidden="true">
@@ -632,9 +638,9 @@ export default function BlogPage() {
                   </span>
 
                   <h3 className={styles.labCardName}>
-                    <a href={routeHref(territory.href)}>
+                    <DocLink href={territory.href}>
                       {territory.name}
-                    </a>
+                    </DocLink>
                   </h3>
                 </div>
 
@@ -644,14 +650,14 @@ export default function BlogPage() {
 
                 <div className={styles.labCardLinks}>
                   {territory.links.map((link) => (
-                    <a
+                    <DocLink
                       key={link.href}
                       className={styles.labCardLink}
-                      href={routeHref(link.href)}
+                      href={link.href}
                     >
                       {link.label}
                       <span aria-hidden="true"> →</span>
-                    </a>
+                    </DocLink>
                   ))}
                 </div>
               </article>
@@ -665,10 +671,10 @@ export default function BlogPage() {
            * the footer) with descriptive anchors.
            */}
           <div className={styles.labCollections} data-reveal="instant">
-            <a
+            <Link
               className={styles.labCollection}
-              href={routeHref("/work/")}
-            >
+              href={"/work/"}
+             prefetch={false}>
               <span className={styles.labCollectionLabel}>
                 COLLECTION / WORK
               </span>
@@ -687,12 +693,12 @@ export default function BlogPage() {
                 Open Selected Work
                 <span aria-hidden="true"> →</span>
               </span>
-            </a>
+            </Link>
 
-            <a
+            <Link
               className={styles.labCollection}
-              href={routeHref("/research/")}
-            >
+              href={"/research/"}
+             prefetch={false}>
               <span className={styles.labCollectionLabel}>
                 COLLECTION / RESEARCH
               </span>
@@ -711,7 +717,7 @@ export default function BlogPage() {
                 Open Research
                 <span aria-hidden="true"> →</span>
               </span>
-            </a>
+            </Link>
           </div>
         </div>
       </section>

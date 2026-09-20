@@ -9,7 +9,7 @@ import {
   contentWebPageEntity
 } from "@/lib/seo";
 
-import { ABOUT_ROUTE, contentRouteMetadata, routeHref } from "@/lib/hubs";
+import { ABOUT_ROUTE, contentRouteMetadata } from "@/lib/hubs";
 
 import { EMAIL_LINK, LINKEDIN_LINK, PUBLIC_LINKS } from "@/lib/links";
 
@@ -17,6 +17,7 @@ import ContentShell from "@/components/content/ContentShell";
 
 import {
   ArticleCard,
+  DocLink,
   FocusList,
   LinkCardRow,
   Prose,
@@ -307,7 +308,7 @@ export default function AboutPage() {
               the systems I built in it, and connects the related writing.
               The hubs are the fastest way into any part of the work, and
               the{" "}
-              <a href={routeHref("/research/")}>Research page</a> maps them
+              <DocLink href="/research/">Research page</DocLink> maps them
               onto the frameworks and the measurement programme.
             </p>
           </Prose>
@@ -363,7 +364,7 @@ export default function AboutPage() {
               documented in its own repository or on this site. The full portfolio — what
               each system addresses, why it matters, and where it lives —
               is collected on the{" "}
-              <a href={routeHref("/work/")}>Selected Work page</a>.
+              <DocLink href="/work/">Selected Work page</DocLink>.
             </p>
           </Prose>
 
@@ -405,7 +406,7 @@ export default function AboutPage() {
             </p>
             <p>
               This page is updated as the work ships; the{" "}
-              <a href={routeHref("/blog/")}>writing index</a> is the honest
+              <DocLink href="/blog/">writing index</DocLink> is the honest
               record of what changed and when.
             </p>
           </Prose>
@@ -427,7 +428,7 @@ export default function AboutPage() {
               Replication attempts, methodological criticism, and joint
               evaluation work are all interesting to me; email is the fastest
               channel and every specification is linked from the{" "}
-              <a href={routeHref("/research/")}>Research page</a>.
+              <DocLink href="/research/">Research page</DocLink>.
             </p>
           </Prose>
         </Section>
@@ -446,7 +447,7 @@ export default function AboutPage() {
               the deadline; I answer quickly, including
               &quot;this is not a good fit&quot; when it is true. Start
               from the{" "}
-              <a href={routeHref("/contact/")}>Contact page</a>.
+              <DocLink href="/contact/">Contact page</DocLink>.
             </p>
           </Prose>
         </Section>
@@ -458,7 +459,7 @@ export default function AboutPage() {
               stories, engineering discipline, and the reasoning behind the
               frameworks. These five are the strongest starting points;
               the full catalogue lives in the{" "}
-              <a href={routeHref("/blog/")}>blog</a>.
+              <DocLink href="/blog/">blog</DocLink>.
             </p>
           </Prose>
 
@@ -515,7 +516,7 @@ export default function AboutPage() {
               Secondary channels are GitHub and LinkedIn. What each channel
               is for, and what to include in a first message, is written on
               the{" "}
-              <a href={routeHref("/contact/")}>Contact page</a>.
+              <DocLink href="/contact/">Contact page</DocLink>.
             </p>
           </Prose>
 

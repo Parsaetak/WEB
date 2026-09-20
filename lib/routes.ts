@@ -25,6 +25,14 @@
 
 import routesJson from "@/data/routes.json";
 
+/*
+ * Type-only import (v4.0.3): the page-identity vocabulary is owned by
+ * the shared document shell; no runtime coupling is created.
+ */
+import type {
+  FullScreenPageId
+} from "@/components/FullScreenPageShell";
+
 export type RouteKind =
   | "home"
   | "identity"
@@ -121,6 +129,61 @@ export function getRegistryRoute(
     ) ?? null
   );
 }
+
+/*
+ * PAGE IDENTITY RESOLVER (v4.0.3) — the shared document shell's
+ * per-tab identity (FullScreenPageShell's `data-page` accent layer)
+ * is derived from the route REGISTRY instead of a hardcoded switch:
+ *
+ *   ""                      → "home"
+ *   about / work / research
+ *   / blog / contact        → the route's own path IS the identity
+ *   topic-hub kind          → "hub" (neutral shared identity)
+ *   unregistered path       → "hub" (safe fallback)
+ *
+ * Adding a primary document route to data/routes.json therefore
+ * grants it an identity automatically; no shell-side switch can grow
+ * stale or forget a route. Topic hubs deliberately do NOT claim a
+ * primary tab identity — they share the neutral "hub" accent of the
+ * document shell.
+ */
+export function pageIdForRoutePath(
+  path: string | undefined
+): FullScreenPageId {
+  if (!path) {
+    return "hub";
+  }
+
+  /* Strip leading/trailing slashes: "/about/" → "about". */
+  const segment = path.replace(/^\/+/, "").replace(/\/+$/, "");
+
+  if (segment === "") {
+    return "home";
+  }
+
+  const route = getRegistryRoute(segment);
+
+  if (!route) {
+    return "hub";
+  }
+
+  if (route.kind === "topic-hub") {
+    return "hub";
+  }
+
+  const identity: FullScreenPageId[] = [
+    "about",
+    "work",
+    "research",
+    "blog",
+    "contact"
+  ];
+
+  return identity.includes(route.path as FullScreenPageId)
+    ? (route.path as FullScreenPageId)
+    : "hub";
+}
+
 
 /**
  * Route meta for the static content documents — the values

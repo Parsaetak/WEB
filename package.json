@@ -1,6 +1,6 @@
 {
   "name": "parsaetak-web",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -20,7 +20,9 @@
     "verify:seo": "node scripts/verify-seo.mjs",
     "verify:brand": "node scripts/verify-brand.mjs",
     "verify:export": "node scripts/verify-export-routes.mjs",
-    "verify": "npm run verify:seo && npm run verify:brand && npm run verify:export"
+    "verify:loading": "node scripts/verify-loading.mjs",
+    "bench:loading": "node scripts/bench-loading.mjs",
+    "verify": "npm run verify:seo && npm run verify:brand && npm run verify:export && npm run verify:loading"
   },
   "dependencies": {
     "next": "16.3.4",

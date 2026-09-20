@@ -70,6 +70,7 @@ export default function BlogHeader() {
           className={styles.brand}
           href="/"
           aria-label="Parsa Tak — back to the world"
+        prefetch={false}
         >
           <span className={styles.brandEye} aria-hidden="true">
             {/*

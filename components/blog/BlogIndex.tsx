@@ -956,6 +956,7 @@ export default function BlogIndex({
                     href={`/blog/${post.slug}/`}
                     tabIndex={-1}
                     aria-hidden="true"
+                  prefetch={false}
                   >
                     <img
                       src={
@@ -1093,6 +1094,7 @@ export default function BlogIndex({
                   >
                     <Link
                       href={`/blog/${post.slug}/`}
+                    prefetch={false}
                     >
                       {
                         post.title

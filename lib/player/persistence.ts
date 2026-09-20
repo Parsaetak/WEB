@@ -1,6 +1,6 @@
 /*
  * lib/player/persistence.ts — non-sensitive playback-session
- * persistence (v4.0.2).
+ * persistence (v4.0.2, split in v4.0.3).
  *
  * WHAT is persisted (never anything sensitive — plain playback
  * preferences and queue identity):
@@ -17,9 +17,16 @@
  * position becomes a pending seek applied after the resumed track's
  * metadata loads. Client-side route navigation never needs this
  * module — the live store and its audio element already survive it.
+ *
+ * SPLIT (v4.0.3): the raw session-key constant and the one-line
+ * existence probe live in lib/player/sessionPresence.ts, the module
+ * the global player host consumes. This file keeps the full
+ * read/write/validate lifecycle and imports the key from there —
+ * one key constant, one probe, and the host's initial graph never
+ * pulls this module's parsing logic into the shared bundle.
  */
 
-const SESSION_STORAGE_KEY = "web-player-session";
+import { SESSION_STORAGE_KEY } from "@/lib/player/sessionPresence";
 
 const SESSION_STORAGE_VERSION = "v1";
 
@@ -194,37 +201,10 @@ export function writePersistedSession(
   }
 }
 
-/**
- * Existence probe used by the global player HOST (which deliberately
- * does not import the store): a raw string check that decides whether
- * the lazy player surface should mount to show a restored, paused
- * player. Parsing/validation happens later, inside the store.
+/*
+ * The existence probe (hasPersistedSession) and the test clear hook
+ * live in lib/player/sessionPresence.ts — the host-facing half of the
+ * split. Nothing re-exports them from here, so the lazy store graph
+ * and the eager host graph stay exactly as small as their needs.
  */
-export function hasPersistedSession(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
 
-  try {
-    return (
-      window.localStorage.getItem(SESSION_STORAGE_KEY) !== null
-    );
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Test hook: clear the persisted session.
- */
-export function clearPersistedSessionForTests(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    window.localStorage.removeItem(SESSION_STORAGE_KEY);
-  } catch {
-    /* Nothing to clear. */
-  }
-}

@@ -10,9 +10,43 @@ import {
 
 import Link from "next/link";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import styles from "@/components/UnifiedSiteNav.module.css";
+
+import { allowsSpeculativeNetwork } from "@/lib/connection";
+
+/*
+ * INTENT WARMING DISCIPLINE (v4.0.3) — the mechanism that makes
+ * clicking a tab feel immediate, bounded so it can never compete with
+ * critical loading:
+ *
+ * - pointer-down   → warm NOW (a pressing finger is unambiguous
+ *                    intent; the fetch overlaps the ~100ms before the
+ *                    click event commits)
+ * - keyboard focus → warm NOW (explicit navigation intent)
+ * - pointer-enter  → warm after a short DWELL (WARM_DWELL_MS),
+ *                    cancelled on pointer-leave. In v4.0.2 every
+ *                    hover fired instantly, so sweeping the cursor
+ *                    across the track fetched every tab it crossed;
+ *                    the dwell makes a resting pointer the only
+ *                    trigger.
+ * - save-data / 2g connections skip route warming entirely (the same
+ *   lib/connection.ts probe the background scheduler applies to
+ *   speculative work)
+ * - the CURRENT ROUTE is never warmed (usePathname comparison)
+ * - every warm is deduplicated per href; a failed warm evicts the
+ *   entry so a later intent can retry; a click always navigates
+ *   normally, warmed or not
+ *
+ * Scene actions warm their modules through onActionWarm
+ * (preloadScene — deduplicated by the scene preloader). Internal
+ * route links warm through router.prefetch(), which in this static
+ * export fetches the destination's RSC payload exactly once — one
+ * small text file per intended destination. Viewport prefetch stays
+ * off (prefetch={false}) — nothing is fetched continuously.
+ */
+const WARM_DWELL_MS = 130;
 
 /*
  * UNIFIED SITE NAVIGATION (v3.4) — THE one navigation system.
@@ -110,27 +144,65 @@ export default function UnifiedSiteNav({
   onActionWarm,
   className
 }: UnifiedSiteNavProps) {
-  /*
-   * INTENT WARMING (v3.5) — the mechanism that makes clicking a tab
-   * feel immediate. Hover/focus/press on an entry fetches its
-   * destination BEFORE the click commits:
-   * - scene actions warm their module through onActionWarm
-   *   (preloadScene — immediate, deduplicated by the preloader).
-   * - internal route links warm through router.prefetch(), the
-   *   framework's own mechanism: in this static export it fetches
-   *   the route's RSC payload exactly once, and the client router
-   *   reuses the cache on navigation. Viewport prefetch stays off
-   *   (prefetch={false}), so nothing is fetched continuously and no
-   *   heavy page asset is pulled — warming costs one small text
-   *   file per intended destination.
-   */
   const router = useRouter();
+
+  const pathname = usePathname();
 
   const warmedRoutes =
     useRef<Set<string>>(new Set());
 
+  /*
+   * Pending hover-dwell timers, keyed by entry id. A pointer that
+   * leaves before the dwell elapses cancels its timer — hover noise
+   * across the track never reaches the network.
+   */
+  const hoverTimers =
+    useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    const timers = hoverTimers.current;
+
+    return () => {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
+
+      timers.clear();
+    };
+  }, []);
+
+  /*
+   * Current-route comparison: hrefs are root-relative with a trailing
+   * slash ("/about/"), usePathname() is basePath-free without one
+   * ("/about"). Normalizing both makes the comparison stable across
+   * surfaces and deployment base paths.
+   */
+  const isCurrentRoute = useCallback(
+    (href: string) => {
+      const normalize = (value: string) =>
+        value.length > 1 ? value.replace(/\/+$/, "") : value;
+
+      return normalize(href) === normalize(pathname ?? "");
+    },
+    [pathname]
+  );
+
   const warmRoute = useCallback(
     (href: string) => {
+      /*
+       * Constrained connections never speculate: save-data and 2g
+       * visitors navigate without a pre-fetched payload — the click
+       * itself performs the full navigation (lib/connection.ts).
+       */
+      if (!allowsSpeculativeNetwork()) {
+        return;
+      }
+
+      /* The destination the visitor is already reading is never warmed. */
+      if (isCurrentRoute(href)) {
+        return;
+      }
+
       if (
         warmedRoutes.current.has(
           href
@@ -157,7 +229,7 @@ export default function UnifiedSiteNav({
         );
       });
     },
-    [router]
+    [isCurrentRoute, router]
   );
 
   const warmEntry = useCallback(
@@ -176,12 +248,65 @@ export default function UnifiedSiteNav({
 
       if (
         entry.kind === "link" &&
-        !entry.external
+        !entry.external &&
+        !entry.active
       ) {
         warmRoute(entry.href);
       }
     },
     [onActionWarm, warmRoute]
+  );
+
+  /*
+   * Pointer-down and keyboard focus are unambiguous intent: warm
+   * immediately.
+   */
+  const warmEntryNow = useCallback(
+    (entry: UnifiedNavEntry) => {
+      warmEntry(entry);
+    },
+    [warmEntry]
+  );
+
+  /*
+   * Pointer-enter starts the dwell timer; pointer-leave cancels it.
+   * Only a pointer that RESTS on an entry reaches the network.
+   */
+  const warmEntryOnHover = useCallback(
+    (entry: UnifiedNavEntry) => {
+      const timers = hoverTimers.current;
+
+      const existing = timers.get(entry.id);
+
+      if (existing !== undefined) {
+        return;
+      }
+
+      timers.set(
+        entry.id,
+        setTimeout(() => {
+          timers.delete(entry.id);
+
+          warmEntry(entry);
+        }, WARM_DWELL_MS)
+      );
+    },
+    [warmEntry]
+  );
+
+  const cancelEntryHover = useCallback(
+    (entry: UnifiedNavEntry) => {
+      const timers = hoverTimers.current;
+
+      const timer = timers.get(entry.id);
+
+      if (timer !== undefined) {
+        clearTimeout(timer);
+
+        timers.delete(entry.id);
+      }
+    },
+    []
   );
 
   const primary = entries.filter(
@@ -220,8 +345,14 @@ export default function UnifiedSiteNav({
                 entry={
                   entry
                 }
-                onWarm={
-                  warmEntry
+                onWarmNow={
+                  warmEntryNow
+                }
+                onWarmHover={
+                  warmEntryOnHover
+                }
+                onCancelHover={
+                  cancelEntryHover
                 }
               />
             )
@@ -246,8 +377,14 @@ export default function UnifiedSiteNav({
                 entry={
                   entry
                 }
-                onWarm={
-                  warmEntry
+                onWarmNow={
+                  warmEntryNow
+                }
+                onWarmHover={
+                  warmEntryOnHover
+                }
+                onCancelHover={
+                  cancelEntryHover
                 }
               />
             )
@@ -263,8 +400,14 @@ export default function UnifiedSiteNav({
         entries={
           entries
         }
-        onWarm={
-          warmEntry
+        onWarmNow={
+          warmEntryNow
+        }
+        onWarmHover={
+          warmEntryOnHover
+        }
+        onCancelHover={
+          cancelEntryHover
         }
       />
     </div>
@@ -277,20 +420,32 @@ export default function UnifiedSiteNav({
 
 function NavEntry({
   entry,
-  onWarm
+  onWarmNow,
+  onWarmHover,
+  onCancelHover
 }: {
   entry: UnifiedNavEntry;
-  onWarm?: (entry: UnifiedNavEntry) => void;
+  onWarmNow?: (entry: UnifiedNavEntry) => void;
+  onWarmHover?: (entry: UnifiedNavEntry) => void;
+  onCancelHover?: (entry: UnifiedNavEntry) => void;
 }) {
   /*
-   * WARM ON INTENT (v3.5): pointerenter + focus cover the desktop
-   * contract (hover, keyboard); pointerdown covers touch — a finger
-   * pressing the tab fetches the destination during the ~100ms
-   * before the click event commits, with or without hover support.
-   * All three share one deduplicated entry point.
+   * WARM ON INTENT (v3.5, dwell-disciplined in v4.0.3): pointerdown
+   * and focus warm immediately (a pressing finger or a focused tab
+   * is intent); pointerenter starts the short dwell and
+   * pointerleave cancels it, so hover noise never reaches the
+   * network. All paths share one deduplicated entry point.
    */
   const warm = () => {
-    onWarm?.(entry);
+    onWarmNow?.(entry);
+  };
+
+  const warmOnEnter = () => {
+    onWarmHover?.(entry);
+  };
+
+  const cancelWarm = () => {
+    onCancelHover?.(entry);
   };
 
   const body = (
@@ -359,7 +514,9 @@ function NavEntry({
         : undefined,
     "aria-label": `Open ${entry.label}`,
     onPointerEnter:
-      warm,
+      warmOnEnter,
+    onPointerLeave:
+      cancelWarm,
     onPointerDown:
       warm,
     onFocus: warm
@@ -430,12 +587,16 @@ function NavMenu({
   menuId,
   label,
   entries,
-  onWarm
+  onWarmNow,
+  onWarmHover,
+  onCancelHover
 }: {
   menuId: string;
   label: string;
   entries: readonly UnifiedNavEntry[];
-  onWarm?: (entry: UnifiedNavEntry) => void;
+  onWarmNow?: (entry: UnifiedNavEntry) => void;
+  onWarmHover?: (entry: UnifiedNavEntry) => void;
+  onCancelHover?: (entry: UnifiedNavEntry) => void;
 }) {
   const [open, setOpen] =
     useState(false);
@@ -828,15 +989,25 @@ function NavMenu({
                     );
 
                   /*
-                   * WARM ON INTENT (v3.5) — the disclosure panel warms
-                   * exactly like the desktop track: pointerenter for
-                   * hover-capable pointers, focus for keyboard users,
-                   * pointerdown for touch. Scene actions preload their
-                   * module; internal links prefetch their route. One
-                   * deduplicated contract, no hover requirement.
+                   * WARM ON INTENT (v3.5, dwell-disciplined in
+                   * v4.0.3) — the disclosure panel warms exactly
+                   * like the desktop track: pointerdown/focus warm
+                   * immediately, pointerenter starts the short
+                   * dwell, pointerleave cancels it. Scene actions
+                   * preload their module; internal links prefetch
+                   * their route. One deduplicated contract, no hover
+                   * requirement.
                    */
                   const warm = () => {
-                    onWarm?.(entry);
+                    onWarmNow?.(entry);
+                  };
+
+                  const warmOnEnter = () => {
+                    onWarmHover?.(entry);
+                  };
+
+                  const cancelWarm = () => {
+                    onCancelHover?.(entry);
                   };
 
                   return (
@@ -883,7 +1054,10 @@ function NavMenu({
                                 : undefined
                             }
                             onPointerEnter={
-                              warm
+                              warmOnEnter
+                            }
+                            onPointerLeave={
+                              cancelWarm
                             }
                             onPointerDown={
                               warm
@@ -969,7 +1143,10 @@ function NavMenu({
                               false
                             }
                             onPointerEnter={
-                              warm
+                              warmOnEnter
+                            }
+                            onPointerLeave={
+                              cancelWarm
                             }
                             onPointerDown={
                               warm

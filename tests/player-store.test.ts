@@ -18,8 +18,9 @@ import {
   type PlayerAudioElement
 } from "../lib/player/playerStore";
 
+import { clearPersistedSessionForTests } from "../lib/player/sessionPresence";
+
 import {
-  clearPersistedSessionForTests,
   writePersistedSession
 } from "../lib/player/persistence";
 

@@ -15,6 +15,8 @@ import {
 
 import { scheduleIdle } from "@/lib/idleScheduler";
 
+import { whenPageSettled } from "@/lib/loadPhase";
+
 import styles from "@/components/scenes/HomeScene.module.css";
 
 /*
@@ -71,17 +73,51 @@ export default function HomeOriginOrganism() {
       return;
     }
 
-    return scheduleIdle(() => {
-      import("@/components/RedMagic")
-        .then((module) => {
-          setOrganism(
-            () => module.default
-          );
-        })
-        .catch(() => {
-          /* Network hiccup: the seed stays. A later visit retries. */
-        });
-    }, 2400);
+    /*
+     * POST-LOAD SETTLE GATE (v4.0.3): the organism is an enhancement,
+     * not content — it starts downloading only after the page has
+     * fully loaded and granted one idle gap (see lib/loadPhase.ts).
+     * In v4.0.2 the bare idle callback could fire between hydration
+     * and first paint, and the ~50KB engine chunk began competing
+     * with the hero's first render before anyone had seen the page.
+     * The seed stays mounted underneath, so the swap remains
+     * seamless whenever the fetch lands.
+     */
+    let cancelled = false;
+
+    let cancelIdle: (() => void) | null = null;
+
+    void whenPageSettled().then(() => {
+      if (cancelled) {
+        return;
+      }
+
+      cancelIdle = scheduleIdle(() => {
+        if (cancelled) {
+          return;
+        }
+
+        import("@/components/RedMagic")
+          .then((module) => {
+            if (cancelled) {
+              return;
+            }
+
+            setOrganism(
+              () => module.default
+            );
+          })
+          .catch(() => {
+            /* Network hiccup: the seed stays. A later visit retries. */
+          });
+      }, 2400);
+    });
+
+    return () => {
+      cancelled = true;
+
+      cancelIdle?.();
+    };
   }, []);
 
   return (

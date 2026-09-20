@@ -417,6 +417,7 @@ export default async function ArticlePage({
               className={
                 styles.backLink
               }
+            prefetch={false}
             >
               ← BLOG
             </Link>
@@ -543,6 +544,7 @@ export default async function ArticlePage({
                 href={`/blog/?type=${post.type}`}
                 data-type={post.type}
                 title={`More ${CONTENT_TYPE_LABELS[post.type].toLowerCase()} content in the Blog`}
+              prefetch={false}
               >
                 <span
                   className={
@@ -562,6 +564,7 @@ export default async function ArticlePage({
                     post.project
                   )}`}
                   title={`More from the ${post.project} project`}
+                prefetch={false}
                 >
                   <span
                     className={
@@ -592,6 +595,7 @@ export default async function ArticlePage({
                   }
                   href="/#work"
                   title="Open the Work scene"
+                prefetch={false}
                 >
                   <span
                     className={
@@ -617,6 +621,7 @@ export default async function ArticlePage({
                   className={styles.contextChip}
                   href={`/${hub.slug}/`}
                   title={`${hub.topicName} — topic hub`}
+                prefetch={false}
                 >
                   <span
                     className={
@@ -643,6 +648,7 @@ export default async function ArticlePage({
                       topic
                     )}`}
                     title={`More articles on ${topic}`}
+                  prefetch={false}
                   >
                     <span
                       className={
@@ -791,7 +797,7 @@ export default async function ArticlePage({
 
           <p className={styles.authorName}>
             By{" "}
-            <Link href="/about/">
+            <Link href="/about/" prefetch={false}>
               {post.author}
             </Link>
           </p>
@@ -822,6 +828,7 @@ export default async function ArticlePage({
                 styles.adjacentLink
               }
               href={`/blog/${adjacent.prev.slug}/`}
+            prefetch={false}
             >
               <span
                 className={
@@ -858,6 +865,7 @@ export default async function ArticlePage({
             <Link
               className={`${styles.adjacentLink} ${styles.adjacentLinkNext}`}
               href={`/blog/${adjacent.next.slug}/`}
+            prefetch={false}
             >
               <span
                 className={
@@ -1293,6 +1301,7 @@ export default async function ArticlePage({
           <Link
             className={`button button-secondary ${styles.backToIndex}`}
             href="/blog/"
+          prefetch={false}
           >
             ← All articles
           </Link>
@@ -1300,6 +1309,7 @@ export default async function ArticlePage({
           <Link
             className={`button button-secondary ${styles.backToWorld}`}
             href="/"
+          prefetch={false}
           >
             Back to the world
           </Link>

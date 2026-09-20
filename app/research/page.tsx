@@ -6,12 +6,13 @@ import {
   contentWebPageEntity
 } from "@/lib/seo";
 
-import { RESEARCH_ROUTE, contentRouteMetadata, routeHref } from "@/lib/hubs";
+import { RESEARCH_ROUTE, contentRouteMetadata } from "@/lib/hubs";
 
 import ContentShell from "@/components/content/ContentShell";
 
 import {
   ArticleCard,
+  DocLink,
   FocusList,
   LinkCardRow,
   Prose,
@@ -321,9 +322,9 @@ export default function ResearchPage() {
                     </span>
 
                     <p className={styles.researchStepBody}>
-                      <a href={routeHref(line.framework.href)}>
+                      <DocLink href={line.framework.href}>
                         {line.framework.label}
-                      </a>
+                      </DocLink>
                     </p>
                   </div>
 
@@ -357,9 +358,9 @@ export default function ResearchPage() {
                     </span>
 
                     <p className={styles.researchStepBody}>
-                      <a href={routeHref(line.artifact.href)}>
+                      <DocLink href={line.artifact.href}>
                         {line.artifact.label}
-                      </a>
+                      </DocLink>
                     </p>
                   </div>
                 </div>
@@ -373,9 +374,9 @@ export default function ResearchPage() {
                 <p className={styles.researchModuleSystem}>
                   <span>SYSTEM</span>
 
-                  <a href={routeHref(line.system.href)}>
+                  <DocLink href={line.system.href}>
                     {line.system.label}
-                  </a>
+                  </DocLink>
                 </p>
               </article>
             ))}
@@ -504,11 +505,11 @@ export default function ResearchPage() {
               The arguments, in long form. These four articles carry the
               programme&#39;s core positions and their engineering consequences;
               the full research stream lives in the{" "}
-              <a href={routeHref("/blog/?type=research")}>
+              <DocLink href="/blog/?type=research">
                 Blog&#39;s research mode
-              </a>
+              </DocLink>
               , and the complete catalogue in the{" "}
-              <a href={routeHref("/blog/")}>Blog index</a>.
+              <DocLink href="/blog/">Blog index</DocLink>.
             </p>
           </Prose>
 

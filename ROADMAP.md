@@ -933,3 +933,74 @@ It is complete when:
 * no unrelated regressions remain.
 
 ```
+
+---
+
+# PHASE 8 — LOADING PERFORMANCE + UNIFIED DOCUMENT TABS
+
+> **STATUS: DELIVERED in v4.0.3.**
+
+## Objective
+
+A measured performance/regression pass on v4.0.2: find the real mechanism
+behind the felt loading slowdown, fix the smallest correct boundaries, and
+add the verification layer so the class of regression cannot pass unnoticed.
+
+## Root causes found (measured, not assumed)
+
+1. **Viewport prefetch of the home shell from every content route** — the
+   document shell's brand link and Home crumb rendered `next/link` without
+   `prefetch={false}`, so each content page prefetch-hydrated the full "/"
+   graph (LivingShell + HomeScene chunks, ~115 KB, plus 3 RSC payloads) in
+   the background right after hydration.
+2. **Blog payload flood** — blog-index and article surfaces carried up to
+   11 internal links without `prefetch={false}`; a cold /blog/ visit fetched
+   6+ article payloads with zero user intent.
+3. **Hard navigations to /work/ and /research/** — document-body links
+   (cards, link rows, prose anchors) rendered plain `<a>`; clicking them
+   reloaded the whole document, killing the global player.
+4. **Speculation before first paint** — predicted scene chunks and the
+   RED MAGIC organism began downloading at the first idle callback, which
+   on fast connections fires before FCP.
+5. **Host chunk carried the full persistence module** — v4.0.2's root-layout
+   player host shipped session read/write/validate code on every route
+   (+5,987 B raw / +1,761 B gzip per route) although only a raw storage
+   probe is needed eagerly.
+6. **Instant hover warming** — pointer-enter prefetch fired with no dwell,
+   no save-data guard, and warmed the current route.
+
+## Delivered
+
+- `whenPageSettled()` (lib/loadPhase.ts): load → idle → speculation, one
+  shared promise, hard cap; consumed by the scene preloader and the RED
+  MAGIC organism.
+- `lib/player/sessionPresence.ts`: the raw session-presence probe split
+  out of persistence.ts; the host's initial graph is minimal by design.
+- `lib/connection.ts`: the one connection/device probe module, shared by
+  the scheduler and the navigation.
+- Warming discipline: pointer-down/focus immediate, pointer-enter dwell +
+  cancel, save-data/2G skip, current-route skip, deduplicated with retry.
+- `prefetch={false}` on every internal `next/link` site-wide; document-body
+  internal links upgraded to `next/link` (DocLink) so the global player
+  survives every in-document jump.
+- Registry-driven page identity (`pageIdForRoutePath`, lib/routes.ts):
+  About and Contact ride the exact shared ContentShell contract of Work,
+  Research and the hubs; the href→identity switch is gone.
+- `npm run verify:loading`: export-level proof (no player surface in HTML,
+  no scene/organism code in initial chunks, host chunk probe-only, About/
+  Contact/Research skeleton bijection with Work).
+- `npm run bench:loading`: reproducible Playwright benchmark measuring
+  cold-load bytes/timings, speculative request classification, navigation
+  medians, and real player continuity — medians over repeated cold runs.
+
+## Measured results (same harness, same environment, medians of 5)
+
+- /blog/ cold load: 8 cross-route payload fetches → 0; dynamic JS on
+  content routes: 4 chunks (the prefetched home shell) → 0.
+- Client navigation blog→work: 791 ms → 111 ms; work→research:
+  702 ms → 94 ms (hard reloads became client-side navigations).
+- Player continuity across the full route flow: playback continues
+  (verified playing at t+5.5 s after six navigations); reload restoration
+  stays paused; fresh visitors create no audio element.
+- Speculation (scene chunks + organism) now starts strictly after the
+  load event plus one idle gap; in v4.0.2 it began before FCP.

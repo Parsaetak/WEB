@@ -24,7 +24,10 @@ import {
 
 import {
   clearPersistedSessionForTests,
-  hasPersistedSession,
+  hasPersistedSession
+} from "../lib/player/sessionPresence";
+
+import {
   readPersistedSession,
   writePersistedSession
 } from "../lib/player/persistence";

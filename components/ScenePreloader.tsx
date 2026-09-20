@@ -18,6 +18,8 @@ import {
   enqueueBackgroundTask
 } from "@/lib/backgroundScheduler";
 
+import { whenPageSettled } from "@/lib/loadPhase";
+
 import type {
   SceneId
 } from "@/lib/sceneIds";
@@ -471,27 +473,51 @@ export default function ScenePreloader({
 
     lastPredictedPrimary = primary;
 
-    enqueueBackgroundTask({
-      id: `scene-chunk:${primary}`,
-      priority:
-        BACKGROUND_PRIORITY.NEAR_TERM,
-      owner: PRELOADER_OWNER,
-      run: () =>
-        preloadScene(primary)
-    });
+    /*
+     * POST-LOAD SETTLE GATE (v4.0.3): prediction is P1/P2 work and
+     * starts only after the page has fully loaded and granted one
+     * idle gap. In v4.0.2 the enqueues below ran on the first idle
+     * callback, which on fast connections fires BEFORE first paint —
+     * measured: predicted scene chunks began downloading before FCP.
+     * The gate costs nothing after load (one shared promise) and
+     * keeps requested scenes fully outranked: they load through
+     * SceneRegistry at P0, never through this queue.
+     */
+    let queued = false;
 
-    if (secondary) {
+    const enqueuePrediction = () => {
+      if (queued) {
+        return;
+      }
+
+      queued = true;
+
       enqueueBackgroundTask({
-        id: `scene-chunk:${secondary}`,
+        id: `scene-chunk:${primary}`,
         priority:
-          BACKGROUND_PRIORITY.PREDICTIVE,
+          BACKGROUND_PRIORITY.NEAR_TERM,
         owner: PRELOADER_OWNER,
         run: () =>
-          preloadScene(secondary)
+          preloadScene(primary)
       });
-    }
+
+      if (secondary) {
+        enqueueBackgroundTask({
+          id: `scene-chunk:${secondary}`,
+          priority:
+            BACKGROUND_PRIORITY.PREDICTIVE,
+          owner: PRELOADER_OWNER,
+          run: () =>
+            preloadScene(secondary)
+        });
+      }
+    };
+
+    void whenPageSettled().then(enqueuePrediction);
 
     return () => {
+      queued = true;
+
       cancelBackgroundTasksByOwner(
         PRELOADER_OWNER
       );

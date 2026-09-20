@@ -12,9 +12,9 @@ import UnifiedSiteNav, {
   type UnifiedNavEntry
 } from "@/components/UnifiedSiteNav";
 
-import FullScreenPageShell, {
-  type FullScreenPageId
-} from "@/components/FullScreenPageShell";
+import FullScreenPageShell from "@/components/FullScreenPageShell";
+
+import { pageIdForRoutePath } from "@/lib/routes";
 
 import SiteFooter from "@/components/SiteFooter";
 
@@ -66,36 +66,15 @@ type ContentShellProps = {
 };
 
 /*
- * Tab identity from the active route — the same href the nav uses
- * for its active state. Unknown routes (the topic hubs) fall back
- * to the neutral "hub" identity of the shared shell.
+ * TAB IDENTITY (v4.0.3): resolved from the canonical route registry
+ * (data/routes.json) through lib/routes.ts — the same registry that
+ * derives SEO metadata and the sitemap. Before v4.0.3 this was a
+ * hardcoded switch that could forget a route; now every registered
+ * primary document route automatically receives its shell identity,
+ * and topic hubs keep the neutral "hub" identity of the shared
+ * shell. About and Contact therefore ride the EXACT same registry
+ * path as Work, Research and the hubs — no special cases.
  */
-function pageIdFromHref(
-  href: string | undefined
-): FullScreenPageId {
-  switch (href) {
-    case "/":
-      return "home";
-
-    case "/about/":
-      return "about";
-
-    case "/work/":
-      return "work";
-
-    case "/research/":
-      return "research";
-
-    case "/blog/":
-      return "blog";
-
-    case "/contact/":
-      return "contact";
-
-    default:
-      return "hub";
-  }
-}
 
 export default function ContentShell({
   kicker,
@@ -152,12 +131,12 @@ export default function ContentShell({
 
   return (
     <FullScreenPageShell
-      page={pageIdFromHref(activeHref)}
+      page={pageIdForRoutePath(activeHref)}
       className={styles.shell}
     >
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <Link className={styles.brand} href="/">
+          <Link className={styles.brand} href="/" prefetch={false}>
             {/*
              * The 13-point star — the site identity — anchors the
              * content shell to the same brand as the world shell
@@ -255,6 +234,7 @@ export default function ContentShell({
                       <Link
                         className={styles.crumbLink}
                         href={crumb.href}
+                        prefetch={false}
                       >
                         {crumb.name}
                       </Link>

@@ -52,6 +52,30 @@ violation as a bug to be justified, not a style preference.
   a CSS seed fallback. Never move the organism into the main bundle;
   never convert the raw `import()` to `next/dynamic`/Suspense (that
   broke static export before — see the file's header comment).
+- **Loading performance law (v4.0.3):** speculation obeys
+  `critical load → page usable → idle → speculation`. The ONE settle
+  gate is `whenPageSettled()` (`lib/loadPhase.ts`): document complete +
+  one idle gap, hard-capped; the scene preloader and the RED MAGIC
+  organism both wait for it — a bare `requestIdleCallback` is NOT
+  permission to fetch during startup (mechanism behind the v4.0.2
+  pre-FCP speculation measured in the v4.0.3 benchmark). Viewport
+  prefetch is OFF site-wide: every internal `next/link` carries
+  `prefetch={false}` — a Link without it floods RSC payloads
+  (v4.0.2 measured: up to 11 article payloads per blog page view,
+  and the whole home shell pulled onto every content page through
+  the brand link). Warming is intent-only and disciplined
+  (pointer-down / focus immediate; pointer-enter requires a dwell
+  and is cancelled on leave; save-data/2G skip via `lib/connection.ts`;
+  the current route is never warmed; dedup + failure retry in
+  `UnifiedSiteNav`). Internal document-body links render through
+  `next/link` (see `components/content/ContentBlocks.tsx` DocLink) so
+  navigation is client-side and the global player survives every
+  in-document jump — plain internal `<a>` anchors are reserved for
+  no-JS-critical or external destinations. Connection/device probes
+  live in ONE module (`lib/connection.ts`); the background scheduler
+  re-exports them. Loading regressions are verified, not asserted:
+  `npm run verify:loading` (export-level) and `npm run bench:loading`
+  (real-browser medians) gate the state.
 - Blog pipeline: `scripts/build-blog.mjs` parses/validates/renderers
   `content/blog/*.md` → `data/blog/posts.json` + `public/sitemap.xml`. A
   malformed article FAILS the build. Run before dev/build.
@@ -97,7 +121,13 @@ violation as a bug to be justified, not a style preference.
   assigns a URL). The host imports NO store code: the lazy
   `PlayerSurface` chunk mounts on the store's `web:player:engage`
   DOM event (first explicit play intent) or immediately when a
-  persisted session exists (a raw localStorage probe). MediaScene is
+  persisted session exists (a raw localStorage probe — since v4.0.3
+  the probe is `lib/player/sessionPresence.ts`, a module that holds
+  ONLY the storage key and the one-line existence check; the full
+  session read/write/validate lifecycle stays in
+  `lib/player/persistence.ts` inside the lazy player chunk, so the
+  eager host graph of every route is minimal by construction).
+  MediaScene is
   a catalog/intent surface — it registers the filtered collection
   and issues intents (play / play next / add to queue); the element
   wiring and the whole Media Session integration live in the global
@@ -298,12 +328,14 @@ npm ci                 # clean install (CI uses --legacy-peer-deps)
 npm run blog           # content pipeline → data/blog/posts.json + sitemap.xml
 npm run build          # blog pipeline + next build (static export → out/)
 npm run lint           # eslint — must stay at 0 errors
-npm run verify         # verify:seo + verify:brand + verify:export
+npm run verify         # verify:seo + verify:brand + verify:export + verify:loading
 npm run typecheck      # tsc --noEmit over application code AND tests
 npm run typecheck:tests # focused test-suite typecheck
 npm test               # node --test over the suite (architecture contract included)
 npm start              # zero-dependency static preview of out/ (serve-static.mjs)
 npm run verify:seo     # SEO verification alone (needs out/ from build)
+npm run verify:loading # export loading verification alone (needs out/ from build)
+npm run bench:loading  # real-browser loading benchmark (Playwright medians; needs out/)
 node scripts/bench-redmagic.mjs    # v2.1 micro-benchmark (Node/V8,
                           # pure-function shapes + policy assertions)
 ```

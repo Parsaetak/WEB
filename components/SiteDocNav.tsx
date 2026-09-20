@@ -81,7 +81,7 @@ function NavRow({
               * Raw root-relative href: Link applies the deployment
               * basePath itself (routeHref would double-prefix it).
               */}
-            <Link className={styles.link} href={link.href}>
+            <Link className={styles.link} href={link.href} prefetch={false}>
               {link.label}
             </Link>
           </li>
