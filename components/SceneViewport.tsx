@@ -7,7 +7,7 @@ import {
 
 import type {
   SceneId
-} from "@/components/LivingShell";
+} from "@/lib/sceneIds";
 
 import SceneLoadingScreen from "@/components/SceneLoadingScreen";
 

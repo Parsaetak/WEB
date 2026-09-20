@@ -42,6 +42,9 @@ export default defineConfig([
     ".next/**",
     "out/**",
     "node_modules/**",
-    "next-env.d.ts"
+    "next-env.d.ts",
+    /* Ambient declaration files for the .mjs tooling modules —
+     * type-only, never executed, and not parseable as scripts. */
+    "**/*.d.mts"
   ])
 ]);

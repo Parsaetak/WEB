@@ -120,19 +120,33 @@ const RELATED_WEIGHTS = {
 
 /*
  * Hash scenes of the world shell — the legal targets of `/#scene`
- * links inside article bodies. When a scene is added to the shell,
- * this set must grow with it (the build fails loudly otherwise).
+ * links inside article bodies. DERIVED from the canonical registry
+ * (data/routes.json scenes.names) so the checker can never drift
+ * from the shell's real vocabulary. "#library" is retained as the
+ * single deliberate backward-compatibility alias of "#media"
+ * (mirroring SCENE_ID_ALIASES in lib/sceneIds.ts, the runtime's
+ * alias map): links published before the v4.0.0 Media migration
+ * must keep validating. No other legacy scene hash is accepted.
  */
+const SCENE_HASH_ALIASES = new Set(["library"]);
+
 const KNOWN_SCENES = new Set([
-  "home",
-  "about",
-  "systems",
-  "magic",
-  "work",
-  "media",
-  /* v4.0.0 legacy alias — old article links may still target it. */
-  "library"
+  ...ROUTE_REGISTRY.scenes.names,
+  ...SCENE_HASH_ALIASES
 ]);
+
+/*
+ * CANONICAL DOCUMENT ROUTES (v4.0.1) — every real public route from
+ * the registry (plus the blog index handled separately below).
+ * Article bodies may link any of them root-relative, with or without
+ * the trailing slash; a fragment is allowed and resolved against the
+ * built documents by verify-seo.mjs (the export-level checker).
+ */
+const CANONICAL_ROUTE_PATHS = new Set(
+  ROUTE_REGISTRY.routes
+    .filter((route) => route.path !== "" && route.path !== "blog")
+    .map((route) => `/${route.path}`)
+);
 
 /*
  * Stopwords for the significant-term overlap signal. Small,
@@ -908,13 +922,17 @@ function validatePost(record, file) {
 }
 
 /*
- * Internal link validation (v2.5) — every link in an article body
- * must resolve to something real:
+ * Internal link validation (v2.5 / v4.0.1) — every link in an
+ * article body must resolve to something real:
  *   - external links use https (never http, never localhost)
  *   - root-relative links stay free of the deployment basePath
  *     (content is written root-relative; the pipeline adds the base)
  *   - /blog/<slug>/[<fragment>] targets must exist, and a fragment
  *     must match a real heading id of the target article
+ *   - canonical document routes from the route registry
+ *     (/about/, /work/, /research/, /contact/, topic hubs, …)
+ *     are accepted with or without the trailing slash; fragments on
+ *     them are validated against the built export by verify-seo.mjs
  *   - /#<scene> targets must match a real hash scene of the shell
  *   - anything else fails: no dead internal links ship
  */
@@ -998,6 +1016,20 @@ function checkInternalLinks(body, validSlugs, headingsBySlug, file) {
           );
         }
       }
+      continue;
+    }
+
+    /*
+     * Canonical document routes (registry-derived): accepted with
+     * or without the trailing slash. A query (e.g. /blog/?type=work
+     * style filters on hubs) or fragment may follow; the export-level
+     * verifier checks fragments against real document ids.
+     */
+    const routePath = cleanPath.endsWith("/")
+      ? cleanPath.slice(0, -1)
+      : cleanPath;
+
+    if (CANONICAL_ROUTE_PATHS.has(routePath)) {
       continue;
     }
 

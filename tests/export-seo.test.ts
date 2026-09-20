@@ -23,13 +23,13 @@ const ROOT = path.resolve(
   ".."
 );
 
-async function readJson(relative) {
+async function readJson(relative: string) {
   return JSON.parse(
     await readFile(path.join(ROOT, relative), "utf8")
   );
 }
 
-async function readText(relative) {
+async function readText(relative: string) {
   return readFile(path.join(ROOT, relative), "utf8");
 }
 
@@ -95,7 +95,8 @@ describe("data files", () => {
     const manifest = await readJson("data/media.json");
 
     const music = manifest.items.filter(
-      (item) => item.type === "music" || item.type === "audio"
+      (item: { type?: string }) =>
+        item.type === "music" || item.type === "audio"
     );
 
     assert.equal(

@@ -24,7 +24,7 @@ const ROOT = path.resolve(
   ".."
 );
 
-async function readComponent(name) {
+async function readComponent(name: string) {
   return readFile(
     path.join(ROOT, "components", "player", name),
     "utf8"

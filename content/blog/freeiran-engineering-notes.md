@@ -58,6 +58,6 @@ A small C++ layer (batch hashing, CRC-32, URL scanning) sits behind a stable C A
 
 ## Why it is on this site
 
-FreeIran shares the laboratory's constitution with the rest of the [Work](/#work) line: bounded resources, explicit state machines, deterministic selection, honest tests, and a hard refusal to ship telemetry. The repository is public and the current version is 0.5.0: [github.com/Parsaetak/FreeIran](https://github.com/Parsaetak/FreeIran).
+FreeIran shares the laboratory's constitution with the rest of the [Work](/work/) line: bounded resources, explicit state machines, deterministic selection, honest tests, and a hard refusal to ship telemetry. The repository is public and the current version is 0.5.0: [github.com/Parsaetak/FreeIran](https://github.com/Parsaetak/FreeIran).
 
 Access to information is a precondition for everything else this laboratory builds. The engineering has to deserve the name.

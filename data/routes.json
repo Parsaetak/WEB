@@ -161,7 +161,7 @@
     }
   ],
   "scenes": {
-    "$comment": "World-shell interaction states (LivingShell.tsx). Legal /#scene and #scene href targets; never sitemap entries; never canonical documents. v4.0.0: the former library scene is now media (#library resolves as a normalised backward-compatible alias).",
-    "names": ["home", "about", "systems", "magic", "work", "media"]
+    "$comment": "World-shell interaction states (LivingShell.tsx). Legal /#scene and #scene href targets; never sitemap entries; never canonical documents. v4.0.1: the about scene is removed — /about/ is the canonical About document and no navigation surface links to an #about hash (a stale #about resolves through the shell's safe fallback). v4.0.0: the former library scene is now media (#library resolves as a normalised backward-compatible alias).",
+    "names": ["home", "systems", "magic", "work", "media"]
   }
 }

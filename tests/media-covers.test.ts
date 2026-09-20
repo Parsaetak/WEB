@@ -13,7 +13,7 @@ import {
   resolveCoverPath
 } from "../scripts/media/covers.mjs";
 
-function setOf(...paths) {
+function setOf(...paths: string[]) {
   return new Set(paths);
 }
 

@@ -10,7 +10,7 @@ import { ROUTE_REGISTRY } from "@/lib/routes";
  * @id values defined here, so the site never emits two conflicting
  * WebSite or Person objects.
  *
- * Laws (see worklog.md — SEO Architecture):
+ * Laws (SEO Architecture):
  * - Production URL is the ONLY canonical base: absolute, HTTPS,
  *   stable, /WEB-aware. No localhost, no repository URLs, no
  *   alternate hosts ever appear in metadata or structured data.

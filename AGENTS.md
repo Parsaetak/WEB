@@ -39,15 +39,19 @@ violation as a bug to be justified, not a style preference.
   `/creative-technology/`), Blog index `/blog/`, articles `/blog/<slug>/`
   (derived from `content/blog/*.md`). World-shell hash scenes (`/#systems`,
   `/#magic`, `/#media`) are interaction states — never documents, never
-   (the legacy `/#library` hash resolves as a backward-compatible alias of
-   `/#media` since v4.0.0). They are never
-  sitemap entries.
-- **RED MAGIC is lazy-loaded.** `components/RedMagic.tsx` (the ~6.5k-line
-  orchestrator + hot path) is
-  dynamically imported at idle time (`components/HomeOriginOrganism.tsx`,
-  MagicConsole usage) with a CSS seed fallback. Never move the organism into
-  the main bundle; never convert the raw `import()` to `next/dynamic`/Suspense
-  (that broke static export before — see the file's header comment).
+  sitemap entries (the legacy `/#library` hash resolves as a deliberate
+  backward-compatible alias of `/#media`; the former `#about` scene was
+  removed in v4.0.1 — `/about/` is the only canonical About).
+- **RED MAGIC is lazy-loaded.** The organism ships as a module
+  family: `components/RedMagic.tsx` is a deliberately tiny React shell
+  (canvas host + one effect); the engine lives in `components/redmagic/`
+  (`engineConstants`, `engineState`, `simulation`, `render`, `input`,
+  `lifecycle`, plus the pre-existing `engineConfig`, `engineWorld`,
+  `engineSprites`). The engine chunk is dynamically imported at idle
+  time (`components/HomeOriginOrganism.tsx`, MagicConsole usage) with
+  a CSS seed fallback. Never move the organism into the main bundle;
+  never convert the raw `import()` to `next/dynamic`/Suspense (that
+  broke static export before — see the file's header comment).
 - Blog pipeline: `scripts/build-blog.mjs` parses/validates/renderers
   `content/blog/*.md` → `data/blog/posts.json` + `public/sitemap.xml`. A
   malformed article FAILS the build. Run before dev/build.
@@ -82,14 +86,17 @@ violation as a bug to be justified, not a style preference.
   tables, flow geometry), `components/redmagic/engineSprites.ts`
   (cached offscreen sprite factory), `lib/backgroundScheduler.ts` +
   `lib/idleScheduler.ts` (idle-time loading).
-- **RedMagic runtime shape (v2.1):** `RedMagic.tsx` is the orchestrator
-  and hot path (React lifecycle, canvas ownership, mutable runtime
-  state, simulation + render loop, adaptation controller). Stateless
-  build-time subsystems live in `redmagic/engineWorld.ts` and
-  `redmagic/engineSprites.ts`; pure policies live in
-  `redmagic/engineConfig.ts`. Do not split the hot path further
-  without a measured reason — module structure is not free when it
-  duplicates mutable state.
+- **RedMagic runtime shape (v4.0.1):** `RedMagic.tsx` mounts the engine
+  through `mountRedMagicEngine(canvas)` (`redmagic/lifecycle.ts`) and
+  returns its teardown. All mutable engine state lives in ONE
+  `EngineState` object (`redmagic/engineState.ts`); the extracted
+  simulation/render/input/lifecycle functions reach each other through
+  one late-bound `Engine` object, preserving the closure semantics of
+  the pre-refactor single-file engine. Stateless build-time subsystems
+  live in `redmagic/engineWorld.ts` and `redmagic/engineSprites.ts`;
+  pure policies live in `redmagic/engineConfig.ts`. Behavior,
+  lazy-loading, idle gating, reduced-motion handling, cleanup and
+  telemetry gates are unchanged by the v4.0.1 modularization.
 
 ## Core rules
 
@@ -256,7 +263,10 @@ npm run blog           # content pipeline → data/blog/posts.json + sitemap.xml
 npm run build          # blog pipeline + next build (static export → out/)
 npm run lint           # eslint — must stay at 0 errors
 npm run verify         # verify:seo + verify:brand + verify:export
-./node_modules/.bin/tsc --noEmit   # typecheck
+npm run typecheck      # tsc --noEmit over application code AND tests
+npm run typecheck:tests # focused test-suite typecheck
+npm test               # node --test over the suite (architecture contract included)
+npm start              # zero-dependency static preview of out/ (serve-static.mjs)
 npm run verify:seo     # SEO verification alone (needs out/ from build)
 node scripts/bench-redmagic.mjs    # v2.1 micro-benchmark (Node/V8,
                           # pure-function shapes + policy assertions)

@@ -1,6 +1,6 @@
 # Parsa Tak — WEB
 
-A statically exported Next.js portfolio that behaves like a living system: six hash-navigated scenes, a markdown-driven blog, a generated SEO graph, and a canvas organism that loads only when the browser can afford it — plus a connected knowledge base of real, indexable topic documents.
+A statically exported Next.js portfolio that behaves like a living system: five hash-navigated scenes, a markdown-driven blog, a generated SEO graph, and a canvas organism that loads only when the browser can afford it — plus a connected knowledge base of real, indexable topic documents.
 
 **Live Site:** https://parsaetak.github.io/WEB/
 **Repository:** https://github.com/Parsaetak/WEB
@@ -51,7 +51,7 @@ COLLECTIONS: WORK · RESEARCH              (canonical deep documents, footer + l
 WORLD:       SYSTEMS · RED MAGIC · MEDIA (quieter, contextual)
 ```
 
-One navigation system renders every surface: `components/UnifiedSiteNav.tsx` consumes `lib/navigation.ts` (the single source of truth) and drives the world HUD desktop track, the blog header, the content-shell header on every content document and topic hub, and their shared ≤860px disclosure menu — desktop and mobile are two responsive modes of the same component, same labels, same ordering, same accents, same active/focus language. The six-scene world is unchanged internally — scene ids (`home / about / systems / magic / work / media`), hash routing, browser history, and hover-to-preload all behave exactly as before; the experiential `#work` scene remains a portfolio scene inside the living world, distinct from the canonical `/work/` document.
+One navigation system renders every surface: `components/UnifiedSiteNav.tsx` consumes `lib/navigation.ts` (the single source of truth) and drives the world HUD desktop track, the blog header, the content-shell header on every content document and topic hub, and their shared ≤860px disclosure menu — desktop and mobile are two responsive modes of the same component, same labels, same ordering, same accents, same active/focus language. The five-scene world (v4.0.1) runs on scene ids (`home / systems / magic / work / media` — the orphaned `#about` scene was removed with the About document as the only canonical About) with hash routing, browser history, and hover-to-preload all behaving exactly as before; the experiential `#work` scene remains a portfolio scene inside the living world, distinct from the canonical `/work/` document.
 
 **Content-type model (v3.7):** every article carries a required frontmatter `type` — `article` (field notes / essays), `work` (built-system documentation), `research` (research-programme writing) — validated by the build pipeline and carried through the generated content index. The type drives the Blog's content modes, the card type badges, the article at-a-glance strip, and the home writing list, and `scripts/verify-seo.mjs` proves no content type is orphaned in the export.
 
@@ -94,12 +94,11 @@ RED MAGIC is the site's living-layer experiment: a canvas-based computational or
 
 ## Experience architecture
 
-The whole site is one route with six hash-navigated scenes, wrapped in a persistent "world shell":
+The whole site is one route with five hash-navigated scenes, wrapped in a persistent "world shell":
 
 ```
 one canonical URL ( / )
 ├── #home      ← statically rendered into the HTML (crawlable)
-├── #about     ← lazily loaded scene
 ├── #systems   ← lazily loaded scene
 ├── #magic     ← lazily loaded scene (RED MAGIC)
 ├── #work      ← lazily loaded scene
@@ -120,7 +119,7 @@ Scene changes are URL-addressable (`#systems` is a shareable state), handled by 
 - **GitHub Pages** hosting behind the `/WEB` basePath, deployed by GitHub Actions
 - Server components pick content at build time; client components receive only minimal serializable props
 - Blog bodies exist only in generated static HTML — never in client JavaScript bundles
-- Zero runtime dependencies beyond React/Next; the build, blog, brand, and verification tooling is dependency-free Node.js
+- Zero runtime **package** dependencies beyond React/Next, and dependency-free Node.js for the build, blog, brand, and verification tooling. One deliberate external runtime dependency exists by design: Media items (PDFs, audio, covers) stream from the jsDelivr CDN mirroring of the Contents repository — see the Media foundation notes below
 - **Lateral content graph (v3.9)**: `lib/workRegistry.ts` is the single source of truth for the Selected Work entries; `lib/blog.ts` resolves each article's deterministic lateral destinations from it — an article whose `project` documents a registry system links `/work/`, and `type=research` articles link `/research/`. Article pages render these as crawlable rows in the related section, connecting topic ↔ article ↔ work ↔ research in exported HTML
 - **Home first-action model (v3.9)**: the hero's START HERE strip (a labeled `<nav>`) links the four canonical destinations in exported HTML, and featured work precedes the capabilities grid — proof before practice, every capability carrying its proof link
 - **Media foundation (v4.0.0)**: the former Library scene is now **Media** (`#media`), rendering one discriminated `MediaItem` model — Book, Music, Video, Art — from `data/media.json` (synced from the Contents repository, external `library.json` contract intact; `#library` survives as a normalised alias)
@@ -136,9 +135,11 @@ app/                 routes: home, blog index, blog articles, 404,
 components/          world shell, scenes, navigation, RED MAGIC systems
 components/content/  shared server-rendered content-route system
                      (shell, building blocks, hub view)
-components/scenes/   the six scene components (HomeScene is static)
-components/redmagic/ RED MAGIC engine config (quality budget, runtime
-                     states, adaptive-DPR policy, refresh estimator)
+components/scenes/   the five scene components (HomeScene is static)
+components/redmagic/ RED MAGIC engine modules (v4.0.1): engine
+                     constants, state, simulation, render, input,
+                     lifecycle — plus the pre-existing config,
+                     sprites, and world builders
 content/blog/        markdown article source (frontmatter + body)
 lib/                 data access, SEO graph, hub definitions, brand,
                      schedulers, links, route-registry loader
@@ -234,6 +235,23 @@ npm run build
 
 Runs the blog pipeline, then `next build`, producing the static export in `out/`. Locally the export uses root-relative URLs; in CI (`GITHUB_ACTIONS=true`) every href carries the `/WEB` base path — the deployment target's shape.
 
+## Production preview
+
+```bash
+npm start
+```
+
+`next start` cannot serve `output: "export"` (there is no server runtime), so `npm start` runs `scripts/serve-static.mjs` — a zero-dependency static server for `out/` that mirrors the GitHub Pages contract: directories resolve to `index.html`, unknown paths serve `404.html` with a real 404 status, and byte-range requests are honoured. Run `npm run build` first; the preview serves whatever `out/` currently holds.
+
+## Typecheck and tests
+
+```bash
+npm run typecheck   # tsc --noEmit over application code AND tests
+npm test            # node --test over the suite (118 tests)
+```
+
+Tests are part of the TypeScript project (no exclusions — `tsconfig.json` covers them, `tsconfig.tests.json` scopes them for focused runs) and CI typechecks them before every build. The suite includes `tests/architecture.test.ts`, which pins the v4.0.1 architecture contract: no legacy Library stack, Media as the canonical media layer, `#library` only as the deliberate compatibility alias, one hash parser, one work catalogue, a real static 404, fresh `npm ci` in CI, and RED MAGIC's lazy loading.
+
 ## Verification
 
 ```bash
@@ -251,7 +269,7 @@ Both read only generated artifacts, so they check what actually ships.
 
 GitHub Actions (`.github/workflows/deploy.yml`) deploys `main` to GitHub Pages:
 
-Pages source check → dependencies → Media manifest sync + validation → unit tests → blog pipeline validation → `next build` → SEO verification → brand verification (with regeneration/drift check) → static export validation → deployment manifests → Pages upload → deploy → live revision probe.
+Pages source check → fresh `npm ci` (no `node_modules` cache — npm's package cache only) → Media manifest sync + validation → typecheck (app + tests) → unit tests → blog pipeline validation → `next build` → SEO verification → brand verification (with regeneration/drift check) → static export validation → deployment manifests → Pages upload → deploy → live revision probe.
 
 The pipeline is concurrency-gated and verifies the deployed revision is publicly observable before reporting success.
 

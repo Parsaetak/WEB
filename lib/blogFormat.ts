@@ -6,7 +6,7 @@
  * no generated content data, so nothing from data/blog/posts.json can
  * leak into a client bundle through it.
  *
- * Boundary law (see worklog.md — Blog Data Access):
+ * Boundary law (Blog Data Access):
  * - lib/blog.ts      server-side data access (imports posts.json)
  * - lib/blogFormat.ts  types + formatters (zero data, client-safe)
  *

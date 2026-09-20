@@ -49,18 +49,14 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          # npm's PACKAGE cache only (~/.npm) — never node_modules.
+          # Dependencies are ALWAYS installed fresh below: a restored
+          # node_modules tree could be stale or half-applied, so CI
+          # must run `npm ci` on every build (v4.0.1).
           cache: npm
 
-      - name: Restore node_modules cache
-        id: node-modules-cache
-        uses: actions/cache@v5
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-
-      - name: Install dependencies
-        if: steps.node-modules-cache.outputs.cache-hit != 'true'
-        run: npm ci --legacy-peer-deps --prefer-offline --no-audit --no-fund
+      - name: Install dependencies (always fresh)
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
@@ -76,6 +72,9 @@ jobs:
 
       - name: Validate Media manifest
         run: node scripts/validate-media-manifest.mjs
+
+      - name: Typecheck application code and tests
+        run: npm run typecheck
 
       - name: Run unit tests
         run: npm test

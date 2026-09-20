@@ -19,7 +19,7 @@ cover:
   height: 630
 ---
 
-The [Work scene](/#work) of this site describes RED THEORY as an experimental model for emergence, adaptation, competition, dissolution, and replacement. That is a deliberately compact sentence for the idea doing the most work in this laboratory: that *behaviour* — not structure — is what makes a system alive, and that the five dynamics above are the minimal vocabulary of that behaviour. This article unpacks the model, shows where it is already running in code you can read, and marks the boundary between what is demonstrated and what is not.
+The [Selected Work document](/work/) of this site describes RED THEORY as an experimental model for emergence, adaptation, competition, dissolution, and replacement. That is a deliberately compact sentence for the idea doing the most work in this laboratory: that *behaviour* — not structure — is what makes a system alive, and that the five dynamics above are the minimal vocabulary of that behaviour. This article unpacks the model, shows where it is already running in code you can read, and marks the boundary between what is demonstrated and what is not.
 
 ## The five dynamics
 
@@ -47,7 +47,7 @@ A model of living systems needs an observable instance. Building a separate simu
 
 ## The honest boundary
 
-RED THEORY's public footprint today is exactly two things: the model statement (the [Work scene](/#work) description and this article), and the demonstrated instance (this repository — background, engine, and document history). There is no standalone public simulation repository for RED THEORY, and this article does not claim one. **(Fact.)** The measurement discipline described in [Measuring Machine Intelligence](/blog/measuring-machine-intelligence/) exists precisely so that claims about systems — including this one — stay pinned to instruments rather than enthusiasm.
+RED THEORY's public footprint today is exactly two things: the model statement (the [Selected Work document](/work/) description and this article), and the demonstrated instance (this repository — background, engine, and document history). There is no standalone public simulation repository for RED THEORY, and this article does not claim one. **(Fact.)** The measurement discipline described in [Measuring Machine Intelligence](/blog/measuring-machine-intelligence/) exists precisely so that claims about systems — including this one — stay pinned to instruments rather than enthusiasm.
 
 **(Position)** the next stage of RED THEORY is to move from a demonstrated instance to a formalised, testable model — the same progression the governance frameworks followed from constitution to specification. The site will document that progression as it happens, with the same separation of fact, analysis, and position used here.
 

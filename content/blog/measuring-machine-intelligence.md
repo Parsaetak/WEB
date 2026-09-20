@@ -19,7 +19,7 @@ cover:
   height: 630
 ---
 
-Every frontier lab now publishes capability numbers, and almost none of them publish the thing that actually fails in production: does the system verify its own work, refuse what it is not authorised to do, and stay correct over a long, adversarial session? The [Work scene](/#work) of this site calls the research line attacking that gap **UHIT — the Universal Human Intelligence Test**: an adaptive framework for measuring intelligence, reasoning, transfer, and human-AI performance. This article documents what UHIT publicly is today, what it measures, and — just as deliberately — what it does not claim.
+Every frontier lab now publishes capability numbers, and almost none of them publish the thing that actually fails in production: does the system verify its own work, refuse what it is not authorised to do, and stay correct over a long, adversarial session? The [Selected Work document](/work/) of this site calls the research line attacking that gap **UHIT — the Universal Human Intelligence Test**: an adaptive framework for measuring intelligence, reasoning, transfer, and human-AI performance. This article documents what UHIT publicly is today, what it measures, and — just as deliberately — what it does not claim.
 
 A register note first, in the house style: what the two specification documents say is **fact** and checkable in their sources; what the design implies is **analysis**; where I commit to a position, it is marked as mine.
 

@@ -16,7 +16,7 @@ import type {
 
 import type {
   SceneId
-} from "@/components/LivingShell";
+} from "@/lib/sceneIds";
 
 import type {
   HomeWritingPost
@@ -48,16 +48,10 @@ import styles from "@/components/SceneRegistry.module.css";
  * importing the scene renders it synchronously into <main> in the
  * exported HTML: crawlers, social scrapers and no-JS visitors read
  * the real homepage immediately, hydration still matches (initial
- * scene is "home" on both sides), and the other five scenes keep
- * their interaction-gated loading.
+ * scene is "home" on both sides), and the other four scenes keep
+ * their interaction-gated loading (v4.0.1: the about scene is gone
+ * — /about/ is the canonical document).
  */
-
-const AboutScene = dynamic(
-  () =>
-    loadSceneModule(
-      "about"
-    )
-);
 
 const SystemsScene = dynamic(
   () =>
@@ -93,7 +87,6 @@ const SCENE_COMPONENTS:
     ComponentType
   > = {
   home: HomeScene,
-  about: AboutScene,
   systems: SystemsScene,
   magic: RedMagicScene,
   work: WorkScene,

@@ -25,17 +25,18 @@ const VALID_BOOK = {
   type: "book"
 };
 
-function makeFetcher(files) {
-  const map = new Map();
+function makeFetcher(files: Record<string, Uint8Array>) {
+  const map = new Map<string, Uint8Array>();
 
   for (const [path, data] of Object.entries(files)) {
     map.set(path, new Uint8Array(data));
   }
 
-  return async (url, start, end) => {
+  return async (url: string, start: number, end: number) => {
     const path = new URL(url).pathname.replace(/^\//, "");
 
-    const bytes = map.get(decodeURIComponent(path));
+    const bytes: Uint8Array | undefined =
+      map.get(decodeURIComponent(path));
 
     if (!bytes) {
       return {
@@ -224,7 +225,7 @@ describe("buildMediaManifest (the sync pipeline core)", () => {
     assert.equal(track.artist, "Test Artist");
     assert.equal(track.album, "Test Album");
     assert.equal(track.metadataSource, "embedded");
-    assert.ok(Math.abs(track.duration - 9) < 0.5);
+    assert.ok(Math.abs(track.duration! - 9) < 0.5);
     assert.equal(track.cover, "Album/01 First.jpeg");
   });
 

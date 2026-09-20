@@ -1,14 +1,12 @@
 /*
  * lib/mediaRepository.ts — Media data layer (v4.0.0).
  *
- * Canonical successor of lib/contentRepository.ts (removed): every
- * Library term became Media and the manifest moved from
- * data/library.json to data/media.json. The external contract —
- * Parsaetak/Contents/Projects/library.json — is untouched; the CI
- * sync step (scripts/sync-media-manifest.mjs) normalises it into
- * data/media.json and merges the optional Music source.
+ * THE canonical media data layer: the CI sync step
+ * (scripts/sync-media-manifest.mjs) normalises the external
+ * manifest contract — Parsaetak/Contents/Projects/library.json —
+ * into data/media.json and merges the optional Music source.
  *
- * Data flow (see worklog.md — Data Pipeline):
+ * Data flow (Media Data Pipeline):
  *   source manifest (synced + validated at build time)
  *   → runtime normalization (lib/media/normalize.ts, one pass)
  *   → derived MediaItem list (derived ONCE at module scope)

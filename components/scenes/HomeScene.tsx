@@ -5,6 +5,11 @@ import HomeOriginOrganism from "@/components/HomeOriginOrganism";
 import { GITHUB_LINK } from "@/lib/links";
 import { routeHref } from "@/lib/hubs";
 
+import {
+  WORK_ENTRIES,
+  type WorkEntry
+} from "@/lib/workRegistry";
+
 import { formatBlogDate } from "@/lib/blogFormat";
 
 import type { ReactNode } from "react";
@@ -192,14 +197,17 @@ const heroEntryPoints: readonly {
 ];
 
 /*
- * Featured projects — the highest-signal public work, verified
- * against the actual repositories. Each card names WHAT IT IS,
- * WHAT PROBLEM IT ADDRESSES, and WHERE TO SEE IT (repository +
- * field notes article). The full portfolio lives in the Work scene.
+ * FEATURED WORK (v4.0.1) — the homepage subset of the canonical work
+ * catalogue. Every card fact (name, type, description, stack,
+ * repository, field-notes article) comes from lib/workRegistry.ts;
+ * this module contributes ONLY presentation: the display order, the
+ * committed artwork, and the compact link labels. There is no second
+ * project table on the homepage — the /work/ document, the Work
+ * scene and this strip render the same registry.
  */
+
 type FeaturedProject = {
   number: string;
-  code: string;
   title: string;
   category: string;
   copy: string;
@@ -223,103 +231,130 @@ const PROJECT_IMAGE_BASE = `${
   process.env.NEXT_PUBLIC_BASE_PATH ?? ""
 }/images/projects`;
 
-const featuredProjects: readonly FeaturedProject[] = [
+/*
+ * Presentation layer: which catalogue entries the homepage features,
+ * in which order, with which committed artwork and compact labels.
+ * Entries are referenced by their stable blogProject id; a typo (or
+ * a removed entry) fails loudly below instead of silently rendering
+ * an empty card.
+ */
+type FeaturedSpec = {
+  project: string;
+  image: {
+    file: string;
+    alt: string;
+  };
+  repositoryLabel?: string;
+  live?: {
+    label: string;
+    href: string;
+  };
+  notesLabel: string;
+};
+
+const FEATURED_SPECS: readonly FeaturedSpec[] = [
   {
-    number: "01",
-    code: "SHEYTAN",
-    title: "SHEYTAN Local Agent",
-    category: "LOCAL-FIRST AI LABORATORY",
-    copy:
-      "A desktop AI engineering laboratory: managed llama.cpp inference, a real agent loop, isolated coding workspaces, and objective verification — all running locally.",
-    tags: ["GO", "WAILS", "LLAMA.CPP"],
-    repository: "https://github.com/Parsaetak/SHEYTAN-local-agent",
-    repositoryLabel: "GitHub ↗",
-    notesHref: "/blog/sheytan-the-local-first-laboratory/",
-    notesLabel: "Field notes",
+    project: "sheytan-local-agent",
     image: {
-      src: `${PROJECT_IMAGE_BASE}/sheytan-agent-lab.svg`,
-      alt: "Abstract diagram of the SHEYTAN local agent laboratory: a framed local workspace containing a four-stage agent loop — plan, act, verify, remember — orbiting a red 13-point core",
-      width: 1200,
-      height: 630
-    }
+      file: "sheytan-agent-lab.svg",
+      alt: "Abstract diagram of the SHEYTAN local agent laboratory: a framed local workspace containing a four-stage agent loop — plan, act, verify, remember — orbiting a red 13-point core"
+    },
+    repositoryLabel: "GitHub ↗",
+    notesLabel: "Field notes"
   },
   {
-    number: "02",
-    code: "UHIT",
-    title: "Universal Human Intelligence Test",
-    category: "INTELLIGENCE MEASUREMENT",
-    copy:
-      "The measurement programme behind this laboratory: UHIT — the Universal Human Intelligence Test — realised as the AIST-2026.09 standard and the ASI-100-Elite benchmark, built on verified operational intelligence.",
-    tags: ["AIST", "ASI-100", "VERIFICATION"],
-    repository: "https://github.com/Parsaetak/Contents/tree/AI-Tests",
+    project: "uhit",
+    image: {
+      file: "uhit-intelligence-scale.svg",
+      alt: "Abstract measurement artwork for UHIT: a rising scale of evaluation bars under a dashed elite threshold, one result ringed and marked in red"
+    },
     repositoryLabel: "Specifications ↗",
-    notesHref: "/blog/measuring-machine-intelligence/",
-    notesLabel: "Field notes",
-    image: {
-      src: `${PROJECT_IMAGE_BASE}/uhit-intelligence-scale.svg`,
-      alt: "Abstract measurement artwork for UHIT: a rising scale of evaluation bars under a dashed elite threshold, one result ringed and marked in red",
-      width: 1200,
-      height: 630
-    }
+    notesLabel: "Field notes"
   },
   {
-    number: "03",
-    code: "FREEIRAN",
-    title: "FreeIran",
-    category: "OPEN-SOURCE VPN MANAGER",
-    copy:
-      "A free, open-source VPN configuration manager for Windows: a Go multi-core runtime that discovers, tests, maintains, and runs public proxy configurations.",
-    tags: ["GO", "XRAY", "V2RAY"],
-    repository: "https://github.com/Parsaetak/FreeIran",
+    project: "freeiran",
+    image: {
+      file: "freeiran-vpn-mesh.svg",
+      alt: "Abstract mesh artwork for FreeIran: a field of proxy network nodes with two bright routing tunnels crossing it toward a highlighted client node"
+    },
     repositoryLabel: "GitHub ↗",
-    notesHref: "/blog/freeiran-engineering-notes/",
-    notesLabel: "Engineering notes",
-    image: {
-      src: `${PROJECT_IMAGE_BASE}/freeiran-vpn-mesh.svg`,
-      alt: "Abstract mesh artwork for FreeIran: a field of proxy network nodes with two bright routing tunnels crossing it toward a highlighted client node",
-      width: 1200,
-      height: 630
-    }
+    notesLabel: "Engineering notes"
   },
   {
-    number: "04",
-    code: "RED MAGIC",
-    title: "RED MAGIC",
-    category: "COMPUTATIONAL ORGANISM",
-    copy:
-      "A living canvas organism that turns this website into a computational experiment — adaptation, perception, and visible state on every page.",
-    tags: ["CANVAS", "ADAPTATION"],
-    liveHref: "#magic",
-    liveLabel: "Live experiment",
-    notesHref: "/blog/why-the-website-is-a-living-system/",
-    notesLabel: "Article",
+    project: "red-magic",
     image: {
-      src: `${PROJECT_IMAGE_BASE}/red-magic-organism.svg`,
-      alt: "Abstract artwork of the RED MAGIC computational organism: a red nucleus inside three breathing membranes with flow currents and orbiting signal particles",
-      width: 1200,
-      height: 630
-    }
+      file: "red-magic-organism.svg",
+      alt: "Abstract artwork of the RED MAGIC computational organism: a red nucleus inside three breathing membranes with flow currents and orbiting signal particles"
+    },
+    live: {
+      label: "Live experiment",
+      href: "#magic"
+    },
+    notesLabel: "Article"
   },
   {
-    number: "05",
-    code: "WEB",
-    title: "This website",
-    category: "STATIC LIVING SYSTEM",
-    copy:
-      "The site you are reading: a statically exported Next.js application that behaves like a living system — six scenes, a markdown-driven blog, and a generated SEO graph.",
-    tags: ["NEXT.JS", "REACT", "STATIC EXPORT"],
-    repository: "https://github.com/Parsaetak/WEB",
+    project: "web-platform",
+    image: {
+      file: "web-static-living-system.svg",
+      alt: "Abstract diagram of this website as a static living system: a red 13-point identity core linking six world scenes and a chained blog route tree"
+    },
     repositoryLabel: "GitHub ↗",
-    notesHref: "/blog/the-anatomy-of-a-fast-static-site/",
-    notesLabel: "How it works",
-    image: {
-      src: `${PROJECT_IMAGE_BASE}/web-static-living-system.svg`,
-      alt: "Abstract diagram of this website as a static living system: a red 13-point identity core linking six world scenes and a chained blog route tree",
-      width: 1200,
-      height: 630
-    }
+    notesLabel: "How it works"
   }
 ];
+
+function entryByProject(
+  project: string
+): WorkEntry {
+  const entry =
+    WORK_ENTRIES.find(
+      (candidate) =>
+        candidate.blogProject === project
+    ) ?? null;
+
+  if (!entry) {
+    throw new Error(
+      `Home scene featured work: no work registry entry for project "${project}" — the homepage presentation and lib/workRegistry.ts have drifted apart.`
+    );
+  }
+
+  return entry;
+}
+
+/*
+ * Card derivation: facts from the registry, presentation from the
+ * spec. The repository link is the entry's first external link; the
+ * notes link is the entry's field-notes article (articleSlug).
+ */
+const featuredProjects: readonly FeaturedProject[] =
+  FEATURED_SPECS.map((spec, index): FeaturedProject => {
+    const entry = entryByProject(spec.project);
+
+    const repository =
+      entry.links.find(
+        (link) => link.external
+      ) ?? null;
+
+    return {
+      number: String(index + 1).padStart(2, "0"),
+      title: entry.name,
+      category: entry.type,
+      copy: entry.what,
+      tags: entry.tech.split(" · "),
+      repository: repository?.href,
+      repositoryLabel: spec.repositoryLabel,
+      liveHref: spec.live?.href,
+      liveLabel: spec.live?.label,
+      notesHref: `/blog/${entry.articleSlug}/`,
+      notesLabel: spec.notesLabel,
+      image: {
+        src: `${PROJECT_IMAGE_BASE}/${spec.image.file}`,
+        alt: spec.image.alt,
+        width: 1200,
+        height: 630
+      }
+    };
+  });
 
 /*
  * The working pipeline, stated in human language (v3.2). One

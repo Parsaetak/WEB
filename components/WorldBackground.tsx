@@ -26,7 +26,7 @@ import styles from "@/components/WorldBackground.module.css";
 /*
  * WORLD BACKGROUND — ONE CONTINUOUS LIVING SYSTEM.
  *
- * Architecture (see worklog.md — Living Organism):
+ * Architecture (Living Organism):
  *
  * LOOPED TIMESTABLES (CSS, compositor-only):
  *   MICRO      particles / sparks (6–17 s, per-element phase offsets)

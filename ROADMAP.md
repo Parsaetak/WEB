@@ -45,11 +45,12 @@ The existing world layer remains the experiential layer:
 
 ```text
 #home
-#about
 #systems
 #magic
 #work
-#media (done in v4.0.0; #library kept as a normalised backward-compatible alias)
+#media (done in v4.0.0; #library kept as a normalised backward-compatible
+       alias; the #about scene was removed in v4.0.1 — /about/ is the only
+       canonical About)
 ```
 
 The document layer remains the canonical, crawlable web architecture.
@@ -125,13 +126,11 @@ ROADMAP.md
     ↓
 future product direction
 
-worklog.md
+Git history
     ↓
-historical implementation record
-
-Updated-Files.md
-    ↓
-release/change-oriented file summary
+historical implementation record (the only one — the former
+worklog.md / Updated-Files.md diaries were removed in v4.0.1;
+commit messages and diffs are the record)
 ```
 
 Do not allow these documents to become overlapping copies of one another.
@@ -821,6 +820,10 @@ v4.0  Media Architecture + Library → Media + Music Player (shipped — the
       Music Player was folded into v4.0 rather than split into v4.1,
       because the Media model without a player would have shipped a
       listening surface that could not listen)
+v4.0.1 Repository cleanup + architecture-integrity pass (shipped — no new
+      product features: Library migration finished, one hash parser, one
+      work catalogue, real static 404, RED MAGIC engine modularization,
+      tests under typecheck, fresh CI installs, working static preview)
 v4.1  Video Player enhancements
 v4.2  Art + Digital Shop foundation
 v4.3  Secure digital delivery / purchase flow

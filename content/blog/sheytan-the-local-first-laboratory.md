@@ -19,7 +19,7 @@ cover:
   height: 630
 ---
 
-Most agent demos end at the impressive part: the model produces something plausible and the video cuts. SHEYTAN Local Agent — the flagship of the [AI Systems](/#work) line on this site — is built for everything that happens *after* the model speaks. It is a local-first desktop AI engineering environment whose founding rule is the same one this laboratory's [reasoning frameworks](/blog/reasoning-is-a-system-property/) are built on: **the model is never the authority on whether an engineering task succeeded — objective verification is.**
+Most agent demos end at the impressive part: the model produces something plausible and the video cuts. SHEYTAN Local Agent — the flagship of the [AI systems line](/work/) on this site — is built for everything that happens *after* the model speaks. It is a local-first desktop AI engineering environment whose founding rule is the same one this laboratory's [reasoning frameworks](/blog/reasoning-is-a-system-property/) are built on: **the model is never the authority on whether an engineering task succeeded — objective verification is.**
 
 A register note, in the house style: everything below about the system's behaviour is **fact**, checkable in the [public repository](https://github.com/Parsaetak/SHEYTAN-local-agent); interpretation is marked as analysis.
 

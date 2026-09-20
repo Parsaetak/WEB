@@ -20,7 +20,7 @@ import {
 
 import type {
   SceneId
-} from "@/components/LivingShell";
+} from "@/lib/sceneIds";
 
 /*
  * SCENE PRELOADER — THIRD GENERATION
@@ -63,7 +63,6 @@ import type {
 const SCENE_ORDER: readonly SceneId[] =
   [
     "home",
-    "about",
     "systems",
     "magic",
     "work",
@@ -88,11 +87,6 @@ const preloaders: Record<
   home: () =>
     import(
       "@/components/scenes/HomeScene"
-    ),
-
-  about: () =>
-    import(
-      "@/components/scenes/AboutScene"
     ),
 
   systems: () =>
@@ -366,7 +360,7 @@ function getAdjacentScenes(
   ) {
     return [
       "home",
-      "about"
+      "systems"
     ];
   }
 

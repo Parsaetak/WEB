@@ -27,8 +27,8 @@ import {
 import { extractAudioMetadata } from "../scripts/media/audioMetadata.mjs";
 
 async function withFileServer(
-  files,
-  run
+  files: Map<string, Uint8Array>,
+  run: (base: string) => Promise<void>
 ) {
   const server = createServer((request, response) => {
     const path = decodeURIComponent(
@@ -75,7 +75,9 @@ async function withFileServer(
     response.end(bytes);
   });
 
-  await promisify(server.listen.bind(server))(0, "127.0.0.1");
+  await new Promise<void>((resolve) => {
+    server.listen(0, "127.0.0.1", () => resolve());
+  });
 
   try {
     const address = server.address();
@@ -134,7 +136,7 @@ describe("range pipeline over real HTTP", () => {
 
         assert.equal(result.source, "embedded");
         assert.equal(result.fields.title, "Test Track");
-        assert.ok(Math.abs(result.duration - 120) < 0.5);
+        assert.ok(Math.abs(result.duration! - 120) <  0.5);
       }
     );
 
@@ -188,7 +190,7 @@ describe("range pipeline over real HTTP", () => {
 
         assert.equal(result.source, "embedded");
         assert.equal(result.fields.title, "M4A Track");
-        assert.ok(Math.abs(result.duration - 42) < 0.001);
+        assert.ok(Math.abs(result.duration! - 42) <  0.001);
       }
     );
   });
@@ -218,7 +220,7 @@ describe("range pipeline over real HTTP", () => {
 
         assert.equal(result.source, "embedded");
         assert.equal(result.fields.genre, "Classical");
-        assert.ok(Math.abs(result.duration - 5) < 0.001);
+        assert.ok(Math.abs(result.duration! - 5) <  0.001);
       }
     );
   });

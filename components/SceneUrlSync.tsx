@@ -10,7 +10,8 @@ import type {
 } from "@/lib/sceneIds";
 
 import {
-  SCENE_ID_ALIASES
+  SCENE_ID_ALIASES,
+  SCENE_IDS
 } from "@/lib/sceneIds";
 
 type SceneUrlSyncProps = {
@@ -18,21 +19,27 @@ type SceneUrlSyncProps = {
   onSceneChange: (
     scene: SceneId
   ) => void;
+  /*
+   * Called ONCE after the initial hash resolution completes — the
+   * shell uses it to drop its boot loading screen and start the
+   * scene preloader only after the URL has spoken (v4.0.1: this
+   * component is the single owner of that decision).
+   */
+  onReady?: () => void;
 };
 
-const VALID_SCENES: readonly SceneId[] =
-  [
-    "home",
-    "about",
-    "systems",
-    "magic",
-    "work",
-    "media"
-  ];
-
-function readSceneFromHash():
-  | SceneId
-  | null {
+/*
+ * THE HASH PARSER (v4.0.1). SceneUrlSync is the one authoritative
+ * URL → world-scene parser and the one code path allowed to rewrite
+ * the address bar. Contract:
+ *
+ *   #media      → media
+ *   #library    → media (deliberate compatibility alias)
+ *   #<invalid>  → home (safe fallback)
+ *   "" / #home  → home
+ *   encoded     → decoded first, then trimmed/lowercased
+ */
+function readSceneFromHash(): SceneId {
   let hash =
     window.location.hash
       .replace(
@@ -83,13 +90,19 @@ function readSceneFromHash():
     return aliased;
   }
 
-  return VALID_SCENES.includes(
+  return SCENE_IDS.includes(
     hash as SceneId
   )
     ? (hash as SceneId)
     : "home";
 }
 
+/*
+ * Canonicalisation — the only URL rewrite path. Home renders as the
+ * clean path (no hash); every other scene as "#<scene>".
+ * replaceState never fires hashchange or popstate, so rewriting can
+ * never re-enter the parser.
+ */
 function normalizeHash(
   scene: SceneId
 ) {
@@ -117,21 +130,25 @@ function normalizeHash(
 
 export default function SceneUrlSync({
   scene,
-  onSceneChange
+  onSceneChange,
+  onReady
 }: SceneUrlSyncProps) {
   /*
-   * Scene and handler live in refs so the browser listeners below are
-   * registered exactly once per mount. The previous shape depended on
-   * [scene, onSceneChange] and resubscribed both window listeners on
-   * every scene change — correct, but needless teardown/setup churn
-   * (and one more retained closure per swap) on a permanently-mounted
-   * shell component.
+   * Scene and handlers live in refs so the browser listeners below
+   * are registered exactly once per mount. The previous shape
+   * depended on [scene, onSceneChange] and resubscribed both window
+   * listeners on every scene change — correct, but needless
+   * teardown/setup churn (and one more retained closure per swap) on
+   * a permanently-mounted shell component.
    */
   const sceneRef =
     useRef(scene);
 
   const onSceneChangeRef =
     useRef(onSceneChange);
+
+  const onReadyRef =
+    useRef(onReady);
 
   useEffect(() => {
     sceneRef.current = scene;
@@ -143,25 +160,27 @@ export default function SceneUrlSync({
   }, [onSceneChange]);
 
   useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
+
+  useEffect(() => {
     const initialScene =
       readSceneFromHash();
 
-    const nextScene =
-      initialScene ??
-      "home";
-
     if (
-      nextScene !==
+      initialScene !==
       sceneRef.current
     ) {
       onSceneChangeRef.current(
-        nextScene
+        initialScene
       );
     }
 
     normalizeHash(
-      nextScene
+      initialScene
     );
+
+    onReadyRef.current?.();
   }, []);
 
   useEffect(() => {
@@ -170,32 +189,22 @@ export default function SceneUrlSync({
         const nextScene =
           readSceneFromHash();
 
-        if (
+        onSceneChangeRef.current(
           nextScene
-        ) {
-          onSceneChangeRef.current(
-            nextScene
-          );
+        );
 
-          /*
-           * Canonicalize the URL after any hash navigation.
-           * Invalid (e.g. "#bogus") and aliased (e.g. "#home",
-           * "#MAGIC") hashes resolve to a scene above, but the
-           * raw hash would otherwise stay in the address bar —
-           * inconsistent with the load-time normalization in the
-           * mount effect, which always rewrites to the canonical
-           * form. replaceState never fires hashchange or
-           * popstate, so this cannot re-enter.
-           */
-          normalizeHash(
-            nextScene
-          );
-
-          return;
-        }
-
+        /*
+         * Canonicalize the URL after any hash navigation.
+         * Invalid (e.g. "#bogus") and aliased (e.g. "#library",
+         * "#MAGIC") hashes resolve to a scene above, but the raw
+         * hash would otherwise stay in the address bar —
+         * inconsistent with the load-time normalization in the
+         * mount effect, which always rewrites to the canonical
+         * form. replaceState never fires hashchange or popstate,
+         * so this cannot re-enter.
+         */
         normalizeHash(
-          sceneRef.current
+          nextScene
         );
       };
 

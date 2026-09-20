@@ -37,35 +37,31 @@ import type {
 } from "@/lib/homeWriting";
 
 /*
- * SCENE VOCABULARY (v4.0.0) — the canonical SceneId type and the
- * legacy "#library" alias map live in lib/sceneIds.ts; LivingShell
- * re-exports them so the historical import surface stays stable.
+ * SCENE VOCABULARY (v4.0.1) — the canonical SceneId type, the
+ * ordered id list and the legacy "#library" alias map live in
+ * lib/sceneIds.ts, the one neutral vocabulary module; shell
+ * components import them from there directly.
  */
 import type {
   SceneId
 } from "@/lib/sceneIds";
 
-import {
-  SCENE_ID_ALIASES
-} from "@/lib/sceneIds";
-
 export type { SceneId };
-
-export { SCENE_ID_ALIASES };
 
 export type SceneChangeSource =
   | "navigation"
   | "history";
 
 /*
- * INTERNAL SCENE REGISTRY (v3.2 / v4.0.0) — the six-scene world.
- * Scene ids (home / about / systems / magic / work / media) are
- * interaction states of the shell, NOT navigation labels; the labels
- * here feed the HUD status readout and hash parsing. The visible
- * navigation is built from lib/navigation.ts (PRIMARY_NAV +
- * WORLD_NAV), which leads with the professional destinations. The
- * v4.0.0 Media migration renamed the library scene id to "media";
- * "#library" survives as a normalised alias (SCENE_ID_ALIASES).
+ * INTERNAL SCENE REGISTRY (v3.2 / v4.0.1) — the five-scene world.
+ * Scene ids (home / systems / magic / work / media) are interaction
+ * states of the shell, NOT navigation labels; the labels here feed
+ * the HUD status readout only. Hash parsing and canonicalisation
+ * belong to SceneUrlSync (the single hash parser) and derive from
+ * lib/sceneIds.ts. The visible navigation is built from
+ * lib/navigation.ts (PRIMARY_NAV + WORLD_NAV), which leads with the
+ * professional destinations; the canonical About document is
+ * /about/ — there is no #about scene (v4.0.1).
  */
 const SCENES: readonly {
   id: SceneId;
@@ -77,11 +73,6 @@ const SCENES: readonly {
       id: "home",
       label: "Home",
       shortLabel: "HOME"
-    },
-    {
-      id: "about",
-      label: "About",
-      shortLabel: "ABOUT"
     },
     {
       id: "systems",
@@ -106,8 +97,6 @@ const SCENES: readonly {
   ];
 
 type LivingShellProps = {
-  initialScene?: SceneId;
-
   /*
    * SERVER-SIDE WRITING SELECTION (v3.0): computed once in
    * app/page.tsx from the blog content index and passed down to the
@@ -117,75 +106,14 @@ type LivingShellProps = {
   writingPosts?: readonly HomeWritingPost[];
 };
 
-function readInitialScene(): SceneId {
-  if (
-    typeof window ===
-    "undefined"
-  ) {
-    return "home";
-  }
-
-  const hash =
-    window.location.hash
-      .replace(
-        /^#/,
-        ""
-      )
-      .toLowerCase();
-
-  const aliased =
-    SCENE_ID_ALIASES[hash];
-
-  if (aliased) {
-    return aliased;
-  }
-
-  return SCENES.some(
-    (scene) =>
-      scene.id === hash
-  )
-    ? (hash as SceneId)
-    : "home";
-}
-
-function normalizeInitialHash(
-  scene: SceneId
-) {
-  if (
-    typeof window ===
-    "undefined"
-  ) {
-    return;
-  }
-
-  const targetHash =
-    scene === "home"
-      ? ""
-      : `#${scene}`;
-
-  if (
-    window.location.hash ===
-    targetHash
-  ) {
-    return;
-  }
-
-  window.history.replaceState(
-    null,
-    "",
-    `${window.location.pathname}${window.location.search}${targetHash}`
-  );
-}
-
 export default function LivingShell({
-  initialScene = "home",
   writingPosts
 }: LivingShellProps) {
   const [
     activeScene,
     setActiveScene
   ] = useState<SceneId>(
-    initialScene
+    "home"
   );
 
   /*
@@ -194,32 +122,30 @@ export default function LivingShell({
    * resubscribing on every scene change.
    */
   const activeSceneRef =
-    useRef<SceneId>(initialScene);
+    useRef<SceneId>("home");
 
   const [
     urlReady,
     setUrlReady
   ] = useState(false);
 
-  useEffect(() => {
-    const initialUrlScene =
-      readInitialScene();
-
-    normalizeInitialHash(
-      initialUrlScene
+  /*
+   * HASH OWNERSHIP (v4.0.1): SceneUrlSync is the single hash
+   * parser; it resolves the initial URL, reports the scene through
+   * onSceneChange, canonicalises the address bar and signals
+   * onReady once the boot resolution is done — that signal drops
+   * the loading screen and starts the preloader. The shell itself
+   * never parses the URL.
+   */
+  const handleUrlReady =
+    useCallback(
+      () => {
+        setUrlReady(
+          true
+        );
+      },
+      []
     );
-
-    activeSceneRef.current =
-      initialUrlScene;
-
-    setActiveScene(
-      initialUrlScene
-    );
-
-    setUrlReady(
-      true
-    );
-  }, []);
 
   /*
    * Connect the global organism to the active scene. The first run
@@ -380,8 +306,8 @@ export default function LivingShell({
   /*
    * Scene warming (v3.4): hover/focus on a scene action preloads
    * that scene's module immediately, bypassing the background
-   * scheduler — the same explicit-intent contract SceneNavigator
-   * honored, now carried by the unified navigation.
+   * scheduler — the same explicit-intent contract the unified
+   * navigation has carried since the scene-link row was retired.
    */
   const warmScene = useCallback((id: string) => {
     void preloadScene(id as SceneId);
@@ -412,6 +338,9 @@ export default function LivingShell({
         }
         onSceneChange={
           changeSceneFromHistory
+        }
+        onReady={
+          handleUrlReady
         }
       />
 
@@ -554,8 +483,9 @@ export default function LivingShell({
           * first client render matches the server render (the
           * initial scene state is "home" on both), so hydration
           * cannot mismatch; the URL-determined scene correction
-          * happens in the mount effect below, behind the loading
-          * screen, through the normal transition machinery.
+          * happens through SceneUrlSync's single parser on mount,
+          * behind the loading screen, through the normal transition
+          * machinery.
           */}
         <SceneRegistry
           scene={

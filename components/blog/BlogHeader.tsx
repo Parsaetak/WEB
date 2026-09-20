@@ -19,9 +19,8 @@ import styles from "./BlogHeader.module.css";
  * the content documents and the topic hubs. BLOG is the active
  * area; the experimental world scenes (SYSTEMS, RED MAGIC, MEDIA)
  * follow as the quieter secondary group; GitHub rides as a utility
- * entry inside the ≤860px disclosure menu. The separate scene-link
- * row and the standalone CompactMenu island are retired — the
- * disclosure trigger is the unified navigation's own compact mode.
+ * entry inside the ≤860px disclosure menu. The disclosure trigger is
+ * the unified navigation's own compact mode.
  */
 
 const NAV_ENTRIES: readonly UnifiedNavEntry[] = [

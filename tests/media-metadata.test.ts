@@ -216,10 +216,10 @@ describe("FLAC metadata", () => {
 });
 
 describe("extractAudioMetadata (range pipeline)", () => {
-  function makeRangeFetcher(file) {
+  function makeRangeFetcher(file: Uint8Array) {
     const bytes = new Uint8Array(file);
 
-    return async (url, start, end) => {
+    return async (url: string, start: number, end: number) => {
       assert.ok(url.startsWith("https://cdn.test/"), "test URL only");
 
       const rangeEnd = end === null ? bytes.length - 1 : end;
@@ -257,7 +257,7 @@ describe("extractAudioMetadata (range pipeline)", () => {
     assert.equal(result.source, "embedded");
     assert.equal(result.fields.title, "Test Track");
     assert.ok(result.duration);
-    assert.ok(Math.abs(result.duration - 8) < 0.5);
+    assert.ok(Math.abs(result.duration! - 8) < 0.5);
     assert.equal(result.exact, true);
   });
 
@@ -272,7 +272,7 @@ describe("extractAudioMetadata (range pipeline)", () => {
 
     assert.equal(result.source, "embedded");
     assert.equal(result.fields.title, "M4A Track");
-    assert.ok(Math.abs(result.duration - 21) < 0.001);
+    assert.ok(Math.abs(result.duration! - 21) < 0.001);
   });
 
   it("extracts FLAC metadata including exact duration", async () => {
@@ -286,7 +286,7 @@ describe("extractAudioMetadata (range pipeline)", () => {
 
     assert.equal(result.source, "embedded");
     assert.equal(result.fields.artist, "FLAC Artist");
-    assert.ok(Math.abs(result.duration - 12.5) < 0.001);
+    assert.ok(Math.abs(result.duration! - 12.5) < 0.001);
   });
 
   it("never fabricates fields for a hostile/empty source", async () => {

@@ -23,13 +23,18 @@
  * timers of its own. Bounded by design.
  */
 
+import type {
+  SceneId
+} from "@/lib/sceneIds";
+
+/*
+ * The mood vocabulary is the world-shell scene vocabulary plus the
+ * one static mood used outside the shell (the blog renders as
+ * "archive"). Derived from lib/sceneIds.ts so the two can never
+ * drift apart (v4.0.1).
+ */
 export type WorldSceneMood =
-  | "home"
-  | "about"
-  | "systems"
-  | "magic"
-  | "work"
-  | "media"
+  | SceneId
   | "archive";
 
 export type WorldEvent =

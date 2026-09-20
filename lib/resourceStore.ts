@@ -18,7 +18,7 @@
  *   `staleAfter` elapses (checked lazily on access and in sweeps)
  * - explicit invalidation + safe retry after eviction
  *
- * RESOURCE LIFETIME CLASSES (see worklog.md — Cache Policy):
+ * RESOURCE LIFETIME CLASSES (Cache Policy):
  *
  * - "immutable"    LONG-LIVED. Build-stamped data, content-addressed
  *                  assets, stable configuration. Kept until evicted by
