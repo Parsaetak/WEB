@@ -17,7 +17,18 @@ import styles from "@/components/UnifiedSiteNav.module.css";
 import { allowsSpeculativeNetwork } from "@/lib/connection";
 
 /*
- * INTENT WARMING DISCIPLINE (v4.0.3) — the mechanism that makes
+ * ROUTE PROGRESS INTENT EVENT — the SAME contract literal
+ * components/RouteProgress.tsx listens for (tests/route-progress.test.ts
+ * asserts both sides carry the identical string, so they can never
+ * drift). Deliberately a local constant, not an import: importing the
+ * progress host into the navigation island would couple the two
+ * client chunk graphs — the island and the host stay independently
+ * chunkable, and no route loads code it does not render.
+ */
+const ROUTE_PROGRESS_EVENT = "web:route-progress";
+
+/*
+ * INTENT WARMING DISCIPLINE (v4.0.5) — the mechanism that makes
  * clicking a tab feel immediate, bounded so it can never compete with
  * critical loading:
  *
@@ -25,12 +36,17 @@ import { allowsSpeculativeNetwork } from "@/lib/connection";
  *                    intent; the fetch overlaps the ~100ms before the
  *                    click event commits)
  * - keyboard focus → warm NOW (explicit navigation intent)
- * - pointer-enter  → warm after a short DWELL (WARM_DWELL_MS),
- *                    cancelled on pointer-leave. In v4.0.2 every
- *                    hover fired instantly, so sweeping the cursor
- *                    across the track fetched every tab it crossed;
- *                    the dwell makes a resting pointer the only
- *                    trigger.
+ * - hover          → VISUAL ANIMATION ONLY. Measured in v4.0.5: even
+ *                    the 130ms dwell warm of v4.0.3 fetched
+ *                    destination payloads when a cursor merely
+ *                    crossed the track (browser automation's own
+ *                    move-to-target gesture triggered 134KB of
+ *                    payload fetches before any click), and the
+ *                    warmed fetches did not measurably reduce
+ *                    click-to-commit time — the dominant cost of
+ *                    leaving the home route is the world shell
+ *                    unmount, not the payload fetch. A cursor sweep
+ *                    across the navigation generates ZERO requests.
  * - save-data / 2g connections skip route warming entirely (the same
  *   lib/connection.ts probe the background scheduler applies to
  *   speculative work)
@@ -45,8 +61,15 @@ import { allowsSpeculativeNetwork } from "@/lib/connection";
  * export fetches the destination's RSC payload exactly once — one
  * small text file per intended destination. Viewport prefetch stays
  * off (prefetch={false}) — nothing is fetched continuously.
+ *
+ * ROUTE PROGRESS (v4.0.5): a normal click on an internal link also
+ * fires ROUTE_PROGRESS_EVENT so the root-mounted top progress line
+ * (components/RouteProgress.tsx) can show activity for slow
+ * navigations. Excluded: modifier clicks, new-tab clicks, external
+ * links, and same-route clicks — the same exclusion matrix the
+ * warming discipline applies. The navigation itself is ALWAYS
+ * native next/link behavior — never prevented, never delayed.
  */
-const WARM_DWELL_MS = 130;
 
 /*
  * UNIFIED SITE NAVIGATION (v3.4) — THE one navigation system.
@@ -73,13 +96,13 @@ const WARM_DWELL_MS = 130;
  * - "link":   a real destination. Internal routes render as
  *             next/link with viewport prefetch disabled (no page is
  *             fetched continuously in the background, per site law);
- *             instead v3.5 warms the route ON INTENT — pointer enter,
- *             focus, or pointer-down fetches the destination's RSC
- *             payload through router.prefetch() once, deduplicated,
- *             so the click itself is a cache hit. Static-export
- *             payloads are tiny text files; no heavy page assets are
- *             pulled by warming. External links render as plain
- *             anchors.
+ *             instead v3.5 warms the route ON INTENT — focus or
+ *             pointer-down fetches the destination's RSC payload
+ *             through router.prefetch() once, deduplicated, so the
+ *             click itself is a cache hit. Static-export payloads
+ *             are tiny text files; no heavy page assets are pulled
+ *             by warming. Hover is VISUAL ONLY (v4.0.5). External
+ *             links render as plain anchors.
  * - "action": an in-shell interaction state (the world scenes),
  *             switched through onSelect with the same preloading
  *             contract as before (onActionWarm — immediate, bypasses
@@ -151,24 +174,13 @@ export default function UnifiedSiteNav({
   const warmedRoutes =
     useRef<Set<string>>(new Set());
 
-  /*
-   * Pending hover-dwell timers, keyed by entry id. A pointer that
-   * leaves before the dwell elapses cancels its timer — hover noise
-   * across the track never reaches the network.
-   */
-  const hoverTimers =
-    useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
-
   useEffect(() => {
-    const timers = hoverTimers.current;
-
-    return () => {
-      for (const timer of timers.values()) {
-        clearTimeout(timer);
-      }
-
-      timers.clear();
-    };
+    /*
+     * Nothing to clean up per se — the warmed set is deduplicated
+     * state, not timers. Hover carries no network side effects
+     * anymore (v4.0.5), so no dwell timers exist to cancel.
+     */
+    return () => {};
   }, []);
 
   /*
@@ -259,7 +271,7 @@ export default function UnifiedSiteNav({
 
   /*
    * Pointer-down and keyboard focus are unambiguous intent: warm
-   * immediately.
+   * immediately. Hover animates only — no network work.
    */
   const warmEntryNow = useCallback(
     (entry: UnifiedNavEntry) => {
@@ -269,42 +281,30 @@ export default function UnifiedSiteNav({
   );
 
   /*
-   * Pointer-enter starts the dwell timer; pointer-leave cancels it.
-   * Only a pointer that RESTS on an entry reaches the network.
+   * ROUTE PROGRESS INTENT (v4.0.5) — fired on a NORMAL click on an
+   * internal link. Excluded, exactly like warming: modifier clicks
+   * (new-tab behavior belongs to the visitor), non-primary buttons,
+   * already-prevented clicks, and the current route (a same-route
+   * click navigates nowhere). The click is NEVER prevented — the
+   * router proceeds natively; the root-mounted progress line only
+   * observes.
    */
-  const warmEntryOnHover = useCallback(
-    (entry: UnifiedNavEntry) => {
-      const timers = hoverTimers.current;
-
-      const existing = timers.get(entry.id);
-
-      if (existing !== undefined) {
+  const fireRouteProgress = useCallback(
+    (event: React.MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
         return;
       }
 
-      timers.set(
-        entry.id,
-        setTimeout(() => {
-          timers.delete(entry.id);
-
-          warmEntry(entry);
-        }, WARM_DWELL_MS)
+      window.dispatchEvent(
+        new CustomEvent(ROUTE_PROGRESS_EVENT)
       );
-    },
-    [warmEntry]
-  );
-
-  const cancelEntryHover = useCallback(
-    (entry: UnifiedNavEntry) => {
-      const timers = hoverTimers.current;
-
-      const timer = timers.get(entry.id);
-
-      if (timer !== undefined) {
-        clearTimeout(timer);
-
-        timers.delete(entry.id);
-      }
     },
     []
   );
@@ -348,11 +348,8 @@ export default function UnifiedSiteNav({
                 onWarmNow={
                   warmEntryNow
                 }
-                onWarmHover={
-                  warmEntryOnHover
-                }
-                onCancelHover={
-                  cancelEntryHover
+                onRouteProgress={
+                  fireRouteProgress
                 }
               />
             )
@@ -380,11 +377,8 @@ export default function UnifiedSiteNav({
                 onWarmNow={
                   warmEntryNow
                 }
-                onWarmHover={
-                  warmEntryOnHover
-                }
-                onCancelHover={
-                  cancelEntryHover
+                onRouteProgress={
+                  fireRouteProgress
                 }
               />
             )
@@ -403,11 +397,8 @@ export default function UnifiedSiteNav({
         onWarmNow={
           warmEntryNow
         }
-        onWarmHover={
-          warmEntryOnHover
-        }
-        onCancelHover={
-          cancelEntryHover
+        onRouteProgress={
+          fireRouteProgress
         }
       />
     </div>
@@ -421,31 +412,20 @@ export default function UnifiedSiteNav({
 function NavEntry({
   entry,
   onWarmNow,
-  onWarmHover,
-  onCancelHover
+  onRouteProgress
 }: {
   entry: UnifiedNavEntry;
   onWarmNow?: (entry: UnifiedNavEntry) => void;
-  onWarmHover?: (entry: UnifiedNavEntry) => void;
-  onCancelHover?: (entry: UnifiedNavEntry) => void;
+  onRouteProgress?: (event: React.MouseEvent) => void;
 }) {
   /*
-   * WARM ON INTENT (v3.5, dwell-disciplined in v4.0.3): pointerdown
+   * WARM ON INTENT (v3.5, hover-visual-only in v4.0.5): pointerdown
    * and focus warm immediately (a pressing finger or a focused tab
-   * is intent); pointerenter starts the short dwell and
-   * pointerleave cancels it, so hover noise never reaches the
-   * network. All paths share one deduplicated entry point.
+   * is intent); hover animates only — a cursor sweep never reaches
+   * the network. All paths share one deduplicated entry point.
    */
   const warm = () => {
     onWarmNow?.(entry);
-  };
-
-  const warmOnEnter = () => {
-    onWarmHover?.(entry);
-  };
-
-  const cancelWarm = () => {
-    onCancelHover?.(entry);
   };
 
   const body = (
@@ -513,10 +493,6 @@ function NavEntry({
         ? ("page" as const)
         : undefined,
     "aria-label": `Open ${entry.label}`,
-    onPointerEnter:
-      warmOnEnter,
-    onPointerLeave:
-      cancelWarm,
     onPointerDown:
       warm,
     onFocus: warm
@@ -569,6 +545,11 @@ function NavEntry({
       prefetch={
         false
       }
+      onClick={
+        entry.active
+          ? undefined
+          : onRouteProgress
+      }
     >
       {
         body
@@ -588,15 +569,13 @@ function NavMenu({
   label,
   entries,
   onWarmNow,
-  onWarmHover,
-  onCancelHover
+  onRouteProgress
 }: {
   menuId: string;
   label: string;
   entries: readonly UnifiedNavEntry[];
   onWarmNow?: (entry: UnifiedNavEntry) => void;
-  onWarmHover?: (entry: UnifiedNavEntry) => void;
-  onCancelHover?: (entry: UnifiedNavEntry) => void;
+  onRouteProgress?: (event: React.MouseEvent) => void;
 }) {
   const [open, setOpen] =
     useState(false);
@@ -989,25 +968,16 @@ function NavMenu({
                     );
 
                   /*
-                   * WARM ON INTENT (v3.5, dwell-disciplined in
-                   * v4.0.3) — the disclosure panel warms exactly
+                   * WARM ON INTENT (v3.5, hover-visual-only in
+                   * v4.0.5) — the disclosure panel warms exactly
                    * like the desktop track: pointerdown/focus warm
-                   * immediately, pointerenter starts the short
-                   * dwell, pointerleave cancels it. Scene actions
-                   * preload their module; internal links prefetch
-                   * their route. One deduplicated contract, no hover
-                   * requirement.
+                   * immediately; hover never reaches the network.
+                   * Scene actions preload their module; internal
+                   * links prefetch their route. One deduplicated
+                   * contract, no hover requirement.
                    */
                   const warm = () => {
                     onWarmNow?.(entry);
-                  };
-
-                  const warmOnEnter = () => {
-                    onWarmHover?.(entry);
-                  };
-
-                  const cancelWarm = () => {
-                    onCancelHover?.(entry);
                   };
 
                   return (
@@ -1052,12 +1022,6 @@ function NavMenu({
                               entry.active
                                 ? "page"
                                 : undefined
-                            }
-                            onPointerEnter={
-                              warmOnEnter
-                            }
-                            onPointerLeave={
-                              cancelWarm
                             }
                             onPointerDown={
                               warm
@@ -1142,12 +1106,6 @@ function NavMenu({
                             prefetch={
                               false
                             }
-                            onPointerEnter={
-                              warmOnEnter
-                            }
-                            onPointerLeave={
-                              cancelWarm
-                            }
                             onPointerDown={
                               warm
                             }
@@ -1155,7 +1113,13 @@ function NavMenu({
                               warm
                             }
                             onClick={
-                              close
+                              entry.active
+                                ? close
+                                : (event) => {
+                                    onRouteProgress?.(event);
+
+                                    close();
+                                  }
                             }
                           >
                             {

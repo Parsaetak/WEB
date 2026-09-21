@@ -1,4 +1,4 @@
-import styles from "@/components/LivingShell.module.css";
+import styles from "@/components/SiteFooter.module.css";
 
 import { BRAND_STAR } from "@/lib/brand";
 
@@ -7,91 +7,81 @@ import FooterLinks from "@/components/FooterLinks";
 import SiteDocNav from "@/components/SiteDocNav";
 
 /*
- * Shared site footer — the legal block used by both the home world
- * shell and the blog routes. Rendered from a client parent it joins
- * the client tree; rendered from the blog layout it stays
- * server-rendered with zero client JavaScript.
+ * SITE FOOTER (v4.0.5) — the compact, professional footer shared by
+ * every surface: the home world shell, the blog routes, the static
+ * content documents (/about/, /work/, /research/, /contact/) and the
+ * topic hubs. Rendered from a client parent it joins the client
+ * tree; rendered from the blog layout it stays server-rendered with
+ * zero client JavaScript.
+ *
+ * COMPOSITION (v4.0.5): the four logical navigation groups render as
+ * one compact COLUMN grid (SiteDocNav), the brand/copyright line and
+ * the public network share one meta row, and the legal notice keeps
+ * its wording with LICENSE / TRADEMARKS top-aligned beside it — every
+ * link of the old tall footer is preserved; only the composition
+ * changed. Styles live in this component's OWN module
+ * (SiteFooter.module.css), not in the living-world shell's sheet.
+ *
+ * The footer never opts into a route-scoped reveal system: reveal
+ * controllers mount only on the world shell and the blog layout, and
+ * a data-reveal element without a controller stays invisible under
+ * html.reveal-js (the v4.0.3 bug — the footer must stay permanently
+ * visible on every route).
  */
 
 export default function SiteFooter() {
   return (
-    /*
-     * NO data-reveal opt-in (v4.0.4): the footer is site chrome and
-     * renders on routes with AND without a reveal controller
-     * (MotionReveal mounts on the world shell and the blog layout
-     * only). Under html.reveal-js a data-reveal element without a
-     * controller stays at opacity 0 forever — the pre-4.0.4 opt-in
-     * left the ENTIRE footer (document nav, public links, legal
-     * block) invisible on /about/, /contact/, /work/, /research/ and
-     * every topic hub. Verified against the v4.0.3 export before the
-     * fix; the footer is now permanently visible everywhere.
-     */
-    <footer
-      className={
-        styles.livingShellLegal
-      }
-    >
-      <div
-        className={
-          styles.livingShellLegalInner
-        }
-      >
+    <footer className={styles.footer}>
+      <div className={styles.footerInner}>
         {/*
-          * SITE DOCUMENT NAV (v3.1): crawlable links to the real
-          * indexable documents — identity routes and topic hubs —
-          * carried by every page that renders this footer. The hash
-          * scenes remain interaction states; these anchors make the
-          * content graph reachable without JavaScript.
+          * SITE DOCUMENT NAV (v3.1, columns in v4.0.5): crawlable
+          * links to the real indexable documents — identity routes,
+          * collections, world scenes and topic hubs — carried by every
+          * page that renders this footer. The hash scenes remain
+          * interaction states; these anchors make the content graph
+          * reachable without JavaScript.
           */}
         <SiteDocNav />
 
-        <div
-          className={
-            styles.livingShellFooterMain
-          }
-        >
-          <div
-            className={
-              styles.livingShellLegalPrimary
-            }
-          >
-            <strong>
-              <span
-                className={
-                  styles.livingShellFooterMark
-                }
-                aria-hidden="true"
-              >
-                {/*
-                 * The 13-point star anchors the legal block to the
-                 * site identity. Decorative: the adjacent text is
-                 * the accessible content.
-                 */}
-                <img
-                  src={BRAND_STAR.red}
-                  alt=""
-                  width={18}
-                  height={18}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </span>
+        <div className={styles.footerMeta}>
+          <div className={styles.footerBrand}>
+            <span
+              className={styles.footerMark}
+              aria-hidden="true"
+            >
+              {/*
+               * The 13-point star anchors the legal block to the
+               * site identity. Decorative: the adjacent text is the
+               * accessible content.
+               */}
+              <img
+                src={BRAND_STAR.red}
+                alt=""
+                width={18}
+                height={18}
+                loading="lazy"
+                decoding="async"
+              />
+            </span>
+
+            <strong className={styles.footerCopyright}>
               © 2026 Parsa Tak. All rights reserved.
             </strong>
 
-            <span>
+            <span className={styles.footerTrademark}>
               Parsa Tak™
             </span>
           </div>
 
+          {/*
+           * THE PUBLIC NETWORK (v4.0.5) — one semantic group that
+           * wraps naturally; the layout decides how many visual
+           * lines it needs. The fixed 7 + 7 row slicing is gone.
+           */}
           <FooterLinks />
         </div>
 
-        <div
-          className={
-            styles.livingShellLegalBottom
-          }
-        >
+        <div className={styles.footerLegal}>
           <p>
             Original website design, visual identity,
             writing, artwork, and other original creative
@@ -102,11 +92,7 @@ export default function SiteFooter() {
             except where a specific material states otherwise.
           </p>
 
-          <div
-            className={
-              styles.livingShellLegalLinks
-            }
-          >
+          <div className={styles.footerLegalLinks}>
             <a
               href="https://github.com/Parsaetak/WEB/blob/main/LICENSE.md"
               target="_blank"

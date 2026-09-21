@@ -7,7 +7,7 @@ import "./globals.css";
 
 import GlobalMusicPlayerHost from "@/components/player/GlobalMusicPlayerHost";
 
-import GlobalRouteTransition from "@/components/GlobalRouteTransition";
+import RouteProgress from "@/components/RouteProgress";
 
 import {
   HOME_TITLE,
@@ -246,17 +246,20 @@ export default function RootLayout({
         <GlobalMusicPlayerHost />
 
         {/*
-          * GLOBAL ROUTE TRANSITION (v4.0.4) — mounted exactly once,
-          * here in the ROOT layout, so the unified real-route loading
-          * surface survives every client-side navigation (the same
-          * law as the player host above). Display-only: it captures
-          * navigation INTENT through a passive click listener, shows
-          * the site's signal language only when a navigation outlives
-          * its grace period, and dismisses when the destination route
-          * has committed. It never blocks interaction, never delays a
-          * route, and ships inert in the static export.
+          * ROUTE PROGRESS (v4.0.5) — mounted exactly once, here in
+          * the ROOT layout, so the tiny top navigation signal
+          * survives every client-side navigation (the same law as
+          * the player host above). Display-only: the navigation
+          * island fires ROUTE_PROGRESS_EVENT on a genuine internal
+          * click, and after a 150ms grace period a 2px indeterminate
+          * red line appears at the top of the viewport ONLY while
+          * the navigation is still unresolved — never a wall in
+          * front of the destination. It never blocks interaction,
+          * never delays a route (pointer-events: none, purely
+          * observational), and ships invisible in the static export
+          * (data-active="false" under the html.reveal-js gate).
           */}
-        <GlobalRouteTransition />
+        <RouteProgress />
       </body>
     </html>
   );

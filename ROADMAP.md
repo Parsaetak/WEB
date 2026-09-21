@@ -1093,3 +1093,105 @@ real browser against the v4.0.3 export (computed opacity "0",
   same machine class): cold-load medians and navigation medians
   within run-to-run variance of the v4.0.3 baseline (the route
   transition adds display-only CSS, no critical-path work).
+
+---
+
+# PHASE 10 — DOCUMENT UNIFICATION, ROUTE PROGRESS, COMPACT FOOTER
+
+> **STATUS: DELIVERED in v4.0.5.**
+
+## Objective
+
+Make About, Contact, Work, Research and the topic hubs visibly and
+structurally ONE document system; replace the v4.0.4 full-screen
+route overlay with a tiny non-blocking progress line; make the
+footer materially more compact while preserving every link.
+
+## Root causes found (measured, not assumed)
+
+- The v4.0.4 route-transition host (`GlobalRouteTransition` +
+  `lib/routeIntent.ts` + the `SceneLoadingScreen` route variant)
+  shipped ~24.5 KB of initial JS on ALL 22 exported routes,
+  including pure static documents, and presented normal tab
+  navigation behind a full-screen dark wall — app-splash UX.
+- The hero vertically CENTERED its content, so the title baseline
+  moved with the amount of lead text (About carries three lead
+  paragraphs, Contact two), and the hero signal hung absolutely
+  positioned ABOVE the breadcrumb block — a floating element, not
+  part of the title identity.
+- Navigations FROM the home route measured ~180 ms slower than any
+  other source (world-shell unmount cost — inherent to the preserved
+  living-world architecture); destination payload size was NOT the
+  bottleneck, and the 130 ms hover-dwell warm fetched up to 134 KB
+  of payloads on a cursor sweep without genuine intent (browser
+  automation's move-to-target gesture triggered it reliably).
+- Footer styles lived in `LivingShell.module.css`, coupling every
+  content route to world-shell CSS; `FooterLinks` hardcoded a 7 + 7
+  row split; four stacked nav rows plus two link rows plus the legal
+  block made the footer 355 px tall at desktop.
+
+## Delivered
+
+- **Document unification**: one hero composition contract in
+  `ContentShell` — heroField → heroDoc → crumbs → heroIdentity
+  (heroSignal BESIDE heroCopy: kicker, H1, lead). The signal is IN
+  FLOW (no absolute positioning, no overlap, no clipping, no
+  content-height dependence), and the hero is TOP-ANCHORED so the
+  crumbs/kicker/H1 sit at identical positions on every route.
+  Verified by measurement: crumbs y=144, kicker y=181, H1 y=206,
+  signal 22×22 at identical coordinates on /about/, /contact/,
+  /work/ and /research/ (1440×900). Route-specific CSS is decorative
+  only (field motifs); no page-specific hero/shell components exist.
+- **Route progress**: `components/RouteProgress.tsx` — a 2 px
+  indeterminate red line at the top of the viewport, mounted once
+  from the root layout. The navigation island fires a
+  `web:route-progress` DOM event on genuine internal clicks
+  (modifier/new-tab/external/same-route excluded); a 150 ms grace
+  period (`ROUTE_PROGRESS_GRACE_MS`) keeps fast navigations
+  invisible; the destination pathname commit plus double-rAF fades
+  the line; a safety cap clears a silently-died navigation. Never
+  blocks, never delays, aria-hidden, reduced-motion static, never
+  visible in the static export. The v4.0.4 route-overlay
+  architecture was REMOVED (files deleted, scene loader back to
+  boot/scene variants only) — exactly ONE mechanism for document
+  navigation.
+- **Prefetching reassessed**: hover warming REMOVED (visual
+  animation only); pointer-down and keyboard focus keep warming
+  (unambiguous intent); save-data/2G still skip; the current route
+  is still never warmed; viewport prefetch still off.
+- **Compact footer**: `SiteFooter.module.css` (new dedicated
+  stylesheet — footer styles moved out of `LivingShell.module.css`);
+  the four logical groups (SITE, COLLECTIONS, WORLD, TOPICS) render
+  as a responsive column grid (4 → 2 → 1) with the six-entry TOPICS
+  group flowing through two sub-columns; the public network is ONE
+  data-driven wrapping group from `lib/links.ts` (the 7 + 7 slice is
+  gone); the legal row top-aligns without baseline hacks. Measured:
+  317 px @1440 (was 355), 361 px @768 (was 425), 566 px @390 (was
+  624) — more compact at every width, no horizontal overflow, all
+  links crawlable.
+- **Benchmark expansion**: `bench-loading.mjs` now covers all twelve
+  canonical routes, reports click→URL-commit AND settled times with
+  medians + P95, CSS/image/RSC-payload metrics per route, and a
+  summary (slowest route, largest client route, largest initial JS
+  asset, slowest navigation).
+- **Tests rewritten as behavior contracts**: `v404-polish.test.ts`
+  (implementation trivia: exact CSS values, slice counts, selector
+  spelling) replaced by `document-shell.test.ts`,
+  `route-progress.test.ts`, `footer.test.ts` and
+  `repository-hygiene.test.ts` (durable structure, exclusion
+  matrices, ownership, crawlability — not pixel values).
+
+## Verification (measured, not assumed)
+
+- `npm run typecheck`, `npm run typecheck:tests`, `npm test`
+  (264 tests, 0 failures), `npm run build` (23 routes),
+  `npm run verify` (SEO + brand + export + loading) — all green.
+- Hero geometry parity measured in a real browser (identical
+  landmark coordinates across the four documents).
+- Footer heights measured at 1440/768/390 against the v4.0.4 export
+  (same machine, same method) — more compact at every width.
+- Route progress behavior probed in a real browser: a fast
+  navigation (97 ms commit) never shows the line; modifier clicks
+  never fire it; the host ships inactive on all 22 exported routes.
+- `npm run bench:loading` re-run on the v4.0.5 export: see
+  bench-results.json for the full twelve-route table.

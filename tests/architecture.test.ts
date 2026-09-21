@@ -498,7 +498,7 @@ describe("CI and the local commands describe the real pipeline", () => {
 
     assert.equal(
       pkg.version,
-      "4.0.4",
+      "4.0.5",
       "the package version matches this release"
     );
   });

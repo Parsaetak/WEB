@@ -158,13 +158,8 @@
  * inner padding, or the text would sit a gutter to the right of
  * every other tab's rail. Text is capped to the shared readable
  * measures by .title/.lead, not by the container.
- *
- * position: relative (v4.0.4) anchors the shared hero signal to the
- * title block without changing any geometry.
  */
 .heroDoc {
-  position: relative;
-
   width:
     min(
       calc(100% - 2 * var(--page-gutter)),
@@ -295,12 +290,20 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* FULL-SCREEN HERO (v3.6.1) — the first screen of every document tab.         */
+/* FULL-SCREEN HERO (v4.0.5) — the first screen of every document route.       */
 /*                                                                             */
-/* One formula, token-owned:                                                   */
-/*   min-height = max(--page-hero-min-height, 100vh/svh/dvh − header)          */
-/* The header is sticky (in-flow), so header + hero compose EXACTLY one        */
-/* viewport on every tab — no per-page compensation anywhere.                  */
+/* One formula, token-owned:                                                    */
+/*   min-height = max(--page-hero-min-height, 100vh/svh/dvh − header)           */
+/* The header is sticky (in-flow), so header + hero compose EXACTLY one         */
+/* viewport on every route — no per-page compensation anywhere.                 */
+/*                                                                             */
+/* VERTICAL COMPOSITION CONTRACT (v4.0.5): the hero is TOP-ANCHORED —           */
+/* content starts at one consistent spacing token below the header on           */
+/* every route. Vertical centering would move the title baseline with           */
+/* the amount of lead text (About carries three lead paragraphs,                */
+/* Contact two); the top-anchored model keeps the crumbs, kicker and H1         */
+/* at IDENTICAL positions on every document, and the document below             */
+/* simply continues for as long as it needs.                                    */
 /* -------------------------------------------------------------------------- */
 
 .hero {
@@ -310,7 +313,7 @@
 
   flex-direction: column;
 
-  justify-content: center;
+  justify-content: flex-start;
 
   min-height:
     max(
@@ -339,8 +342,9 @@
       )
     );
 
+  /* One spacing model on every route — not content-dependent. */
   padding:
-    clamp(36px, 6vh, 80px)
+    clamp(44px, 7.5vh, 96px)
     0
     clamp(64px, 10vh, 116px);
 
@@ -403,21 +407,38 @@
 }
 
 /*
- * HERO SIGNAL (v4.0.4) — the SHARED top-left identity animation of
- * the document tabs, rendered by ContentShell for every document.
+ * HERO IDENTITY (v4.0.5) — the stable title system of EVERY document
+ * route: the shared signal mark beside the title copy. Normal
+ * document flow (no absolute positioning, no route-specific
+ * geometry): the signal can never overlap the crumbs, the H1, or
+ * the lead, never depends on how much lead text a route carries,
+ * and never clips on narrow screens — the flow itself guarantees
+ * all of it on every route identically.
+ */
+.heroIdentity {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: clamp(16px, 2.4vw, 26px);
+}
+
+.heroCopy {
+  /* Flex child of the identity row: keeps its width in flow and */
+  /* lets long words wrap instead of overflowing the rail.        */
+  flex: 1;
+
+  min-width: 0;
+}
+
+/*
+ * HERO SIGNAL (v4.0.5) — the shared identity animation of the
+ * document routes, rendered by ContentShell for every document.
  *
- * Geometry contract:
- * - anchored to the heroDoc title block (position:relative above),
- *   hanging ABOVE the crumbs on the shared alignment rail — beside/
- *   around the title area, never behind the text, never overlapped
- *   by it;
- * - absolutely positioned → zero layout impact;
- * - the total vertical occupancy (8px gap + 22px ring + 4px arc
- *   overhang = 34px) always fits inside the hero's minimum top
- *   padding floor (clamp(36px, 6vh, 80px)), so `overflow: clip` on
- *   the hero can never cut it — the hero always grows to fit its
- *   content plus that padding;
- * - themed per tab through the shell's --page-accent.
+ * Geometry contract: IN FLOW beside the title copy (the heroIdentity
+ * row above) — a 22px flex item, so its position is owned by the
+ * same flow on every route and can never overlap or clip anything.
+ * Themed per route through the shell's --page-accent.
  *
  * Motion contract: compositor-only (transform: rotate on the arc,
  * opacity on the core); under prefers-reduced-motion the arc
@@ -425,17 +446,16 @@
  * the same reduced-motion treatment as the scene loader's signal.
  */
 .heroSignal {
-  position: absolute;
+  position: relative;
 
-  left: 0;
-
-  bottom: calc(100% + 8px);
+  flex: 0 0 auto;
 
   width: 22px;
 
   height: 22px;
 
-  pointer-events: none;
+  /* Optical alignment with the kicker line that opens heroCopy. */
+  margin-top: 2px;
 
   color:
     var(
@@ -1127,11 +1147,16 @@
   .hero {
     /*
      * The phone floor is token-owned (--page-hero-min-height drops
-     * to 380px in globals.css) — only the padding is local here.
+     * to 380px in globals.css) — only the spacing is local here,
+     * and it stays top-anchored like every other width.
      */
-    padding-top: 30px;
+    padding-top: 40px;
 
     padding-bottom: 84px;
+  }
+
+  .heroIdentity {
+    gap: 14px;
   }
 
   .heroCue {

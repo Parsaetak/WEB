@@ -1,0 +1,271 @@
+/*
+ * SITE FOOTER (v4.0.5) — the footer's OWN stylesheet, moved out of
+ * LivingShell.module.css. The living-world shell owns the world HUD;
+ * the footer is shared site chrome rendered by every route (world
+ * shell, blog, content documents, topic hubs), so coupling its
+ * styles to the world shell made every content route load world
+ * shell CSS it never renders. One responsibility per file.
+ *
+ * COMPOSITION (v4.0.5 compact contract):
+ *
+ *   footerNav    4 logical groups as GRID COLUMNS — SITE,
+ *                COLLECTIONS, WORLD, TOPICS (4 → 2 → 1 responsive)
+ *   footerMeta   brand + copyright left, the public network as ONE
+ *                naturally wrapping group right
+ *   footerLegal  the legal notice and LICENSE / TRADEMARKS sharing
+ *                the rail, top-aligned — quiet and secondary
+ *
+ * The footer keeps every link the old tall footer carried; the
+ * change is composition (columns instead of stacked rows, one
+ * wrapping link group instead of a fixed 7+7 split), not content.
+ */
+
+.footer {
+  width: 100%;
+
+  border-top:
+    1px solid
+    rgba(255, 32, 32, 0.08);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(5, 5, 6, 0.72),
+      rgba(4, 4, 5, 0.94)
+    );
+}
+
+/* Footer rail = the shared alignment rail (v3.6.1). */
+.footerInner {
+  width:
+    min(
+      calc(100% - 2 * var(--page-gutter)),
+      var(--page-content-width)
+    );
+
+  margin: 0 auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* Navigation region — four logical groups as columns                  */
+/* ------------------------------------------------------------------ */
+
+.footerNav {
+  padding:
+    24px 0
+    18px;
+
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.06);
+}
+
+/* ------------------------------------------------------------------ */
+/* Meta region — brand + the public network                            */
+/* ------------------------------------------------------------------ */
+
+.footerMeta {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px 28px;
+
+  padding:
+    14px 0
+    12px;
+
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.06);
+}
+
+.footerBrand {
+  min-width: 0;
+
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 8px 10px;
+}
+
+.footerMark {
+  display: inline-flex;
+
+  align-items: center;
+
+  flex: 0 0 auto;
+}
+
+.footerMark img {
+  width: 18px;
+
+  height: 18px;
+
+  display: block;
+}
+
+.footerCopyright {
+  color: var(--text-soft);
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  line-height: 1.45;
+}
+
+.footerTrademark {
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  letter-spacing: 0.08em;
+}
+
+/* ------------------------------------------------------------------ */
+/* Legal region — notice + LICENSE / TRADEMARKS on one alignment rail  */
+/* ------------------------------------------------------------------ */
+
+/*
+ * LEGAL GRID CONTRACT (v4.0.5): the long legal paragraph owns the
+ * flexible first column (left-aligned on the footer rail), the
+ * LICENSE / TRADEMARKS anchors end-align to the rail's right edge,
+ * and both share the row's START edge — top-aligned, no baseline
+ * hacks, no negative-margin tricks, no compensating padding. The
+ * anchors keep their own comfortable touch target.
+ */
+.footerLegal {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+
+  align-items: start;
+
+  column-gap: 32px;
+
+  padding:
+    14px 0
+    18px;
+}
+
+.footerLegal > p {
+  max-width: 720px;
+
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-size: 11px;
+
+  line-height: 1.7;
+}
+
+.footerLegalLinks {
+  display: flex;
+
+  align-items: center;
+
+  gap: 18px;
+
+  padding: 5px 0;
+}
+
+.footerLegalLinks a {
+  display: inline-block;
+
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.12em;
+
+  text-transform: uppercase;
+
+  transition:
+    color 160ms ease;
+}
+
+.footerLegalLinks a:hover {
+  color: var(--red);
+}
+
+.footerLegalLinks a:focus-visible {
+  outline: 2px solid var(--red-hot);
+
+  outline-offset: 3px;
+
+  border-radius: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Responsive behavior                                                  */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 980px) {
+  .footerLegal {
+    grid-template-columns: minmax(0, 1fr);
+
+    row-gap: 12px;
+  }
+
+  .footerLegalLinks {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .footerNav {
+    padding:
+      22px 0
+      18px;
+  }
+
+  .footerMeta {
+    padding:
+      14px 0
+      12px;
+  }
+
+  .footerCopyright {
+    font-size: 11px;
+  }
+
+  .footerLegal {
+    padding:
+      14px 0
+      18px;
+  }
+
+  .footerLegal > p {
+    font-size: 10px;
+
+    line-height: 1.65;
+  }
+
+  .footerLegalLinks {
+    gap: 14px;
+  }
+}
+
+/* Print (v2.5.1): the footer is screen-only. */
+@media print {
+  .footer {
+    display: none !important;
+  }
+}

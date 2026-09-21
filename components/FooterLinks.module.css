@@ -1,33 +1,21 @@
+/*
+ * THE PUBLIC NETWORK (v4.0.5) — ONE wrapping group: the flow
+ * decides how many visual lines the registry needs, with no
+ * hardcoded row sizes. Right-aligned inside the footer meta row on
+ * wide screens, full-width wrapping below it on narrow ones.
+ */
 .footerLinks {
-  min-width: 0;
-
-  display: grid;
-
-  grid-template-rows:
-    repeat(
-      2,
-      auto
-    );
-
-  gap: 5px;
-
-  align-content: center;
-
-  min-height: 66px;
-}
-
-.linkRow {
   min-width: 0;
 
   display: flex;
 
+  flex-wrap: wrap;
+
   align-items: center;
 
-  justify-content: flex-start;
+  justify-content: flex-end;
 
-  flex-wrap: nowrap;
-
-  gap: 4px;
+  gap: 4px 6px;
 }
 
 .link {
@@ -168,19 +156,11 @@
 
 @media (max-width: 980px) {
   .footerLinks {
-    min-height: auto;
-  }
-
-  .linkRow {
-    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 }
 
 @media (max-width: 760px) {
-  .linkRow {
-    gap: 3px;
-  }
-
   .link {
     min-height: 30px;
 

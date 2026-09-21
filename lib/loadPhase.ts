@@ -73,33 +73,34 @@ export const BACKGROUND_IDLE_TIMEOUT_MS = 1800;
 export const SCENE_OVERLAY_DELAY_MS = 180;
 
 /*
- * ROUTE TRANSITION TIMING (v4.0.4).
+ * ROUTE PROGRESS TIMING (v4.0.5).
  *
- * Real route/tab navigation (App Router) shares the scene loader's
- * honesty rules — no fake progress, no arbitrary minimum duration —
- * through two bounds owned here so the host and its tests agree:
+ * Document-route navigation (App Router) shows the tiny top
+ * progress line (components/RouteProgress.tsx) through two bounds
+ * owned here so the host and its tests agree:
  *
- * - ROUTE_OVERLAY_DELAY_MS is the GRACE PERIOD between the captured
- *   navigation intent and the moment the route overlay may appear.
- *   Warmed/cached routes commit well inside this window and never
- *   flash a loader; a navigation that is still in flight after it
- *   keeps the overlay visible until the destination is actually
- *   ready. The mechanism NEVER delays a route to make the animation
- *   visible — the overlay is display-only (pointer-events: none).
+ * - ROUTE_PROGRESS_GRACE_MS is the GRACE PERIOD between the
+ *   navigation intent (the navigation island's click) and the
+ *   moment the 2px line may appear. Warmed/cached/fast routes
+ *   commit well inside this window and never show anything; a
+ *   navigation that is still in flight after it reveals the line
+ *   until the destination is actually ready. The mechanism NEVER
+ *   delays a route to make itself visible — it is display-only
+ *   (pointer-events: none).
  *
- * - ROUTE_TRANSITION_CAP_MS is a safety cap, not a duration: if a
+ * - ROUTE_PROGRESS_CAP_MS is a safety cap, not a duration: if a
  *   navigation silently dies (offline fetch, aborted render), the
- *   overlay clears itself instead of becoming a zombie wall. A
- *   committed route always dismisses the overlay earlier through the
- *   pathname effect.
+ *   line clears itself instead of becoming a zombie. A committed
+ *   route always dismisses the line earlier through the pathname
+ *   effect.
  *
- * Both values are documented constants (like SCENE_OVERLAY_DELAY_MS):
- * keeping them here — not inline in the component — is what makes the
- * race-safety tests possible.
+ * Both values are documented constants (like
+ * SCENE_OVERLAY_DELAY_MS): keeping them here — not inline in the
+ * component — is what makes the race-safety tests possible.
  */
-export const ROUTE_OVERLAY_DELAY_MS = 180;
+export const ROUTE_PROGRESS_GRACE_MS = 150;
 
-export const ROUTE_TRANSITION_CAP_MS = 12000;
+export const ROUTE_PROGRESS_CAP_MS = 10000;
 
 /*
  * POST-LOAD SETTLE GATE (v4.0.3).

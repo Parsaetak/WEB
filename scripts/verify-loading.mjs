@@ -17,8 +17,12 @@
  *      against the dynamic-only chunk set)
  *   5. no player code in the RSC payload .txt files
  *   6. About/Contact share the exact FullScreenPageShell → header →
- *      nav → hero → crumbs → kicker → H1 → lead → footer landmark
- *      skeleton of Work/Research (structural bijection of the shell)
+ *      nav → hero → crumbs → identity → signal → kicker → H1 →
+ *      lead → footer landmark skeleton of Work/Research (structural
+ *      bijection of the shell)
+ *   7. the RouteProgress host ships INACTIVE on every exported
+ *      route (data-active="false" — a 2px line can never be visible
+ *      without JavaScript)
  *
  * Exit 0 = verified. Exit 1 = any violation.
  */
@@ -259,9 +263,11 @@ function landmarkSkeleton(route) {
     [/class="[^"]*content-module[^"]*main"/, "main"],
     [/class="[^"]*content-module[^"]*hero"/, "hero"],
     [/class="[^"]*content-module[^"]*heroField"/, "heroField"],
-    [/class="[^"]*content-module[^"]*heroSignal"/, "heroSignal"],
     [/class="[^"]*content-module[^"]*heroDoc"/, "heroDoc"],
     [/class="[^"]*content-module[^"]*crumbs"/, "crumbs"],
+    [/class="[^"]*content-module[^"]*heroIdentity"/, "heroIdentity"],
+    [/class="[^"]*content-module[^"]*heroSignal"/, "heroSignal"],
+    [/class="[^"]*content-module[^"]*heroCopy"/, "heroCopy"],
     [/class="[^"]*content-module[^"]*docKicker"/, "kicker"],
     [/class="[^"]*content-module[^"]*title"/, "h1"],
     [/class="[^"]*content-module[^"]*lead"/, "lead"],
@@ -296,67 +302,50 @@ function landmarkSkeleton(route) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 7. Global route transition host ships inert (v4.0.4)                */
+/* 7. Route progress host ships INACTIVE (v4.0.5)                      */
 /* ------------------------------------------------------------------ */
 
 {
   /*
-   * The unified route-transition surface is mounted from the ROOT
-   * layout, so every exported route must carry it — and it must ship
-   * INERT: data-visible="false" (never a permanent blocking overlay),
-   * never pre-engaged (no 13-point star request before any intent),
-   * and never rendered visible in the export.
+   * The route progress line (components/RouteProgress.tsx) is mounted
+   * from the ROOT layout, so every exported route must carry it — and
+   * it must ship INACTIVE: data-active="false", opacity 0, never
+   * visible in the static export (the html.reveal-js gate keeps it
+   * hidden without JavaScript). The old v4.0.4 route-overlay host is
+   * gone entirely — no route may carry data-variant="route".
    */
-  let inertHosts = 0;
-  let visibleHosts = 0;
-  let eagerStars = 0;
+  let inactiveHosts = 0;
 
   for (const route of routes) {
     const html = fs.readFileSync(path.join(OUT, route, "index.html"), "utf8");
 
-    const hasHost = /data-variant="route"/.test(html);
+    if (/data-variant="route"/.test(html)) {
+      fail(`${route}: the removed v4.0.4 route-overlay host is still present`);
+    }
+
+    const hasHost = /class="[^"]*routeProgress/.test(html);
 
     if (!hasHost) {
-      fail(`${route}: the global route transition host is missing from the export`);
+      fail(`${route}: the route progress host is missing from the export`);
       continue;
     }
 
-    /*
-     * React emits the attributes in prop order (data-visible before
-     * data-variant) — match both orders so the check can never
-     * silently no-op.
-     */
-    const hostVisible =
-      /data-variant="route"[^>]*data-visible="true"/.test(html) ||
-      /data-visible="true"[^>]*data-variant="route"/.test(html);
+    const hostActive = /data-active="true"/.test(
+      html.slice(html.indexOf("routeProgress"), html.indexOf("routeProgress") + 300)
+    );
+    const hostInactive = /data-active="false"/.test(
+      html.slice(html.indexOf("routeProgress"), html.indexOf("routeProgress") + 300)
+    );
 
-    const hostInert =
-      /data-variant="route"[^>]*data-visible="false"/.test(html) ||
-      /data-visible="false"[^>]*data-variant="route"/.test(html);
-
-    if (hostVisible) {
-      visibleHosts += 1;
-      fail(`${route}: the route transition overlay ships VISIBLE — permanent blocking content in the export`);
-    } else if (hostInert) {
-      inertHosts += 1;
-    }
-
-    /*
-     * The star inside the route host mounts only at first real
-     * overlay engagement (renderMark). It must not ship inside the
-     * exported route host markup — that would fetch the image on
-     * every page load with zero user intent. (On "/" the world
-     * shell's boot gate legitimately renders its own star — the
-     * existing boot architecture, not the route host.)
-     */
-    if (route !== "/" && /<img[^>]+star-red-hot\.svg/.test(html)) {
-      eagerStars += 1;
-      fail(`${route}: the route transition host ships the star image eagerly — a speculative request before any intent`);
+    if (hostActive) {
+      fail(`${route}: the route progress line ships ACTIVE — visible content in the export without any navigation`);
+    } else if (hostInactive) {
+      inactiveHosts += 1;
     }
   }
 
-  if (visibleHosts === 0 && eagerStars === 0 && inertHosts === routes.length) {
-    ok(`route transition host ships inert on all ${routes.length} exported route(s) — non-blocking, no eager star`);
+  if (inactiveHosts === routes.length) {
+    ok(`route progress host ships inactive on all ${routes.length} exported route(s)`);
   }
 }
 

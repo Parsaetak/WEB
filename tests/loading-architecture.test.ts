@@ -252,15 +252,25 @@ describe("no automatic speculative route flood (viewport prefetch off everywhere
 /* 4. NAV WARMING DISCIPLINE                                          */
 /* ------------------------------------------------------------------ */
 
-describe("navigation warming is intent-disciplined (v4.0.3)", () => {
-  it("pointer-down and focus warm immediately; pointer-enter dwells", async () => {
+describe("navigation warming is intent-disciplined (v4.0.5)", () => {
+  it("pointer-down and focus warm immediately; hover never reaches the network", async () => {
     const nav = await readText("components/UnifiedSiteNav.tsx");
 
-    assert.match(nav, /WARM_DWELL_MS/);
-    assert.match(nav, /onPointerEnter:\s*\n?\s*warmOnEnter/);
-    assert.match(nav, /onPointerLeave:\s*\n?\s*cancelWarm/);
-    assert.match(nav, /onPointerDown:\s*\n?\s*warm\b/);
-    assert.match(nav, /onFocus:\s*warm\b/);
+    assert.match(nav, /onPointerDown:\s*\n?\s*warm/);
+    assert.match(nav, /onFocus:\s*warm/);
+
+    /*
+     * v4.0.5: the hover-dwell warm is REMOVED — measured in this
+     * release, a cursor sweep across the track (even with the
+     * 130ms dwell of v4.0.3) fetched destination payloads without
+     * genuine intent, and the warmed fetches did not measurably
+     * reduce click-to-commit time. Hover must stay visual-only.
+     */
+    assert.doesNotMatch(
+      nav,
+      /WARM_DWELL|onPointerEnter:\s*\n?\s*warmOnEnter|onPointerLeave:\s*\n?\s*cancelWarm/,
+      "no hover warming mechanism may exist — hover is visual-only"
+    );
   });
 
   it("constrained connections never warm routes", async () => {
@@ -425,7 +435,7 @@ describe("the loading benchmark harness exists and is wired", () => {
       scripts: Record<string, string>;
     };
 
-    assert.equal(pkg.version, "4.0.4");
+    assert.equal(pkg.version, "4.0.5");
 
     assert.match(
       pkg.scripts["bench:loading"] ?? "",

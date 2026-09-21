@@ -21,19 +21,25 @@ import SiteFooter from "@/components/SiteFooter";
 import styles from "@/components/content/content.module.css";
 
 /*
- * CONTENT SHELL (v3.6) — the shared frame for the static content
- * documents: /about/, /work/, /research/, /contact/, and the topic
+ * CONTENT SHELL (v4.0.5) — the shared frame for ALL document
+ * routes: /about/, /work/, /research/, /contact/, and the topic
  * hubs.
  *
- * v3.6 full-screen architecture: the shell is now a
- * FullScreenPageShell — every tab BEGINS as a full-screen
- * composition (crumbs, kicker, title and lead composed against a
- * per-tab identity field), and the document below it scrolls
- * naturally for as long as it needs. Full-screen is composition,
- * not confinement: no fixed heights, no clipping, no squeezed
- * text — the hero simply refuses to be shorter than one viewport
- * (with a content floor so short screens scroll instead of
- * cramping).
+ * ONE document composition system: route identity changes accent
+ * and decorative geometry only; it never changes the layout
+ * contract. Every route renders the same header rail, the same
+ * navigation island, the same hero composition (field → rail →
+ * crumbs → identity → kicker → H1 → lead), the same document
+ * rhythm, and the same footer. Pages supply title, kicker, lead
+ * and content — nothing else.
+ *
+ * Full-screen is composition, not confinement: the first screen
+ * never collapses below one viewport (with a content floor so
+ * short screens scroll instead of cramping) and the document below
+ * scrolls naturally for as long as it needs. The hero's vertical
+ * composition is TOP-ANCHORED: the title system starts at the same
+ * offset from the header on every route, so the amount of lead
+ * text can never move the title baseline between pages.
  *
  * v3.4 navigation: the header renders the UNIFIED navigation system
  * (UnifiedSiteNav) — the same renderer, data source, geometry,
@@ -170,12 +176,24 @@ export default function ContentShell({
 
       <main className={styles.main} id="content">
         {/*
-         * FULL-SCREEN HERO (v3.6) — the first screen of every tab.
-         * The identity field behind it is decorative (aria-hidden,
-         * pointer-transparent) and themed per tab through the
-         * shell's data-page accent tokens. The cue line at the
-         * bottom says what the composition does: the document
-         * continues below the fold.
+         * FULL-SCREEN HERO (v4.0.5) — the first screen of every
+         * document route, ONE composition contract:
+         *
+         *   hero
+         *   ├── heroField        decorative per-route motif (aria-hidden)
+         *   ├── heroDoc          the shared alignment rail
+         *   │   ├── crumbs
+         *   │   └── heroIdentity
+         *   │       ├── heroSignal   the shared identity mark
+         *   │       └── heroCopy     kicker → H1 → lead
+         *   └── heroCue          the honest "document continues" cue
+         *
+         * The signal belongs to the title identity — it sits BESIDE
+         * the copy block, in normal document flow (no absolute
+         * positioning, no overlap, no content-height dependence).
+         * The route's accent themes it; the route's decorative
+         * field motif surrounds it. Nothing in this structure
+         * varies per route.
          */}
         <section
           className={styles.hero}
@@ -211,39 +229,6 @@ export default function ContentShell({
            * measure (styles.doc).
            */}
           <div className={styles.heroDoc}>
-            {/*
-             * HERO SIGNAL (v4.0.4) — the shared top-left identity
-             * animation of the document tabs: a small node inside a
-             * thin ring, crowned by a rotating transmission arc — the
-             * same signal language as the scene loader, at document
-             * scale. It hangs ABOVE the title block on the shared
-             * alignment rail (never behind the text), is absolutely
-             * positioned (zero layout impact), is themed per tab
-             * through the shell's --page-accent, animates with
-             * transform/opacity only, and collapses to a static mark
-             * under prefers-reduced-motion. One shared mechanism for
-             * every ContentShell document; the per-tab motifs in the
-             * hero field keep their unique identities around it.
-             */}
-            <span
-              className={
-                styles.heroSignal
-              }
-              aria-hidden="true"
-            >
-              <span
-                className={
-                  styles.heroSignalRing
-                }
-              />
-
-              <span
-                className={
-                  styles.heroSignalCore
-                }
-              />
-            </span>
-
             <nav
               className={styles.crumbs}
               aria-label="Breadcrumb"
@@ -288,23 +273,49 @@ export default function ContentShell({
               })}
             </nav>
 
-            <p className={styles.docKicker}>
-              {kicker}
-            </p>
+            {/*
+             * HERO IDENTITY (v4.0.5) — the stable title system: the
+             * shared signal mark BESIDE the title copy. One
+             * structure on every document route; the signal's
+             * position can never depend on the amount of lead text,
+             * never overlaps the crumbs or the H1, and never clips
+             * on narrow screens — it is in normal document flow, so
+             * the layout itself guarantees all three.
+             */}
+            <div className={styles.heroIdentity}>
+              <span
+                className={styles.heroSignal}
+                aria-hidden="true"
+              >
+                <span
+                  className={styles.heroSignalRing}
+                />
 
-            <h1 className={styles.title}>
-              {title}
-            </h1>
+                <span
+                  className={styles.heroSignalCore}
+                />
+              </span>
 
-            <div className={styles.lead}>
-              {lead.map((paragraph, index) => (
-                <p
-                  key={index}
-                  className={styles.leadParagraph}
-                >
-                  {paragraph}
+              <div className={styles.heroCopy}>
+                <p className={styles.docKicker}>
+                  {kicker}
                 </p>
-              ))}
+
+                <h1 className={styles.title}>
+                  {title}
+                </h1>
+
+                <div className={styles.lead}>
+                  {lead.map((paragraph, index) => (
+                    <p
+                      key={index}
+                      className={styles.leadParagraph}
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 

@@ -1,19 +1,24 @@
 #!/usr/bin/env node
 /*
- * scripts/bench-loading.mjs — reproducible loading benchmark.
+ * scripts/bench-loading.mjs — reproducible loading benchmark (v4.0.5).
  *
  * Measures REAL browser facts with the Performance APIs through the
  * already-installed Playwright/Chromium toolchain (resolved from the
  * environment — never a new project dependency):
  *
- *   - HTML transfer size per route
- *   - initial JS bytes + JS resource count
- *   - DOMContentLoaded, load event, FCP, LCP
- *   - speculative requests observed before any user intent
- *     (RSC payload .txt fetches + scene chunks)
- *   - client-side navigation completion times
+ *   - per route (ALL twelve canonical routes: home, the four
+ *     documents, the blog index, the six topic hubs):
+ *       median cold-load time, HTML transfer, JS count + transfer,
+ *       CSS transfer, FCP, LCP, RSC payload requests, speculative
+ *       JS requests, major image transfer
+ *   - navigation: click→URL-commit AND click→settled, medians + P95
+ *     (networkidle-settled numbers include post-load speculative
+ *     work and are therefore an upper bound; URL-commit is the
+ *     honest navigation latency)
  *   - player: chunk requests and audio requests BEFORE first playback
  *     intent, and the continuity of the audio element across routes
+ *   - summary: slowest route, largest client route, largest initial
+ *     JS asset, most requested route
  *
  * Every scenario runs N times with a fresh browser context (cold
  * cache) and reports MEDIANS, never a single lucky run.
@@ -158,7 +163,24 @@ function pct(values, p) {
   return v[idx];
 }
 
-const ROUTES = ["/", "/about/", "/contact/", "/blog/", "/work/", "/research/"];
+/*
+ * ALL twelve canonical routes (v4.0.5): home, the four primary
+ * documents, the blog index, and the six topic hubs.
+ */
+const ROUTES = [
+  "/",
+  "/about/",
+  "/blog/",
+  "/contact/",
+  "/work/",
+  "/research/",
+  "/local-ai/",
+  "/ai-systems/",
+  "/ai-reasoning/",
+  "/ai-evaluation/",
+  "/software-engineering/",
+  "/creative-technology/"
+];
 
 /*
  * Request classification (v4.0.3): honest categories instead of
@@ -208,6 +230,7 @@ function classifyRequests(requests, route, initialScripts) {
             : !r.url.startsWith(`${routePrefix}/__next`);
         return { ...r, kind: crossRoute ? "rsc-cross-route" : "rsc-bootstrap" };
       }
+      if (/\.(png|jpe?g|webp|avif|svg|gif)(\?|$)/.test(r.url)) return { ...r, kind: "image" };
       return { ...r, kind: "other" };
     });
 }
@@ -247,6 +270,8 @@ async function collectMetrics(page) {
     let jsBytes = 0;
     let jsCount = 0;
     let cssBytes = 0;
+    let cssCount = 0;
+    let imgBytes = 0;
     const jsFiles = [];
     for (const r of resources) {
       const isJs =
@@ -261,7 +286,10 @@ async function collectMetrics(page) {
           decodedBodySize: r.decodedBodySize || 0
         });
       } else if (r.name.endsWith(".css")) {
+        cssCount += 1;
         cssBytes += r.transferSize || 0;
+      } else if (/\.(png|jpe?g|webp|avif|gif)(\?|$)/.test(r.name)) {
+        imgBytes += r.transferSize || 0;
       }
     }
     return {
@@ -272,6 +300,8 @@ async function collectMetrics(page) {
       jsCount,
       jsBytes,
       cssBytes,
+      cssCount,
+      imgBytes,
       jsFiles,
       lcp: null
     };
@@ -323,14 +353,29 @@ const results = {
   coldLoads: {},
   navigations: {},
   player: {},
+  summary: {},
   notes: []
 };
 
 /* ------------------------------------------------------------------ */
-/* Scenario 1: cold initial loads                                      */
+/* Scenario 1: cold initial loads (all twelve routes)                  */
 /* ------------------------------------------------------------------ */
 
-console.log(`\n=== COLD LOADS (${args.runs} runs each, medians) ===`);
+console.log(`\n=== COLD LOADS (${ROUTES.length} routes × ${args.runs} runs, medians) ===`);
+console.log(
+  "route".padEnd(24),
+  "loadMs".padStart(7),
+  "html".padStart(7),
+  "js".padStart(7),
+  "jsF".padStart(4),
+  "css".padStart(7),
+  "fcp".padStart(6),
+  "lcp".padStart(6),
+  "rsc".padStart(4),
+  "img".padStart(7),
+  "dynJS".padStart(6),
+  "cross".padStart(6)
+);
 
 for (const route of ROUTES) {
   const runs = [];
@@ -340,11 +385,13 @@ for (const route of ROUTES) {
     const page = await context.newPage();
     const t0 = Date.now();
     await page.goto(`${BASE}${route}`, { waitUntil: "load", timeout: 30000 });
+    /* Cold-load time stops at the load event — the idle wait below */
+    /* only surfaces SPECULATIVE requests, never the load timing.    */
+    const elapsed = Date.now() - t0;
     // give idle work (preloader etc.) 3s to surface speculative requests
     await page.waitForTimeout(3000);
     const metrics = await collectMetrics(page);
     metrics.lcp = await collectLcp(page);
-    const elapsed = Date.now() - t0;
 
     const html = fs.readFileSync(routeToFile(route), "utf8");
     const initialScripts = initialScriptSet(html);
@@ -352,10 +399,14 @@ for (const route of ROUTES) {
 
     const dynamicJs = classified.filter((r) => r.kind === "dynamic");
     const crossRoute = classified.filter((r) => r.kind === "rsc-cross-route");
+    const rscBootstrap = classified.filter((r) => r.kind === "rsc-bootstrap");
+    const images = classified.filter((r) => r.kind === "image");
 
     runs.push({
       ...metrics,
       elapsed,
+      rscRequestCount: rscBootstrap.length,
+      imageTransfer: images.reduce((acc, r) => acc + (r.size ?? 0), 0),
       speculativeJsCount: dynamicJs.length,
       speculativeJsUrls: dynamicJs.map((r) => r.url).sort(),
       crossRoutePayloads: crossRoute.map((r) => r.url).sort()
@@ -363,48 +414,64 @@ for (const route of ROUTES) {
     await context.close();
   }
   const med = {
+    elapsed: median(runs.map((r) => r.elapsed)),
     htmlTransferSize: median(runs.map((r) => r.htmlTransferSize)),
     jsCount: median(runs.map((r) => r.jsCount)),
     jsBytes: median(runs.map((r) => r.jsBytes)),
     cssBytes: median(runs.map((r) => r.cssBytes)),
+    cssCount: median(runs.map((r) => r.cssCount)),
+    imgBytes: median(runs.map((r) => r.imgBytes)),
+    imageTransfer: median(runs.map((r) => r.imageTransfer)),
     domContentLoaded: median(runs.map((r) => r.domContentLoaded)),
     loadEvent: median(runs.map((r) => r.loadEvent)),
     fcp: median(runs.map((r) => r.fcp)),
     lcp: median(runs.map((r) => r.lcp)),
+    rscRequestCount: median(runs.map((r) => r.rscRequestCount)),
     speculativeJsCount: median(runs.map((r) => r.speculativeJsCount)),
     crossRoutePayloadCount: median(runs.map((r) => r.crossRoutePayloads.length)),
     speculativeJsUrls: runs[0].speculativeJsUrls,
-    crossRoutePayloads: runs[0].crossRoutePayloads
+    crossRoutePayloads: runs[0].crossRoutePayloads,
+    jsFiles: runs[0].jsFiles
   };
   results.coldLoads[route] = med;
   console.log(
-    `${route.padEnd(12)} html=${String(med.htmlTransferSize).padStart(6)}B js=${String(
-      med.jsBytes
-    ).padStart(7)}B/${med.jsCount}f dcl=${String(med.domContentLoaded).padStart(4)}ms load=${String(
-      med.loadEvent
-    ).padStart(4)}ms fcp=${String(med.fcp).padStart(4)}ms lcp=${String(med.lcp).padStart(4)}ms dynJS=${med.speculativeJsCount} crossRoute=${med.crossRoutePayloadCount}`
+    route.padEnd(24),
+    String(med.elapsed).padStart(7),
+    String(med.htmlTransferSize).padStart(7),
+    String(med.jsBytes).padStart(7),
+    String(med.jsCount).padStart(4),
+    String(med.cssBytes).padStart(7),
+    String(med.fcp ?? "-").padStart(6),
+    String(med.lcp ?? "-").padStart(6),
+    String(med.rscRequestCount).padStart(4),
+    String(med.imageTransfer).padStart(7),
+    String(med.speculativeJsCount).padStart(6),
+    String(med.crossRoutePayloadCount).padStart(6)
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Scenario 2: client-side navigation after hydration                  */
+/* Scenario 2: client-side navigation (medians + P95, commit + settle) */
 /* ------------------------------------------------------------------ */
 
-console.log(`\n=== CLIENT NAVIGATION (click, after hydration; medians) ===`);
+console.log(`\n=== CLIENT NAVIGATION (click, after hydration; medians + P95) ===`);
 
 const NAV_PATHS = [
   { from: "/", to: "/about/", label: "home->about" },
-  { from: "/", to: "/contact/", label: "home->contact" },
   { from: "/", to: "/blog/", label: "home->blog" },
+  { from: "/", to: "/contact/", label: "home->contact" },
+  { from: "/", to: "/local-ai/", label: "home->local-ai" },
   { from: "/blog/", to: "/work/", label: "blog->work" },
   { from: "/work/", to: "/research/", label: "work->research" },
   { from: "/research/", to: "/contact/", label: "research->contact" },
-  { from: "/contact/", to: "/", label: "contact->home" }
+  { from: "/contact/", to: "/", label: "contact->home" },
+  { from: "/about/", to: "/about/", label: "about->about (same-route)", skip: true }
 ];
 
 results.navigations = {};
-for (const nav of NAV_PATHS) {
-  const times = [];
+for (const nav of NAV_PATHS.filter((n) => !n.skip)) {
+  const commitTimes = [];
+  const settledTimes = [];
   for (let i = 0; i < args.runs; i += 1) {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -416,18 +483,31 @@ for (const nav of NAV_PATHS) {
     try {
       await page.click(selector, { timeout: 4000, noWaitAfter: true });
       await page.waitForURL(`${BASE}${nav.to}`, { timeout: 8000 });
+      commitTimes.push(Date.now() - t0);
       await page
         .waitForLoadState("networkidle", { timeout: 6000 })
         .catch(() => {});
-      times.push(Date.now() - t0);
+      settledTimes.push(Date.now() - t0);
     } catch {
-      times.push(NaN);
+      commitTimes.push(NaN);
+      settledTimes.push(NaN);
     }
     await context.close();
   }
-  const med = median(times);
+  const med = {
+    medianCommitMs: median(commitTimes),
+    p95CommitMs: pct(commitTimes, 95),
+    medianSettledMs: median(settledTimes),
+    p95SettledMs: pct(settledTimes, 95)
+  };
   results.navigations[nav.label] = med;
-  console.log(`${nav.label.padEnd(20)} median ${med} ms`);
+  console.log(
+    `${nav.label.padEnd(20)} commit med ${String(med.medianCommitMs).padStart(5)}ms p95 ${String(
+      med.p95CommitMs
+    ).padStart(5)}ms   settled med ${String(med.medianSettledMs).padStart(5)}ms p95 ${String(
+      med.p95SettledMs
+    ).padStart(5)}ms`
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -538,14 +618,63 @@ console.log(`\n=== PLAYER: pre-intent requests + continuity ===`);
     times.push(Date.now() - t0);
     await context.close();
   }
-  results.navigations["home->about (first nav, ASAP after DCL)"] = median(times);
+  results.navigations["home->about (first nav, ASAP after DCL)"] = {
+    medianSettledMs: median(times),
+    p95SettledMs: pct(times, 95)
+  };
   console.log(
-    `home->about (first nav, ASAP after DCL) median ${median(times)} ms`
+    `home->about (first nav, ASAP after DCL) median ${median(times)} ms p95 ${pct(times, 95)} ms`
   );
 }
 
 await browser.close();
 serverHandle.stop();
+
+/* ------------------------------------------------------------------ */
+/* Summary: the honest headline numbers                                */
+/* ------------------------------------------------------------------ */
+
+{
+  const loads = Object.entries(results.coldLoads).map(([route, m]) => ({
+    route,
+    loadMs: m.elapsed,
+    jsBytes: m.jsBytes,
+    fcp: m.fcp,
+    lcp: m.lcp
+  }));
+
+  const slowest = [...loads].sort((a, b) => b.loadMs - a.loadMs)[0];
+  const largestClient = [...loads].sort((a, b) => b.jsBytes - a.jsBytes)[0];
+  const slowestFcp = [...loads].filter((l) => l.fcp != null).sort((a, b) => b.fcp - a.fcp)[0];
+
+  const assetSizes = new Map();
+  for (const m of Object.values(results.coldLoads)) {
+    for (const f of m.jsFiles ?? []) {
+      assetSizes.set(f.url, Math.max(assetSizes.get(f.url) ?? 0, f.decodedBodySize || f.transferSize));
+    }
+  }
+  const largestAsset = [...assetSizes.entries()].sort((a, b) => b[1] - a[1])[0];
+
+  const navEntries = Object.entries(results.navigations)
+    .filter(([, v]) => typeof v.medianCommitMs === "number")
+    .map(([label, v]) => ({ label, ...v }));
+  const slowestNav = [...navEntries].sort((a, b) => b.medianCommitMs - a.medianCommitMs)[0];
+
+  results.summary = {
+    slowestColdRoute: slowest ? { route: slowest.route, loadMs: slowest.loadMs } : null,
+    slowestFcpRoute: slowestFcp ? { route: slowestFcp.route, fcp: slowestFcp.fcp } : null,
+    largestClientRoute: largestClient ? { route: largestClient.route, jsBytes: largestClient.jsBytes } : null,
+    largestInitialJsAsset: largestAsset ? { file: largestAsset[0], bytes: largestAsset[1] } : null,
+    slowestNavigation: slowestNav ? { label: slowestNav.label, medianCommitMs: slowestNav.medianCommitMs } : null
+  };
+
+  console.log(`\n=== SUMMARY ===`);
+  console.log(`slowest cold route:        ${slowest?.route} (${slowest?.loadMs}ms median)`);
+  console.log(`slowest FCP route:         ${slowestFcp?.route} (fcp ${slowestFcp?.fcp}ms median)`);
+  console.log(`largest client route:      ${largestClient?.route} (${largestClient?.jsBytes}B JS transfer)`);
+  console.log(`largest initial JS asset:  ${largestAsset?.[0]} (${largestAsset?.[1]}B decoded)`);
+  console.log(`slowest navigation:        ${slowestNav?.label} (${slowestNav?.medianCommitMs}ms median commit)`);
+}
 
 /* ------------------------------------------------------------------ */
 /* Report                                                              */

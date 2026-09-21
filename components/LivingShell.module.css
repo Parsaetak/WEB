@@ -123,28 +123,6 @@
   height: 32px;
 }
 
-/*
- * Footer brand mark (v2.9) — the 13-point star anchoring the legal
- * block to the site identity. Decorative; sized to the copyright
- * line's optical weight.
- */
-.livingShellFooterMark {
-  display: inline-flex;
-
-  align-items: center;
-
-  margin-right: 9px;
-
-  vertical-align: -3px;
-}
-
-.livingShellFooterMark img {
-  display: block;
-
-  width: 18px;
-  height: 18px;
-}
-
 .livingShellBrandName {
   position: relative;
 
@@ -330,189 +308,7 @@
   min-width: max-content;
 }
 
-/*
- * UNIFIED NAVIGATION (v3.4) — the ≤860px disclosure trigger is
- * carried by UnifiedSiteNav's own root (see UnifiedSiteNav.module.css),
- * which self-manages its desktop/mobile modes. The HUD actions area
- * keeps only the GitHub link.
- */
-
-.livingShellLegal {
-  width: 100%;
-
-  border-top:
-    1px solid
-    rgba(255, 32, 32, 0.08);
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(5, 5, 6, 0.72),
-      rgba(4, 4, 5, 0.94)
-    );
-}
-
-.livingShellLegalInner {
-  /* Footer rail = the shared alignment rail (v3.6.1). */
-  width:
-    min(
-      calc(100% - 2 * var(--page-gutter)),
-      var(--page-content-width)
-    );
-
-  margin: 0 auto;
-}
-
-.livingShellFooterMain {
-  display: grid;
-
-  grid-template-columns:
-    minmax(260px, 0.34fr)
-    minmax(0, 1.66fr);
-
-  align-items: start;
-
-  column-gap: 36px;
-
-  padding:
-    22px 0
-    20px;
-
-  border-bottom:
-    1px solid
-    rgba(255, 255, 255, 0.06);
-}
-
-.livingShellLegalPrimary {
-  min-width: 0;
-
-  display: flex;
-
-  flex-direction: column;
-
-  justify-content: center;
-
-  gap: 7px;
-
-  min-height: 66px;
-}
-
-.livingShellLegalPrimary strong {
-  color: var(--text-soft);
-
-  font-size: 12px;
-
-  font-weight: 600;
-
-  line-height: 1.45;
-}
-
-.livingShellLegalPrimary span {
-  color: var(--text-muted);
-
-  font-family: var(--font-mono);
-
-  font-size: 10px;
-
-  letter-spacing: 0.08em;
-}
-
-/*
- * LEGAL BLOCK GRID CONTRACT (v4.0.4) — the long legal paragraph and
- * the LICENSE / TRADEMARKS links share one grid on the footer rail:
- * the paragraph owns the flexible first column (left-aligned at the
- * same rail as the document nav above), the links end-align to the
- * rail's right edge. Both items align to the row's end edge, and the
- * links carry the SAME 1.7 line-height as the paragraph — combined
- * with the anchors' cancelling 7px padding/negative margin (the
- * touch-target contract), the two texts share one baseline without
- * any per-side pixel offsets.
- */
-.livingShellLegalBottom {
-  display: grid;
-
-  grid-template-columns:
-    minmax(0, 1fr)
-    auto;
-
-  align-items: end;
-
-  gap: 32px;
-
-  padding:
-    18px 0
-    20px;
-}
-
-.livingShellLegalBottom > p {
-  max-width: 720px;
-
-  margin: 0;
-
-  color: var(--text-muted);
-
-  font-size: 11px;
-
-  line-height: 1.7;
-}
-
-.livingShellLegalLinks {
-  display: flex;
-
-  align-items: baseline;
-
-  justify-content: flex-end;
-
-  gap: 18px;
-
-  padding: 0;
-}
-
-.livingShellLegalLinks a {
-  color: var(--text-muted);
-
-  font-family: var(--font-mono);
-
-  font-size: 10px;
-
-  font-weight: 700;
-
-  letter-spacing: 0.12em;
-
-  /*
-   * TOUCH TARGET (v2.8.1): these are standalone footer controls, not
-   * inline links in running text. Vertical padding lifts the hit
-   * height to the 24px minimum; the negative margin keeps the footer
-   * row's visual geometry exactly as designed. line-height 1.7 (the
-   * legal paragraph's line box) plus the exact cancellation of
-   * padding and margin keep the link text on the paragraph's baseline
-   * under the v4.0.4 end-alignment grid.
-   */
-  line-height: 1.7;
-
-  padding: 7px 0;
-
-  margin: -7px 0;
-
-  text-transform: uppercase;
-
-  transition:
-    color 160ms ease;
-}
-
-.livingShellLegalLinks a:hover {
-  color: var(--red);
-}
-
 @media (max-width: 1180px) {
-  .livingShellFooterMain {
-    grid-template-columns:
-      minmax(220px, 0.28fr)
-      minmax(0, 1.72fr);
-
-    column-gap: 22px;
-  }
-
   .livingShellGithub {
     font-size: 9px;
   }
@@ -550,18 +346,6 @@
   }
 }
 
-@media (max-width: 980px) {
-  .livingShellFooterMain {
-    grid-template-columns: 1fr;
-
-    gap: 16px;
-  }
-
-  .livingShellLegalPrimary {
-    min-height: auto;
-  }
-}
-
 @media (max-width: 760px) {
   /*
    * v3.6.1: header height (68px) and gutters are token-owned
@@ -584,16 +368,6 @@
   .livingShellBrandName {
     font-size: 14px;
   }
-
-  .livingShellLegalBottom {
-    grid-template-columns: 1fr;
-
-    gap: 16px;
-  }
-
-  .livingShellLegalLinks {
-    justify-content: flex-start;
-  }
 }
 
 @media (max-width: 560px) {
@@ -608,34 +382,6 @@
    */
   .livingShellGithub {
     display: none;
-  }
-
-  .livingShellFooterMain {
-    padding:
-      18px 0;
-  }
-
-  .livingShellLegalPrimary strong {
-    font-size: 11px;
-  }
-
-  .livingShellLegalBottom > p {
-    margin: 0;
-
-    font-size: 10px;
-
-    line-height: 1.65;
-  }
-
-  .livingShellLegalLinks {
-    gap: 14px;
-  }
-}
-
-/* Print (v2.5.1): the legal footer block is screen-only. */
-@media print {
-  .livingShellLegal {
-    display: none !important;
   }
 }
 

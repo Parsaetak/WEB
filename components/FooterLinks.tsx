@@ -10,23 +10,13 @@ import {
 } from "@/lib/links";
 
 /*
- * Two balanced rows of the public network (7 + 7 of the 14 verified
- * links, rebalanced in v4.0.4 when a retired contact channel left the
- * registry). The rows are presentation-only slicing of
- * ALL_PUBLIC_LINKS — the link data itself is owned by lib/links.ts.
+ * THE PUBLIC NETWORK (v4.0.5) — ONE semantic group of every
+ * verified public link (lib/links.ts owns the registry). The fixed
+ * 7 + 7 row slicing of v4.0.4 is gone: the group wraps naturally
+ * and the LAYOUT decides how many visual lines it needs, so adding
+ * or retiring a channel can never leave a hardcoded row split
+ * stale.
  */
-const FOOTER_LINK_ROWS: readonly (
-  readonly PublicLink[]
-)[] = [
-  ALL_PUBLIC_LINKS.slice(
-    0,
-    7
-  ),
-  ALL_PUBLIC_LINKS.slice(
-    7,
-    14
-  )
-];
 
 function FooterLink({
   link
@@ -105,32 +95,16 @@ export default function FooterLinks() {
       }
       aria-label="Public network"
     >
-      {FOOTER_LINK_ROWS.map(
-        (
-          row,
-          rowIndex
-        ) => (
-          <div
-            className={
-              styles.linkRow
-            }
+      {ALL_PUBLIC_LINKS.map(
+        (link) => (
+          <FooterLink
             key={
-              `footer-row-${rowIndex}`
+              link.id
             }
-          >
-            {row.map(
-              (link) => (
-                <FooterLink
-                  key={
-                    link.id
-                  }
-                  link={
-                    link
-                  }
-                />
-              )
-            )}
-          </div>
+            link={
+              link
+            }
+          />
         )
       )}
     </nav>
