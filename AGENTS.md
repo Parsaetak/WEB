@@ -124,6 +124,34 @@ violation as a bug to be justified, not a style preference.
   layout, so an opt-in there left the entire footer invisible
   (`opacity: 0`) on every ContentShell route (the v4.0.3 bug,
   verified against the v4.0.3 export before the fix).
+- **Global red cursor (v4.0.5):** the cursor is a ROOT-layout
+  system, mounted exactly ONCE from `app/layout.tsx` (the same
+  root-layout law as the Music player and RouteProgress) — never
+  from a shell or route layout. Before v4.0.5 it mounted inside
+  LivingShell (and separately in the blog layout), so every
+  ContentShell document route (`/about/`, `/contact/`, `/work/`,
+  `/research/`, the hubs) fell back to the native pointer. The
+  component itself (`components/RedCursor.tsx`) is a native CSS
+  cursor: zero pointer listeners, zero rAF, zero React state, zero
+  moving DOM; coarse/touch + reduced-motion visitors keep the native
+  pointer, and `html.pdf-reader-active` is the embedded-viewer
+  escape hatch. Pinned by `tests/global-cursor.test.ts` (one mount,
+  one implementation, fallback contract).
+- **Page identity artifacts (v4.0.5):** About and Contact lead
+  their documents with a unique server-rendered visual artifact —
+  the About identity/practice matrix (RESEARCH / ENGINEERING /
+  PRODUCT on one signal rail) and the Contact transmission console
+  (four collaboration intents wired to the one verified email
+  action, GitHub/LinkedIn secondary). Both render through
+  ContentShell's ONE generic optional `docFeature` slot (the page's
+  first document block) from inside the page files — no page-specific
+  shell, no client component, no canvas, no pointer tracking; CSS
+  transforms/opacity only, static under reduced motion; all facts
+  and links are material the site already presents. Artifact styling
+  lives in `content.module.css` (page-specific ARTIFACT blocks) and
+  may not redefine shared geometry. Export-level presence is
+  verified by `verify:loading` (6b), source contracts by
+  `tests/document-shell.test.ts`.
 - Blog pipeline: `scripts/build-blog.mjs` parses/validates/renderers
   `content/blog/*.md` → `data/blog/posts.json` + `public/sitemap.xml`. A
   malformed article FAILS the build. Run before dev/build.

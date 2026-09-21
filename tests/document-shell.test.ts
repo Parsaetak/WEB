@@ -293,3 +293,182 @@ describe("route-specific CSS is decorative only", () => {
     );
   });
 });
+
+/* ------------------------------------------------------------------ */
+/* 4. The page identity artifacts (v4.0.5)                             */
+/* ------------------------------------------------------------------ */
+
+describe("the unique page identity artifacts ride the one shared shell", () => {
+  it("ContentShell exposes exactly ONE generic document-feature slot", async () => {
+    const shell = await readText("components/content/ContentShell.tsx");
+
+    assert.match(
+      shell,
+      /docFeature\?: ReactNode/,
+      "the one optional slot: the page's first document block"
+    );
+
+    /* The slot renders inside the shared doc container, above children. */
+    const docIndex = shell.indexOf("styles.doc");
+    const featureIndex = shell.indexOf("{docFeature}");
+    const childrenIndex = shell.indexOf("{children}", docIndex);
+
+    assert.ok(docIndex > -1, "the shared document container exists");
+    assert.ok(featureIndex > docIndex, "the slot renders inside the container");
+    assert.ok(
+      childrenIndex > featureIndex,
+      "the slot precedes the page content"
+    );
+
+    /* No second slot, and no page-named slot masquerading as shared API. */
+    assert.doesNotMatch(
+      shell,
+      /heroFeature|aboutFeature|contactFeature|aboutArtifact|contactArtifact/,
+      "the slot stays generic — page identity lives in the pages"
+    );
+  });
+
+  it("About renders its unique identity artifact as the first document block", async () => {
+    const page = await readText("app/about/page.tsx");
+
+    assert.match(
+      page,
+      /docFeature=\{<AboutIdentityArtifact \/>\}/,
+      "the artifact fills the shared slot"
+    );
+
+    /* The artifact's own semantic structure. */
+    assert.match(page, /styles\.identityArtifact/);
+    assert.match(page, /aria-labelledby="about-identity-title"/);
+    assert.match(page, /<h2/);
+    assert.match(page, /styles\.identityArtifactTracks/);
+
+    /* Crawlable internal links on the artifact (DocLink = next/link). */
+    assert.match(page, /styles\.identityArtifactTrackLink/);
+    assert.match(page, /href: "\/research\/"/);
+    assert.match(page, /href: "\/work\/"/);
+    assert.match(page, /href: "\/contact\/"/);
+
+    /* Server-rendered page: still no client machinery, no animation file. */
+    assert.doesNotMatch(page, /"use client"/);
+    assert.doesNotMatch(page, /useState|useEffect/);
+  });
+
+  it("Contact renders its unique transmission artifact as the first document block", async () => {
+    const page = await readText("app/contact/page.tsx");
+
+    assert.match(
+      page,
+      /docFeature=\{<ContactTransmissionArtifact \/>\}/,
+      "the artifact fills the shared slot"
+    );
+
+    /* The artifact's own semantic structure. */
+    assert.match(page, /styles\.transmissionArtifact/);
+    assert.match(page, /aria-labelledby="contact-transmission-title"/);
+    assert.match(page, /<h2/);
+    assert.match(page, /styles\.transmissionIntents/);
+
+    /* The primary action resolves from the ONE verified link source. */
+    assert.match(page, /EMAIL_LINK\?\.href \?\? "mailto:Parsaetak@gmail\.com"/);
+    assert.match(page, /className="button button-primary"/);
+
+    /* The honest no-backend model is untouched. */
+    assert.doesNotMatch(page, /<form/i);
+    assert.doesNotMatch(page, /"use client"/);
+    assert.doesNotMatch(page, /useState|useEffect/);
+  });
+
+  it("the transmission console and the collaboration types can never disagree", async () => {
+    const page = await readText("app/contact/page.tsx");
+
+    /* Extract each const block, so no other label/title literals leak in. */
+    function blockOf(name: string): string {
+      const start = page.indexOf(`const ${name}`);
+
+      assert.ok(start > -1, `${name} is declared on the page`);
+
+      return page.slice(start, page.indexOf("];", start));
+    }
+
+    const intentLabels = [
+      ...blockOf("TRANSMISSION_INTENTS").matchAll(/label: "([^"]+)"/g)
+    ].map((match) => match[1]);
+
+    const typeTitles = [
+      ...blockOf("COLLABORATION_TYPES").matchAll(/title: "([^"]+)"/g)
+    ].map((match) => match[1]);
+
+    assert.ok(intentLabels.length > 0, "the console carries intents");
+    assert.deepEqual(
+      intentLabels,
+      typeTitles,
+      "the console renders exactly the collaboration-type model, in order"
+    );
+  });
+
+  it("both artifacts share one header vocabulary and the per-route accent", async () => {
+    const about = await readText("app/about/page.tsx");
+    const contact = await readText("app/contact/page.tsx");
+
+    for (const page of [about, contact]) {
+      assert.match(page, /styles\.artifactHead/);
+      assert.match(page, /styles\.artifactKicker/);
+      assert.match(page, /styles\.artifactTitle/);
+      assert.match(page, /BRAND_STAR\.red/, "the 13-point star identity");
+    }
+
+    /* The artifact styling is page-specific CSS, in the shared module. */
+    const css = await readText("components/content/content.module.css");
+
+    for (const block of [
+      ".identityArtifact {",
+      ".transmissionArtifact {",
+      ".artifactKicker {"
+    ]) {
+      assert.ok(
+        css.includes(block),
+        `content.module.css carries ${block.trim()}`
+      );
+    }
+
+    /* Artifact motion is gated and compositor-only: transform/opacity. */
+    const identityPulse = css.match(
+      /@keyframes\s+identityNodePulse\s*\{([\s\S]*?)\}/
+    );
+
+    assert.ok(identityPulse, "the identity rail pulse keyframes exist");
+    assert.match(identityPulse[1], /opacity/);
+    assert.ok(
+      !/width|height|top|left|margin|padding/.test(identityPulse[1]),
+      "the pulse animates opacity only"
+    );
+
+    const ripple = css.match(
+      /@keyframes\s+transmissionRipple\s*\{([\s\S]*?)\}/
+    );
+
+    assert.ok(ripple, "the transmission ripple keyframes exist");
+    assert.match(ripple[1], /transform: scale/);
+    assert.match(ripple[1], /opacity/);
+    assert.ok(
+      !/width|height|top|left|margin|padding/.test(ripple[1]),
+      "the ripple animates transform/opacity only"
+    );
+  });
+
+  it("no artifact escaped into a separate component file", async () => {
+    for (const banned of [
+      "components/AboutArtifact.tsx",
+      "components/ContactArtifact.tsx",
+      "components/content/AboutArtifact.tsx",
+      "components/content/ContactArtifact.tsx"
+    ]) {
+      await assert.rejects(
+        () => readText(banned),
+        /ENOENT/,
+        `${banned} must not exist — artifacts render inside their page files`
+      );
+    }
+  });
+});

@@ -79,6 +79,16 @@ The rail formula is `x = max(--page-gutter, (viewport − --page-content-width)/
 
 **The footer rides the same rail with one grid contract (v4.0.4):** the four navigation rows (SITE · COLLECTIONS · WORLD · TOPICS) share a fixed heading column and one link-start position so every row's links begin at the exact same x-coordinate (gracefully stacking at ≤560px), the legal paragraph and the LICENSE/TRADEMARKS links share one end-aligned grid on the same rail, and the footer never opts into a route-scoped reveal system — the pre-v4.0.4 opt-in left the entire footer invisible (`opacity: 0`) on every ContentShell route, because the reveal controller only mounts on the world shell and the blog layout. The footer is now permanently visible on every route, verified at export time.
 
+### Page identity artifacts and the global cursor (v4.0.5)
+About and Contact now lead their documents with the same kind of strong, page-specific visual artifact that Work (project cards) and Research (module chains) use — without leaving the shared ContentShell:
+
+- **About — the identity/practice matrix:** RESEARCH · ENGINEERING · PRODUCT as three connected cards on one signal rail (scope vocabulary, one honest note, and a real link per track), leading directly into "What I do" and "How I work". Themed by the About accent.
+- **Contact — the transmission console:** the four collaboration intents (academic/research, business/engineering, project, open technical) rendered as packet-dotted channels wired to the ONE primary action — the verified `mailto:` — with GitHub / LinkedIn as secondary paths. The visual language extends the unified nav's contact identity (ripple/packet) at document scale. Same honest contact model: no form, no backend, no tracking.
+
+Both artifacts are plain server-rendered HTML inside their page files, composed through ContentShell's one generic optional `docFeature` slot (the page's first document block). No page-specific shell, header, navigation, or client component exists for either route: the artifacts work without JavaScript, animate only via compositor-friendly CSS (transform/opacity) behind `prefers-reduced-motion` gates, and ship in the exported HTML (verified by `npm run verify:loading`).
+
+The **red cursor is a root-level global system (v4.0.5)**: mounted exactly once from `app/layout.tsx` — the same root-layout law as the global Music player and RouteProgress — so it now works identically on the world shell, the blog, and every ContentShell document route. Previously it mounted only inside the world shell (and separately in the blog layout), leaving `/about/`, `/contact/`, `/work/`, `/research/`, and the topic hubs on the native pointer. The cursor remains a native CSS cursor with zero pointer listeners, zero requestAnimationFrame, and zero React state; coarse/touch pointers and reduced-motion users keep the native cursor, and `html.pdf-reader-active` still exempts embedded PDF viewing.
+
 ### RED MAGIC
 RED MAGIC is the site's living-layer experiment: a canvas-based computational organism with adaptation, perception, and visible state. It is deliberately **not** part of the critical path — visitors receive a CSS-only seed first, and the organism loads at idle time only when motion is permitted and the device can afford it.
 

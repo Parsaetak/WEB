@@ -68,6 +68,20 @@ type ContentShellProps = {
   lead: readonly string[];
   /** Root-relative href of the current route, marks the active header link. */
   activeHref?: string;
+  /*
+   * DOC FEATURE SLOT (v4.0.5) — the ONE generic optional slot of the
+   * shared shell: the page's first document block, rendered inside
+   * the shared document measure, directly above the page's content
+   * children. Work and Research lead their documents with strong
+   * visual artifacts through ordinary children; this slot exists for
+   * pages whose first document block needs the same first-impression
+   * treatment (the About identity/practice matrix, the Contact
+   * transmission console). It is NOT a shell fork: a server-rendered
+   * node in normal document flow, themed by the same --page-accent,
+   * with no client code, no route-specific layout contract, and no
+   * effect on the hero, header, rail, or footer geometry.
+   */
+  docFeature?: ReactNode;
   children: ReactNode;
 };
 
@@ -88,6 +102,7 @@ export default function ContentShell({
   crumbs,
   lead,
   activeHref,
+  docFeature,
   children
 }: ContentShellProps) {
   /*
@@ -330,6 +345,8 @@ export default function ContentShell({
         </section>
 
         <div className={styles.doc}>
+          {docFeature}
+
           {children}
         </div>
       </main>

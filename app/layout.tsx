@@ -9,6 +9,8 @@ import GlobalMusicPlayerHost from "@/components/player/GlobalMusicPlayerHost";
 
 import RouteProgress from "@/components/RouteProgress";
 
+import RedCursor from "@/components/RedCursor";
+
 import {
   HOME_TITLE,
   JsonLd,
@@ -260,6 +262,23 @@ export default function RootLayout({
           * (data-active="false" under the html.reveal-js gate).
           */}
         <RouteProgress />
+
+        {/*
+          * RED CURSOR (v4.0.5) — mounted exactly once, here in the
+          * ROOT layout, the same root-layout law as the player host
+          * and the route progress line above. Before v4.0.5 the
+          * cursor mounted only inside LivingShell (and, separately,
+          * in the blog layout), so the document routes — /about/,
+          * /contact/, /work/, /research/, and the topic hubs — never
+          * received the cursor's activation class and fell back to
+          * the native pointer. The root mount ships the ONE cursor
+          * system site-wide: the same native CSS cursor (zero pointer
+          * listeners, zero React state, zero rAF, zero moving DOM),
+          * the coarse/touch + reduced-motion fallbacks, and the
+          * pdf-reader-active escape hatch — all unchanged in
+          * components/RedCursor.tsx.
+          */}
+        <RedCursor />
       </body>
     </html>
   );

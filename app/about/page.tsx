@@ -26,6 +26,8 @@ import {
 
 import { getBlogMetaList } from "@/lib/blog";
 
+import { BRAND_STAR } from "@/lib/brand";
+
 import styles from "@/components/content/content.module.css";
 
 /*
@@ -204,6 +206,46 @@ const PROFILE_IDS: readonly string[] = [
   "linktree"
 ];
 
+/*
+ * IDENTITY / PRACTICE ARTIFACT DATA (v4.0.5) — the three tracks of
+ * the practice, stated the way the identity matrix renders them: one
+ * line of scope vocabulary and one honest note per track, each
+ * linking to the document where that track's evidence lives. Every
+ * term is material this page or this site already presents — the
+ * same facts "What I do" states in prose, arranged to be readable in
+ * seconds. Nothing here is invented: no credentials, no metrics, no
+ * claims the rest of the site does not make.
+ */
+const IDENTITY_TRACKS: readonly {
+  name: string;
+  scope: readonly string[];
+  note: string;
+  href: string;
+  linkLabel: string;
+}[] = [
+  {
+    name: "Research",
+    scope: ["Reasoning", "Evaluation", "AI systems"],
+    note: "How intelligence systems should be structured, measured, and governed — published as frameworks, specifications, and benchmarks.",
+    href: "/research/",
+    linkLabel: "The programme"
+  },
+  {
+    name: "Engineering",
+    scope: ["Local AI", "Software", "Architecture"],
+    note: "The systems those answers describe — local AI agents, network software, and this statically engineered website.",
+    href: "/work/",
+    linkLabel: "The systems"
+  },
+  {
+    name: "Product",
+    scope: ["Systems", "Interfaces", "Delivery"],
+    note: "Both tracks carried into things people can run — scoping, interface decisions, and delivery that can be evaluated honestly afterwards.",
+    href: "/contact/",
+    linkLabel: "The engagements"
+  }
+];
+
 function profileLink(id: string) {
   return (
     [...PUBLIC_LINKS.social, ...PUBLIC_LINKS.resources, ...PUBLIC_LINKS.meta]
@@ -259,6 +301,7 @@ export default function AboutPage() {
         title="Parsa Tak"
         crumbs={crumbs}
         activeHref="/about/"
+        docFeature={<AboutIdentityArtifact />}
         lead={[
           `${AUTHOR_TAGLINE} I build local-first AI systems and the frameworks that govern them — the SHEYTAN local-agent laboratory, the UHIT/AIST machine-intelligence measurement programme, the FreeIran VPN manager, and this website — and I research how intelligence systems can be structured, measured, and verified.`,
           "My work follows one pipeline: research → product direction → architecture → implementation → testing → verification → delivery. Every system in that chain is public — the repositories, the specifications, the benchmarks, the writing — so the claims can be checked against the artifacts.",
@@ -556,6 +599,113 @@ export default function AboutPage() {
         </Section>
       </ContentShell>
     </>
+  );
+}
+
+/*
+ * ABOUT IDENTITY ARTIFACT (v4.0.5) — the page's first document block,
+ * rendered through ContentShell's ONE generic docFeature slot. A
+ * compact practice matrix: RESEARCH / ENGINEERING / PRODUCT connected
+ * on one signal rail, so the first document block answers "what is
+ * this page" in seconds and leads directly into "What I do" and "How
+ * I work" below. Server-rendered semantic HTML inside this page file
+ * — no new client component, no page-specific shell — themed by the
+ * shell's --page-accent, with CSS-only motion (an opacity pulse on
+ * the rail nodes) that collapses to a fully usable static state under
+ * reduced motion. The rail is decorative (aria-hidden): the cards
+ * carry the content and its crawlable links.
+ */
+function AboutIdentityArtifact() {
+  return (
+    <section
+      className={styles.identityArtifact}
+      aria-labelledby="about-identity-title"
+    >
+      <div className={styles.artifactHead}>
+        {/*
+          * The 13-point star — the site identity — anchors the
+          * artifact to the same brand vocabulary as the shell.
+          * Decorative: the kicker text beside it is the content.
+          */}
+        <img
+          className={styles.artifactStar}
+          src={BRAND_STAR.red}
+          alt=""
+          width={22}
+          height={22}
+          loading="eager"
+          decoding="async"
+        />
+
+        <p className={styles.artifactKicker}>Identity / practice</p>
+      </div>
+
+      <h2 className={styles.artifactTitle} id="about-identity-title">
+        Three tracks, one practice
+      </h2>
+
+      <p className={styles.artifactSummary}>
+        The same practice seen from its three tracks — each one public,
+        each one verifiable, all three carried by one pipeline from
+        research to delivery.
+      </p>
+
+      {/*
+        * The signal rail — three nodes on one line, each node centered
+        * above its track column. Pure flex: no absolute positioning,
+        * nothing can overlap text, nothing clips on narrow screens
+        * (the rail simply steps aside below 880px and the stacked
+        * cards carry the connection through their shared accent edge).
+        * The outer half-segments render as invisible ghosts so the
+        * nodes stay centered without shifting the line.
+        */}
+      <div className={styles.identityArtifactRail} aria-hidden="true">
+        {IDENTITY_TRACKS.map((track, index) => (
+          <span
+            key={track.name}
+            className={styles.identityArtifactRailCell}
+          >
+            <i
+              className={`${styles.identityArtifactRailLine} ${index === 0 ? styles.identityArtifactRailLineGhost : ""}`}
+            />
+
+            <i className={styles.identityArtifactRailNode} />
+
+            <i
+              className={`${styles.identityArtifactRailLine} ${index === IDENTITY_TRACKS.length - 1 ? styles.identityArtifactRailLineGhost : ""}`}
+            />
+          </span>
+        ))}
+      </div>
+
+      <ol className={styles.identityArtifactTracks}>
+        {IDENTITY_TRACKS.map((track) => (
+          <li
+            key={track.name}
+            className={styles.identityArtifactTrack}
+          >
+            <h3 className={styles.identityArtifactTrackName}>
+              {track.name}
+            </h3>
+
+            <p className={styles.identityArtifactTrackScope}>
+              {track.scope.join(" / ")}
+            </p>
+
+            <p className={styles.identityArtifactTrackNote}>
+              {track.note}
+            </p>
+
+            <DocLink
+              className={styles.identityArtifactTrackLink}
+              href={track.href}
+            >
+              {track.linkLabel}
+            </DocLink>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

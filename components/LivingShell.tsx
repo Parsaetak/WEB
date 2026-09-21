@@ -23,7 +23,6 @@ import SceneRegistry from "@/components/SceneRegistry";
 import SceneUrlSync from "@/components/SceneUrlSync";
 import SiteFooter from "@/components/SiteFooter";
 import WorldBackground from "@/components/WorldBackground";
-import RedCursor from "@/components/RedCursor";
 import MotionReveal from "@/components/MotionReveal";
 import {
   pulseWorld,
@@ -323,7 +322,15 @@ export default function LivingShell({
     >
       <WorldBackground />
 
-      <RedCursor />
+      {/*
+        * RED CURSOR moved to the ROOT application layout (v4.0.5) —
+        * the same root-layout law as the global Music player and the
+        * route progress line. The world shell renders only on "/", so
+        * a cursor mounted here left every document route (/about/,
+        * /contact/, /work/, /research/, the hubs) on the native
+        * pointer. The root layout now owns the ONE cursor mount,
+        * site-wide; this shell keeps no cursor mount of its own.
+        */}
 
       {/*
         * One reveal observer for the world shell — HUD, scenes and

@@ -3,7 +3,6 @@ import type {
 } from "next";
 
 import WorldBackground from "@/components/WorldBackground";
-import RedCursor from "@/components/RedCursor";
 import SiteFooter from "@/components/SiteFooter";
 import BlogHeader from "@/components/blog/BlogHeader";
 import MotionReveal from "@/components/MotionReveal";
@@ -32,7 +31,9 @@ import styles from "./layout.module.css";
  * generated content index. v3.6: the route rides the shared
  * FullScreenPageShell (full-screen contract + data-page identity),
  * so BLOG begins as the same kind of full-screen composition as
- * every other primary tab.
+ * every other primary tab. The cursor itself is a ROOT-layout
+ * system since v4.0.5 (app/layout.tsx) — the blog keeps no mount
+ * of its own.
  */
 
 export function generateMetadata(): Metadata {
@@ -88,7 +89,10 @@ export default function BlogLayout({
         */}
       <WorldBackground mood="archive" />
 
-      <RedCursor />
+      {/*
+        * RED CURSOR moved to the ROOT application layout (v4.0.5):
+        * one mount site-wide, no per-route mounts anywhere.
+        */}
 
       {/*
         * The single reveal observer for the whole blog route tree:

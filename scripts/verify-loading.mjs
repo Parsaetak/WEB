@@ -20,6 +20,9 @@
  *      nav → hero → crumbs → identity → signal → kicker → H1 →
  *      lead → footer landmark skeleton of Work/Research (structural
  *      bijection of the shell)
+ *   6b. the unique page artifacts (About identity/practice matrix,
+ *      Contact transmission console) ship SERVER-RENDERED in the
+ *      exported HTML — present without JavaScript (v4.0.5)
  *   7. the RouteProgress host ships INACTIVE on every exported
  *      route (data-active="false" — a 2px line can never be visible
  *      without JavaScript)
@@ -297,6 +300,49 @@ function landmarkSkeleton(route) {
       fail(`${route}: landmark skeleton has missing landmarks: ${skeleton.join(", ")}`);
     } else {
       ok(`${route} matches the shared document skeleton exactly`);
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 6b. The unique page artifacts ship SERVER-RENDERED (v4.0.5)         */
+/* ------------------------------------------------------------------ */
+
+{
+  /*
+   * About and Contact each lead their document with a unique visual
+   * artifact (identity/practice matrix, transmission console). Both
+   * are plain server-rendered HTML inside the shared ContentShell —
+   * so the exported HTML must already contain them (no client
+   * rendering gate, no JS required). Matched by the CSS-module class
+   * fragments, the same way the skeleton check matches landmarks.
+   */
+  const ARTIFACTS = [
+    {
+      route: "/about/",
+      markers: ["identityArtifact", "identityArtifactTracks"],
+      name: "identity/practice artifact"
+    },
+    {
+      route: "/contact/",
+      markers: ["transmissionArtifact", "transmissionConsole"],
+      name: "transmission artifact"
+    }
+  ];
+
+  for (const { route, markers, name } of ARTIFACTS) {
+    const html = fs.readFileSync(path.join(OUT, route, "index.html"), "utf8");
+
+    const missing = markers.filter(
+      (marker) => !new RegExp(`content-module[^"]*${marker}`).test(html)
+    );
+
+    if (missing.length > 0) {
+      fail(
+        `${route}: the ${name} is missing from the exported HTML (${missing.join(", ")}) — it must ship server-rendered`
+      );
+    } else {
+      ok(`${route} ships the ${name} server-rendered`);
     }
   }
 }

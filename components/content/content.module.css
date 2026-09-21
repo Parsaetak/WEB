@@ -2264,3 +2264,694 @@
     display: none;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* PAGE ARTIFACT HEADER (v4.0.5) — shared voice of the About/Contact   */
+/* identity artifacts                                                  */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The one header vocabulary both unique artifacts speak: the 13-point
+ * star, one mono kicker, one title, one summary line. The per-route
+ * accent comes from the shell's --page-accent, so the same classes
+ * read warm orange on /about/ and house red on /contact/ without a
+ * fork. Page-specific artifact STRUCTURE lives in the blocks below;
+ * this header is what makes both artifacts read as one system.
+ */
+
+.artifactHead {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+.artifactStar {
+  flex: 0 0 auto;
+
+  width: 22px;
+
+  height: 22px;
+}
+
+.artifactKicker {
+  margin: 0;
+
+  color:
+    var(
+      --page-accent,
+      var(--red-hot)
+    );
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.26em;
+
+  text-transform: uppercase;
+}
+
+.artifactTitle {
+  margin: 14px 0 0;
+
+  /* Same heading scale as the shared section titles. */
+  font-size: clamp(21px, 3vw, 27px);
+
+  font-weight: 800;
+
+  letter-spacing: -0.02em;
+
+  line-height: 1.25;
+}
+
+.artifactSummary {
+  max-width: var(--page-lead-measure);
+
+  margin: 8px 0 0;
+
+  color: var(--text-soft);
+
+  font-size: 15px;
+
+  line-height: 1.7;
+}
+
+/* ------------------------------------------------------------------ */
+/* ABOUT IDENTITY ARTIFACT (v4.0.5) — /about/ first document block     */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The identity/practice matrix: the three tracks of the practice
+ * (RESEARCH / ENGINEERING / PRODUCT) on one connected signal rail —
+ * a compact answer to "what is this page" before the prose begins,
+ * leading directly into "What I do" and "How I work".
+ *
+ * Page-specific ARTIFACT styling only: the shared document measure,
+ * section rhythm, and typography tokens are consumed, never
+ * redefined. Pure flex/grid — no absolute positioning, so nothing in
+ * the artifact can overlap text or clip on narrow screens. The only
+ * motion is an opacity pulse on the rail nodes, gated behind
+ * prefers-reduced-motion: no-preference; the static state (full
+ * opacity, static rail) is the complete, usable artifact.
+ */
+
+.identityArtifact {
+  border: 1px solid var(--line-soft);
+
+  border-radius: 14px;
+
+  background:
+    radial-gradient(
+      90% 70% at 18% 0%,
+      color-mix(
+        in srgb,
+        var(--page-accent, var(--red-hot)) 8%,
+        transparent
+      ),
+      transparent 62%
+    ),
+    linear-gradient(
+      150deg,
+      rgba(18, 20, 27, 0.82),
+      rgba(9, 10, 14, 0.74)
+    );
+
+  padding: 26px 28px;
+}
+
+/*
+ * The signal rail — three nodes on one line, aligned to the track
+ * columns below. Decorative (aria-hidden in the markup): the cards
+ * carry the content.
+ */
+.identityArtifactRail {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+
+  gap: 18px;
+
+  margin: 24px 0 0;
+}
+
+.identityArtifactRailCell {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  min-height: 12px;
+}
+
+.identityArtifactRailLine {
+  flex: 1;
+
+  height: 1px;
+
+  background:
+    color-mix(
+      in srgb,
+      var(--page-accent, var(--red-hot)) 30%,
+      transparent
+    );
+}
+
+/*
+ * The outer half-segments (left of the first node, right of the
+ * last) keep their space but paint nothing, so every node stays
+ * centered above its own track column.
+ */
+.identityArtifactRailLineGhost {
+  visibility: hidden;
+}
+
+.identityArtifactRailNode {
+  flex: 0 0 auto;
+
+  width: 7px;
+
+  height: 7px;
+
+  border-radius: 50%;
+
+  background:
+    var(
+      --page-accent,
+      var(--red-hot)
+    );
+
+  box-shadow:
+    0 0 10px
+      color-mix(
+        in srgb,
+        var(--page-accent, var(--red-hot)) 55%,
+        transparent
+      );
+}
+
+.identityArtifactTracks {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+
+  gap: 18px;
+
+  margin: 12px 0 0;
+
+  padding: 0;
+
+  list-style: none;
+}
+
+.identityArtifactTrack {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+
+  padding: 18px 20px;
+
+  border: 1px solid var(--line-soft);
+
+  border-radius: 12px;
+
+  background: var(--panel);
+
+  transition: border-color 140ms ease;
+}
+
+.identityArtifactTrack:hover {
+  border-color:
+    color-mix(
+      in srgb,
+      var(--page-accent, var(--red-hot)) 32%,
+      transparent
+    );
+}
+
+.identityArtifactTrackName {
+  margin: 0;
+
+  color:
+    var(
+      --page-accent,
+      var(--red-hot)
+    );
+
+  font-family: var(--font-mono);
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.2em;
+
+  text-transform: uppercase;
+}
+
+.identityArtifactTrackScope {
+  margin: 0;
+
+  color: var(--text);
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  line-height: 1.5;
+}
+
+.identityArtifactTrackNote {
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-size: 13px;
+
+  line-height: 1.65;
+}
+
+.identityArtifactTrackLink {
+  margin-top: 4px;
+
+  color:
+    var(
+      --page-accent,
+      var(--red-hot)
+    );
+
+  font-family: var(--font-mono);
+
+  font-size: 11px;
+
+  letter-spacing: 0.06em;
+
+  text-decoration: none;
+}
+
+.identityArtifactTrackLink:hover {
+  color: #ffffff;
+
+  text-shadow:
+    0 0 18px
+      rgba(255, 32, 32, 0.35);
+}
+
+.identityArtifactTrackLink:focus-visible {
+  outline: 2px solid var(--red-hot);
+
+  outline-offset: 3px;
+
+  border-radius: 2px;
+}
+
+/*
+ * Motion: one quiet opacity pulse on the rail nodes — the same
+ * rhythm as the hero field pulse. transform/opacity only; under
+ * reduced motion the nodes hold their static full opacity.
+ */
+@media
+  (prefers-reduced-motion: no-preference) {
+  .identityArtifactRailNode {
+    animation:
+      identityNodePulse
+      5.2s
+      ease-in-out
+      infinite;
+  }
+}
+
+@keyframes
+  identityNodePulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 880px) {
+  .identityArtifact {
+    padding: 20px;
+  }
+
+  /*
+   * Stacked: the horizontal rail no longer applies — it steps
+   * aside entirely and the cards carry the connection through a
+   * shared left accent edge (the same treatment as the focus list
+   * on narrow screens). No overlap, no clipping, no orphan nodes.
+   */
+  .identityArtifactRail {
+    display: none;
+  }
+
+  .identityArtifactTracks {
+    grid-template-columns: 1fr;
+  }
+
+  .identityArtifactTrack {
+    border-left: 2px solid
+      color-mix(
+        in srgb,
+        var(--page-accent, var(--red-hot)) 45%,
+        transparent
+      );
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* CONTACT TRANSMISSION ARTIFACT (v4.0.5) — /contact/ first doc block  */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The transmission instrument: the four collaboration intents the
+ * page actually serves, wired over one line to the ONE primary
+ * action (the verified mailto), with GitHub / LinkedIn as the
+ * secondary paths. The visual language extends the unified nav's
+ * contact identity (navContactRipple / navContactPacket) at document
+ * scale — packet dots on each intent, a wired line into the action
+ * node, one quiet ripple. transform/opacity only; static under
+ * reduced motion; no pointer tracking, no canvas, no client code.
+ */
+
+.transmissionArtifact {
+  border: 1px solid var(--line-red);
+
+  border-radius: 14px;
+
+  background:
+    radial-gradient(
+      80% 80% at 88% 30%,
+      rgba(255, 32, 32, 0.07),
+      transparent 60%
+    ),
+    linear-gradient(
+      150deg,
+      rgba(18, 20, 27, 0.82),
+      rgba(9, 10, 14, 0.74)
+    );
+
+  padding: 26px 28px;
+}
+
+.transmissionConsole {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.15fr)
+    minmax(64px, 0.35fr)
+    minmax(0, 0.85fr);
+
+  align-items: center;
+
+  gap: 18px;
+
+  margin: 24px 0 0;
+}
+
+.transmissionIntents {
+  display: grid;
+
+  gap: 8px;
+
+  margin: 0;
+
+  padding: 0;
+
+  list-style: none;
+}
+
+.transmissionIntent {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 9px 12px;
+
+  border: 1px solid var(--line-soft);
+
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, 0.015);
+
+  color: var(--text);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.14em;
+
+  line-height: 1.5;
+
+  text-transform: uppercase;
+}
+
+.transmissionIntentDot {
+  flex: 0 0 auto;
+
+  width: 5px;
+
+  height: 5px;
+
+  border-radius: 50%;
+
+  background: var(--red-hot);
+
+  opacity: 0.85;
+}
+
+.transmissionWire {
+  display: flex;
+
+  align-items: center;
+}
+
+.transmissionWireLine {
+  flex: 1;
+
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    rgba(255, 32, 32, 0.06),
+    rgba(255, 70, 56, 0.65)
+  );
+}
+
+.transmissionWireNode {
+  position: relative;
+
+  flex: 0 0 auto;
+
+  width: 9px;
+
+  height: 9px;
+
+  border-radius: 50%;
+
+  background: var(--red-hot);
+
+  box-shadow:
+    0 0 12px
+      rgba(255, 70, 56, 0.7);
+}
+
+/*
+ * The ripple rings: static by default — one thin ring visible, one
+ * hidden — so the reduced-motion state is calm and stable. Only
+ * under prefers-reduced-motion: no-preference do both rings emit
+ * (scale + opacity, compositor-only, the navContactRipple cadence).
+ */
+.transmissionWireNode::before,
+.transmissionWireNode::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  border:
+    1px solid
+      rgba(255, 70, 56, 0.55);
+
+  border-radius: 50%;
+}
+
+.transmissionWireNode::after {
+  opacity: 0;
+}
+
+@media
+  (prefers-reduced-motion: no-preference) {
+  .transmissionWireNode::before,
+  .transmissionWireNode::after {
+    animation:
+      transmissionRipple
+      2.6s
+      cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      )
+      infinite;
+  }
+
+  .transmissionWireNode::after {
+    animation-delay: 1.3s;
+  }
+}
+
+@keyframes
+  transmissionRipple {
+  0% {
+    opacity: 0.75;
+
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+
+    transform: scale(3.4);
+  }
+}
+
+.transmissionAction {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  gap: 10px;
+}
+
+.transmissionAddress {
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  letter-spacing: 0.14em;
+
+  text-transform: uppercase;
+}
+
+.transmissionSecondary {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-top: 22px;
+
+  padding-top: 18px;
+
+  border-top: 1px solid var(--line-soft);
+}
+
+.transmissionSecondaryLabel {
+  margin-right: 4px;
+
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.22em;
+
+  text-transform: uppercase;
+}
+
+.transmissionSecondaryLink {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 8px 14px;
+
+  border: 1px solid var(--line-soft);
+
+  border-radius: 999px;
+
+  background: var(--panel);
+
+  color: var(--text);
+
+  font-family: var(--font-mono);
+
+  font-size: 11px;
+
+  letter-spacing: 0.1em;
+
+  text-transform: uppercase;
+
+  text-decoration: none;
+
+  transition: border-color 140ms ease;
+}
+
+.transmissionSecondaryLink:hover {
+  border-color: rgba(255, 32, 32, 0.4);
+}
+
+.transmissionSecondaryLink:focus-visible {
+  outline: 2px solid var(--red-hot);
+
+  outline-offset: 3px;
+}
+
+@media (max-width: 880px) {
+  .transmissionArtifact {
+    padding: 20px;
+  }
+
+  /*
+   * Stacked: intents, a short centered connector, then the action —
+   * the console reads top-to-bottom with the same meaning, and the
+   * CTA stays a comfortable touch target.
+   */
+  .transmissionConsole {
+    grid-template-columns: 1fr;
+
+    gap: 16px;
+  }
+
+  .transmissionWire {
+    min-height: 20px;
+  }
+
+  .transmissionWireLine {
+    max-width: 96px;
+  }
+}

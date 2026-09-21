@@ -1195,3 +1195,98 @@ footer materially more compact while preserving every link.
   never fire it; the host ships inactive on all 22 exported routes.
 - `npm run bench:loading` re-run on the v4.0.5 export: see
   bench-results.json for the full twelve-route table.
+
+---
+
+# PHASE 11 — ABOUT/CONTACT IDENTITY ARTIFACTS + GLOBAL RED CURSOR
+
+> **STATUS: DELIVERED in v4.0.5 (rebuild of the v4.0.5 state).**
+
+## Objective
+
+Give About and Contact the same kind of strong, page-specific visual
+artifact that Work (project cards) and Research (module chains) use
+immediately after the shared hero — without leaving the shared
+ContentShell — and make the red cursor a TRUE global site system so it
+works on every document route.
+
+## Root causes found (verified against the source)
+
+- `RedCursor` mounted only inside `LivingShell.tsx` (world shell,
+  renders on "/" only) and, separately, in `app/blog/layout.tsx`.
+  ContentShell document routes (`/about/`, `/contact/`, `/work/`,
+  `/research/`, the six hubs) mount neither shell, so the cursor's
+  activation class never reached them — a mount-placement error, not
+  a cursor CSS error.
+- About and Contact documents opened with plain prose sections; their
+  first document block carried no page-specific visual identity.
+
+## Delivered
+
+- **Global red cursor**: mounted exactly ONCE from `app/layout.tsx`
+  (the same root-layout law as the Music player and RouteProgress);
+  the LivingShell and blog-layout mounts removed. The implementation
+  is unchanged: native CSS cursor, zero pointer listeners, zero rAF,
+  zero React state, coarse/touch + reduced-motion fallbacks, the
+  `pdf-reader-active` escape hatch. Pinned by the new
+  `tests/global-cursor.test.ts` (one mount, one implementation,
+  preserved fallback contract).
+- **One generic shell slot**: `ContentShell` gained a single optional
+  `docFeature` prop — the page's first document block, rendered
+  inside the shared document measure above the page content. No
+  shell fork, no client code, no layout-contract change.
+- **About identity/practice artifact**: RESEARCH · ENGINEERING ·
+  PRODUCT as three connected track cards on one signal rail (scope
+  vocabulary, one honest note, one real link per track — /research/,
+  /work/, /contact/), leading directly into "What I do" and "How I
+  work". Themed by the About accent (`--page-accent`), rendered by
+  `app/about/page.tsx` through the slot.
+- **Contact transmission artifact**: the four collaboration intents
+  (the page's own model) as packet-dotted channels wired over one
+  line to the ONE primary action (the verified mailto from
+  `lib/links.ts`), GitHub / LinkedIn as secondary paths. Visual
+  language extends the unified nav's contact identity
+  (navContactRipple / navContactPacket) at document scale. The page
+  restructured to artifact → Collaboration types → Before writing →
+  Where the work lives; the honest no-form/no-backend model is
+  unchanged.
+- **CSS architecture**: artifact styling lives in
+  `content.module.css` (PAGE ARTIFACT HEADER + ABOUT IDENTITY
+  ARTIFACT + CONTACT TRANSMISSION ARTIFACT blocks) — page-specific
+  artifact styling only; shared geometry untouched. Motion is
+  compositor-only (opacity pulse on the rail nodes, scale/opacity
+  ripple on the wire node), gated behind
+  `prefers-reduced-motion: no-preference`; the static state is the
+  complete, usable artifact. No absolute positioning anywhere in
+  either artifact — nothing can overlap text or clip.
+
+## Verification (measured, not assumed)
+
+- `npm run typecheck`, `npm run typecheck:tests`, `npm test`
+  (280 tests, 0 failures), `npm run build` (23 routes), `npm run
+  lint` (0 errors), `npm run verify` (SEO + brand + export +
+  loading) — all green. `verify:loading` now additionally asserts
+  both artifacts ship server-rendered in the exported HTML (check 6b).
+- `node scripts/verify-interactive.mjs` in headless Chromium:
+  22/22 behavioral checks pass (keyboard disclosure, reduced-motion,
+  throttled route progress, no-JS content on /about/, /contact/,
+  /work/, /research/, /local-ai/, deep links, player absence before
+  intent).
+- Rendered artifact verification (headless Chromium, 36/36 checks):
+  cursor class active on /about/ and /contact/ at 1440/820/390;
+  zero horizontal overflow at every width; artifact present, visible,
+  and positioned after the hero; reduced-motion contexts show no
+  artifact animation with the artifact fully rendered; artifact links
+  keyboard-focusable with visible outlines.
+- Initial client graph measured before/after (decoded, on-disk bytes
+  of the initial script set, identical method on both builds):
+  document routes +3555 bytes each (the cursor module joining the
+  shared root chunk — home and blog are byte-identical or smaller),
+  same file count everywhere, zero new JS files, zero dynamic JS on
+  document routes. Artifact markup costs only server-rendered HTML
+  (About +12.2 KB, Contact +10.2 KB uncompressed).
+- `npm run bench:loading` re-run on the final export: all twelve
+  routes load cold within the established envelope, document routes
+  carry dynJS=0, and navigation medians are unchanged within
+  run-to-run variance. No performance claims beyond these
+  measurements.
