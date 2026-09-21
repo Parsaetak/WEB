@@ -1,23 +1,29 @@
 /*
  * SITE FOOTER (v4.0.5) — the footer's OWN stylesheet, moved out of
- * LivingShell.module.css. The living-world shell owns the world HUD;
- * the footer is shared site chrome rendered by every route (world
- * shell, blog, content documents, topic hubs), so coupling its
- * styles to the world shell made every content route load world
- * shell CSS it never renders. One responsibility per file.
+ * LivingShell.module.css in the previous revision. The living-world
+ * shell owns the world HUD; the footer is shared site chrome
+ * rendered by every route (world shell, blog, content documents,
+ * topic hubs), so coupling its styles to the world shell made every
+ * content route load world shell CSS it never renders. One
+ * responsibility per file.
  *
- * COMPOSITION (v4.0.5 compact contract):
+ * REGION STACK CONTRACT (v4.0.5) — the footer is a deliberate stack
+ * of four regions, each separated by one quiet rail:
  *
- *   footerNav    4 logical groups as GRID COLUMNS — SITE,
- *                COLLECTIONS, WORLD, TOPICS (4 → 2 → 1 responsive)
- *   footerMeta   brand + copyright left, the public network as ONE
- *                naturally wrapping group right
- *   footerLegal  the legal notice and LICENSE / TRADEMARKS sharing
- *                the rail, top-aligned — quiet and secondary
+ *   footerNavRegion   SITE / COLLECTIONS / WORLD / TOPICS (SiteDocNav)
+ *   footerNetwork     PUBLIC NETWORK heading + the 7 + 7 link rows
+ *   footerLegal       notice + LICENSE / TRADEMARKS (secondary)
+ *   footerBottom      star + copyright + trademark — THE LAST row
  *
- * The footer keeps every link the old tall footer carried; the
- * change is composition (columns instead of stacked rows, one
- * wrapping link group instead of a fixed 7+7 split), not content.
+ * The copyright/trademark identity row is BOTTOM-MOST: it is no
+ * longer part of a meta row beside the public network. It sits in
+ * normal document flow — no negative margins, no absolute
+ * positioning, no baseline compensation.
+ *
+ * OWNERSHIP: link rows, icon size and interaction live in
+ * FooterLinks.module.css; the document groups live in
+ * SiteDocNav.module.css; this sheet owns the composition, the
+ * network heading, the legal region and the bottom identity row.
  */
 
 .footer {
@@ -47,10 +53,10 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Navigation region — four logical groups as columns                  */
+/* Region 1 — document navigation (SITE / COLLECTIONS / WORLD / TOPICS) */
 /* ------------------------------------------------------------------ */
 
-.footerNav {
+.footerNavRegion {
   padding:
     24px 0
     18px;
@@ -61,79 +67,61 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Meta region — brand + the public network                            */
+/* Region 2 — the public network                                       */
 /* ------------------------------------------------------------------ */
 
-.footerMeta {
-  display: flex;
-
-  flex-wrap: wrap;
-
-  align-items: center;
-
-  justify-content: space-between;
-
-  gap: 12px 28px;
-
+.footerNetwork {
   padding:
     14px 0
-    12px;
+    16px;
 
   border-bottom:
     1px solid
     rgba(255, 255, 255, 0.06);
 }
 
-.footerBrand {
-  min-width: 0;
-
+/*
+ * The network heading shares SiteDocNav's heading rhythm — one mono
+ * voice for every footer group label — with a quiet rule carrying
+ * the eye to the rail's end.
+ */
+.footerNetworkHeading {
   display: flex;
 
-  flex-wrap: wrap;
-
   align-items: center;
 
-  gap: 8px 10px;
-}
+  gap: 14px;
 
-.footerMark {
-  display: inline-flex;
+  margin: 0 0 10px;
 
-  align-items: center;
-
-  flex: 0 0 auto;
-}
-
-.footerMark img {
-  width: 18px;
-
-  height: 18px;
-
-  display: block;
-}
-
-.footerCopyright {
-  color: var(--text-soft);
-
-  font-size: 12px;
-
-  font-weight: 600;
-
-  line-height: 1.45;
-}
-
-.footerTrademark {
   color: var(--text-muted);
 
   font-family: var(--font-mono);
 
-  font-size: 10px;
+  font-size: 9px;
 
-  letter-spacing: 0.08em;
+  font-weight: 800;
+
+  letter-spacing: 0.22em;
+
+  text-transform: uppercase;
+}
+
+.footerNetworkLine {
+  flex: 1;
+
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.02)
+    );
 }
 
 /* ------------------------------------------------------------------ */
-/* Legal region — notice + LICENSE / TRADEMARKS on one alignment rail  */
+/* Region 3 — legal: notice + LICENSE / TRADEMARKS                     */
 /* ------------------------------------------------------------------ */
 
 /*
@@ -157,7 +145,11 @@
 
   padding:
     14px 0
-    18px;
+    16px;
+
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.06);
 }
 
 .footerLegal > p {
@@ -214,6 +206,65 @@
 }
 
 /* ------------------------------------------------------------------ */
+/* Region 4 — the bottom identity row (star + © + ™)                   */
+/* ------------------------------------------------------------------ */
+
+/*
+ * BOTTOM IDENTITY (v4.0.5): one compact, normal-flow row — the
+ * LAST element of the footer stack. Wraps gracefully on narrow
+ * screens; alignment adapts, wording never changes.
+ */
+.footerBottom {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 8px 12px;
+
+  padding:
+    14px 0
+    18px;
+}
+
+.footerMark {
+  display: inline-flex;
+
+  align-items: center;
+
+  flex: 0 0 auto;
+}
+
+.footerMark img {
+  width: 18px;
+
+  height: 18px;
+
+  display: block;
+}
+
+.footerCopyright {
+  color: var(--text-soft);
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  line-height: 1.45;
+}
+
+.footerTrademark {
+  color: var(--text-muted);
+
+  font-family: var(--font-mono);
+
+  font-size: 10px;
+
+  letter-spacing: 0.08em;
+}
+
+/* ------------------------------------------------------------------ */
 /* Responsive behavior                                                  */
 /* ------------------------------------------------------------------ */
 
@@ -230,16 +281,16 @@
 }
 
 @media (max-width: 560px) {
-  .footerNav {
+  .footerNavRegion {
     padding:
       22px 0
       18px;
   }
 
-  .footerMeta {
+  .footerNetwork {
     padding:
-      14px 0
-      12px;
+      12px 0
+      14px;
   }
 
   .footerCopyright {
@@ -249,7 +300,7 @@
   .footerLegal {
     padding:
       14px 0
-      18px;
+      16px;
   }
 
   .footerLegal > p {
@@ -260,6 +311,12 @@
 
   .footerLegalLinks {
     gap: 14px;
+  }
+
+  .footerBottom {
+    padding:
+      12px 0
+      16px;
   }
 }
 

@@ -13,6 +13,7 @@ import styles from "@/components/LivingShell.module.css";
 import UnifiedSiteNav, {
   type UnifiedNavEntry
 } from "@/components/UnifiedSiteNav";
+import SiteHeaderStatus from "@/components/SiteHeaderStatus";
 import { BRAND_STAR } from "@/lib/brand";
 import SceneLoadingScreen from "@/components/SceneLoadingScreen";
 import { PRIMARY_NAV, WORLD_NAV } from "@/lib/navigation";
@@ -417,26 +418,23 @@ export default function LivingShell({
             </span>
           </a>
 
-          <div
-            className={
-              styles.livingShellStatus
+          {/*
+            * HEADER STATUS (v4.0.5) — the shared SiteHeaderStatus
+            * identity, rendering the active scene's label (HOME /
+            * SYSTEMS / RED MAGIC / WORK / MEDIA) beside the brand.
+            * The markup, dot, pulse, typography and reduced-motion
+            * behavior live in SiteHeaderStatus; this HUD owns
+            * placement only. `live` keeps the v3.x polite announce-
+            * ment of scene changes — the label legitimately changes
+            * client-side as the reader moves through the world.
+            */}
+          <SiteHeaderStatus
+            label={
+              activeSceneDefinition?.label ??
+              "Home"
             }
-            aria-live="polite"
-          >
-            <span
-              className={
-                styles.livingShellStatusDot
-              }
-              aria-hidden="true"
-            />
-
-            <span>
-              {
-                activeSceneDefinition?.label ??
-                "Home"
-              }
-            </span>
-          </div>
+            live
+          />
 
           <UnifiedSiteNav
             menuId="world-unified-nav"

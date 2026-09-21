@@ -181,59 +181,13 @@
   transform: scaleX(1);
 }
 
-.livingShellStatus {
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-  min-width: max-content;
-
-  color: #8a919d;
-
-  font-family: var(--font-mono);
-
-  font-size: 9px;
-
-  letter-spacing: 0.16em;
-
-  text-transform: uppercase;
-}
-
-.livingShellStatusDot {
-  width: 6px;
-  height: 6px;
-
-  border-radius: 50%;
-
-  background: var(--red);
-
-  box-shadow:
-    0 0 8px
-    rgba(255, 32, 32, 0.72);
-
-  animation:
-    shellStatusPulse
-    2.4s
-    ease-in-out
-    infinite;
-}
-
-@keyframes shellStatusPulse {
-  0%,
-  100% {
-    opacity: 0.35;
-
-    transform: scale(0.8);
-  }
-
-  50% {
-    opacity: 1;
-
-    transform: scale(1.12);
-  }
-}
+/*
+ * HEADER STATUS (v4.0.5) — removed from this sheet. The status is
+ * the shared SiteHeaderStatus component now (markup, dot, pulse,
+ * typography, reduced-motion all live in SiteHeaderStatus.module.css);
+ * this HUD owns PLACEMENT only — the component sits in the grid
+ * column right after the brand, at every viewport width.
+ */
 
 .livingShellViewport {
   position: relative;
@@ -317,32 +271,29 @@
 /*
  * COMPACT NAVIGATION MODE (v3.4) — ≤860px (phones and narrow
  * portrait tablets). The full unified track stands down (the
- * component hides it itself); the HUD carries brand + the unified
- * disclosure trigger (end-aligned by the component) + GitHub. The
- * status label is already hidden at ≤1100px, so the freed grid
- * column is reassigned: actions take the last column, aligned to
- * the edge.
+ * component hides it itself); the HUD carries brand + status + the
+ * unified disclosure trigger (end-aligned by the component) + the
+ * actions group. The v4.0.5 status stays VISIBLE at every width —
+ * the compact relationship is brand → status → menu trigger, so the
+ * actions group keeps its own fourth column instead of reusing the
+ * status column (the pre-v4.0.5 grid-column reassignment is gone
+ * with the hiding rule that required it).
  */
 @media (max-width: 860px) {
   .livingShellHudActions {
-    grid-column: 3;
-
-    justify-self: end;
-
     gap: 12px;
   }
 }
 
 @media (max-width: 1100px) {
+  /*
+   * The status stays (v4.0.5 unification); the grid keeps all four
+   * columns and the HUD tightens its rhythm so the unified track
+   * keeps usable width between status and actions (the track's own
+   * overflow contract absorbs any remaining tightness).
+   */
   .livingShellHudInner {
-    grid-template-columns:
-      auto
-      minmax(0, 1fr)
-      auto;
-  }
-
-  .livingShellStatus {
-    display: none;
+    gap: 14px;
   }
 }
 
@@ -386,12 +337,7 @@
 }
 
 /*
- * Reduced motion (v2.8): the HUD status dot stops pulsing for
- * readers who ask the OS for reduced motion. Its color and glow
- * are static, so presence information survives without motion.
+ * Reduced-motion behavior for the status dot moved WITH the status
+ * itself into SiteHeaderStatus.module.css (v4.0.5) — one owner, no
+ * duplicate pulse/keyframe architectures.
  */
-@media (prefers-reduced-motion: reduce) {
-  .livingShellStatusDot {
-    animation: none;
-  }
-}

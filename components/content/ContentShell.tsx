@@ -12,9 +12,14 @@ import UnifiedSiteNav, {
   type UnifiedNavEntry
 } from "@/components/UnifiedSiteNav";
 
+import SiteHeaderStatus from "@/components/SiteHeaderStatus";
+
 import FullScreenPageShell from "@/components/FullScreenPageShell";
 
-import { pageIdForRoutePath } from "@/lib/routes";
+import {
+  headerStatusForRoutePath,
+  pageIdForRoutePath
+} from "@/lib/routes";
 
 import SiteFooter from "@/components/SiteFooter";
 
@@ -48,6 +53,16 @@ import styles from "@/components/content/content.module.css";
  * the document body below it remains static semantic HTML, and the
  * nav itself still ships as complete server-rendered markup for
  * crawlers and no-JS readers.
+ *
+ * v4.0.5 header identity: the header also renders the shared
+ * SiteHeaderStatus — brand → status → navigation, the same visual
+ * grammar as the world HUD and the blog. The label is derived from
+ * the route registry (lib/routes.ts → headerStatusForRoutePath) via
+ * this shell's existing activeHref, so EVERY ContentShell route
+ * (About, Contact, Work, Research, the six topic hubs, and any
+ * future registered route) inherits its identity automatically.
+ * Pages never render status markup; there are no route-specific
+ * header implementations.
  *
  * The 13-point star, mono kickers, and red accents are reused so
  * every content document reads as the same website, not a template.
@@ -150,6 +165,15 @@ export default function ContentShell({
       : [])
   ];
 
+  /*
+   * HEADER STATUS (v4.0.5) — the visible surface identity, resolved
+   * from the canonical route registry through this route's own
+   * activeHref. One derivation for every ContentShell route; pages
+   * provide content only, never status markup.
+   */
+  const headerStatus =
+    headerStatusForRoutePath(activeHref);
+
   return (
     <FullScreenPageShell
       page={pageIdForRoutePath(activeHref)}
@@ -180,6 +204,16 @@ export default function ContentShell({
 
             <span className={styles.brandName}>Parsa Tak</span>
           </Link>
+
+          {/*
+            * HEADER STATUS (v4.0.5) — placement only. The label is
+            * resolved from the canonical route registry through the
+            * activeHref the route already provides; unregistered
+            * paths resolve to null and render no status.
+            */}
+          {headerStatus !== null && (
+            <SiteHeaderStatus label={headerStatus} />
+          )}
 
           <UnifiedSiteNav
             className={styles.contentNav}

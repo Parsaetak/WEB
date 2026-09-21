@@ -102,6 +102,22 @@ violation as a bug to be justified, not a style preference.
   its own system (`SceneLoadingScreen`, boot/scene variants only).
   Behavior regressions are pinned by `tests/route-progress.test.ts`
   and the export-level inactive check in `verify:loading`.
+- **Shared header status (v4.0.5):** every major surface carries the
+  same header identity — `★ Parsa Tak  ● CURRENT SURFACE` — through
+  ONE shared component, `components/SiteHeaderStatus.tsx` (+ its own
+  module). It owns the markup, the red dot, the 2.4s transform/opacity
+  pulse, the typography, the reduced-motion behavior and the
+  accessibility behavior; host headers (LivingShell, BlogHeader,
+  ContentShell) own PLACEMENT only and must not restyle it. Labels
+  come from the authorities: world scenes use the live scene
+  definition (with `live` for polite scene-change announcements);
+  BLOG is static; ContentShell routes resolve through
+  `headerStatusForRoutePath()` in `lib/routes.ts` (registry path →
+  uppercase identity; unregistered paths render no status). No
+  route-specific status variant may be created, no status may be
+  hidden at breakpoints (the compact hierarchy is brand → status →
+  menu trigger), and the component stays server-safe (no client
+  code, no animation state).
 - **Document unification + compact footer (v4.0.5):** every
   ContentShell document renders ONE shared title system — crumbs,
   then the identity row (heroSignal BESIDE heroCopy, in normal
@@ -113,12 +129,20 @@ violation as a bug to be justified, not a style preference.
   DECORATIVE field vocabulary only (heroField/heroRing/heroAxis/
   heroNode) — never the rail, crumbs, title, lead, or identity; no
   page-specific hero/shell components may be created. The footer
-  is ONE compact composition owned by its own stylesheet
+  is ONE deliberate region stack owned by its own stylesheet
   (`SiteFooter.module.css` — NOT LivingShell.module.css): the four
   logical groups (SITE, COLLECTIONS, WORLD, TOPICS) render as a
-  responsive column grid (4 → 2 → 1), the public network is ONE
-  data-driven wrapping group from `lib/links.ts` (no hardcoded row
-  slicing), and the legal row top-aligns without baseline hacks.
+  responsive column grid (4 → 2 → 1); the PUBLIC NETWORK region
+  presents the 14 verified links of `lib/links.ts` as exactly TWO
+  rows of SEVEN on desktop (`FOOTER_LINK_ROW_SIZE = 7` —
+  presentation-only slicing of the one registry; rows wrap
+  order-stably below desktop) through the ONE shared FooterLink
+  renderer and the shared LinkIcon system at a 19–18px box with a
+  CSS-only, transform/opacity accent hover (the registry's own
+  `--link-accent`, static under reduced motion); the legal row
+  top-aligns without baseline hacks; and the BOTTOM-MOST row is the
+  identity line (star + © 2026 Parsa Tak. All rights reserved. +
+  Parsa Tak™) in normal flow.
   `SiteFooter` must NEVER carry a `data-reveal` opt-in again — the
   reveal controller mounts only on the world shell and the blog
   layout, so an opt-in there left the entire footer invisible

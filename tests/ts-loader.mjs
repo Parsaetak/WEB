@@ -46,6 +46,37 @@ export async function resolve(
   context,
   nextResolve
 ) {
+  /*
+   * JSON DATA IMPORTS (v4.0.5): Node ESM requires `with { type:
+   * "json" }` on JSON import statements; the app code relies on the
+   * bundler (which infers it). When this hook resolves a .json
+   * module it injects the attribute so data authorities
+   * (data/routes.json) can be imported by tests through the same
+   * app code path the build uses.
+   */
+  const resolved = await resolveAppSpecifier(specifier, context, nextResolve);
+
+  if (
+    resolved &&
+    resolved.url.endsWith(".json")
+  ) {
+    return {
+      ...resolved,
+
+      importAttributes: {
+        type: "json"
+      }
+    };
+  }
+
+  return resolved;
+}
+
+async function resolveAppSpecifier(
+  specifier,
+  context,
+  nextResolve
+) {
   /* "@/*" application alias. */
   if (specifier.startsWith("@/")) {
     const base = path.join(ROOT, specifier.slice(2));

@@ -14,13 +14,25 @@ import SiteDocNav from "@/components/SiteDocNav";
  * tree; rendered from the blog layout it stays server-rendered with
  * zero client JavaScript.
  *
- * COMPOSITION (v4.0.5): the four logical navigation groups render as
- * one compact COLUMN grid (SiteDocNav), the brand/copyright line and
- * the public network share one meta row, and the legal notice keeps
- * its wording with LICENSE / TRADEMARKS top-aligned beside it — every
- * link of the old tall footer is preserved; only the composition
- * changed. Styles live in this component's OWN module
- * (SiteFooter.module.css), not in the living-world shell's sheet.
+ * COMPOSITION (v4.0.5) — the deliberate site-chrome stack, top to
+ * bottom, one region per rail:
+ *
+ *   1. footerNavRegion   SITE / COLLECTIONS / WORLD / TOPICS
+ *                        (SiteDocNav, four crawlable groups)
+ *   2. footerNetwork     the PUBLIC NETWORK heading + the 14
+ *                        verified links as two rows of seven
+ *                        (desktop) via FooterLinks
+ *   3. footerLegal       the legal notice + LICENSE / TRADEMARKS,
+ *                        visually secondary
+ *   4. footerBottom      the BOTTOM-MOST identity row: the 13-point
+ *                        star, © 2026 Parsa Tak. All rights
+ *                        reserved., Parsa Tak™
+ *
+ * The copyright/trademark identity row moved OUT of the public-
+ * network meta row to the bottom of the stack (v4.0.5) — the exact
+ * wording, the star identity and normal document flow are preserved
+ * (no negative margins, no absolute positioning, no baseline
+ * compensation).
  *
  * The footer never opts into a route-scoped reveal system: reveal
  * controllers mount only on the world shell and the blog layout, and
@@ -41,46 +53,39 @@ export default function SiteFooter() {
           * interaction states; these anchors make the content graph
           * reachable without JavaScript.
           */}
-        <SiteDocNav />
+        <div className={styles.footerNavRegion}>
+          <SiteDocNav />
+        </div>
 
-        <div className={styles.footerMeta}>
-          <div className={styles.footerBrand}>
+        {/*
+          * THE PUBLIC NETWORK (v4.0.5) — its own region under the
+          * document nav: a quiet mono heading (the same heading
+          * rhythm as SiteDocNav's groups) above the two seven-link
+          * rows. FooterLinks owns the rows, the icons and the
+          * interaction; this region owns only the heading and the
+          * rail.
+          */}
+        <div className={styles.footerNetwork}>
+          <div className={styles.footerNetworkHeading}>
+            <span>Public Network</span>
+
             <span
-              className={styles.footerMark}
+              className={
+                styles.footerNetworkLine
+              }
               aria-hidden="true"
-            >
-              {/*
-               * The 13-point star anchors the legal block to the
-               * site identity. Decorative: the adjacent text is the
-               * accessible content.
-               */}
-              <img
-                src={BRAND_STAR.red}
-                alt=""
-                width={18}
-                height={18}
-                loading="lazy"
-                decoding="async"
-              />
-            </span>
-
-            <strong className={styles.footerCopyright}>
-              © 2026 Parsa Tak. All rights reserved.
-            </strong>
-
-            <span className={styles.footerTrademark}>
-              Parsa Tak™
-            </span>
+            />
           </div>
 
-          {/*
-           * THE PUBLIC NETWORK (v4.0.5) — one semantic group that
-           * wraps naturally; the layout decides how many visual
-           * lines it needs. The fixed 7 + 7 row slicing is gone.
-           */}
           <FooterLinks />
         </div>
 
+        {/*
+          * LEGAL REGION — the notice keeps its exact meaning and
+          * stays visible and crawlable (never an inaccessible
+          * disclosure), with LICENSE / TRADEMARKS end-aligned on
+          * the same rail. Visually secondary by design.
+          */}
         <div className={styles.footerLegal}>
           <p>
             Original website design, visual identity,
@@ -109,6 +114,41 @@ export default function SiteFooter() {
               TRADEMARKS
             </a>
           </div>
+        </div>
+
+        {/*
+          * BOTTOM IDENTITY ROW (v4.0.5) — the final footer row, and
+          * the LAST thing in the region stack: star + copyright +
+          * trademark, one compact line in normal flow. The wording
+          * is exact and the star is the same 13-point site identity.
+          */}
+        <div className={styles.footerBottom}>
+          <span
+            className={styles.footerMark}
+            aria-hidden="true"
+          >
+            {/*
+              * The 13-point star anchors the identity row to the
+              * site identity. Decorative: the adjacent text is the
+              * accessible content.
+              */}
+            <img
+              src={BRAND_STAR.red}
+              alt=""
+              width={18}
+              height={18}
+              loading="lazy"
+              decoding="async"
+            />
+          </span>
+
+          <strong className={styles.footerCopyright}>
+            © 2026 Parsa Tak. All rights reserved.
+          </strong>
+
+          <span className={styles.footerTrademark}>
+            Parsa Tak™
+          </span>
         </div>
       </div>
     </footer>

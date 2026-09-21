@@ -92,38 +92,16 @@
   color: #ffffff;
 }
 
-.status {
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-  min-width: max-content;
-
-  color: #8a919d;
-
-  font-family: var(--font-mono);
-
-  font-size: 9px;
-
-  letter-spacing: 0.16em;
-
-  text-transform: uppercase;
-}
-
-.statusDot {
-  width: 6px;
-  height: 6px;
-
-  border-radius: 50%;
-
-  background: var(--red);
-
-  box-shadow:
-    0 0 8px
-      rgba(255, 32, 32, 0.72);
-}
+/*
+ * HEADER STATUS (v4.0.5) — removed from this sheet. The blog's
+ * status is the shared SiteHeaderStatus component (same dot, same
+ * pulse, same typography as the world HUD and the content routes);
+ * this header owns PLACEMENT only. The old breakpoint-hiding rules
+ * (≤1100px / ≤760px display:none) are gone with it: the current
+ * tab identity remains visible on tablet and mobile — the compact
+ * hierarchy is brand → status → menu trigger, and the header's
+ * flex/gap rhythm (tightened below) is what makes it fit.
+ */
 
 /*
  * UNIFIED NAVIGATION (v3.4) — placement only. The navigation's own
@@ -192,11 +170,12 @@
 
 @media (max-width: 1100px) {
   /*
-   * The BLOG status chip stands down with the world HUD's status
-   * label, freeing the middle slot for the unified track.
+   * The status stays (v4.0.5): the freed-slot hiding rule is gone
+   * and the header tightens its rhythm instead, so the unified
+   * track keeps usable width beside the identity.
    */
-  .status {
-    display: none;
+  .blogHeaderInner {
+    gap: 14px;
   }
 }
 
@@ -241,11 +220,7 @@
         var(--page-content-width)
       );
 
-    gap: 14px;
-  }
-
-  .status {
-    display: none;
+    gap: 12px;
   }
 }
 

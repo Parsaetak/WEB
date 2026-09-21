@@ -1159,16 +1159,18 @@ footer materially more compact while preserving every link.
   animation only); pointer-down and keyboard focus keep warming
   (unambiguous intent); save-data/2G still skip; the current route
   is still never warmed; viewport prefetch still off.
-- **Compact footer**: `SiteFooter.module.css` (new dedicated
+- **Compact footer**: `SiteFooter.module.css` (dedicated
   stylesheet — footer styles moved out of `LivingShell.module.css`);
   the four logical groups (SITE, COLLECTIONS, WORLD, TOPICS) render
   as a responsive column grid (4 → 2 → 1) with the six-entry TOPICS
-  group flowing through two sub-columns; the public network is ONE
-  data-driven wrapping group from `lib/links.ts` (the 7 + 7 slice is
-  gone); the legal row top-aligns without baseline hacks. Measured:
-  317 px @1440 (was 355), 361 px @768 (was 425), 566 px @390 (was
-  624) — more compact at every width, no horizontal overflow, all
-  links crawlable.
+  group flowing through two sub-columns; the public network presents
+  the 14 verified links of `lib/links.ts` as its own region —
+  PUBLIC NETWORK heading + two explicit rows of seven on desktop
+  (final v4.0.5 contract; see PHASE 12); the legal row top-aligns
+  without baseline hacks; the copyright/trademark identity row is
+  the bottom-most footer row. Measured: no horizontal overflow at
+  1440/1000/900/390, all 14 links crawlable and visible at every
+  width.
 - **Benchmark expansion**: `bench-loading.mjs` now covers all twelve
   canonical routes, reports click→URL-commit AND settled times with
   medians + P95, CSS/image/RSC-payload metrics per route, and a
@@ -1290,3 +1292,112 @@ works on every document route.
   carry dynJS=0, and navigation medians are unchanged within
   run-to-run variance. No performance claims beyond these
   measurements.
+
+---
+
+# PHASE 12 — HEADER + FOOTER UNIFICATION
+
+> **STATUS: DELIVERED in v4.0.5.**
+
+## Objective
+
+Make the header identity and the footer site chrome consistent on
+every major surface: one shared header status component rendering
+`★ Parsa Tak  ● CURRENT SURFACE` on the world HUD, the blog and every
+ContentShell document; one deliberate footer stack — document nav →
+PUBLIC NETWORK (14 verified links, 7 + 7 on desktop) → legal →
+bottom identity row (star + © + ™).
+
+## Root causes found (verified against the source)
+
+- The header identity existed as THREE implementations: the world
+  HUD's pulsing `livingShellStatus/StatusDot` (+ `shellStatusPulse`
+  keyframes), the blog's local unpulsed `status/statusDot` chip that
+  stood down at ≤1100px and ≤760px, and NOTHING on ContentShell —
+  so /about/, /contact/, /work/, /research/ and the six topic hubs
+  carried no status identity at all.
+- The footer placed the copyright/trademark identity BESIDE the
+  public network (one meta row) instead of at the bottom; the public
+  network was one naturally wrapping group (no explicit 7 + 7
+  desktop rows); footer icons rendered at 13px (12px ≤760px); the
+  registry's per-link `accent` was unused by the footer.
+- `tests/footer.test.ts` asserted the obsolete "no fixed row
+  slicing" implementation detail.
+
+## Implementation
+
+- **`components/SiteHeaderStatus.tsx` + `.module.css`** — the ONE
+  shared status implementation: markup, 6px red dot, 2.4s
+  transform/opacity pulse, 9px mono uppercase label, reduced-motion
+  static state, `aria-hidden` dot, optional polite live region.
+  Server-safe presentational component (no client code).
+- **World HUD**: renders the shared status with the live scene
+  definition's label (`live` keeps scene-change announcements); the
+  duplicate status markup, CSS and keyframes are removed; the HUD
+  keeps its four-column grid at every width (brand → status →
+  navigation → actions; compact: brand → status → menu trigger).
+- **Blog**: renders `<SiteHeaderStatus label="BLOG" />`; the local
+  chip, its CSS and BOTH breakpoint-hiding rules are removed — the
+  identity is visible at every width; the header rhythm tightens
+  instead (14px/12px gaps).
+- **ContentShell**: renders the shared status with
+  `headerStatusForRoutePath(activeHref)` — one derivation for every
+  document route; `HubPageView` passes its registry slug as
+  `activeHref` (route identity plumbing only; the hub page-id and
+  nav-active behavior are unchanged). Labels resolve from
+  `data/routes.json` via `lib/routes.ts` (registry path → uppercase;
+  unregistered → no status); no route-specific header code exists.
+- **Footer**: `SiteFooter` renders the region stack
+  (footerNavRegion → footerNetwork with a PUBLIC NETWORK heading →
+  footerLegal → footerBottom identity row). `FooterLinks` slices the
+  registry with `FOOTER_LINK_ROW_SIZE = 7` into two rows rendered by
+  the ONE shared FooterLink renderer (list semantics, registry order
+  preserved); icons render through the shared `LinkIcon` at a
+  19–18px box; hover/focus activate the registry's own accent via
+  `--link-accent` (CSS-only transform/opacity/color; scale + ring +
+  arrow nudge; strong `:focus-visible` boundary; reduced motion
+  keeps icons, color and focus, drops movement). The copyright/
+  trademark identity row is the LAST footer row in normal flow.
+- **Tests**: `tests/footer.test.ts` rewritten to the durable
+  contracts (registry = exactly 14 unique links in canonical order,
+  no WhatsApp; two row containers × seven links covering the full
+  registry with no omission/duplication; shared renderer; LinkIcon;
+  icon box 18–20px; transform/opacity-only animation; reduced-motion;
+  legal wording; bottom identity row after the legal region; style
+  ownership). New `tests/header-status.test.ts` (17 contracts: one
+  implementation, all three hosts, no duplicates, label resolution,
+  world scene labels, server-safety, accessibility, reduced motion).
+  `tests/ts-loader.mjs` injects the JSON import attribute so tests
+  can import the app's data authorities through the app code path.
+- **Docs**: README, AGENTS and this roadmap updated to the final
+  architecture (no "naturally wrapping" claims remain).
+
+## Verification (measured, not assumed)
+
+- `npm run typecheck`, `npm run typecheck:tests`, `npm test`
+  (310 tests, 0 failures), `npm run lint` (0 errors; the pre-existing
+  `<img>` warning profile unchanged), `npm run build` (23 routes),
+  `npm run verify` (SEO + brand + export + loading) — all green.
+- `node scripts/verify-interactive.mjs` in headless Chromium:
+  22/22 behavioral checks pass (keyboard disclosure, reduced-motion,
+  throttled route progress, no-JS content, deep links, player
+  absence before intent).
+- Rendered-export QA (12 routes × 14 checks, all green): brand +
+  correct server-rendered status label per route; footer groups;
+  PUBLIC NETWORK heading; exactly two row containers; all 14 links
+  in canonical order; 14 inline SVG icons; legal + LICENSE +
+  TRADEMARKS; identity row AFTER the legal region; no WhatsApp
+  remnant.
+- Browser measurement (1440/1000/900/390): zero horizontal overflow
+  on /, /about/, /blog/, /contact/, /local-ai/; desktop rows render
+  7 + 7 as two single visual lines (rows wrap order-stably below
+  desktop); status visible at every width on every tested surface
+  (the blog status no longer hides); status not focusable; footer
+  link keyboard focus applies the red outline, the registry accent
+  (LinkedIn → #0A66C2 measured) and scale(1.08) via transform;
+  world scene clicks update the status (Home → Systems → RED Magic,
+  uppercase by CSS); compact HUD at 390 renders brand → status →
+  menu trigger with GitHub inside the disclosure menu.
+- `npm run bench:loading` re-run: all twelve routes load within the
+  established envelope; no new client bundle for the status or the
+  footer animation (CSS-only, server-rendered markup).

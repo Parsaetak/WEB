@@ -86,6 +86,7 @@ export default function HubPageView({ hub }: { hub: HubDefinition }) {
         title={hub.h1}
         crumbs={crumbs}
         lead={hub.lead}
+        activeHref={`/${hub.slug}/`}
       >
         <Section title={`What I work on in ${topicInSentence(hub.topicName)}`}>
           <FocusList items={hub.focus} />

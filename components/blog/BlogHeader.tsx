@@ -4,6 +4,7 @@ import { BRAND_STAR } from "@/lib/brand";
 import UnifiedSiteNav, {
   type UnifiedNavEntry
 } from "@/components/UnifiedSiteNav";
+import SiteHeaderStatus from "@/components/SiteHeaderStatus";
 import { PRIMARY_NAV, WORLD_NAV } from "@/lib/navigation";
 
 import { GITHUB_LINK } from "@/lib/links";
@@ -93,16 +94,15 @@ export default function BlogHeader() {
           </span>
         </Link>
 
-        <div
-          className={styles.status}
-        >
-          <span
-            className={styles.statusDot}
-            aria-hidden="true"
-          />
-
-          <span>BLOG</span>
-        </div>
+        {/*
+          * HEADER STATUS (v4.0.5) — the shared SiteHeaderStatus
+          * identity with the same red pulsing light as the world
+          * HUD and the content documents. The local (unpulsed,
+          * breakpoint-hidden) chip this replaces is gone; the
+          * identity remains visible at every width the header's
+          * responsive structure permits.
+          */}
+        <SiteHeaderStatus label="BLOG" />
 
         {/*
          * The unified navigation (v3.4): desktop track + ≤860px

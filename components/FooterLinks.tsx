@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import styles from "@/components/FooterLinks.module.css";
 
 import {
@@ -10,13 +12,23 @@ import {
 } from "@/lib/links";
 
 /*
- * THE PUBLIC NETWORK (v4.0.5) — ONE semantic group of every
- * verified public link (lib/links.ts owns the registry). The fixed
- * 7 + 7 row slicing of v4.0.4 is gone: the group wraps naturally
- * and the LAYOUT decides how many visual lines it needs, so adding
- * or retiring a channel can never leave a hardcoded row split
- * stale.
+ * THE PUBLIC NETWORK (v4.0.5) — the 14 verified public links of
+ * lib/links.ts (the ONLY data authority; no link record is
+ * duplicated here) presented under the explicit desktop contract:
+ *
+ *   ROW 1 — links 1–7
+ *   ROW 2 — links 8–14
+ *
+ * FOOTER_LINK_ROW_SIZE is PRESENTATION LOGIC ONLY: it slices the
+ * registry into the two desktop row containers, it never defines
+ * or edits the link set. Both rows render through the ONE shared
+ * FooterLink renderer, so the two rows can never drift visually.
+ * Below desktop the rows themselves wrap (order-stable, no overflow)
+ * — the 7 + 7 requirement is a desktop presentation contract, not a
+ * mobile one.
  */
+
+const FOOTER_LINK_ROW_SIZE = 7;
 
 function FooterLink({
   link
@@ -48,6 +60,19 @@ function FooterLink({
       }
       aria-label={
         link.label
+      }
+      style={
+        {
+          /*
+           * Per-link accent (v4.0.5): the registry's own accent
+           * value exposed as a custom property — the CSS never
+           * hardcodes social-network colors, and the hover
+           * language (icon color + ring) is owned by the
+           * stylesheet through var(--link-accent).
+           */
+          "--link-accent":
+            link.accent
+        } as CSSProperties
       }
     >
       <span
@@ -87,7 +112,55 @@ function FooterLink({
   );
 }
 
+/*
+ * One presentation row — the shared FooterLink renderer, list
+ * semantics (crawlable anchors), registry order preserved inside
+ * the row.
+ */
+function FooterLinkRow({
+  links
+}: {
+  links: readonly PublicLink[];
+}) {
+  return (
+    <ul
+      className={
+        styles.linkRow
+      }
+    >
+      {links.map(
+        (link) => (
+          <li
+            key={
+              link.id
+            }
+            className={
+              styles.linkItem
+            }
+          >
+            <FooterLink
+              link={
+                link
+              }
+            />
+          </li>
+        )
+      )}
+    </ul>
+  );
+}
+
 export default function FooterLinks() {
+  const firstRow = ALL_PUBLIC_LINKS.slice(
+    0,
+    FOOTER_LINK_ROW_SIZE
+  );
+
+  const secondRow = ALL_PUBLIC_LINKS.slice(
+    FOOTER_LINK_ROW_SIZE,
+    FOOTER_LINK_ROW_SIZE * 2
+  );
+
   return (
     <nav
       className={
@@ -95,18 +168,17 @@ export default function FooterLinks() {
       }
       aria-label="Public network"
     >
-      {ALL_PUBLIC_LINKS.map(
-        (link) => (
-          <FooterLink
-            key={
-              link.id
-            }
-            link={
-              link
-            }
-          />
-        )
-      )}
+      <FooterLinkRow
+        links={
+          firstRow
+        }
+      />
+
+      <FooterLinkRow
+        links={
+          secondRow
+        }
+      />
     </nav>
   );
 }

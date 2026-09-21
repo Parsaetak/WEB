@@ -131,6 +131,56 @@ export function getRegistryRoute(
 }
 
 /*
+ * HEADER STATUS RESOLVER (v4.0.5) — the visible header identity for
+ * ContentShell routes, derived from the SAME registry that owns SEO
+ * and sitemap facts (data/routes.json → lib/routes.ts). No second
+ * route registry, no duplicated titles:
+ *
+ *   ""                      → "HOME"
+ *   /about/                 → "ABOUT"
+ *   /work/                  → "WORK"
+ *   /research/              → "RESEARCH"
+ *   /blog/                  → "BLOG"
+ *   /contact/               → "CONTACT"
+ *   /local-ai/              → "LOCAL AI"
+ *   /ai-systems/            → "AI SYSTEMS"
+ *   /ai-reasoning/          → "AI REASONING"
+ *   /ai-evaluation/         → "AI EVALUATION"
+ *   /software-engineering/  → "SOFTWARE ENGINEERING"
+ *   /creative-technology/   → "CREATIVE TECHNOLOGY"
+ *
+ * The label IS the registry path — normalized to the site's uppercase
+ * identity vocabulary — so every registered route resolves correctly
+ * and a route added to the registry automatically earns its header
+ * identity. An unregistered path resolves to null and the host
+ * header renders no status: identities are never invented.
+ * (World scenes are NOT resolved here — their labels come from the
+ * live scene definition inside LivingShell.)
+ */
+export function headerStatusForRoutePath(
+  path: string | undefined
+): string | null {
+  if (!path) {
+    return null;
+  }
+
+  /* Strip leading/trailing slashes: "/about/" → "about". */
+  const segment = path.replace(/^\/+/, "").replace(/\/+$/, "");
+
+  if (segment === "") {
+    return "HOME";
+  }
+
+  const route = getRegistryRoute(segment);
+
+  if (!route) {
+    return null;
+  }
+
+  return segment.replace(/-/g, " ").toUpperCase();
+}
+
+/*
  * PAGE IDENTITY RESOLVER (v4.0.3) — the shared document shell's
  * per-tab identity (FullScreenPageShell's `data-page` accent layer)
  * is derived from the route REGISTRY instead of a hardcoded switch:

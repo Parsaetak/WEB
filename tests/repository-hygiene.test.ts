@@ -39,6 +39,7 @@ const WHATSAPP_PATTERN = /whatsapp|wa\.me/i;
  */
 const CHECKER_FILES = new Set([
   path.join("tests", "repository-hygiene.test.ts"),
+  path.join("tests", "footer.test.ts"),
   path.join("scripts", "verify-seo.mjs"),
   path.join("README.md"),
   path.join("ROADMAP.md"),
