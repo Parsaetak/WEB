@@ -1,11 +1,144 @@
 {
   "version": 2,
-  "generatedAt": "2026-09-21T04:45:57.025Z",
+  "generatedAt": "2026-09-29T14:00:10.089Z",
   "basePath": "",
   "siteUrl": "https://parsaetak.github.io/WEB",
   "siteName": "Parsa Tak",
   "siteDescription": "Notes from an evolving laboratory for AI systems, reasoning architecture, creative technology, and RED MAGIC.",
   "posts": [
+    {
+      "slug": "freeiran-2026-09",
+      "search": "freeiran 2026-09: tun mode and the evidence ladder system-wide tunneling through the managed sing-box core — and an evidence ladder that refuses to claim what was not run. the september research line of freeiran delivers functional windows tun through the managed sing-box core's native dataplane, hardens the activation gate until it fails closed, repairs the windows gui startup defect at the root, and proves the repair with a launch test that demands a visible window — not a live process. research research parsa tak freeiran freeiran tun sing-box networking go verification windows 2026 networking verification go systems",
+      "title": "FreeIran 2026-09: TUN Mode and the Evidence Ladder",
+      "subtitle": "System-wide tunneling through the managed sing-box core — and an evidence ladder that refuses to claim what was not run.",
+      "excerpt": "The September research line of FreeIran delivers functional Windows TUN through the managed sing-box core's native dataplane, hardens the activation gate until it fails closed, repairs the Windows GUI startup defect at the root, and proves the repair with a launch test that demands a visible window — not a live process.",
+      "description": "FreeIran September research: system-wide TUN through the managed sing-box core, a fail-closed activation gate, and the evidence ladder keeping claims honest.",
+      "date": "2026-09-29",
+      "updated": null,
+      "author": "Parsa Tak",
+      "category": "research",
+      "type": "research",
+      "tags": [
+        "FreeIran",
+        "TUN",
+        "sing-box",
+        "networking",
+        "Go",
+        "verification",
+        "Windows",
+        "2026"
+      ],
+      "project": "freeiran",
+      "topics": [
+        "networking",
+        "verification",
+        "Go",
+        "systems"
+      ],
+      "readingMinutes": 5,
+      "readingTime": "5 min read",
+      "wordCount": 910,
+      "featured": false,
+      "cover": {
+        "src": "/blog/images/freeiran-tun-evidence.svg",
+        "alt": "A red evidence-ladder diagram of five rungs from config check to physical host with the top rung left open, above a TUN adapter and its route table",
+        "width": 1200,
+        "height": 630,
+        "ogSrc": "/blog/images/freeiran-tun-evidence.png"
+      },
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\"><a href=\"/blog/freeiran-engineering-notes/\">FreeIran</a> is the laboratory&#39;s free, open-source VPN configuration manager for Windows — local-first in the strict sense: no account, no cloud, no telemetry. <strong>(Fact — the repository&#39;s own description.)</strong> The September research line (v0.11.3 through v0.11.5, current) attacked the hardest technical and epistemic problem the project had left: system-wide tunneling, and the question of what a project is allowed to claim about code it could not run.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"tun-the-managed-core-is-the-dataplane\">TUN: the managed core is the dataplane<a class=\"h-anchor\" href=\"#tun-the-managed-core-is-the-dataplane\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">Since v0.11.3, TUN is no longer an honest refusal. The managed, digest-verified sing-box core — the same binary the Cores page installs with pinned-digest verification — IS the TUN dataplane: a native sing-box tun inbound (Wintun-backed) runs the user&#39;s active configuration system-wide. There is no second packet engine and no second downloader: the official Wintun driver ships embedded inside the verified sing-box binary and loads from memory. <strong>(Fact — docs/tun.md.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Activation is transactional and observed at every step: elevation check, verified managed core, sing-box compatibility validation refused before any mutation, collision-free TUN addressing derived from the live interface table, loop prevention through sing-box&#39;s <code>auto_detect_interface</code>, and a DNS hijack where plain DNS is answered by sing-box&#39;s resolver over the proxy while system adapter DNS is never mutated. And the definition of Active is the sentence I would frame: <em>&quot;Active is never &#39;the process started&#39;: it is &#39;the exact session adapter was observed, the covering route state was observed, traffic provably flowed, and no upstream loop was observed&#39;.&quot;</em> <strong>(Fact — quoted from docs/tun.md.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"v0114-the-activation-gate-stops-accepting-weak-evidence\">v0.11.4: the activation gate stops accepting weak evidence<a class=\"h-anchor\" href=\"#v0114-the-activation-gate-stops-accepting-weak-evidence\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The hardening release replaced the two weak observations the first gate accepted. Exact adapter identity: the observed interface must match the recorded FreeIran adapter name AND carry the session&#39;s expected address on that same interface — same-address-on-wrong-adapter is rejected. Native route-path observation: before traffic is trusted, the Windows IP Helper forwarding table must show the TUN owning the covering IPv4 routes (the 0.0.0.0/0 default, or the 0.0.0.0/1 + 128.0.0.0/1 pair), and after the tunneled request succeeds, the sing-box process must own NO TCP socket sourced from the TUN address — that sourcing IS the route-loop failure mode. UDP-family outbounds hold no TCP upstream socket, so the verdict honestly reports &quot;not observable through the TCP owner table&quot; instead of guessing. Address selection now fails closed when every IPv4 candidate collides. No netsh, no route.exe, no PowerShell anywhere — lazy syscalls, bounded, fail-closed. <strong>(Fact.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-evidence-ladder\">The evidence ladder<a class=\"h-anchor\" href=\"#the-evidence-ladder\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">What makes TUN mode research rather than a feature announcement is <a href=\"https://github.com/Parsaetak/FreeIran/blob/main/docs/tun.md\" target=\"_blank\" rel=\"noreferrer\">the evidence ladder</a> in docs/tun.md, where each class is stated at exactly the level actually proven and classes are not interchangeable. Generated-config verification: VERIFIED — the complete TUN document passes <code>sing-box check</code> of the real pinned 1.14.1 binary. Linux/unit verification: VERIFIED against deterministic seams. Windows compile verification: VERIFIED. Windows CI behavioural verification: EXECUTED BY CI, which runs no privileged TUN operation. Physical elevated Windows TUN runtime: <strong>NOT VERIFIED</strong> — and the repository deliberately does not claim it. <strong>(Fact.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\"><strong>(Analysis)</strong> this ladder is the laboratory&#39;s <a href=\"/research/\">measurement discipline</a> applied to a network daemon: evidence classes are not interchangeable, and a claim that cannot name its class is not a claim — it is marketing. FreeIran would rather ship a smaller truth than a larger fiction.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"v0115-a-gui-defect-with-a-forensic-story\">v0.11.5: a GUI defect with a forensic story<a class=\"h-anchor\" href=\"#v0115-a-gui-defect-with-a-forensic-story\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The current release root-caused a silent Windows startup failure. The pre-Run tray reconcile dispatched through <code>application.InvokeAsync</code>, whose first step dereferences Wails&#39; platform-app handle — which does not exist until <code>Run()</code> — and the resulting panic killed the process on the main goroutine after the engine logs were written and before the window was created; a windowsgui binary has no console, so the crash left no visible trace. The repair creates and shows the ONE main window from the <code>ApplicationStarted</code> event, where the platform app and message loop exist, making visibility independent of the WebView2 outcome. <strong>(Fact — verified against the pinned wails v3.0.0-beta.19 source.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The proof is the part worth stealing: a new Windows-only test launches the ACTUAL built executable — not a smoke flag — in an isolated workspace and fails unless a visible top-level window owned by the launched process is observed natively (user32 EnumWindows, IsWindowVisible, GetWindowThreadProcessId) within a bounded timeout. It distinguishes &quot;process alive&quot; from &quot;GUI visible&quot; and terminates the instance by exact PID. <strong>(Fact.)</strong> The runtime log also shed its metadata — no per-entry wall-clock timestamps, no commit field, no toolchain identifiers; <code>seq</code> and the measured <code>duration_ms</code>/<code>status</code> remain the only evidence. <strong>(Fact.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"why-this-belongs-here\">Why this belongs here<a class=\"h-anchor\" href=\"#why-this-belongs-here\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">FreeIran carries the laboratory&#39;s constitution into the <a href=\"/blog/building-under-constraints/\">hardest environment it builds for</a>: unreliable networks, restricted connectivity, and a Windows host it does not romanticise. The unified adaptive memory controller samples real measurements every two seconds and adapts within hard floors and ceilings with hysteresis; process supervision is kernel-level — job objects, so no orphan core survives; the <a href=\"/software-engineering/\">software engineering</a> through-line is the same as everywhere else in <a href=\"/work/\">Selected Work</a>: bounded resources, explicit state machines, honest tests. <strong>(Fact.)</strong> The questions behind the engineering sit in the <a href=\"/research/\">research programme</a>. The repository is public: <a href=\"https://github.com/Parsaetak/FreeIran\" target=\"_blank\" rel=\"noreferrer\">github.com/Parsaetak/FreeIran</a>.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">Access to information is a precondition for everything else this laboratory builds — and now the tunnel, the memory controller, and the claims about them all obey one law: nothing is Active until it is observed.</p>",
+      "headings": [
+        {
+          "id": "tun-the-managed-core-is-the-dataplane",
+          "text": "TUN: the managed core is the dataplane",
+          "level": 2
+        },
+        {
+          "id": "v0114-the-activation-gate-stops-accepting-weak-evidence",
+          "text": "v0.11.4: the activation gate stops accepting weak evidence",
+          "level": 2
+        },
+        {
+          "id": "the-evidence-ladder",
+          "text": "The evidence ladder",
+          "level": 2
+        },
+        {
+          "id": "v0115-a-gui-defect-with-a-forensic-story",
+          "text": "v0.11.5: a GUI defect with a forensic story",
+          "level": 2
+        },
+        {
+          "id": "why-this-belongs-here",
+          "text": "Why this belongs here",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "sheytan-la-2026-09",
+      "search": "sheytan-la 2026-09: the runtime governor research notes a policy authority that measures the machine, admits against resident budgets, and refuses to guess — the laboratory's september research release, documented. the september 2026 research release of sheytan-la adds a runtime governor: one resource-state model over measurable facts, admission against resident memory budgets, honest adjustment classes, a self-model with provenance — and two p0 repairs that make pause/resume and abort semantics honest at the root. research research parsa tak sheytan-local-agent sheytan sheytan-la local-first runtime governor resource management verification go 2026 local-first ai agent architecture verification resource management",
+      "title": "SHEYTAN-LA 2026-09: The Runtime Governor Research Notes",
+      "subtitle": "A policy authority that measures the machine, admits against resident budgets, and refuses to guess — the laboratory's September research release, documented.",
+      "excerpt": "The September 2026 research release of SHEYTAN-LA adds a Runtime Governor: one resource-state model over measurable facts, admission against resident memory budgets, honest adjustment classes, a self-model with provenance — and two P0 repairs that make pause/resume and abort semantics honest at the root.",
+      "description": "Inside SHEYTAN-LA v1.8.0: a Runtime Governor that admits workloads against resident memory budgets, explains every verdict, and keeps the host responsive.",
+      "date": "2026-09-29",
+      "updated": null,
+      "author": "Parsa Tak",
+      "category": "research",
+      "type": "research",
+      "tags": [
+        "SHEYTAN",
+        "SHEYTAN-LA",
+        "local-first",
+        "Runtime Governor",
+        "resource management",
+        "verification",
+        "Go",
+        "2026"
+      ],
+      "project": "sheytan-local-agent",
+      "topics": [
+        "local-first AI",
+        "agent architecture",
+        "verification",
+        "resource management"
+      ],
+      "readingMinutes": 4,
+      "readingTime": "4 min read",
+      "wordCount": 813,
+      "featured": false,
+      "cover": {
+        "src": "/blog/images/sheytan-la-governor.svg",
+        "alt": "A red policy-loop diagram: telemetry flowing into a governor core, an execution-envelope band beside it, and subsystem boxes below carrying the actions",
+        "width": 1200,
+        "height": 630,
+        "ogSrc": "/blog/images/sheytan-la-governor.png"
+      },
+      "html": "<p data-reveal=\"\" data-reveal-order=\"0\">Every agent system eventually collides with the same wall: the machine it runs on. The <a href=\"/blog/sheytan-the-local-first-laboratory/\">SHEYTAN laboratory</a> has spent its releases building verification gates for the model&#39;s work; the September research release (v1.8.0, current) turns the same discipline on the host itself. The headline is a <strong>Runtime Governor</strong> — a policy authority that continuously understands the machine and governs runtime policy while keeping the host responsive. <strong>(Fact — the repository&#39;s v1.8.0 documentation.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"1\">A register note, in the house style: everything below about the system&#39;s behaviour is <strong>fact</strong>, checkable in the <a href=\"https://github.com/Parsaetak/SHEYTAN-Local-Agent\" target=\"_blank\" rel=\"noreferrer\">public repository</a>; interpretation is marked as analysis.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"one-process-one-runtime-stack\">One process, one runtime stack<a class=\"h-anchor\" href=\"#one-process-one-runtime-stack\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">SHEYTAN-LA is a single Go process that owns its runtime exactly once: one engine lifecycle over managed llama.cpp — with the native C++ engine as a validated alternative path — one run registry where fresh and resumed runs share one identity, one session store, one tool registry, one scheduler, one downloader, one memory authority. <strong>(Fact — the architecture truth table.)</strong> I keep the architecture accumulative by rule: v1.8 added the Governor without moving a single authority, because a laboratory that rearranges its constitution every release is not a laboratory.</p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-runtime-governor-policy-never-force\">The Runtime Governor: policy, never force<a class=\"h-anchor\" href=\"#the-runtime-governor-policy-never-force\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The Governor (<code>internal/governor</code>) is fed by the live-pressure monitor that already existed — one sampler, one cadence, one protection path; no second telemetry database. It computes a resource state of measured facts with an explicit unknowns list, then a pressure model that reuses the shipped four-level vocabulary (ok / warning / high_pressure / critical_pressure) and adds the time dimension: sustained-duration tracking per level and bounded rolling signals, so one noisy sample never flips policy. <strong>(Fact.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The output is an execution envelope — what may be admitted, what should be reduced (background work, context work, tool concurrency) — and, the part I consider the honest core, an adjustment class on every recommendation: <code>live</code> (a real control point exists now), <code>next-run</code>, or <code>reload</code> (the engine must reload; the llama.cpp contract is not pretended away). <strong>(Fact.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"3\">Admission is arithmetic, not vibes. Model loads are admitted against a resident budget — available RAM minus host headroom minus measured process RSS — where mapped file size is never accepted as resident size, plans without an estimate are refused, and every verdict carries its own arithmetic in the reason. Unknown evidence refuses conservatively. <strong>(Fact.)</strong> <strong>(Analysis)</strong> this is the laboratory&#39;s <a href=\"/blog/reasoning-is-a-system-property/#rep-strengthen-the-thinking\">verification doctrine</a> applied to resources: a decision is only as good as the evidence it names, and a policy that cannot explain itself has no business governing a machine.</p>\n<p data-reveal=\"\" data-reveal-order=\"4\">The Governor executes nothing. Enforcement stays with the subsystems that already own engines, runs, and memory. <code>GET /api/governor</code> composes one read model — governor state, hardware facts with GPU/NPU honestly labelled detection-level, engine health, actual capabilities — and the System Centre renders it with real values and named unknowns, no decorative graphs. <strong>(Fact.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"two-p0-repairs-told-honestly\">Two P0 repairs, told honestly<a class=\"h-anchor\" href=\"#two-p0-repairs-told-honestly\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The release also closed two defects at the root, and both stories read as research.</p>\n<p data-reveal=\"\" data-reveal-order=\"2\">The pause→resume→pause synchronization defect: a failing integration test reused a wait helper whose condition was satisfied by the <em>stale, pre-resume</em> cumulative snapshot — the second pause was issued without proof the resumed generation was live. The repair is an authoritative-evidence contract (<code>resumedGenerationEvidence</code>): after a resume, proof requires a strictly newer run sequence AND a changed cumulative response/reasoning snapshot; stale cumulative state is never evidence. <strong>(Fact.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"3\">The abort honesty race: on a canceled run context the orchestrator published <code>done</code> with an abort caption while the outcome registry recorded <code>aborted</code> — a divergence the one-settlement rule could never repair, and the source of a ~17% flake in the abort-after-resume integration test on Linux. The orchestrator now publishes the typed <code>aborted</code> activity, live state and registry agree on it forever, and the flake is gone across 15/15 stressed runs. <strong>(Fact — the v1.8.0 release notes.)</strong></p>\n<h2 data-reveal=\"heading\" data-reveal-order=\"0\" id=\"the-honest-boundary\">The honest boundary<a class=\"h-anchor\" href=\"#the-honest-boundary\" aria-label=\"Link to this section\"><span aria-hidden=\"true\">#</span></a></h2>\n<p data-reveal=\"\" data-reveal-order=\"1\">The laboratory&#39;s evidence model names its classes — deterministic unit, race gate, integration, E2E, CI, real-engine probe, real-host runtime, known limitation — and v1.8.0 keeps every boundary truthful: CPU load is measured on Linux while the Windows seam reports unknown rather than a fabricated utilisation number; the Governor is a policy authority, not yet a full closed-loop actuator; CI is build/test evidence, never physical-host evidence. <strong>(Fact.)</strong></p>\n<p data-reveal=\"\" data-reveal-order=\"2\"><strong>(Analysis)</strong> that refusal to flatter itself is the actual research result. A local-first system that admits workloads it cannot measure is a demo; one that refuses until the evidence exists is an instrument. This is why the system anchors the laboratory&#39;s <a href=\"/local-ai/\">Local AI line</a> in <a href=\"/work/\">Selected Work</a>, and why these notes sit inside the <a href=\"/research/\">research programme</a>: the same rule runs through everything I build — the model proposes, the tools execute, the laboratory verifies, and now the runtime governs. The repository is public: <a href=\"https://github.com/Parsaetak/SHEYTAN-Local-Agent\" target=\"_blank\" rel=\"noreferrer\">github.com/Parsaetak/SHEYTAN-Local-Agent</a>.</p>",
+      "headings": [
+        {
+          "id": "one-process-one-runtime-stack",
+          "text": "One process, one runtime stack",
+          "level": 2
+        },
+        {
+          "id": "the-runtime-governor-policy-never-force",
+          "text": "The Runtime Governor: policy, never force",
+          "level": 2
+        },
+        {
+          "id": "two-p0-repairs-told-honestly",
+          "text": "Two P0 repairs, told honestly",
+          "level": 2
+        },
+        {
+          "id": "the-honest-boundary",
+          "text": "The honest boundary",
+          "level": 2
+        }
+      ]
+    },
     {
       "slug": "freeiran-engineering-notes",
       "search": "freeiran engineering notes determinism, chunked storage, and honest testing in a go system built for unreliable networks. freeiran is a local-first configuration manager built around a shared go engine: three protocol cores behind one abstraction, checksummed chunked storage with crash recovery, a deterministic fake-core test harness, and no telemetry at all. these are the engineering notes. engineering work parsa tak freeiran freeiran go systems storage testing 2026 go deterministic testing storage systems",
@@ -643,6 +776,8 @@
   "indexes": {
     "tags": {
       "2026": [
+        "freeiran-2026-09",
+        "sheytan-la-2026-09",
         "freeiran-engineering-notes",
         "measuring-machine-intelligence",
         "red-theory-and-the-living-web",
@@ -653,11 +788,50 @@
         "why-the-website-is-a-living-system"
       ],
       "FreeIran": [
+        "freeiran-2026-09",
         "freeiran-engineering-notes"
       ],
+      "TUN": [
+        "freeiran-2026-09"
+      ],
+      "sing-box": [
+        "freeiran-2026-09"
+      ],
+      "networking": [
+        "freeiran-2026-09"
+      ],
       "Go": [
+        "freeiran-2026-09",
+        "sheytan-la-2026-09",
         "freeiran-engineering-notes",
         "sheytan-the-local-first-laboratory"
+      ],
+      "verification": [
+        "freeiran-2026-09",
+        "sheytan-la-2026-09",
+        "measuring-machine-intelligence",
+        "sheytan-the-local-first-laboratory",
+        "ai-instructions"
+      ],
+      "Windows": [
+        "freeiran-2026-09"
+      ],
+      "SHEYTAN": [
+        "sheytan-la-2026-09",
+        "sheytan-the-local-first-laboratory"
+      ],
+      "SHEYTAN-LA": [
+        "sheytan-la-2026-09"
+      ],
+      "local-first": [
+        "sheytan-la-2026-09",
+        "sheytan-the-local-first-laboratory"
+      ],
+      "Runtime Governor": [
+        "sheytan-la-2026-09"
+      ],
+      "resource management": [
+        "sheytan-la-2026-09"
       ],
       "systems": [
         "freeiran-engineering-notes",
@@ -682,11 +856,6 @@
       "measurement": [
         "measuring-machine-intelligence"
       ],
-      "verification": [
-        "measuring-machine-intelligence",
-        "sheytan-the-local-first-laboratory",
-        "ai-instructions"
-      ],
       "benchmarks": [
         "measuring-machine-intelligence"
       ],
@@ -704,12 +873,6 @@
       ],
       "simulation": [
         "red-theory-and-the-living-web"
-      ],
-      "SHEYTAN": [
-        "sheytan-the-local-first-laboratory"
-      ],
-      "local-first": [
-        "sheytan-the-local-first-laboratory"
       ],
       "agents": [
         "sheytan-the-local-first-laboratory"
@@ -785,23 +948,125 @@
       ]
     },
     "categories": {
+      "research": [
+        "freeiran-2026-09",
+        "sheytan-la-2026-09",
+        "measuring-machine-intelligence",
+        "red-theory-and-the-living-web",
+        "ai-instructions",
+        "reasoning-is-a-system-property"
+      ],
       "engineering": [
         "freeiran-engineering-notes",
         "sheytan-the-local-first-laboratory",
         "the-anatomy-of-a-fast-static-site",
         "why-the-website-is-a-living-system"
       ],
-      "research": [
-        "measuring-machine-intelligence",
-        "red-theory-and-the-living-web",
-        "ai-instructions",
-        "reasoning-is-a-system-property"
-      ],
       "systems": [
         "building-under-constraints"
       ]
     },
     "related": {
+      "freeiran-2026-09": [
+        {
+          "slug": "freeiran-engineering-notes",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "building-under-constraints",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "sheytan-the-local-first-laboratory",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "sheytan-la-2026-09",
+          "score": 19.9,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "Go",
+            "2026"
+          ]
+        },
+        {
+          "slug": "reasoning-is-a-system-property",
+          "score": 15.2,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "verification",
+            "systems"
+          ]
+        },
+        {
+          "slug": "ai-instructions",
+          "score": 14.4,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "2026",
+            "verification"
+          ]
+        }
+      ],
+      "sheytan-la-2026-09": [
+        {
+          "slug": "sheytan-the-local-first-laboratory",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "reasoning-is-a-system-property",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "ai-instructions",
+          "score": null,
+          "explicit": true,
+          "shared": []
+        },
+        {
+          "slug": "freeiran-2026-09",
+          "score": 20,
+          "explicit": false,
+          "shared": [
+            "Go",
+            "verification",
+            "2026"
+          ]
+        },
+        {
+          "slug": "measuring-machine-intelligence",
+          "score": 15.7,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "2026",
+            "verification"
+          ]
+        },
+        {
+          "slug": "freeiran-engineering-notes",
+          "score": 10.8,
+          "explicit": false,
+          "shared": [
+            "Go",
+            "2026",
+            "note"
+          ]
+        }
+      ],
       "freeiran-engineering-notes": [
         {
           "slug": "building-under-constraints",
@@ -816,6 +1081,16 @@
           "shared": []
         },
         {
+          "slug": "freeiran-2026-09",
+          "score": 21,
+          "explicit": false,
+          "shared": [
+            "freeiran",
+            "FreeIran",
+            "Go"
+          ]
+        },
+        {
           "slug": "why-the-website-is-a-living-system",
           "score": 14,
           "explicit": false,
@@ -827,7 +1102,7 @@
         },
         {
           "slug": "reasoning-is-a-system-property",
-          "score": 12.25,
+          "score": 12.2,
           "explicit": false,
           "shared": [
             "systems",
@@ -836,22 +1111,13 @@
           ]
         },
         {
-          "slug": "ai-instructions",
-          "score": 6.5,
+          "slug": "sheytan-la-2026-09",
+          "score": 10.9,
           "explicit": false,
           "shared": [
+            "Go",
             "2026",
-            "system",
-            "built"
-          ]
-        },
-        {
-          "slug": "the-anatomy-of-a-fast-static-site",
-          "score": 6.13,
-          "explicit": false,
-          "shared": [
-            "behind",
-            "fake"
+            "note"
           ]
         }
       ],
@@ -869,8 +1135,28 @@
           "shared": []
         },
         {
+          "slug": "sheytan-la-2026-09",
+          "score": 15.9,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "2026",
+            "verification"
+          ]
+        },
+        {
+          "slug": "freeiran-2026-09",
+          "score": 14,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "2026",
+            "verification"
+          ]
+        },
+        {
           "slug": "sheytan-the-local-first-laboratory",
-          "score": 10.63,
+          "score": 10.5,
           "explicit": false,
           "shared": [
             "verification",
@@ -880,29 +1166,11 @@
         },
         {
           "slug": "red-theory-and-the-living-web",
-          "score": 8.75,
+          "score": 8.6,
           "explicit": false,
           "shared": [
             "2026",
             "laboratory"
-          ]
-        },
-        {
-          "slug": "freeiran-engineering-notes",
-          "score": 5,
-          "explicit": false,
-          "shared": [
-            "2026",
-            "built"
-          ]
-        },
-        {
-          "slug": "why-the-website-is-a-living-system",
-          "score": 4,
-          "explicit": false,
-          "shared": [
-            "2026",
-            "built"
           ]
         }
       ],
@@ -920,8 +1188,28 @@
           "shared": []
         },
         {
+          "slug": "freeiran-2026-09",
+          "score": 10,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "system",
+            "test"
+          ]
+        },
+        {
+          "slug": "sheytan-la-2026-09",
+          "score": 9.9,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "laboratory",
+            "model"
+          ]
+        },
+        {
           "slug": "ai-instructions",
-          "score": 9.5,
+          "score": 9.4,
           "explicit": false,
           "shared": [
             "2026",
@@ -931,31 +1219,11 @@
         },
         {
           "slug": "measuring-machine-intelligence",
-          "score": 8.88,
+          "score": 8.7,
           "explicit": false,
           "shared": [
             "2026",
             "laboratory"
-          ]
-        },
-        {
-          "slug": "freeiran-engineering-notes",
-          "score": 6,
-          "explicit": false,
-          "shared": [
-            "2026",
-            "system",
-            "test"
-          ]
-        },
-        {
-          "slug": "sheytan-the-local-first-laboratory",
-          "score": 5.63,
-          "explicit": false,
-          "shared": [
-            "2026",
-            "laboratory",
-            "model"
           ]
         }
       ],
@@ -973,8 +1241,28 @@
           "shared": []
         },
         {
-          "slug": "freeiran-engineering-notes",
+          "slug": "sheytan-la-2026-09",
+          "score": 22.9,
+          "explicit": false,
+          "shared": [
+            "sheytan-local-agent",
+            "SHEYTAN",
+            "local-first"
+          ]
+        },
+        {
+          "slug": "freeiran-2026-09",
           "score": 17,
+          "explicit": false,
+          "shared": [
+            "Go",
+            "verification",
+            "2026"
+          ]
+        },
+        {
+          "slug": "freeiran-engineering-notes",
+          "score": 16.8,
           "explicit": false,
           "shared": [
             "Go",
@@ -984,31 +1272,12 @@
         },
         {
           "slug": "measuring-machine-intelligence",
-          "score": 10.88,
+          "score": 10.7,
           "explicit": false,
           "shared": [
             "verification",
             "2026",
             "verification"
-          ]
-        },
-        {
-          "slug": "why-the-website-is-a-living-system",
-          "score": 8,
-          "explicit": false,
-          "shared": [
-            "2026",
-            "engineering"
-          ]
-        },
-        {
-          "slug": "red-theory-and-the-living-web",
-          "score": 5.75,
-          "explicit": false,
-          "shared": [
-            "2026",
-            "laboratory",
-            "model"
           ]
         }
       ],
@@ -1026,8 +1295,28 @@
           "shared": []
         },
         {
+          "slug": "sheytan-la-2026-09",
+          "score": 16.9,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "2026",
+            "verification"
+          ]
+        },
+        {
           "slug": "measuring-machine-intelligence",
-          "score": 15.88,
+          "score": 15.7,
+          "explicit": false,
+          "shared": [
+            "verification",
+            "2026",
+            "verification"
+          ]
+        },
+        {
+          "slug": "freeiran-2026-09",
+          "score": 15,
           "explicit": false,
           "shared": [
             "verification",
@@ -1037,32 +1326,12 @@
         },
         {
           "slug": "sheytan-the-local-first-laboratory",
-          "score": 12.63,
+          "score": 12.5,
           "explicit": false,
           "shared": [
             "verification",
             "2026",
             "verification"
-          ]
-        },
-        {
-          "slug": "red-theory-and-the-living-web",
-          "score": 9.75,
-          "explicit": false,
-          "shared": [
-            "2026",
-            "system",
-            "boundary"
-          ]
-        },
-        {
-          "slug": "freeiran-engineering-notes",
-          "score": 7,
-          "explicit": false,
-          "shared": [
-            "2026",
-            "system",
-            "three"
           ]
         }
       ],
@@ -1090,7 +1359,7 @@
           ]
         },
         {
-          "slug": "freeiran-engineering-notes",
+          "slug": "freeiran-2026-09",
           "score": 8,
           "explicit": false,
           "shared": [
@@ -1100,23 +1369,23 @@
           ]
         },
         {
+          "slug": "freeiran-engineering-notes",
+          "score": 7.8,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "systems",
+            "system"
+          ]
+        },
+        {
           "slug": "red-theory-and-the-living-web",
-          "score": 5.75,
+          "score": 5.6,
           "explicit": false,
           "shared": [
             "2026",
             "static",
             "system"
-          ]
-        },
-        {
-          "slug": "sheytan-the-local-first-laboratory",
-          "score": 5.63,
-          "explicit": false,
-          "shared": [
-            "2026",
-            "engineering",
-            "architecture"
           ]
         }
       ],
@@ -1134,8 +1403,18 @@
           "shared": []
         },
         {
+          "slug": "freeiran-2026-09",
+          "score": 16,
+          "explicit": false,
+          "shared": [
+            "2026",
+            "verification",
+            "systems"
+          ]
+        },
+        {
           "slug": "measuring-machine-intelligence",
-          "score": 13.88,
+          "score": 13.7,
           "explicit": false,
           "shared": [
             "2026",
@@ -1144,31 +1423,21 @@
           ]
         },
         {
-          "slug": "freeiran-engineering-notes",
-          "score": 13,
-          "explicit": false,
-          "shared": [
-            "systems",
-            "2026",
-            "systems"
-          ]
-        },
-        {
-          "slug": "red-theory-and-the-living-web",
-          "score": 10.75,
+          "slug": "sheytan-la-2026-09",
+          "score": 12.9,
           "explicit": false,
           "shared": [
             "2026",
-            "system",
+            "verification",
             "model"
           ]
         },
         {
-          "slug": "building-under-constraints",
-          "score": 10.38,
+          "slug": "freeiran-engineering-notes",
+          "score": 12.8,
           "explicit": false,
           "shared": [
-            "human will",
+            "systems",
             "2026",
             "systems"
           ]
@@ -1189,7 +1458,7 @@
         },
         {
           "slug": "freeiran-engineering-notes",
-          "score": 7,
+          "score": 6.8,
           "explicit": false,
           "shared": [
             "behind",
@@ -1198,15 +1467,24 @@
         },
         {
           "slug": "sheytan-the-local-first-laboratory",
-          "score": 5.63,
+          "score": 5.5,
           "explicit": false,
           "shared": [
             "architecture"
           ]
         },
         {
+          "slug": "sheytan-la-2026-09",
+          "score": 2.9,
+          "explicit": false,
+          "shared": [
+            "architecture",
+            "budget"
+          ]
+        },
+        {
           "slug": "red-theory-and-the-living-web",
-          "score": 2.75,
+          "score": 2.6,
           "explicit": false,
           "shared": [
             "static",
@@ -1229,7 +1507,7 @@
         },
         {
           "slug": "freeiran-engineering-notes",
-          "score": 15,
+          "score": 14.8,
           "explicit": false,
           "shared": [
             "systems",
@@ -1239,7 +1517,7 @@
         },
         {
           "slug": "red-theory-and-the-living-web",
-          "score": 9.75,
+          "score": 9.6,
           "explicit": false,
           "shared": [
             "2026",
@@ -1249,7 +1527,7 @@
         },
         {
           "slug": "building-under-constraints",
-          "score": 9.38,
+          "score": 9.3,
           "explicit": false,
           "shared": [
             "2026",
@@ -1259,7 +1537,7 @@
         },
         {
           "slug": "sheytan-the-local-first-laboratory",
-          "score": 8.63,
+          "score": 8.5,
           "explicit": false,
           "shared": [
             "2026",
@@ -1303,11 +1581,25 @@
       },
       "freeiran-engineering-notes": {
         "prev": "measuring-machine-intelligence",
+        "next": "sheytan-la-2026-09"
+      },
+      "sheytan-la-2026-09": {
+        "prev": "freeiran-engineering-notes",
+        "next": "freeiran-2026-09"
+      },
+      "freeiran-2026-09": {
+        "prev": "sheytan-la-2026-09",
         "next": null
       }
     },
     "linksHere": {
+      "freeiran-engineering-notes": [
+        "freeiran-2026-09",
+        "sheytan-the-local-first-laboratory",
+        "building-under-constraints"
+      ],
       "building-under-constraints": [
+        "freeiran-2026-09",
         "freeiran-engineering-notes",
         "measuring-machine-intelligence",
         "ai-instructions",
@@ -1315,10 +1607,12 @@
         "the-anatomy-of-a-fast-static-site"
       ],
       "sheytan-the-local-first-laboratory": [
+        "sheytan-la-2026-09",
         "freeiran-engineering-notes",
         "measuring-machine-intelligence"
       ],
       "reasoning-is-a-system-property": [
+        "sheytan-la-2026-09",
         "freeiran-engineering-notes",
         "measuring-machine-intelligence",
         "red-theory-and-the-living-web",
@@ -1349,10 +1643,6 @@
       "measuring-machine-intelligence": [
         "red-theory-and-the-living-web",
         "sheytan-the-local-first-laboratory"
-      ],
-      "freeiran-engineering-notes": [
-        "sheytan-the-local-first-laboratory",
-        "building-under-constraints"
       ],
       "red-theory-and-the-living-web": [
         "why-the-website-is-a-living-system"
