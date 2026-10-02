@@ -353,3 +353,5 @@ In practice: a query cluster that repeatedly produces impressions for a page ran
 ## Licence
 
 Original design, writing, artwork, and creative materials are licensed under the terms of [`LICENSE.md`](LICENSE.md) — all rights reserved by Parsa Tak. Brand and trademark notices live in [`TRADEMARKS.md`](TRADEMARKS.md). Third-party runtime libraries are governed by their own licences.
+
+Just because I am in iran
