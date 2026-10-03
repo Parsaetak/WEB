@@ -1401,4 +1401,3 @@ bottom identity row (star + © + ™).
 - `npm run bench:loading` re-run: all twelve routes load within the
   established envelope; no new client bundle for the status or the
   footer animation (CSS-only, server-rendered markup).
-fuck irgc?
